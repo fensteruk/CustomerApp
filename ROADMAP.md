@@ -1,6 +1,6 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 22 July 2026*
+*Last Updated: 7 August 2026*
 
 # Project Overview
 
@@ -8,9 +8,22 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `v0.1 – Application Foundation (In Progress)`
+**Current Milestone:** `Sprint 1G - Production Hardening`
 
-Status: Laravel project and SiteApp-matched dependency stack created. Base layout and branding remain intentionally unstarted.
+Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
+access and domain foundation has been implemented and verified. Sprint 1B call-off domain
+foundation has been implemented and QA verified. Sprint 1C.1 authenticated assigned-site
+selection and site dashboard UI has been implemented and verified. Sprint 1C.2 New Call
+Off UI has been implemented and verified against the audited domain actions. Sprint 1C.3
+Office Staff review, approval and rejection UI has been implemented and QA verified after
+a confirmation-integrity correction. Sprint 1D withdrawal, Trash, restore and quick Undo
+UI has been implemented and QA verified after Undo ownership and dashboard summary
+corrections. Sprint 1E backend notifications have been implemented; notification centre
+UI has been implemented and QA verified after recipient-authorisation, preview-user and
+no-JavaScript form corrections.
+
+Sprint 1G locally verifiable hardening has been implemented and regression verified; the
+release remains blocked on MySQL evidence and production infrastructure controls.
 
 # Version Roadmap
 
@@ -31,34 +44,55 @@ Status: Laravel project and SiteApp-matched dependency stack created. Base layou
 - Secure login and password reset
 - Disable public registration
 - Active-account enforcement
-- Customer organisation model
-- Customer User, Customer Administrator and Internal Administrator roles
+- Customer organisation and portal site-assignment model
+- Sites
+- Four distinct portal roles: Site Manager, Assistant Site Manager, Finishing Foreman and Fenster Office Staff
+- Active assigned-site selection for site roles
+- Assigned-site review scope for Fenster Office Staff
+- Development-only role-preview routing, excluded from production
 - Server-side authorisation
-- Cross-customer access tests
+- Cross-customer and cross-site access tests
+
+**Sprint 1A Exit:** authenticated users are active, assigned to customer organisations,
+hold portal-specific roles, and can access only authorised site contexts. Development
+preview must be unavailable in production and must not bypass authentication or
+authorisation.
 
 ## v0.3 — Customer Data Foundation
 
 - Customer-visible developments and phases
-- Outstanding plot projection
+- Outstanding projected plots
 - Service types: Cavity Closers, Windows and CML
 - External SiteApp identifiers
 - Synchronisation state
 - Search, filtering and pagination
 
-## v0.4 — Customer Request Workflow
+## v0.4 — Call-Off Workflow
 
-- Requested dates and customer notes
+- Call-off dates and explicit customer-visible response fields
+- Call-off batch model where one submission action has exactly one site, one service type,
+  one requested date and one submitting user
+- Individual request model where each request applies to one projected plot for the batch
+  service type
+- Independent request decisions after submission
 - One active request per plot and service
+- Centralised call-off eligibility action
+- Computed active conflict key for duplicate prevention
 - Bulk requests where approved
 - Request detail and history
-- Validation and authorisation tests
+- Submitted call-off lifecycle and validation
+- Pending request withdrawal
+- Rejected request Trash and traceable resubmission
+- Five-second quick Undo for eligible actions
+- Seven-day customer-facing Trash recovery and expiry handling
+- Validation, authorisation and cross-site access tests
 
-## v0.5 — Internal Portal Approval
+## v0.5 — Fenster Office Approval
 
-- Internal request queue
-- Confirm requested date
-- Propose revised date
-- Reject request
+- Fenster Office Staff Review Requests dashboard
+- Assigned-site review queue
+- Approve a submitted call-off
+- Reject a submitted call-off
 - Customer-visible response
 - Private internal reason
 - User attribution, timestamps and transition tests
@@ -66,7 +100,7 @@ Status: Laravel project and SiteApp-matched dependency stack created. Base layou
 ## v0.6 — Amendments and Revisions
 
 - Amendment requests
-- Reasons and notes
+- Explicit customer-visible responses and private internal reasons
 - Previous and proposed date tracking
 - Immutable revision history
 - Resubmission and amendment eligibility rules
@@ -74,7 +108,7 @@ Status: Laravel project and SiteApp-matched dependency stack created. Base layou
 ## v0.7 — Notifications and Status Tracking
 
 - In-app notification centre
-- Submission, confirmation, revision, rejection and amendment notifications
+- Submission, approval and rejection notifications
 - Customer-facing progress statuses
 - Read/unread state
 - Email where approved
@@ -83,7 +117,7 @@ Status: Laravel project and SiteApp-matched dependency stack created. Base layou
 
 - Dashboard summaries
 - Planned service dates
-- Outstanding and recently confirmed requests
+- Outstanding and recently approved requests
 - Due-soon view
 - Filters and plot search
 - Mobile layouts
@@ -115,9 +149,9 @@ Status: Laravel project and SiteApp-matched dependency stack created. Base layou
 - Authentication
 - Customer dashboard
 - Outstanding plots
-- Date requests
+- Call-off requests
 - Amendments
-- Portal approval
+- Fenster Office approval
 - Notifications
 - Status tracking
 - SiteApp integration
@@ -125,13 +159,17 @@ Status: Laravel project and SiteApp-matched dependency stack created. Base layou
 
 # Future Versions
 
-## v1.1 — Customer User Management
-Customer invitations, organisation role management and offboarding.
+## v1.1 – Portal User Management
+Customer invitations, portal role management, site assignments and offboarding.
 
-## v1.2 — Calendar Experience
+## v1.2 – Calendar Experience
 Calendar view, upcoming work and calendar export.
 
-## v1.3 — Evidence and Attachments
+## Future – QR Site Context
+QR codes may identify a site and assist a signed-in, authorised site user with selecting
+that site. They must never authenticate a user, grant site access or bypass authorisation.
+
+## v1.3 – Evidence and Attachments
 Secure customer documents and optional delay evidence.
 
 ## v1.4 — Enhanced Notifications
@@ -150,14 +188,12 @@ Do not add SiteApp workflow, trade sequencing, trade sign-off, Black Hat approva
 # Outstanding Decisions
 
 - Customer-facing meaning of CML
-- Bulk request rules
-- Customer Administrator Version 1 permissions
-- Revised-date acceptance
-- Amendment cutoff statuses
+- Bulk request creation limits and validation feedback
+- Amendment lifecycle eligibility beyond Version 1 withdrawal, rejected-request resubmission, Trash and Undo
 - Email notification requirements
 - Synchronisation freshness
 - Customer-facing status mapping
-- Retention requirements
+- Long-term retention requirements outside the seven-day customer-facing Trash window
 - Initial SiteApp integration method
 
 # Release Checklist
@@ -177,15 +213,16 @@ Each release should include:
 
 | Item | Status |
 |---|---|
-| Current Version | v0.1.0 (in progress) |
-| Next Version | v0.1.0 completion |
+| Current Version | Sprint 1G - Production Hardening |
+| Next Version | Portal-only production preparation after blockers are closed |
 | Project Created | Yes |
 | Foundation Documents | ✅ Prepared |
-| Authentication | ⚪ Not started |
-| Customer Data | ⚪ Not started |
-| Requests | ⚪ Not started |
-| Approval | ⚪ Not started |
-| Amendments | ⚪ Not started |
-| Notifications | ⚪ Not started |
+| Authentication | Implemented for Sprint 1A |
+| Customer Data | Organisation and site foundation implemented |
+| Requests | Sprint 1B backend/domain foundation implemented; Sprint 1C.2 submission UI and Sprint 1D withdrawal/Trash/Undo UI implemented |
+| Approval | Sprint 1B backend/domain actions implemented; Sprint 1C.3 Office Staff decision UI implemented |
+| Notifications | Sprint 1E backend and notification centre UI implemented and QA verified |
+| Amendments | ⚪ Not started; remains out of Sprint 1G scope |
 | SiteApp Integration | ⚪ Not defined |
+| Production Hardening | Locally verified; production evidence outstanding |
 | Production Ready | ❌ No |

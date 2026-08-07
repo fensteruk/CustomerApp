@@ -39,7 +39,9 @@ Do not introduce or recreate:
 - workflow stages, trade sequencing or dependencies;
 - trade sign-offs or Black Hat approvals;
 - readiness or build verification;
-- Site Manager, Build Manager, Trade Operative, Team Leader or Office User roles;
+- SiteApp roles or permission rules. The Customer Portal may define its own Site Manager,
+  Assistant Site Manager, Finishing Foreman and Fenster Office Staff roles, but they must
+  remain portal-specific and must not reuse SiteApp policy, workflow or administration code;
 - SiteApp workflow policies;
 - SiteApp Filament resources or administration;
 - SiteApp queries, templates, workflow issues or internal notes;
@@ -47,6 +49,26 @@ Do not introduce or recreate:
 - SiteApp database tables, domain models, services or internal statuses.
 
 Portal-specific approval screens are allowed only for portal requests.
+
+## Local Environment
+
+Before beginning work, verify:
+
+- php -v
+- composer --version
+- node -v
+- npm -v
+- git --version
+
+The project assumes:
+
+- Laravel Herd
+- PHP 8.4.x
+- Composer 2.x
+- Node.js 26.x
+- npm 11.x
+
+If any command is unavailable, stop and resolve the local environment before making application changes.
 
 ## Communication Rules
 
@@ -110,13 +132,13 @@ Avoid speculative microservices, AI scheduling, manufacturing calculations, labo
 - Completed plots must reject new requests.
 - Prevent more than one active request for the same plot and service.
 - Changes create amendments or revisions, not duplicate active requests.
-- A requested date is not confirmed until an authorised internal portal user publishes a decision.
+- A call-off is not approved until authorised Fenster Office Staff publish a decision.
 - Do not invent lead times or scheduling rules.
 - Bulk requests must remain traceable per plot and service.
 
 ## Approval and Amendment Rules
 
-Internal Administrators may confirm, propose a revised date or reject.
+Fenster Office Staff may approve or reject submitted call-offs within their authorised scope.
 
 - Keep transitions in actions, services or domain classes, not views.
 - Authorise immediately before persistence.
@@ -129,7 +151,9 @@ Internal Administrators may confirm, propose a revised date or reject.
 
 ## Customer-Facing Status Rules
 
-Initial statuses may include Submitted, Confirmed, In Production, Delivery Made, Installation Planned, Installation Complete, Amendment Requested, Revised Date Proposed and Rejected.
+Initial call-off decision statuses are Submitted, Approved and Rejected. Any later
+customer-facing progress statuses require an explicit mapping decision and must not mirror
+SiteApp workflow statuses.
 
 These are portal statuses, not SiteApp workflow statuses.
 
@@ -139,9 +163,18 @@ Centralise labels, icons, colours, ordering and transitions. Do not assume every
 
 Initial portal roles:
 
-- Customer User
-- Customer Administrator
-- Internal Administrator
+- Site Manager
+- Assistant Site Manager
+- Finishing Foreman
+- Fenster Office Staff
+
+Site Manager, Assistant Site Manager and Finishing Foreman may submit call-offs only for
+their assigned sites. Fenster Office Staff may approve or reject call-offs within the
+scope that is explicitly authorised for them. These are four distinct Customer Portal
+roles; they are not SiteApp roles or permission rules.
+
+Development-only role preview may simulate these portal roles and their dashboard routing.
+It must never be available in production or bypass authentication or authorisation.
 
 Use policies, gates, middleware, scopes or explicit checks. Hidden buttons are not security.
 
@@ -206,7 +239,7 @@ The portal should clearly answer:
 
 - Which plots remain outstanding?
 - What date did the customer request?
-- Has Fenster confirmed, revised or rejected it?
+- Has Fenster approved or rejected it?
 - What changed and when?
 - What customer-facing stage is it at?
 - What should the customer do next?

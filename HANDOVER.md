@@ -1,0 +1,823 @@
+# Fenster Customer Portal Handover
+
+## Sprint 1A - Secure Access and Domain Foundation
+
+Status:
+Implemented and verified.
+
+## Migrations and Tables Added
+
+Migration:
+
+- `2026_08_05_000001_create_secure_access_domain_tables.php`
+
+Tables added:
+
+- `customer_organisations`
+- `portal_roles`
+- `sites`
+- `site_user_assignments`
+
+Existing `users` table extended with:
+
+- `customer_organisation_id`
+- `portal_role_id`
+- `is_active`
+- `is_preview_user`
+
+## Models and Relationships
+
+Models added:
+
+- `CustomerOrganisation`
+- `PortalRole`
+- `Site`
+- `SiteUserAssignment`
+
+Updated:
+
+- `User`
+
+Relationships:
+
+- Customer organisations have many users and sites.
+- Users belong to one customer organisation.
+- Users belong to one portal role.
+- Users may be assigned to many sites.
+- Sites belong to one customer organisation.
+- Sites may have many assigned users.
+
+## Roles and Identifiers
+
+Stable role identifiers are centralised in `App\Enums\PortalRoleIdentifier`:
+
+- `site_manager`
+- `assistant_site_manager`
+- `finishing_foreman`
+- `fenster_office_staff`
+
+The three site roles remain distinct records with identical Version 1 permissions.
+
+## Routes
+
+Authentication:
+
+- `GET /login`
+- `POST /login`
+- `POST /logout`
+- `GET /forgot-password`
+- `POST /forgot-password`
+- `GET /reset-password/{token}`
+- `POST /reset-password`
+
+Protected portal routes:
+
+- `GET /dashboard`
+- `GET /sites/select`
+- `POST /sites/active`
+- `GET /portal/site-dashboard`
+- `GET /portal/review-requests`
+
+Development preview:
+
+- `GET /development/role-preview`
+- `POST /development/role-preview`
+
+Public registration is not routed.
+
+## Middleware, Policies and Gates
+
+Middleware added:
+
+- `active.portal` enforces active users with complete portal profile.
+- `active.site` re-authorises active site context from the session before site dashboard access.
+
+Gates added:
+
+- `select-site`
+- `view-site-dashboard`
+- `view-review-requests`
+
+Authorisation rules:
+
+- Site roles can select and use assigned sites only.
+- Office Staff review scope is assigned sites only.
+- Active site context stores only the selected site ID and is rechecked server-side.
+- Cross-organisation active-site context is rejected even if a bad assignment exists.
+
+## Seeders and Preview Users
+
+`DatabaseSeeder` now:
+
+- confirms the four portal role records;
+- creates a preview customer organisation;
+- creates preview sites;
+- creates controlled preview users for each portal role;
+- assigns preview users to preview sites.
+
+Development role preview signs in controlled preview users only in local or test environments.
+It does not mutate a real user's role and is unavailable outside local/test.
+
+## Tests Added
+
+Added `tests/Feature/SecureAccessFoundationTest.php`.
+
+Coverage includes:
+
+- valid login;
+- invalid login;
+- logout;
+- forgot-password request;
+- password reset;
+- public registration unavailable;
+- inactive-user login and retained-access blocking;
+- four portal roles;
+- assigned-site visibility for site users;
+- assigned-site review scope for Office Staff;
+- unassigned site ID rejection;
+- active-site assignment requirement;
+- cross-customer active-site rejection;
+- dashboard routing by role;
+- local/test role preview;
+- production role-preview blocking;
+- browser input cannot mutate a user's role;
+- unauthenticated protected-route blocking.
+
+## Backend Contracts for Next Sprint
+
+Next backend sprint can implement call-off batch and request schema against these access
+boundaries.
+
+Required contracts:
+
+- each request must belong to one batch;
+- each request must target one plot and one service;
+- request creation must authorise the active assigned site;
+- Office Staff decisions must authorise assigned-site review scope;
+- batch-level operations must authorise every affected request;
+- batch-level operations must not overwrite individual request decisions after divergence.
+
+## Unresolved Risks
+
+- Customer-facing meaning of CML remains unresolved.
+- Bulk call-off creation limits and validation feedback remain unresolved.
+- Amendment lifecycle beyond confirmed withdrawal, rejected-request resubmission, Trash and Undo remains unresolved.
+- Email notification requirements remain unresolved.
+- SiteApp integration method and sync freshness remain unresolved.
+- Long-term retention beyond seven-day customer-facing Trash visibility remains unresolved.
+
+## Sprint 1A QA Audit - 5 August 2026
+
+Status: Passed after corrective changes.
+
+Fixes made:
+
+- Removed standalone local development dashboard routes that rendered portal screens without
+  authentication, active-account validation or assigned-site authorisation.
+- Restored no-JavaScript access to the review preview content by removing its unconditional
+  Alpine `x-cloak` state.
+
+Additional automated coverage:
+
+- Revoked active-site assignments invalidate an existing active-site session context.
+- Site roles cannot access the Office Staff review dashboard.
+- Office Staff cannot select or access a site dashboard.
+- Development role-preview POST access is rejected in production.
+- Removed standalone development dashboard URLs remain unavailable.
+
+Recommendation for Sprint 1B:
+
+- Continue to enforce every request action through the active-site and assigned-site boundary.
+- Use database constraints and transactions for future batch-level lifecycle guarantees.
+- Add a MySQL-backed migration check before production readiness; this audit ran against the
+  required local SQLite database only.
+
+## Sprint 1B - Call-Off Domain Foundation
+
+Status:
+Implemented; pending dedicated Sprint 1B QA audit.
+
+Implemented:
+
+- `projected_plots` projection table and model.
+- Call-off service, request status, operation type and history event enums.
+- Call-off batches with one site, one service type, one requested date and one submitting
+  user.
+- One independently auditable call-off request per selected projected plot.
+- UUIDs on Sprint 1B business tables while retaining integer primary keys.
+- Nullable unique `active_conflict_key` for submitted and approved duplicate blocking.
+- `DetermineCallOffEligibilityAction` as the central eligibility source.
+- `UpdateConflictKeyAction` as the only domain owner of `active_conflict_key`.
+- Submission, approval, rejection, withdrawal, Trash, restore, quick Undo and rejected
+  resubmission actions.
+- Direct `call_off_batch_operation_items` membership with before/after state snapshots.
+- Append-only call-off status history with separate `customer_response` and
+  `internal_reason`.
+- Gates for projected plot visibility and call-off lifecycle actions.
+- Factories and local/test projected plot seed data.
+
+Verification:
+
+- `php artisan migrate` passed.
+- `php artisan test` passed.
+- `vendor\bin\pint --test` passed after formatter fixes were applied.
+- `npm run build` passed after rerunning outside the sandbox due to a Windows `spawn EPERM`
+  permission failure.
+- `git diff --check` passed.
+- `php artisan migrate:fresh --seed` passed against local SQLite.
+
+Out of Scope Not Implemented:
+
+- Final customer-facing call-off UI.
+- Final Office Staff review UI.
+- Email notifications.
+- QR scanning.
+- SiteApp API integration.
+- Manufacturing scheduling.
+- Completion, supersession or closure lifecycle for approved requests.
+- Amendments beyond rejected resubmission.
+- Filament resources.
+
+QA Recommendation:
+
+- Run a dedicated Sprint 1B QA audit before UI implementation.
+- Focus on concurrency, conflict keys, atomic Undo, operation item membership, history
+  sequencing, customer-facing serialization and cross-site/cross-organisation
+  authorisation.
+
+## Sprint 1B QA Audit - 5 August 2026
+
+Status:
+Passed after corrective changes. Safe to begin Sprint 1C UI integration.
+
+Defects found and fixed:
+
+- Submission now rejects a selected projected plot that no longer exists instead of
+  silently creating a partial batch.
+- Withdrawal, Trash and restoration now reject missing or duplicate request selections
+  before any state changes, preserving atomic bulk behaviour.
+- Quick Undo delegates active conflict-key restoration to `UpdateConflictKeyAction`,
+  preserving its single-owner domain boundary.
+- Operation-item foreign keys now restrict operation deletion, preserving operation
+  snapshots as audit-critical data.
+- Business UUIDs are not mass assignable, and application-level history records reject
+  update and delete operations.
+
+Tests added:
+
+- Missing selected plot rejection and full batch rollback.
+- Missing and duplicate bulk request selection rejection.
+- Server-generated UUID protection.
+- Append-only history mutation and deletion protection.
+
+Safe UI contracts:
+
+- Submit, approve, reject, withdraw, Trash, restore, Undo and rejected-resubmission
+  actions enforce their domain eligibility immediately before persistence.
+- UI must resolve the active assigned site through existing middleware and pass only that
+  server-authorised site to submission actions; it must never trust client-provided IDs.
+- UI must expose public UUIDs rather than integer primary keys and must never serialise
+  `internal_reason` to site users.
+- Bulk UI actions must pass the exact selected request set; the actions reject missing,
+  duplicate, cross-batch or ineligible items atomically.
+
+Known limitations:
+
+- The domain and migrations were verified with local SQLite only. MySQL-specific locking,
+  unique-index and migration behaviour have not been executed against MySQL.
+- There are no final customer or Office Staff lifecycle routes or views in Sprint 1B;
+  their controllers must apply authentication, active-account and active-site middleware
+  before invoking these actions.
+
+## Sprint 1C.1 - Authenticated Site Dashboard
+
+Status:
+Implemented and verified.
+
+Implemented:
+
+- Replaced the authenticated assigned-site selection preview with a real assigned-site
+  list scoped to the signed-in site user.
+- Site selection now displays the current active site when one is authorised.
+- Site selection stores the active site only after server-side customer-organisation and
+  site-assignment checks.
+- Replaced the site dashboard preview data with real relationships from the active site,
+  projected plots, call-off batches, call-off requests, submitter and customer-visible
+  decision history.
+- Site dashboard now shows site name, customer, signed-in assigned user, outstanding
+  projected plot count, current request status counts, outstanding projected plots and
+  existing call-off request cards.
+- Each call-off card shows plot, service, requested date, status, submitted by,
+  submission date and customer-visible decision response where applicable.
+- Removed authenticated dashboard preview data, Delete controls and New Call Off UI.
+- Added empty states for no assigned sites, no projected plots and no requests.
+- Kept Office Staff routing to a Review Requests placeholder only; no review queue,
+  approval or rejection UI was built in this sprint.
+
+Tests added:
+
+- Assigned-site selection displays only authorised sites and active-site context.
+- No-assigned-sites empty state.
+- Authenticated site dashboard renders real projected plots and call-offs and hides
+  completed/cross-site/private data.
+- No projected plots and no requests empty states.
+- Office Staff route to the Review Requests placeholder without decision controls.
+
+Verification:
+
+- `php artisan test` passed.
+- `vendor/bin/pint --test` passed after a formatter fix was applied.
+- `npm run build` passed after rerunning outside the sandbox because the first run hit a
+  Windows `spawn EPERM` environment permission failure.
+- `git diff --check` passed.
+
+Still out of scope:
+
+- New Call Off.
+- Review Requests queue.
+- Approve and Reject UI/actions.
+- Notifications.
+- Trash.
+- Undo.
+- QR.
+- SiteApp integration.
+
+## Sprint 1C.2 - New Call Off
+
+Status:
+Implemented and verified.
+
+Implemented:
+
+- Added authenticated active-site New Call Off routes for create, confirmation and final
+  submission.
+- Added a thin `NewCallOffController` that resolves the server-authorised active site,
+  delegates eligibility to `DetermineCallOffEligibilityAction` and delegates persistence
+  to `SubmitCallOffBatchAction`.
+- Added `NewCallOffRequest` validation for service type, requested date, selected
+  projected plot UUIDs and customer-facing submission text.
+- Added the New Call Off form with active site, service type, requested date, projected
+  plot multi-selection, customer-facing submission text and duplicate-click waiting state.
+- Projected plot options are shown only when eligible for the currently selected service.
+- Added a confirmation screen so no batch is created until the user submits from review.
+- Submission creates one batch and one individual submitted request per selected projected
+  plot through the domain action.
+- Successful submission redirects to the site dashboard with a customer-facing success
+  message; newly submitted requests appear immediately from the dashboard's real data.
+
+Tests added:
+
+- Authentication and site-role active-site access for New Call Off.
+- Eligible plot display excludes completed, cross-site and duplicate-conflicted projected
+  plots.
+- Validation feedback before confirmation.
+- Confirmation does not create batches or requests.
+- Final submission creates one batch and one request per projected plot.
+- Tampered cross-site UUIDs are rejected without persistence.
+- Final submission rechecks eligibility and blocks duplicate active submissions.
+
+Verification:
+
+- `php artisan test tests/Feature/NewCallOffTest.php` passed.
+- `php artisan test` passed.
+- `vendor/bin/pint --test` passed.
+- `npm run build` passed after rerunning outside the sandbox because the first run hit a
+  Windows `spawn EPERM` environment permission failure.
+- `git diff --check` passed.
+
+Still out of scope:
+
+- Review Requests queue.
+- Approve and Reject UI/actions.
+- Notifications.
+- Trash.
+- Undo.
+- QR.
+- SiteApp integration.
+
+## Sprint 1C.3 - Office Staff Review, Approval and Rejection
+
+Status:
+Implemented and verified.
+
+Implemented:
+
+- Replaced the Office Staff Review Requests placeholder with a real assigned-site review
+  dashboard.
+- Review dashboard defaults to Submitted requests and supports server-side filters for
+  status, assigned site and service type.
+- Review dashboard shows request cards with site, plot, service type, requested date,
+  submitting user, submission date, customer-facing submission text and current status.
+- Added request detail routes using public call-off request UUIDs.
+- Detail screen shows site, customer organisation, plot, service, requested date,
+  submitter, submitted timestamp, customer-facing submission text, current status and
+  Office Staff request history.
+- Added approve and reject form submissions.
+- Approve consumes `ApproveCallOffRequestAction`; reject consumes
+  `RejectCallOffRequestAction`.
+- Reject requires `customer_response`; approve allows optional `customer_response`.
+- Both decision forms support optional `internal_reason` for Office Staff only.
+- Site roles and unauthenticated users are blocked from review and decision routes.
+- Decision submissions re-authorise assigned Office Staff scope through the audited domain
+  action immediately before persistence.
+- Stale decisions, withdrawn requests and revoked Office Staff assignments fail safely
+  without overwriting existing decisions.
+- Approved and rejected requests leave the default Submitted queue.
+- Site-user dashboard reflects approved and rejected decisions on reload and never exposes
+  `internal_reason`.
+
+Routes added:
+
+- `GET /portal/review-requests`
+- `GET /portal/review-requests/{callOffRequest:uuid}`
+- `POST /portal/review-requests/{callOffRequest:uuid}/approve`
+- `POST /portal/review-requests/{callOffRequest:uuid}/reject`
+
+Tests added:
+
+- Assigned Office Staff can view Submitted requests for assigned sites.
+- Office Staff cannot see unassigned-site requests.
+- Site roles and unauthenticated users cannot access review or decision routes.
+- Request detail respects assigned-site and cross-organisation boundaries.
+- Assigned Office Staff can approve and reject.
+- Approval persists `customer_response`.
+- Rejection requires customer-visible response.
+- `internal_reason` is not shown on the site-user dashboard.
+- Approved and rejected requests leave the default Submitted queue.
+- Site-user dashboard shows Approved and Rejected results.
+- Stale second approval, approval after rejection and rejection after approval fail safely.
+- Withdrawn requests cannot be decided.
+- Revoked Office Staff assignment prevents decisions.
+- Foreign or malformed UUIDs fail safely.
+- Filters do not leak unauthorised records.
+
+Verification:
+
+- `php artisan test tests/Feature/OfficeStaffReviewRequestsTest.php` passed.
+- `php artisan test tests\Feature` passed.
+- `php artisan test` passed.
+- `vendor/bin/pint --test` passed after a formatter fix was applied.
+- `npm run build` passed after rerunning outside the sandbox because the first run hit a
+  Windows `spawn EPERM` environment permission failure.
+
+Still out of scope:
+
+- Trash.
+- Withdraw.
+- Undo.
+- Notifications.
+- QR scanning.
+- SiteApp integration.
+- Email.
+- Completion or supersession workflow.
+- Filament resources.
+
+## Sprint 1C Submission-to-Decision QA Audit - 5 August 2026
+
+Status:
+Passed after one workflow-integrity correction. Safe to begin Sprint 1D
+withdrawal/Trash/Undo work, provided that work remains within the already confirmed
+lifecycle rules.
+
+Defects found and fixed:
+
+- Final New Call Off submission could previously be posted directly, or with edited hidden
+  confirmation fields, without proving that the exact submitted values had been reviewed
+  on the confirmation screen. The final submit path now requires a server/session-backed
+  confirmation signature for the reviewed payload and rejects direct or tampered final
+  submissions before persistence.
+
+Tests added:
+
+- Final New Call Off submission without the confirmation screen is rejected.
+- Tampered confirmation payload values are rejected before batch or request creation.
+- Final submit still rechecks eligibility after confirmation, so a duplicate active
+  request created between review and final submit blocks persistence.
+
+Contracts verified:
+
+- Site Manager, Assistant Site Manager and Finishing Foreman can submit call-offs only for
+  their active assigned site.
+- New Call Off validation rejects unsupported services, past dates, empty plot selection,
+  duplicate plot UUIDs and unavailable projected plots.
+- Confirmation creates no batch or request until final submission.
+- Final submission calls `SubmitCallOffBatchAction`, and the domain action rechecks
+  eligibility immediately before persistence.
+- Fenster Office Staff review queues are scoped to assigned sites and default to
+  Submitted requests.
+- Approval and rejection call the audited domain actions, lock the current request,
+  re-authorise assigned Office Staff scope and reject stale or conflicting decisions.
+- Approval retains the active conflict key, rejection clears it through
+  `UpdateConflictKeyAction`, and decision history records actor, timestamp,
+  customer-visible response and private internal reason separately.
+- Site dashboards show the latest approved/rejected status and customer-visible response
+  for the active assigned site only.
+- `internal_reason` remains Office Staff-only and is not loaded or rendered on the
+  site-user dashboard.
+
+Remaining risks and limitations:
+
+- Browser-level accessibility, mobile layout and no-JavaScript behaviour were reviewed
+  from Blade structure and automated feature coverage only; no live browser or assistive
+  technology pass was performed in this audit.
+- MySQL-specific locking, unique-index and migration behaviour remain unverified; this
+  audit ran against the required local SQLite setup only.
+- Notifications, withdrawal, Trash, Undo, QR, SiteApp integration, email, completion and
+  supersession remain out of scope and were not started.
+
+## Sprint 1D - Withdrawal, Trash and Undo
+
+Status:
+Implemented; ready for dedicated QA audit.
+
+Customer-facing routes and screens:
+
+- Active-site dashboard selection controls and confirmation screens for withdrawal and
+  Trash.
+- `GET /portal/call-offs/trash` for unexpired, active-site customer Trash.
+- Confirmation, final lifecycle and operation UUID Undo routes recorded in
+  `current_sprint.md`.
+
+Implementation contract:
+
+- The UI does not mutate request status, Trash timestamps, conflict keys, histories or
+  operation records. It consumes the four audited Sprint 1B actions only.
+- The confirmation payload is HMAC signed and stored in session. It binds the operation,
+  ordered complete UUID selection, active site and acting user. A final action requires
+  this exact reviewed payload.
+- Quick Undo uses the original operation UUID, scoped by active assigned site; the browser
+  countdown is display-only and server timestamps decide eligibility.
+- Customer Trash uses `CallOffRequest::customerTrash()`: expired records are hidden but
+  remain retained. No scheduler is required for this derived visibility rule.
+
+QA focus:
+
+- Confirm all selected UUIDs are required, duplicate/missing/stale and mixed-batch
+  selections fail atomically, and direct/tampered final posts do not persist changes.
+- Verify Submitted can withdraw; only Rejected/Withdrawn can enter Trash; Approved never
+  exposes or accepts destructive site-user actions.
+- Verify cross-site, cross-organisation and revoked-assignment access cannot view, restore
+  or Undo by UUID possession.
+- Verify Undo expiry, already-reversed and divergence paths against the audited backend
+  action, plus exact history and operation-item snapshots.
+- Perform an accessibility and mobile-device pass. MySQL-specific locking and index
+  behaviour remain unverified by local SQLite tests.
+
+## Sprint 1D QA Audit - 6 August 2026
+
+Status:
+Passed after corrective changes. Safe to close Sprint 1D and begin the next scoped
+milestone.
+
+Defects found and fixed:
+
+- Quick Undo could be performed by any currently assigned site user who possessed a valid
+  operation UUID. Undo is now restricted to the user who performed the original
+  withdrawal, Trash or restore operation, while still rechecking current active-site
+  assignment inside the domain action.
+- The site dashboard hid trashed request cards but still included trashed requests in the
+  status summary counts. Status counts now exclude `trashed_at` records so the dashboard
+  and customer-facing Trash list remain consistent.
+
+Tests added:
+
+- Tampered final lifecycle operation routes do not mutate requests.
+- Replayed lifecycle confirmations do not create duplicate operations.
+- Trashed request cards leave the active dashboard and are excluded from status summary
+  counts.
+- Quick Undo by another currently assigned user on the same site is rejected.
+
+Confirmation contract verified:
+
+- Lifecycle confirmation validates the complete selected UUID list, rejects duplicate,
+  missing, malformed, cross-site and mixed-batch selections, and stores an HMAC signature
+  in session.
+- The signed payload binds the operation, ordered selected request UUIDs, active site ID
+  and acting user ID. The final action must present the matching route operation,
+  submitted operation value, selected UUIDs and confirmation signature.
+- Final persistence re-resolves the selected UUIDs for the active site and invokes only
+  the audited domain actions, which re-authorise and revalidate state inside a
+  transaction.
+
+Undo boundary behaviour:
+
+- Withdrawal, Trash and restore operations create `undo_expires_at` using server time at
+  five seconds after the operation.
+- The browser countdown is visual only; `QuickUndoCallOffOperationAction` and
+  `DetermineCallOffEligibilityAction::ensureCanUndo()` are authoritative.
+- An Undo at the exact stored expiry instant is currently accepted because Laravel's
+  `isPast()` returns false at equality; Undo after that instant fails.
+
+Trash visibility and expiry contract:
+
+- Customer-facing Trash uses `CallOffRequest::customerTrash()` with server time:
+  `trashed_at` present and `trash_expires_at` greater than `now()`.
+- Expired Trash records are hidden from the customer-facing Trash screen but remain stored
+  for audit.
+- Restore preserves the underlying rejected or withdrawn status and clears only Trash
+  fields through the domain action.
+
+Remaining risks:
+
+- MySQL-specific locking, unique-index and timestamp behaviour remain unverified; this
+  audit ran against local SQLite only.
+- Browser-level accessibility, mobile layout and assistive-technology verification were
+  reviewed from Blade structure and automated feature tests only; no live browser/device
+  pass was performed.
+- Notifications, email, QR, SiteApp integration, completion, supersession, amendments and
+  Filament resources remain out of scope and were not started.
+
+## Sprint 1E - In-App Notifications Backend
+
+Status:
+Backend implemented; ready for notification UI and dedicated QA.
+
+Implemented contract:
+
+- `CallOffSubmitted`, `CallOffApproved` and `CallOffRejected` are dispatched by the
+  successful audited domain actions after persistence.
+- `CallOffNotificationListener` delegates to `PortalNotificationService`; listener
+  failures are logged and cannot roll back a valid call-off state change.
+- Submission recipients are the active submitting site user plus active Fenster Office
+  Staff assigned to the affected site. Approval and rejection recipients are only the
+  active submitting site user. No broadcast to other site users is created.
+- `PortalNotificationQueryService` scopes every read, count, mark-read, mark-all-read and
+  dismissal operation to the signed-in user's notification records.
+- `PortalNotificationLinkService` re-checks current role, organisation and site
+  assignment before opening a request-linked screen. Notification UUID possession is not
+  an access grant.
+- Notification records retain customer-safe request context only. `internal_reason`,
+  operation snapshots, conflict keys and internal IDs are excluded from serialized
+  payloads. Notification retention is independent of seven-day call-off Trash expiry.
+
+Backend routes:
+
+- `GET /portal/notifications`
+- `GET /portal/notifications/unread-count`
+- `GET /portal/notifications/{notificationUuid}/open`
+- `POST /portal/notifications/{notificationUuid}/read`
+- `POST /portal/notifications/read-all`
+- `POST /portal/notifications/{notificationUuid}/dismiss`
+
+QA focus for the next slice:
+
+- Verify all three recipient mappings with revoked assignments, cross-site and
+  cross-organisation users.
+- Verify event idempotency, failed notification persistence, per-recipient read state,
+  dismissal retention and safe link failure after access revocation.
+- Confirm withdrawals, Trash, restoration and Undo do not create Sprint 1E notifications.
+- Build the notification bell/list UI against these routes; email, push and SiteApp
+  integration remain out of scope.
+
+## Sprint 1E - Notification Centre UI
+
+Status:
+Implemented and automated checks passed; ready for focused browser and accessibility QA.
+
+Screens and behaviour added:
+
+- Authenticated portal header bell with an authorised unread count, accessible label,
+  99+ visual cap and mobile-sized touch target.
+- Compact recent-notifications panel loaded from `GET /portal/notifications`, showing
+  type, customer-safe message, timestamp and read/unread state.
+- Mark-one-read, mark-all-read and dismissal controls use the existing server endpoints.
+- Full server-rendered centre at `GET /portal/notifications/centre` with newest-first
+  pagination, empty state, read/unread styling, safe-open links and regular POST forms
+  that remain usable without JavaScript.
+- Notification presentation uses only customer-safe payload fields. `internal_reason`,
+  snapshots, conflict keys and internal IDs are not rendered.
+
+Files added or updated:
+
+- `app/Http/Controllers/PortalNotificationController.php`
+- `app/Enums/PortalNotificationType.php`
+- `app/Providers/AppServiceProvider.php`
+- `resources/views/layouts/portal.blade.php`
+- `resources/views/portal/notifications/index.blade.php`
+- `resources/js/app.js`
+- `routes/web.php`
+- `tests/Feature/PortalNotificationUiTest.php`
+
+Verification:
+
+- `php artisan test` — 99 tests, 506 assertions passed.
+- `vendor/bin/pint --test` passed.
+- `npm run build` passed after the Windows sandbox spawn restriction was approved for
+  the bundler process.
+- `git diff --check` passed.
+
+Focused QA handover:
+
+- Check bell focus, Escape/outside-click behaviour, panel focus order and screen-reader
+  announcements at desktop, tablet and mobile widths.
+- Verify revoked-site safe-open returns no unauthorised request details and gives the
+  expected friendly response for the deployed error handling.
+- Verify repeated read/dismiss actions, cross-user isolation, notification ordering and
+  large unread counts in a live browser session.
+- Email, push, preferences, new notification types and SiteApp integration remain out
+  of scope.
+
+## Sprint 1E QA Audit - 7 August 2026
+
+Status:
+Passed after corrective changes; safe to close Sprint 1E and begin the next scoped
+milestone.
+
+Defects found and fixed:
+
+- Notification query, read, dismissal and safe-open paths originally trusted only the
+  recipient user ID. They now re-check active account state, current portal role,
+  organisation and current assignment to the request site. Revoked assignments,
+  organisation changes and role changes no longer expose retained notification data.
+- Development role-preview users could have created or viewed real notification records.
+  Preview users are now excluded from event recipient creation and notification queries.
+- Full-centre no-JavaScript forms posted to JSON-only responses and left users on raw JSON.
+  Non-JSON form requests now redirect back to the centre with a safe status message while
+  AJAX requests retain their JSON responses.
+- Compact-panel read/unread state was conveyed by colour and button availability alone.
+  An explicit screen-reader-only read/unread cue is now rendered for each notification.
+- Recipient notification writes are now wrapped in a transaction so a failure cannot leave
+  only part of an expected recipient set persisted.
+
+Trigger and recipient contract verified:
+
+- Successful submission creates `call_off_submitted` notifications for the submitting
+  non-preview site user and assigned active Office Staff only.
+- Successful approval and rejection create one corresponding notification for the
+  submitting non-preview site user only.
+- Withdrawal, Trash, restore and Undo remain outside the Sprint 1E trigger set.
+- Failed, unauthorised and stale transitions do not create notifications; a notification
+  listener failure does not roll back the already-persisted call-off transition.
+
+Payload and safe-open findings:
+
+- API and rendered payloads contain only public UUIDs and customer-facing request context;
+  internal reasons, state snapshots, conflict keys, operation IDs and numeric persistence
+  IDs are not serialized or rendered.
+- Safe-open re-checks the current request/site authorisation and marks read only after the
+  target is authorised. A foreign, malformed, revoked or role-incompatible UUID returns
+  not found without exposing target details.
+- Dismissal remains per-recipient presentation state, sets unread notifications read, and
+  does not alter call-off state or history. Notification retention remains independent of
+  the seven-day call-off Trash window.
+
+Tests added or strengthened:
+
+- `PortalNotificationsTest` now covers revoked assignment query hiding, role-change
+  hiding, development preview exclusion and JSON/form content negotiation in addition to
+  existing recipient, idempotency, payload, read/unread, dismissal and failure tests.
+- `PortalNotificationUiTest` verifies no-JavaScript form redirects and the visible read
+  state after an AJAX mark-read action.
+
+Browser/accessibility review:
+
+- Live local browser review confirmed the authenticated bell, no-unread state, panel
+  semantics, visible keyboard focus, Escape-to-close focus return, clear empty state,
+  centre headings and no browser console warnings.
+- The Browser viewport capability was unavailable for an automated width matrix, and no
+  assistive technology or physical-device pass was performed. Static mobile-first layout
+  and touch-target review remains the available evidence.
+
+Known limitations:
+
+- Verification ran on local SQLite; MySQL locking/index behaviour, production queue/mail
+  infrastructure and long-term retention remain unverified/open.
+- No email, push, QR, SiteApp integration, reporting or dashboard redesign was started.
+
+## Sprint 1G - Production Hardening
+
+Status:
+Locally verifiable hardening implemented; not yet safe to deploy.
+
+Completed:
+
+- Secure-access migration rollback corrected to drop the `is_active` and `is_preview_user`
+  indexes before dropping their columns. Fresh SQLite migration, seed, rollback and
+  reapply now pass.
+- Submission, approval/rejection, withdrawal, Trash, restore, Undo and history sequencing
+  were reviewed for transaction and `lockForUpdate` coverage. MySQL locking and
+  concurrency remain unverified because no local MySQL/MariaDB instance is available.
+- Composer advisories were remediated with a targeted compatible update to Guzzle 7.15.3,
+  CommonMark 2.9.0, Guzzle promises 2.5.2, Guzzle PSR-7 2.13.0 and nette/utils 4.1.5.
+- Notification listener logging no longer serializes exception objects or messages into
+  application logs.
+- Current notification transitions remain synchronous; no queue or scheduler behaviour was
+  changed.
+
+Verification:
+
+- Pest: 101 tests and 521 assertions passed.
+- Pint, Composer validation, Vite build and SQLite migration rehearsal passed.
+- Composer audit reports no advisories after the targeted update.
+- npm audit still reports 10 moderate PostCSS-chain advisories with no available fix.
+
+Open blockers:
+
+- Approved MySQL environment and production-like concurrency/restore evidence.
+- Production session, cache, queue, storage, HTTPS, logging, monitoring and backup setup.
+- Physical-device, keyboard-only and assistive-technology QA.
+- Production-scale performance evidence and release/rollback rehearsal.
+
+No deployment, SiteApp integration, QR scanning, commit, tag or release candidate was
+created. See `documentation/sprint-1g-production-hardening-report.md` for the full
+readiness report.
