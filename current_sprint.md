@@ -1,5 +1,157 @@
 # Current Sprint
 
+Sprint 2A - Company Test Readiness
+
+Status:
+Sprint 2A QA passed on 19 August 2026. Controlled company testing may begin; production
+release remains blocked by the separately documented MySQL and operational gates.
+
+Evidence baseline:
+The 19 August 2026 full-site audit is the current source of truth for this sprint. It
+supersedes older Sprint 1G claims where they conflict, including the recorded SQLite
+rollback result and npm advisory count.
+
+Final QA evidence — 19 August 2026:
+
+- Fresh SQLite migration/seed, disposable migrate/rollback/reapply, full Pest suite
+  (118 tests, 632 assertions), Pint, production Vite build, Composer validation and
+  `composer audit` passed. `git diff --check` passed.
+- `npm audit` remains non-zero with 11 build-toolchain advisories: 9 moderate and 2 high.
+  No automatic compatible remediation is offered. This is a production-release risk, not
+  a controlled local company-test blocker; do not process untrusted CSS/source-map input
+  in the local build environment.
+- Herd now lists `https://customerapp.test` as secured. Its certificate has
+  `CN=customerapp.test` and SAN entries for `customerapp.test` and
+  `*.customerapp.test`; HTTPS navigation succeeded in the browser without bypassing a
+  warning. The prior local hostname certificate mismatch is resolved.
+- Browser QA verified the notification panel within 320px and 390px viewport bounds,
+  Escape/focus return, outside-click close, responsive no-overflow checks through desktop,
+  site-role browsing, Office Staff review, withdrawal/Undo, Trash/restore and confirmed
+  rejected-request resubmission.
+
+Purpose:
+Make the existing portal materially easier and safer to use in the next controlled company
+testing session. This is not a production-readiness or new-feature sprint.
+
+Scope:
+
+- AUD-001 SQLite migration rollback integrity and automated rollback/reapply regression;
+- AUD-002 responsive notification fly-out at 320px and 390px;
+- AUD-003 evidence-led triage of the two high-severity npm advisories, with no dependency
+  upgrade unless a compatible, tested remediation is approved;
+- AUD-007 retryable notification-fetch failure presentation;
+- AUD-005/AUD-008 paginated active-site dashboard and Trash list, with dashboard plot
+  search, service and status filters plus a date filter only if it is simple and clear;
+- AUD-012 disabled lifecycle controls until an eligible selection is made, while retaining
+  server-side validation;
+- AUD-013 removal or safe replacement of the dormant welcome-template registration link;
+- AUD-009 documentation refresh using the audit's exact current evidence;
+- AUD-006 traceable rejected-call-off resubmission only after formal confirmation of
+  DEC-034.
+
+Backend implementation — 19 August 2026:
+
+- DEC-034 is now confirmed. Rejected call-offs can be resubmitted through a public UUID
+  route with a new date and customer-facing message; the original rejected request remains
+  unchanged and the new Submitted request records source lineage.
+- The resubmission controller derives site, plot, service, source status and lineage from
+  the authorised source request. Its review signature binds source UUID, date, message,
+  active site and user. Final persistence calls `ResubmitRejectedCallOffAction`, which
+  rechecks eligibility immediately before creating the new request.
+- Dashboard requests are active-site scoped, paginated at 15 per page and ordered by batch
+  submission time descending, then request ID descending. `plot`, `service` and `status`
+  filters combine server-side and are retained in paginator query strings. Requested-date,
+  development and phase filters remain omitted because no unambiguous approved contract
+  exists for them.
+- Customer-facing Trash is active-site scoped, unexpired/recoverable only, paginated at
+  15 per page and ordered by Trash timestamp descending, then request ID descending.
+- AUD-001 rollback now drops user indexes before indexed columns in separate SQLite schema
+  operations. `scripts/verify-sqlite-migrations.ps1` performs disposable SQLite migrate,
+  full rollback and reapply verification without relying on a fixed migration count.
+- Added batch submission and request Trash indexes supporting the bounded list patterns.
+
+UI implementation — 19 August 2026:
+
+- The notification fly-out now uses a small-screen fixed inset layout and an independently
+  scrollable list. It remains within the usable layout width at 320px and 390px, while
+  retaining the existing keyboard close and focus-return behaviour.
+- Notification loading failures now present the exact customer-safe message
+  `Notifications could not be loaded.`, a retry action and the existing notification-centre
+  fallback. The empty state is not rendered when the fetch has failed.
+- The site dashboard renders the supplied active-site paginator, combined plot/service/status
+  filters, clear-filters action and distinct no-result state. Trash renders its supplied
+  paginator and states that selections apply to the current page only.
+- Lifecycle bulk controls show selected-request count and remain disabled until every selected
+  request is eligible for the relevant action. Server-side lifecycle authorisation and
+  validation are unchanged.
+- Rejected requests now expose the approved resubmission entry point, customer-safe new-date
+  form and confirmation screen. Derived source context is display-only; only the new date,
+  customer-facing message and server-issued confirmation signature are posted.
+- Removed the unused Laravel welcome template. The root route continues to redirect to login,
+  and public registration remains unavailable.
+
+Acceptance criteria:
+
+1. A SQLite migrate, rollback and reapply sequence succeeds from a disposable database and
+   is covered by an automated regression.
+2. The notification fly-out is fully visible and usable at 320px and 390px widths, with
+   visual regression coverage.
+3. The current npm audit result is recorded accurately; each high finding has either a
+   compatible tested fix or a documented, time-bounded risk decision.
+4. A notification fetch failure cannot appear as an empty notification list: it presents a
+   clear retry action and a notification-centre fallback.
+5. The site dashboard and Trash list use bounded pagination. The dashboard remains scoped
+   to the active assigned site and uses server-authorised plot search, service and status
+   filters. A date filter is included only when it has a clear defined meaning.
+6. Lifecycle actions are unavailable without an eligible selection, but every server-side
+   authorisation and validation check remains intact.
+7. The dormant welcome template cannot reference public registration.
+8. The documented audit baseline, advisory count, verification date and current risks are
+   accurate after the sprint's QA run.
+9. If DEC-034 is confirmed, rejected resubmission preserves the original decision and
+   creates a new linked submitted batch/request only after review, confirmation and fresh
+   eligibility checks. If it is not confirmed, the feature is excluded from Sprint 2A
+   implementation and company-test acceptance.
+
+Implementation order:
+
+1. Reproduce and correct AUD-001, then add its regression test.
+2. Correct AUD-002 and AUD-007, with narrow viewport and failure-state coverage.
+3. Implement the bounded dashboard and Trash contract (AUD-005/AUD-008), preserving
+   active-site authorisation and lifecycle bulk-action traceability.
+4. Implement AUD-012 and AUD-013.
+5. Triage AUD-003; make no package change without approved compatible remediation and
+   full relevant verification.
+6. Implement AUD-006 only after DEC-034 confirmation.
+7. Run focused QA, update evidence documentation and re-check company-test acceptance.
+
+Work split:
+
+- UI: notification fly-out/error state, dashboard and Trash pagination presentation,
+  dashboard controls, selection-state affordances, welcome-template cleanup and
+  resubmission screens if approved.
+- Backend: rollback integrity, server-side dashboard and Trash query bounds, secure filter
+  validation, pagination, and the existing resubmission action's route/controller/policy
+  integration only if DEC-034 is approved.
+- QA: migration rollback/reapply, 320px/390px visual checks, notification failure state,
+  active-site/tenant filter isolation, dashboard and Trash pagination, selection-state
+  behaviour, npm audit evidence and end-to-end resubmission lineage if implemented.
+
+Explicitly deferred:
+
+- MySQL validation, backup/restore, monitoring, production configuration and deployment;
+- physical-device, keyboard-only and screen-reader release evidence;
+- amendments, approved-request change/reopen and later customer-facing progress statuses;
+- SiteApp integration, QR context, email, push, reporting and advanced analytics;
+- development or phase filters until supported projection data exists.
+
+Product decision status:
+DEC-034 was confirmed on 19 August 2026. No additional product decision blocks the
+remaining Sprint 2A work; the optional date filter remains omitted because its user-facing
+semantics have not been confirmed.
+
+---
+
 Sprint 1G - Production Hardening
 
 Status:

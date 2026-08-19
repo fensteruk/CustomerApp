@@ -534,13 +534,44 @@ describes earlier actions.
 
 The following remain unresolved and must be decided before the affected implementation:
 
-1. The customer-facing meaning of CML.
-2. Bulk call-off creation limits and validation feedback.
-3. Amendment eligibility and lifecycle beyond withdrawal, rejected-request resubmission,
+1. Confirm the proposed rejected-call-off resubmission journey in DEC-034 before its UI
+   is implemented.
+2. The customer-facing meaning of CML.
+3. Bulk call-off creation limits and validation feedback.
+4. Amendment eligibility and lifecycle beyond withdrawal, rejected-request resubmission,
    Trash and Undo.
-4. Required email notification rules.
-5. Synchronisation freshness rules.
-6. Customer-facing status mapping beyond submitted, approved, rejected and withdrawn
+5. Required email notification rules.
+6. Synchronisation freshness rules.
+7. Customer-facing status mapping beyond submitted, approved, rejected and withdrawn
    request states.
-7. Long-term retention periods outside the seven-day customer-facing Trash window.
-8. Initial SiteApp integration method.
+8. Long-term retention periods outside the seven-day customer-facing Trash window.
+9. Initial SiteApp integration method.
+
+---
+
+## DEC-034
+
+Date:
+19 August 2026
+
+Decision:
+A rejected call-off may be traceably resubmitted by an authorised site user for the active
+assigned site.
+
+Rules:
+
+- The original rejected request and its Office Staff customer response remain unchanged.
+- The site user starts the flow from that rejected request; the existing site, plot and
+  service context is displayed, not chosen anew.
+- The user may enter a new requested date and add or update the customer-facing submission
+  message.
+- A review and confirmation screen is required before persistence.
+- Confirmation creates a new batch and submitted request linked to the rejected source.
+- Authorisation, active-site scope, customer organisation, projected-plot completion and
+  active duplicate-conflict eligibility are rechecked immediately before persistence.
+- The new request begins as `submitted`; the source rejection and customer response remain
+  visible in history.
+- Approved and withdrawn requests do not use this flow.
+
+Status:
+Confirmed 19 August 2026. This is the Sprint 2A resubmission contract.

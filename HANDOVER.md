@@ -821,3 +821,101 @@ Open blockers:
 No deployment, SiteApp integration, QR scanning, commit, tag or release candidate was
 created. See `documentation/sprint-1g-production-hardening-report.md` for the full
 readiness report.
+
+## Sprint 2A — Company Test Readiness Planning — 19 August 2026
+
+Status:
+Planned only. No production code was changed while preparing this handover.
+
+Current evidence:
+`documentation/full-site-audit-2026-08-19.md` is the current evidence baseline. It
+overrides conflicting historic Sprint 1G statements: the audit recorded a SQLite rollback
+failure, a clipped small-phone notification fly-out and two high-severity npm advisories.
+
+Implementation contract:
+`documentation/sprint-2a-company-test-readiness.md` defines the limited remediation,
+usability and QA scope for the next company test.
+
+Decision gate:
+Traceable rejected-call-off resubmission is not approved for implementation yet. It may
+proceed only if proposed DEC-034 receives formal confirmation; otherwise it is excluded
+from Sprint 2A acceptance.
+
+Production boundary:
+Sprint 2A does not close MySQL, backup/restore, monitoring, production configuration,
+physical-device or assistive-technology release gates.
+
+## Sprint 2A Backend — 19 August 2026
+
+Status:
+Backend implementation complete; UI and dedicated QA remain.
+
+Completed:
+
+- DEC-034 formally confirmed. Added secure rejected-call-off resubmission routes, request
+  validation, review/confirmation binding and server-side action integration.
+- The flow derives source context from the authorised rejected request only. It accepts a
+  new requested date and customer-facing message, creates a new linked Submitted request
+  through `ResubmitRejectedCallOffAction`, and preserves the source rejection/history.
+- Active-site Dashboard and recoverable Trash queries now paginate at 15 items. Dashboard
+  supports combined `plot`, `service` and `status` filters; date, development and phase
+  were deliberately omitted because no unambiguous approved contract exists.
+- AUD-001 SQLite rollback fixed by dropping indexed user columns only after their indexes.
+  `scripts/verify-sqlite-migrations.ps1` is the repeatable disposable migration,
+  full-rollback and reapply check.
+- Added browsing indexes for batch site/submitted ordering and request batch/Trash lookup.
+
+UI handover:
+
+- Render the existing paginator objects from `callOffRequests` and `trashedRequests`,
+  retaining dashboard `plot`, `service` and `status` query parameters.
+- Build the resubmission entry point only for rejected active-site requests and consume:
+  `GET /portal/call-offs/{callOffRequest:uuid}/resubmit`, confirmation POST to
+  `/resubmit/confirm`, then final POST to `/resubmit` with the returned confirmation
+  signature. Do not submit site, plot, service, status or lineage inputs.
+- Date filtering is not part of the backend contract. Keep it absent unless a future
+  explicit decision defines its customer-facing meaning.
+
+Remaining risks:
+
+- MySQL rollback, index and concurrency behaviour are not verified.
+- npm audit remains 11 advisories: 9 moderate and 2 high, with no automatic fix reported.
+- Mobile notification, notification-fetch-error, lifecycle-button and welcome-template
+  UI items remain for the UI Sprint 2A slice.
+
+## Sprint 2A UI — 19 August 2026
+
+Status:
+UI implementation complete; controlled company-test QA remains.
+
+Completed:
+
+- AUD-002: the notification panel now occupies the safe small-screen inset and scrolls its
+  contents independently. Local browser measurements after a production asset rebuild were
+  8px–297px at a 320px viewport and 8px–367px at a 390px viewport; document width did not
+  exceed the usable layout width. Escape closed the panel and returned focus to its bell.
+- AUD-007: fetch failure is visible as `Notifications could not be loaded.` with `Try again`
+  and the notification-centre fallback. A failure no longer renders the all-caught-up state.
+- AUD-005/AUD-008/AUD-012: dashboard filters, pagination, active-filter empty state, Trash
+  pagination and disabled selection-dependent lifecycle controls consume the backend's
+  existing authorised contracts. Trash states that selections apply to this page only.
+- AUD-006/DEC-034: rejected requests expose customer-safe resubmission create and confirmation
+  screens. No client-submitted source identifiers, status or lineage inputs were added.
+- AUD-013: deleted the unused Laravel welcome view. The root redirect and disabled registration
+  route are covered by a UI feature test.
+
+UI verification:
+
+- `php artisan test tests\\Feature\\Sprint2aUiTest.php` passed: 7 tests, 45 assertions.
+- `php artisan test` passed: 117 tests, 630 assertions.
+- `vendor\\bin\\pint --test`, `npm run build` and `git diff --check` passed.
+
+Remaining QA and risks:
+
+- Final QA repaired the local Herd certificate for `customerapp.test`. Herd now reports the
+  site as secured with a certificate whose CN/SAN includes `customerapp.test`; browser
+  navigation to HTTPS succeeds without bypassing a warning.
+- Fetch-failure interaction is feature-tested at markup/state level; exercise it against a
+  controlled failed endpoint during dedicated QA.
+- MySQL/index/concurrency, physical-device and assistive-technology release evidence remain
+  outside this UI slice.

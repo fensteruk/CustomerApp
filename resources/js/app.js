@@ -4,9 +4,38 @@ import Alpine from 'alpinejs';
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('lifecycleSelection', () => ({
+        selected: {},
+
+        get count() {
+            return Object.keys(this.selected).length;
+        },
+
+        update(event) {
+            const input = event.target;
+
+            if (input.checked) {
+                this.selected[input.value] = {
+                    withdraw: input.dataset.withdraw === 'true',
+                    trash: input.dataset.trash === 'true',
+                    restore: input.dataset.restore === 'true',
+                };
+            } else {
+                delete this.selected[input.value];
+            }
+        },
+
+        can(operation) {
+            const selections = Object.values(this.selected);
+
+            return selections.length > 0 && selections.every((selection) => selection[operation]);
+        },
+    }));
+
     Alpine.data('notificationBell', (initialUnreadCount = 0) => ({
         open: false,
         loading: false,
+        fetchError: false,
         notifications: [],
         unreadCount: initialUnreadCount,
 
@@ -45,6 +74,7 @@ document.addEventListener('alpine:init', () => {
 
         async load() {
             this.loading = true;
+            this.fetchError = false;
 
             try {
                 const response = await fetch(document.querySelector('meta[name="portal-notifications-index"]')?.content ?? '/portal/notifications', {
@@ -57,7 +87,7 @@ document.addEventListener('alpine:init', () => {
                 this.notifications = payload.data ?? [];
                 this.unreadCount = payload.unread_count ?? 0;
             } catch (error) {
-                this.notifications = [];
+                this.fetchError = true;
             } finally {
                 this.loading = false;
             }

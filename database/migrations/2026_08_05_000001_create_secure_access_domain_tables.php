@@ -70,12 +70,17 @@ return new class extends Migration
         Schema::dropIfExists('site_user_assignments');
         Schema::dropIfExists('sites');
 
+        // SQLite cannot safely remove indexed columns in the same schema operation that
+        // removes their indexes. Keep these operations separate for rollback support.
         Schema::table('users', function (Blueprint $table): void {
             $table->dropForeign(['customer_organisation_id']);
             $table->dropForeign(['portal_role_id']);
             $table->dropIndex(['customer_organisation_id', 'portal_role_id']);
             $table->dropIndex(['is_active']);
             $table->dropIndex(['is_preview_user']);
+        });
+
+        Schema::table('users', function (Blueprint $table): void {
             $table->dropColumn([
                 'customer_organisation_id',
                 'portal_role_id',

@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Development\PreviewRoleController;
 use App\Http\Controllers\NewCallOffController;
 use App\Http\Controllers\PortalNotificationController;
+use App\Http\Controllers\ResubmitRejectedCallOffController;
 use App\Http\Controllers\ReviewRequestsController;
 use App\Http\Controllers\SiteDashboardController;
 use Illuminate\Support\Facades\Route;
@@ -72,6 +73,12 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
             ->name('portal.call-offs.confirm');
         Route::post('/portal/call-offs', [NewCallOffController::class, 'store'])
             ->name('portal.call-offs.store');
+        Route::get('/portal/call-offs/{callOffRequest:uuid}/resubmit', [ResubmitRejectedCallOffController::class, 'create'])
+            ->name('portal.call-offs.resubmit.create');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/resubmit/confirm', [ResubmitRejectedCallOffController::class, 'confirm'])
+            ->name('portal.call-offs.resubmit.confirm');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/resubmit', [ResubmitRejectedCallOffController::class, 'store'])
+            ->name('portal.call-offs.resubmit.store');
 
         Route::post('/portal/call-offs/lifecycle/confirm', [CallOffLifecycleController::class, 'confirm'])
             ->name('portal.call-offs.lifecycle.confirm');

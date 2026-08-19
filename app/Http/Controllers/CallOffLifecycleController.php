@@ -112,7 +112,9 @@ class CallOffLifecycleController extends Controller
                     ->select('id', 'call_off_request_id', 'event_type', 'sequence', 'customer_response'),
             ])
             ->orderByDesc('trashed_at')
-            ->get();
+            ->orderByDesc('id')
+            ->paginate(15)
+            ->withQueryString();
 
         return view('portal.call-offs.trash', [
             'activeSite' => $activeSite,

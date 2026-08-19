@@ -124,7 +124,11 @@ production.
 Only projected plots not reported complete by SiteApp may be selected for new requests.
 Historical requests for completed projected plots may remain read-only.
 
-Filtering should support development, phase, plot, service, status and date. A simple plot search is required.
+For the next company-test release, the site dashboard must keep the active assigned-site
+scope mandatory and provide paginated call-offs, plot search, service and status filters.
+A date filter may be included only if it remains simple and clear. Development and phase
+filters remain deferred until those projected data dimensions are available. All filtering
+and pagination must remain server-authorised; this is a browsing aid, not reporting.
 
 ---
 
@@ -194,6 +198,9 @@ Submitted → Approved
 - Rejected call-offs remain in history and may be moved to customer-facing Trash.
 - A site user may submit a new request for the same plot and service after rejection, but
   the original rejected decision must remain unchanged and traceable.
+- The exact rejected-request resubmission user journey is proposed in DEC-034 and must be
+  formally confirmed before implementation. It must not be replaced with an unlinked new
+  call-off flow.
 
 ### Trash and Undo Rules
 
@@ -405,7 +412,7 @@ Version 1 is complete when:
 14. Approved call-offs cannot be deleted, trashed or cancelled by site users in Version 1
    and remain active duplicate blockers until a future authorised closing lifecycle event.
 15. Rejected call-offs remain in history, may be trashed from customer-facing lists and
-   support traceable resubmission.
+   support traceable resubmission once the proposed DEC-034 journey is formally confirmed.
 16. Five-second quick Undo works for eligible withdrawal, Trash and restoration actions.
 17. Customer-facing Trash supports seven-day recovery for eligible withdrawn or rejected
    call-offs, then hides expired Trash records while preserving audit-critical history.
@@ -434,6 +441,8 @@ Version 1 is complete when:
 6. Map approved call-offs and any operational information to customer-facing statuses.
 7. Define long-term retention periods outside the seven-day customer-facing Trash window.
 8. Confirm the initial SiteApp integration method.
+9. Confirm the proposed rejected-call-off resubmission journey in DEC-034 before its UI is
+   implemented.
 
 ---
 

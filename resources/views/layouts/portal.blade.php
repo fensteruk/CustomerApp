@@ -31,11 +31,12 @@
                             <a href="{{ route('portal.notifications.centre') }}" class="ml-2 rounded px-2 py-3 text-sm font-bold text-sky-200 underline underline-offset-2">Notifications{{ $notificationUnreadCount > 0 ? ' ('.$notificationUnreadCount.' unread)' : '' }}</a>
                         </noscript>
 
-                        <div id="notification-panel" x-cloak x-show="open" x-transition @click.outside="close()" class="absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl" role="region" aria-label="Recent notifications">
+                        <div id="notification-panel" x-cloak x-show="open" x-transition @click.outside="close()" class="fixed inset-x-2 top-20 z-40 max-h-[calc(100vh-5.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl sm:absolute sm:right-0 sm:left-auto sm:top-auto sm:mt-2 sm:max-h-none sm:w-[22rem]" role="region" aria-label="Recent notifications">
                             <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
                                 <div>
                                     <h2 class="text-base font-bold">Notifications</h2>
-                                    <p class="text-xs text-slate-600" x-text="unreadCount ? `${unreadCount} unread` : 'All caught up'"></p>
+                                    <p x-show="!fetchError" class="text-xs text-slate-600" x-text="unreadCount ? `${unreadCount} unread` : 'All caught up'"></p>
+                                    <p x-show="fetchError" class="text-xs font-semibold text-rose-700">Notifications need attention</p>
                                 </div>
                                 <div class="flex items-center gap-1">
                                     <button type="button" class="min-h-11 rounded px-2 text-sm font-bold text-sky-800 hover:bg-sky-50" x-show="unreadCount > 0" @click="markAllRead()">Mark all read</button>
@@ -44,9 +45,14 @@
                                     </button>
                                 </div>
                             </div>
-                            <div class="max-h-[min(24rem,60vh)] overflow-y-auto p-2">
+                            <div class="max-h-[calc(100vh-11rem)] overflow-y-auto p-2 sm:max-h-[min(24rem,60vh)]">
                                 <p x-show="loading" class="px-3 py-6 text-center text-sm text-slate-600">Loading notifications…</p>
-                                <p x-show="!loading && notifications.length === 0" class="px-3 py-6 text-center text-sm text-slate-600">You have no notifications.</p>
+                                <div x-show="!loading && fetchError" class="m-1 rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm text-rose-950" role="alert">
+                                    <p class="font-bold">Notifications could not be loaded.</p>
+                                    <p class="mt-1 leading-5">Try again, or open the full notification centre.</p>
+                                    <button type="button" class="secondary-button mt-3 min-h-11 w-full text-sm" @click="load()">Try again</button>
+                                </div>
+                                <p x-show="!loading && !fetchError && notifications.length === 0" class="px-3 py-6 text-center text-sm text-slate-600">You have no notifications.</p>
                                 <template x-for="notification in notifications" :key="notification.uuid">
                                     <article class="rounded-lg p-3" :class="notification.read_at ? 'bg-white' : 'bg-sky-50'">
                                         <div class="flex items-start gap-3">

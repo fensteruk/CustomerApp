@@ -1,6 +1,6 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 7 August 2026*
+*Last Updated: 19 August 2026*
 
 # Project Overview
 
@@ -8,7 +8,7 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 1G - Production Hardening`
+**Current Milestone:** `Sprint 2A - Company Test Readiness (QA passed; controlled company testing may begin)`
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain
@@ -22,8 +22,45 @@ corrections. Sprint 1E backend notifications have been implemented; notification
 UI has been implemented and QA verified after recipient-authorisation, preview-user and
 no-JavaScript form corrections.
 
-Sprint 1G locally verifiable hardening has been implemented and regression verified; the
-release remains blocked on MySQL evidence and production infrastructure controls.
+Sprint 1G locally verifiable hardening was reported complete, but the 19 August full-site
+audit is the current evidence baseline: it reproduced a SQLite rollback failure, found a
+small-phone notification fly-out defect and two high-severity npm advisories. Sprint 2A is
+a deliberately small remediation and usability slice for the next controlled company test.
+It does not make the product production-ready. MySQL evidence and production infrastructure
+controls remain release blockers.
+
+## Sprint 2A — Company Test Readiness
+
+Planned scope:
+
+- migration rollback integrity (AUD-001);
+- mobile notification fly-out (AUD-002);
+- high-severity npm advisory triage (AUD-003);
+- notification fetch failure state (AUD-007);
+- active-site dashboard and Trash pagination, plot search and bounded dashboard filters
+  (AUD-005/AUD-008);
+- lifecycle-button selection behaviour (AUD-012);
+- stale welcome-template cleanup (AUD-013);
+- documentation refresh against the 19 August audit (AUD-009);
+- confirmed traceable rejected-call-off resubmission backend integration (DEC-034).
+
+Backend result — 19 August 2026:
+
+- AUD-001 SQLite rollback/reapply correction and disposable verification script completed.
+- AUD-005/AUD-008 active-site dashboard and Trash pagination backend completed. Dashboard
+  supports plot, service and status filters; date, development and phase remain deferred.
+- DEC-034 confirmed and secure rejected-request resubmission review/confirmation/backend
+  flow completed.
+- UI remediation is complete: responsive notification error handling, dashboard/Trash
+  browsing affordances, lifecycle selection states, rejected-request resubmission screens
+  and welcome-template cleanup now consume the existing backend contracts.
+- Dedicated Sprint 2A QA passed on 19 August 2026. The npm advisory remains a
+  production-release risk; it is not a controlled local company-test blocker because the
+  affected chain is build tooling and no untrusted CSS/source-map input is processed.
+
+Excluded from Sprint 2A: MySQL and production infrastructure work, physical-device and
+screen-reader release evidence, amendments, later progress statuses, SiteApp integration,
+advanced reporting, email and push notifications.
 
 # Version Roadmap
 
@@ -213,8 +250,8 @@ Each release should include:
 
 | Item | Status |
 |---|---|
-| Current Version | Sprint 1G - Production Hardening |
-| Next Version | Portal-only production preparation after blockers are closed |
+| Current Version | Sprint 2A - Company Test Readiness (planned) |
+| Next Version | Controlled company-test readiness; production release remains blocked |
 | Project Created | Yes |
 | Foundation Documents | ✅ Prepared |
 | Authentication | Implemented for Sprint 1A |
