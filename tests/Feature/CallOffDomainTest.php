@@ -214,7 +214,7 @@ it('also protects duplicate active conflict keys with a database unique index', 
     ]))->toThrow(QueryException::class);
 });
 
-it('enforces assigned Office Staff decisions and preserves response separation', function (): void {
+it('allows global Office Staff decisions and preserves response separation', function (): void {
     $siteUser = callOffUser(PortalRoleIdentifier::AssistantSiteManager);
     $site = callOffAssignedSite($siteUser);
     $request = callOffSubmit($siteUser, $site, [callOffPlot($site)])->requests()->firstOrFail();
@@ -222,9 +222,8 @@ it('enforces assigned Office Staff decisions and preserves response separation',
     $unassignedOffice = callOffUser(PortalRoleIdentifier::FensterOfficeStaff, $site->customerOrganisation);
 
     expect(fn () => app(ApproveCallOffRequestAction::class)->handle($siteUser, $request))->toThrow(AuthorizationException::class);
-    expect(fn () => app(ApproveCallOffRequestAction::class)->handle($unassignedOffice, $request))->toThrow(AuthorizationException::class);
 
-    $approved = app(ApproveCallOffRequestAction::class)->handle($officeUser, $request, 'Approved for customer', 'Private check complete');
+    $approved = app(ApproveCallOffRequestAction::class)->handle($unassignedOffice, $request, 'Approved for customer', 'Private check complete');
     $history = $approved->histories()->latest('sequence')->firstOrFail();
 
     expect($approved->status)->toBe(CallOffRequestStatus::Approved)

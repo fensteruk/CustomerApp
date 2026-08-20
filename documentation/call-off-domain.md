@@ -363,3 +363,10 @@ Only after the backend contract is implemented should UI replace preview screens
 
 These decisions must be resolved before implementing the affected later behaviour, but
 they do not block Sprint 1B call-off domain implementation.
+# Sprint 3A target-domain addendum
+
+The active implementation contract for new work is
+`documentation/target-domain-v3.md`. This document remains the historical Sprint 1B
+domain record. Where it describes a three-service, single-service batch or
+Approved/Rejected final lifecycle, treat that as legacy compatibility behaviour rather
+than the target product design.

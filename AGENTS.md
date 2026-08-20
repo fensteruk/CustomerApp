@@ -7,7 +7,8 @@ Before work, read in this order:
 1. `AGENTS.md`
 2. `brief.md`
 3. `ROADMAP.md`
-4. Any task-specific schema, design, integration or prototype documentation
+4. `context-work-prompt.md`
+5. Any task-specific schema, design, integration or prototype documentation
 
 All work must align with the Customer Portal brief, current roadmap milestone, customer data boundaries and separation from SiteApp.
 

@@ -32,19 +32,15 @@ class ReviewRequestsController extends Controller
         ]);
 
         $assignedSites = Site::query()
-            ->assignedTo($user)
             ->orderBy('name')
             ->get(['sites.id', 'sites.name']);
 
-        $assignedSiteIds = $assignedSites->pluck('id');
         $status = $validated['status'] ?? CallOffRequestStatus::Submitted->value;
 
         $requests = CallOffRequest::query()
-            ->whereHas('batch', fn ($query) => $query->whereIn('site_id', $assignedSiteIds))
             ->when($status !== '', fn ($query) => $query->where('status', $status))
-            ->when(isset($validated['site']), function ($query) use ($assignedSiteIds, $validated): void {
+            ->when(isset($validated['site']), function ($query) use ($validated): void {
                 $query->whereHas('batch', fn ($batchQuery) => $batchQuery
-                    ->whereIn('site_id', $assignedSiteIds)
                     ->where('site_id', (int) $validated['site']));
             })
             ->when(isset($validated['service']), fn ($query) => $query
@@ -152,7 +148,7 @@ class ReviewRequestsController extends Controller
     {
         $callOffRequest->loadMissing('batch.site');
 
-        abort_unless($user->canAccessSite($callOffRequest->batch->site), 404);
+        abort_unless($user->hasCompletePortalProfile() && $user->isFensterOfficeStaff(), 404);
 
         return $callOffRequest->load([
             'projectedPlot:id,site_id,plot_reference',

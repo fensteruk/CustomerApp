@@ -64,9 +64,7 @@ class PortalNotificationService
         $officeStaff = User::query()
             ->where('is_active', true)
             ->where('is_preview_user', false)
-            ->where('customer_organisation_id', $site->customer_organisation_id)
             ->whereHas('portalRole', fn ($query) => $query->where('identifier', 'fenster_office_staff'))
-            ->whereHas('assignedSites', fn ($query) => $query->whereKey($site->id))
             ->get();
 
         return $this->activeAuthorisedSubmitter($submitter, $site)

@@ -16,7 +16,7 @@ class PortalNotificationLinkService
             ->with('batch.site')
             ->first();
 
-        if ($request === null || ! $user->hasCompletePortalProfile() || ! $user->canAccessSite($request->batch->site)) {
+        if ($request === null || ! $user->hasCompletePortalProfile()) {
             return null;
         }
 
@@ -32,7 +32,7 @@ class PortalNotificationLinkService
         }
 
         if ($notification->route_name === 'portal.site-dashboard') {
-            if (! $user->isSiteRole()) {
+            if (! $user->isSiteRole() || ! $user->canAccessSite($request->batch->site)) {
                 return null;
             }
 

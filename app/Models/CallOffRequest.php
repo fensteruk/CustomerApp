@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use App\Enums\CallOffRequestStatus;
+use App\Enums\CallOffServiceType;
 use App\Models\Concerns\HasUuid;
 use Database\Factories\CallOffRequestFactory;
 use Illuminate\Database\Eloquent\Builder;
@@ -19,8 +20,12 @@ class CallOffRequest extends Model
     protected $fillable = [
         'call_off_batch_id',
         'projected_plot_id',
+        'projected_plot_service_id',
+        'service_identifier',
+        'requested_date',
+        'agreed_date',
+        'customer_response',
         'status',
-        'active_conflict_key',
         'trashed_at',
         'trash_expires_at',
         'resubmitted_from_call_off_request_id',
@@ -30,6 +35,9 @@ class CallOffRequest extends Model
     {
         return [
             'status' => CallOffRequestStatus::class,
+            'service_identifier' => CallOffServiceType::class,
+            'requested_date' => 'date',
+            'agreed_date' => 'date',
             'trashed_at' => 'datetime',
             'trash_expires_at' => 'datetime',
         ];
@@ -56,6 +64,12 @@ class CallOffRequest extends Model
         return $this->belongsTo(ProjectedPlot::class);
     }
 
+    /** @return BelongsTo<ProjectedPlotService, $this> */
+    public function projectedPlotService(): BelongsTo
+    {
+        return $this->belongsTo(ProjectedPlotService::class);
+    }
+
     /**
      * @return BelongsTo<CallOffRequest, $this>
      */
@@ -78,6 +92,22 @@ class CallOffRequest extends Model
     public function histories(): HasMany
     {
         return $this->hasMany(CallOffStatusHistory::class);
+    }
+
+    /** @return HasMany<CallOffDateNegotiation, $this> */
+    public function dateNegotiations(): HasMany
+    {
+        return $this->hasMany(CallOffDateNegotiation::class);
+    }
+
+    public function effectiveServiceIdentifier(): ?CallOffServiceType
+    {
+        return $this->service_identifier ?? $this->batch?->service_identifier;
+    }
+
+    public function isLegacyDateAgreed(): bool
+    {
+        return $this->status === CallOffRequestStatus::Approved;
     }
 
     /**

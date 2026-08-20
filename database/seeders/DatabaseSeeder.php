@@ -2,10 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Enums\CallOffServiceType;
 use App\Enums\PortalRoleIdentifier;
 use App\Models\CustomerOrganisation;
 use App\Models\PortalRole;
 use App\Models\ProjectedPlot;
+use App\Models\ProjectedPlotService;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Database\Console\Seeds\WithoutModelEvents;
@@ -78,6 +80,15 @@ class DatabaseSeeder extends Seeder
                     'source_updated_at' => now(),
                     'synchronised_at' => now(),
                 ])->save();
+
+                foreach (CallOffServiceType::cases() as $service) {
+                    ProjectedPlotService::query()->firstOrCreate([
+                        'projected_plot_id' => $plot->id,
+                        'service_identifier' => $service->value,
+                    ], [
+                        'uuid' => (string) Str::uuid(),
+                    ]);
+                }
             }
         });
     }

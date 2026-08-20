@@ -55,6 +55,18 @@ class ProjectedPlot extends Model
         return $this->hasMany(CallOffRequest::class);
     }
 
+    /** @return HasMany<ProjectedPlotService, $this> */
+    public function services(): HasMany
+    {
+        return $this->hasMany(ProjectedPlotService::class);
+    }
+
+    /** @return HasMany<ProjectedPlotProduct, $this> */
+    public function products(): HasMany
+    {
+        return $this->hasMany(ProjectedPlotProduct::class);
+    }
+
     /**
      * @param  Builder<ProjectedPlot>  $query
      * @return Builder<ProjectedPlot>

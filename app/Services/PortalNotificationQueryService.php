@@ -75,12 +75,16 @@ class PortalNotificationQueryService
             return $query->whereRaw('1 = 0');
         }
 
-        return $query
-            ->where('route_name', $routeName)
-            ->whereHas('request.batch.site', function (Builder $siteQuery) use ($user): void {
-                $siteQuery
-                    ->where('customer_organisation_id', $user->customer_organisation_id)
-                    ->whereHas('assignedUsers', fn (Builder $assignedUsers): Builder => $assignedUsers->whereKey($user->id));
-            });
+        $query->where('route_name', $routeName);
+
+        if ($user->isFensterOfficeStaff()) {
+            return $query;
+        }
+
+        return $query->whereHas('request.batch.site', function (Builder $siteQuery) use ($user): void {
+            $siteQuery
+                ->where('customer_organisation_id', $user->customer_organisation_id)
+                ->whereHas('assignedUsers', fn (Builder $assignedUsers): Builder => $assignedUsers->whereKey($user->id));
+        });
     }
 }

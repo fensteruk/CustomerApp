@@ -152,7 +152,7 @@ it('shows site users only their assigned sites', function (): void {
         ->assertDontSee('Hidden Beta');
 });
 
-it('shows office staff only assigned review sites', function (): void {
+it('shows global Office Staff all review sites', function (): void {
     $user = portalUserForTest(PortalRoleIdentifier::FensterOfficeStaff);
     $assignedSite = assignedSiteForTest($user, ['name' => 'Assigned Review Scope']);
 
@@ -165,7 +165,7 @@ it('shows office staff only assigned review sites', function (): void {
         ->get('/portal/review-requests')
         ->assertOk()
         ->assertSee($assignedSite->name)
-        ->assertDontSee('Hidden Review Scope');
+        ->assertSee('Hidden Review Scope');
 });
 
 it('rejects unassigned site ids server side', function (): void {

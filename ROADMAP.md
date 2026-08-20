@@ -1,6 +1,6 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 19 August 2026*
+*Last Updated: 20 August 2026*
 
 # Project Overview
 
@@ -8,7 +8,7 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 2A - Company Test Readiness (QA passed; controlled company testing may begin)`
+**Current Milestone:** `Sprint 3B - Source Projection, Import Contract and MySQL Rehearsal (SQLite implemented; MySQL blocked)`
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain
@@ -22,12 +22,35 @@ corrections. Sprint 1E backend notifications have been implemented; notification
 UI has been implemented and QA verified after recipient-authorisation, preview-user and
 no-JavaScript form corrections.
 
-Sprint 1G locally verifiable hardening was reported complete, but the 19 August full-site
-audit is the current evidence baseline: it reproduced a SQLite rollback failure, found a
-small-phone notification fly-out defect and two high-severity npm advisories. Sprint 2A is
-a deliberately small remediation and usability slice for the next controlled company test.
-It does not make the product production-ready. MySQL evidence and production infrastructure
-controls remain release blockers.
+Sprint 1G locally verifiable hardening and Sprint 2A readiness evidence remain historical
+baselines. Management's 20 August requirements supersede the old three-service,
+single-service/single-date batch, assigned-site Office Staff and Approved/Rejected product
+assumptions. The Portal is therefore not ready for company testing until the full
+management-confirmed programme and final integrated QA gate have completed. MySQL evidence
+and production infrastructure controls remain release blockers.
+
+## Management Requirements Programme — 20 August 2026
+
+The authoritative programme is documented in
+`documentation/management-gap-analysis-2026-08-20.md`. It replaces the former sequence of
+small incremental Version 1 feature milestones with a controlled target-domain migration:
+
+1. Sprint 3A — Target domain and access migration contract.
+2. Sprint 3B — Source projection and service eligibility foundation.
+3. Sprint 3C — Lead-time and eligibility engine.
+4. Sprint 3D — Plot-centric overview.
+5. Sprint 3E — Multi-plot/multi-service New Call Off.
+6. Sprint 3F — Date negotiation and Office review.
+7. Sprint 3G — Amendments and source completion reconciliation.
+8. Sprint 3H — Structured attachments.
+9. Sprint 3I — Notifications and reminders.
+10. Sprint 3J — Calendar and PDF schedules.
+11. Sprint 3K — Integrated QA and company-test preparation.
+
+Sprint 3A has produced the additive schema/access migration spike and preservation tests.
+SQLite QA passed on 20 August 2026 after a non-empty legacy migration rehearsal and two
+narrow data-integrity corrections. MySQL rehearsal remains mandatory before production or
+Sprint 3B source integration.
 
 ## Sprint 2A — Company Test Readiness
 
@@ -63,6 +86,11 @@ screen-reader release evidence, amendments, later progress statuses, SiteApp int
 advanced reporting, email and push notifications.
 
 # Version Roadmap
+
+The historical version sequence below is retained for traceability. It must not be used as
+an implementation contract where it conflicts with the Management Requirements Programme
+above; in particular, Calendar, attachments and the four-service/date-agreement domain are
+now Version 1 work, not later-version scope.
 
 ## v0.1 — Application Foundation
 

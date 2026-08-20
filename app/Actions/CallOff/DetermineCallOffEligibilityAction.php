@@ -119,7 +119,7 @@ class DetermineCallOffEligibilityAction
         $this->ensureSiteUserCanActOnRequest($user, $request);
         $this->ensureStatus($request, CallOffRequestStatus::Rejected, 'Only rejected requests may be resubmitted.');
         $this->ensureNotTrashed($request);
-        $this->ensureProjectedPlotCanBeRequested($request->projectedPlot, $request->batch->site, $request->batch->service_identifier);
+        $this->ensureProjectedPlotCanBeRequested($request->projectedPlot, $request->batch->site, $request->effectiveServiceIdentifier() ?? $request->batch->service_identifier);
     }
 
     public function canViewProjectedPlot(User $user, ProjectedPlot $plot): bool
@@ -128,7 +128,7 @@ class DetermineCallOffEligibilityAction
 
         return $user->hasCompletePortalProfile()
             && $user->customer_organisation_id === $plot->site->customer_organisation_id
-            && $user->canAccessSite($plot->site);
+            && ($user->isFensterOfficeStaff() || ($user->isSiteRole() && $user->canAccessSite($plot->site)));
     }
 
     private function normaliseServiceType(CallOffServiceType|string $serviceType): CallOffServiceType
@@ -152,7 +152,7 @@ class DetermineCallOffEligibilityAction
     {
         $request->loadMissing('batch.site');
 
-        if (! $user->hasCompletePortalProfile() || ! $user->isFensterOfficeStaff() || ! $user->canAccessSite($request->batch->site)) {
+        if (! $user->hasCompletePortalProfile() || ! $user->isFensterOfficeStaff()) {
             throw new AuthorizationException;
         }
     }
@@ -171,6 +171,16 @@ class DetermineCallOffEligibilityAction
 
         if ($plot->is_completed) {
             throw ValidationException::withMessages(['projected_plots' => 'Completed projected plots cannot receive new call-offs.']);
+        }
+
+        if ($plot->services()
+            ->where('service_identifier', $serviceType->value)
+            ->where(function ($query): void {
+                $query->whereNotNull('source_completed_at')
+                    ->orWhereNotNull('source_completion_observed_at');
+            })
+            ->exists()) {
+            throw ValidationException::withMessages(['projected_plots' => 'This completed projected plot service cannot receive a new call-off.']);
         }
 
         $conflictKey = UpdateConflictKeyAction::keyFor((int) $plot->id, $serviceType->value);

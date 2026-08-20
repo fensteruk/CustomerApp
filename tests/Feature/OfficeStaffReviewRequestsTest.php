@@ -81,7 +81,7 @@ function reviewPeople(): array
     return [$organisation, $siteUser, $officeUser, $site];
 }
 
-it('shows submitted requests for assigned Office Staff sites', function (): void {
+it('shows submitted requests to global Office Staff', function (): void {
     [, $siteUser, $officeUser, $site] = reviewPeople();
     $request = reviewRequestFor($siteUser, $site, 'Plot 201', CallOffServiceType::CavityClosers, 'Ready from Monday.');
 
@@ -98,7 +98,7 @@ it('shows submitted requests for assigned Office Staff sites', function (): void
         ->assertSee('Submitted');
 });
 
-it('does not show unassigned-site requests to Office Staff', function (): void {
+it('shows requests from formerly unassigned sites to Office Staff', function (): void {
     [$organisation, $siteUser, $officeUser] = reviewPeople();
     $hiddenSite = Site::factory()->create([
         'customer_organisation_id' => $organisation->id,
@@ -110,8 +110,8 @@ it('does not show unassigned-site requests to Office Staff', function (): void {
     $this->actingAs($officeUser)
         ->get('/portal/review-requests')
         ->assertOk()
-        ->assertDontSee('Hidden Review Site')
-        ->assertDontSee('Hidden Plot');
+        ->assertSee('Hidden Review Site')
+        ->assertSee('Hidden Plot');
 });
 
 it('blocks site roles and guests from review screens and decision actions', function (): void {
@@ -147,7 +147,7 @@ it('shows authorised review detail with Office Staff history', function (): void
         ->assertSee('Please book this in.');
 });
 
-it('prevents detail access for unassigned and cross-organisation requests', function (): void {
+it('allows global Office Staff detail access across customers and sites', function (): void {
     [$organisation, $siteUser, $officeUser] = reviewPeople();
     $sameOrganisationHiddenSite = Site::factory()->create([
         'customer_organisation_id' => $organisation->id,
@@ -162,11 +162,11 @@ it('prevents detail access for unassigned and cross-organisation requests', func
 
     $this->actingAs($officeUser)
         ->get('/portal/review-requests/'.$sameOrganisationRequest->uuid)
-        ->assertNotFound();
+        ->assertOk();
 
     $this->actingAs($officeUser)
         ->get('/portal/review-requests/'.$otherRequest->uuid)
-        ->assertNotFound();
+        ->assertOk();
 });
 
 it('allows assigned Office Staff to approve with a customer response', function (): void {
@@ -320,7 +320,7 @@ it('fails stale and conflicting decisions safely', function (): void {
         ->and(CallOffStatusHistory::query()->where('event_type', CallOffHistoryEventType::Rejected)->count())->toBe(1);
 });
 
-it('prevents deciding withdrawn requests and revoked Office Staff assignments', function (): void {
+it('prevents deciding withdrawn requests while Office Staff assignments do not affect global access', function (): void {
     [, $siteUser, $officeUser, $site] = reviewPeople();
     $withdrawnRequest = reviewRequestFor($siteUser, $site, 'Plot 1001');
     $revokedRequest = reviewRequestFor($siteUser, $site, 'Plot 1002');
@@ -335,12 +335,12 @@ it('prevents deciding withdrawn requests and revoked Office Staff assignments', 
     $officeUser->assignedSites()->detach($site);
 
     $this->actingAs($officeUser)
-        ->post('/portal/review-requests/'.$revokedRequest->uuid.'/approve')
+        ->post('/portal/review-requests/'.$revokedRequest->uuid.'/approve', ['customer_response' => 'Approved globally.'])
         ->assertRedirect('/portal/review-requests')
-        ->assertSessionHasErrors('request');
+        ->assertSessionHas('status');
 
     expect($withdrawnRequest->fresh()->status)->toBe(CallOffRequestStatus::Withdrawn)
-        ->and($revokedRequest->fresh()->status)->toBe(CallOffRequestStatus::Submitted);
+        ->and($revokedRequest->fresh()->status)->toBe(CallOffRequestStatus::Approved);
 });
 
 it('fails malformed UUIDs safely', function (): void {
@@ -351,7 +351,7 @@ it('fails malformed UUIDs safely', function (): void {
         ->assertNotFound();
 });
 
-it('keeps filters server-side and scoped to assigned sites', function (): void {
+it('keeps global Office Staff filters server-side', function (): void {
     [$organisation, $siteUser, $officeUser, $assignedSite] = reviewPeople();
     reviewRequestFor($siteUser, $assignedSite, 'Visible Filter Plot', CallOffServiceType::Windows);
 
@@ -365,8 +365,8 @@ it('keeps filters server-side and scoped to assigned sites', function (): void {
     $this->actingAs($officeUser)
         ->get('/portal/review-requests?status=submitted&site='.$hiddenSite->id.'&service=cml')
         ->assertOk()
-        ->assertDontSee('Hidden Filter Plot')
-        ->assertDontSee('Filtered Hidden Site');
+        ->assertSee('Hidden Filter Plot')
+        ->assertSee('Filtered Hidden Site');
 
     $this->actingAs($officeUser)
         ->get('/portal/review-requests?status=submitted&site='.$assignedSite->id.'&service=windows')

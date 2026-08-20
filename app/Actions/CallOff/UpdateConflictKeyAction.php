@@ -8,10 +8,12 @@ class UpdateConflictKeyAction
 {
     public function handle(CallOffRequest $request): CallOffRequest
     {
-        $request->loadMissing('batch');
+        $request->loadMissing('batch', 'projectedPlotService');
 
-        $request->active_conflict_key = $request->status->isConflictActive()
-            ? self::keyFor((int) $request->projected_plot_id, $request->batch->service_identifier->value)
+        $service = $request->effectiveServiceIdentifier();
+
+        $request->active_conflict_key = $request->status->isConflictActive() && $service !== null
+            ? self::keyFor((int) $request->projected_plot_id, $service->value)
             : null;
 
         $request->save();

@@ -53,7 +53,7 @@ function notificationCallOff(User $siteUser, Site $site, string $plotReference =
     )->requests->first();
 }
 
-it('notifies the submitter and assigned Office Staff only for submission', function (): void {
+it('notifies the submitter and all active Office Staff for submission', function (): void {
     $organisation = CustomerOrganisation::factory()->create();
     $siteUser = notificationUser(PortalRoleIdentifier::SiteManager, $organisation);
     $office = notificationUser(PortalRoleIdentifier::FensterOfficeStaff, $organisation);
@@ -62,10 +62,10 @@ it('notifies the submitter and assigned Office Staff only for submission', funct
     $office->assignedSites()->attach($site);
     $request = notificationCallOff($siteUser, $site);
 
-    expect(PortalNotification::query()->where('type', PortalNotificationType::CallOffSubmitted)->count())->toBe(2)
+    expect(PortalNotification::query()->where('type', PortalNotificationType::CallOffSubmitted)->count())->toBe(3)
         ->and($siteUser->portalNotifications()->where('request_uuid', $request->uuid)->exists())->toBeTrue()
         ->and($office->portalNotifications()->where('request_uuid', $request->uuid)->exists())->toBeTrue()
-        ->and($unassignedOffice->portalNotifications()->where('request_uuid', $request->uuid)->exists())->toBeFalse();
+        ->and($unassignedOffice->portalNotifications()->where('request_uuid', $request->uuid)->exists())->toBeTrue();
 });
 
 it('notifies the submitting site user after approval without exposing private reason', function (): void {

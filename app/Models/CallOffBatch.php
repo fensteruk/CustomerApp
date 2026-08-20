@@ -58,6 +58,15 @@ class CallOffBatch extends Model
     }
 
     /**
+     * Legacy batch-level service/date/message fields are retained for audit and dual-read
+     * compatibility. New multi-service submissions must store those facts on requests.
+     */
+    public function isLegacySingleServiceBatch(): bool
+    {
+        return $this->service_identifier !== null;
+    }
+
+    /**
      * @return HasMany<CallOffBatchOperation, $this>
      */
     public function operations(): HasMany

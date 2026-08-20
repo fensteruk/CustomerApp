@@ -1,5 +1,68 @@
 # Fenster Customer Portal Handover
 
+## Management Requirements Reset — 20 August 2026
+
+Status:
+Planning complete; implementation has not started.
+
+The secure Sprint 1A–2A foundation remains in place, but its three-service,
+single-service/single-date batch, assigned-site Office Staff and Approved/Rejected
+assumptions are superseded for future work. Do not remove or rewrite historic records.
+
+The current target, gap analysis and safe implementation order are in:
+
+- `context-work-prompt.md`
+- `brief.md` section 17
+- `documentation/management-gap-analysis-2026-08-20.md`
+
+Next implementation milestone:
+Sprint 3B — Source Projection and Service Eligibility Foundation, after Sprint 3A QA.
+
+Before application changes, Product must freeze the target state glossary and treatment of
+historic rejected records. Backend then owns only the additive migration/access spike and
+SQLite/MySQL preservation tests. UI, Excel integration, attachments, calendar/PDF and
+company testing are explicitly deferred.
+
+## Sprint 3A — Target Domain and Access Migration Contract
+
+Status: Backend implementation and SQLite architecture QA passed; no UI or source
+integration was started.
+
+- Added four-service projected plot-service and product projections, read-only source-import
+  audit records, request-level service/date compatibility fields and ordered date
+  negotiation/proposal entities.
+- The migration backfills unambiguous legacy request values while preserving every legacy
+  row, UUID, history, Trash/Undo operation, notification and rejected-resubmission link.
+- Legacy Approved is represented as legacy Date Agreed without rewriting history or
+  inventing a negotiation/proposal. Legacy Rejected remains intentionally unconverted
+  pending a retained TBC decision.
+- Fenster Office Staff are global reviewers/notification recipients; external Site Users
+  remain restricted to active assigned sites.
+- `documentation/target-domain-v3.md` is the Sprint 3B+ implementation reference.
+
+QA result: non-empty SQLite migration rollback/reapply, regression tests, formatting and
+frontend build passed. A MySQL migration/backfill/concurrency rehearsal is still required
+before source ingestion or release work. See
+`documentation/sprint-3a-domain-qa-report-2026-08-20.md`.
+
+## Sprint 3B — Source Projection, Import Contract and MySQL Rehearsal
+
+Status: SQLite implementation complete; MySQL rehearsal is blocked by the absence of a
+safe disposable database target.
+
+- Added a transport-neutral, internal-only importer and durable source audit, issue and
+  completion/reversal event records.
+- Completion closes active negotiations and clears conflicts without sending notifications.
+  Reversal never reactivates an older request when a newer active request exists.
+- No live source path, XLSX parser, credentials, scheduler, public upload endpoint or
+  SiteApp write-back was added.
+- See `documentation/source-integration-contract.md` and
+  `documentation/sprint-3b-source-import-report.md`.
+
+Historical note:
+Sprint 2A's 19 August QA evidence remains valid for the old implemented workflow, but it
+is not permission to company-test the management-confirmed target product early.
+
 ## Sprint 1A - Secure Access and Domain Foundation
 
 Status:

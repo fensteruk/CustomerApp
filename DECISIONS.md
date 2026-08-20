@@ -575,3 +575,70 @@ Rules:
 
 Status:
 Confirmed 19 August 2026. This is the Sprint 2A resubmission contract.
+
+---
+
+## DEC-035
+
+Date:
+20 August 2026
+
+Decision:
+Requirements confirmed directly with Fenster management on 20 August 2026 are the
+authoritative target product specification. They are recorded in `context-work-prompt.md`,
+consolidated in `brief.md` section 17, and assessed in
+`documentation/management-gap-analysis-2026-08-20.md`.
+
+Superseded assumptions:
+
+- the Portal has three services rather than Cavity Closers, Windows, Snagging and CML;
+- Fenster Office Staff are restricted to assigned sites;
+- a call-off batch has one service and one requested date;
+- Approved/Rejected is the final customer-facing date lifecycle; and
+- direct Portal write-back to Excel/SiteApp is permitted or required.
+
+Consequences:
+
+- The historical decisions remain audit records. Their implementation contracts must not
+  be silently reused where they conflict with the management specification.
+- DEC-014, DEC-015, DEC-018–DEC-020, DEC-025–DEC-029, DEC-032 and DEC-034 require an
+  additive migration/transition treatment in Sprint 3A rather than a destructive rewrite.
+- Existing UUIDs, histories, batch-operation audit records, Trash/Undo evidence and
+  tenant protections must be preserved.
+- Company testing is deferred until the complete management-confirmed programme and final
+  integrated QA gate have passed.
+
+Reason:
+The prior workflow is a secure, working foundation but does not represent the newly
+confirmed four-service, source-driven, negotiated-date product model.
+
+---
+
+## DEC-036
+
+Date:
+20 August 2026
+
+Decision:
+Sprint 3A introduces the target call-off domain additively. `ProjectedPlotService` is the
+independent four-service projection; batches remain submission groups while request-level
+fields own service/date; and ordered date negotiations/proposals preserve the future
+agreement loop.
+
+Rules:
+
+- Legacy batch fields, statuses, UUIDs, histories, Trash/Undo operations, notifications and
+  rejected-resubmission lineage remain intact.
+- Legacy Approved is mapped as legacy Date Agreed without rewriting its historical status
+  or event; direct legacy Rejected remains a terminal legacy record pending a separate
+  retention/presentation decision.
+- `UpdateConflictKeyAction` remains the sole conflict-key writer. Date Agreed and
+  Amendment On Hold are conflict-active; source Completed is not.
+- Fenster Office Staff are global Portal reviewers. Site assignment remains an external
+  Site User boundary only.
+- A holiday-provider interface is required before lead-time enforcement; Sprint 3A does
+  not invent a UK bank-holiday dataset.
+
+Reason:
+This gives later sprints stable, auditable data structures without disrupting the working
+legacy workflow or making unsupported source-integration assumptions.

@@ -19,6 +19,8 @@ class Site extends Model
         'customer_organisation_id',
         'name',
         'location',
+        'external_source',
+        'external_identifier',
     ];
 
     /**

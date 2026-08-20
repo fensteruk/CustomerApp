@@ -1,5 +1,85 @@
 # Current Sprint
 
+Sprint 3B — Source Projection, Import Contract and MySQL Rehearsal
+
+Status:
+SQLite source-projection/import implementation is complete. MySQL rehearsal is blocked by
+the absence of a safe disposable database target and remains required before production-like
+source ingestion.
+Sprint 2A is retained below as historical QA evidence, but its controlled-company-test
+permission is superseded by the 20 August management decision to implement the full
+confirmed programme first.
+
+Authoritative planning:
+
+- `context-work-prompt.md`
+- `brief.md` section 17
+- `documentation/management-gap-analysis-2026-08-20.md`
+- `documentation/target-domain-v3.md`
+- `documentation/source-integration-contract.md`
+
+Sprint 3B implementation result:
+
+- Internal-only, transport-neutral source import maps Call No., site/plot identity, Call
+  Type, completion and product quantities into Portal projections.
+- Durable reconciliation issues cover unknown/duplicate Call No. data, association changes,
+  missing source records, completion inconsistencies and unsafe reversals.
+- No real source transport, parser, scheduler, dashboard or customer import endpoint exists.
+
+Purpose:
+Define and rehearse the additive, non-destructive migration from the three-service,
+single-service/single-date batch and Approved/Rejected lifecycle to the four-service,
+per-plot/service, Date Agreed negotiation model.
+
+Scope:
+
+- target state glossary and legacy mapping approval;
+- Office Staff global-scope policy/query migration plan;
+- schema/data-migration contract for plot-service projections, request-level dates,
+  negotiations/proposals and source-import audit;
+- legacy UUID, history, notification, lineage and batch-operation preservation plan;
+- SQLite and MySQL migration/backfill/reconciliation test plan.
+
+Implementation result:
+
+- Additive target-domain migration adds source-import audit, four projected plot services,
+  source product quantities, request-level service/date fields and date
+  negotiation/proposal records.
+- Existing legacy data is preserved. Legacy Approved is interpreted as legacy Date Agreed
+  from its truthful status/date without creating a fictional negotiation or proposal;
+  legacy rejected/resubmission data remains unchanged.
+- Fenster Office Staff are now globally authorised for review and notifications. Site User
+  organisation and assigned-site boundaries remain enforced.
+- The target domain, conflict-key and lead-time-provider contracts are recorded in
+  `documentation/target-domain-v3.md`.
+
+Explicit exclusions:
+
+- production migration execution or data conversion rehearsal;
+- Excel/source connection or import;
+- dashboard, New Call Off, review, attachment, calendar or PDF UI work;
+- date negotiation, amendment, notification or reminder implementation;
+- company testing and production release.
+
+Exit gate:
+
+- Product has approved state names and historic rejected-record treatment.
+- Backend has a reviewed additive schema/data plan with no destructive reset.
+- QA has SQLite and MySQL fixture/rehearsal assertions for tenant boundaries, UUIDs,
+  immutable history, conflict keys and legacy status mappings.
+
+QA result — 20 August 2026:
+
+- SQLite non-empty legacy migration rollback/reapply rehearsal passed: requests, UUIDs,
+  histories, Undo/Trash operation evidence, notifications and rejected-resubmission lineage
+  remained intact.
+- The QA gate removed original synthetic legacy proposal records, corrected zero-quantity
+  BF lead-time handling and prevented direct mass assignment of the computed conflict key.
+- Full Pest suite passed: 135 tests, 661 assertions. Pint, diff check and production Vite
+  build passed. See `documentation/sprint-3a-domain-qa-report-2026-08-20.md`.
+
+Previous Sprint Context:
+
 Sprint 2A - Company Test Readiness
 
 Status:

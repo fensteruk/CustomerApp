@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Actions\CallOff\DetermineCallOffEligibilityAction;
+use App\Contracts\HolidayProvider;
 use App\Events\CallOffApproved;
 use App\Events\CallOffRejected;
 use App\Events\CallOffSubmitted;
@@ -13,6 +14,7 @@ use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\PortalNotificationQueryService;
+use App\Services\WeekdayHolidayProvider;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\View;
@@ -25,7 +27,7 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register(): void
     {
-        //
+        $this->app->singleton(HolidayProvider::class, WeekdayHolidayProvider::class);
     }
 
     /**
@@ -51,11 +53,15 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('view-review-requests', fn (User $user): bool => $user->isFensterOfficeStaff());
 
+        Gate::define('manage-portal-accounts', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff());
+
+        Gate::define('manage-site-assignments', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff());
+
         Gate::define('view-projected-plot', fn (User $user, ProjectedPlot $plot): bool => app(DetermineCallOffEligibilityAction::class)->canViewProjectedPlot($user, $plot));
 
         Gate::define('submit-call-off', fn (User $user, Site $site): bool => $user->isSiteRole() && $user->canAccessSite($site));
 
-        Gate::define('review-call-off', fn (User $user, CallOffRequest $request): bool => $user->isFensterOfficeStaff() && $user->canAccessSite($request->batch->site));
+        Gate::define('review-call-off', fn (User $user, CallOffRequest $request): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff());
 
         Gate::define('approve-call-off', fn (User $user, CallOffRequest $request): bool => $this->allowsCallOff(fn () => app(DetermineCallOffEligibilityAction::class)->ensureCanApprove($user, $request)));
 
