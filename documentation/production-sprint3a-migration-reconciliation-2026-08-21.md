@@ -1,5 +1,11 @@
 # Production Sprint 3A migration reconciliation — 21 August 2026
 
+> **Superseded by verified evidence later on 21 August 2026.** The backup and
+> disposable-MySQL rehearsal described in
+> `production-migration-000002-repair-rehearsal-2026-08-21.md` establish the
+> physical partial state and a forward-only repair candidate. This historical
+> record is retained because its original stop decision was correct at the time.
+
 ## Overall result
 
 **Blocked before remediation. No production database changes were made.**
@@ -65,3 +71,27 @@ remains absent from the ledger.
 The data, indexes, constraints, foreign keys, row counts and full partial-execution map
 were intentionally not inspected in this run because no recovery point was available.
 No claim is made that the existing table is valid, empty or safe to remove.
+
+## Verified reconciliation update — later 21 August 2026
+
+A verified manual backup is now available at
+`/home/forge/backups/customerapp/customerapp-production-2026-08-21-094607Z.sql.gz`.
+Its SHA-256 sidecar and gzip integrity check passed. The isolated restore confirmed
+the production ledger has the three Laravel base migrations and 000001 only; 000002
+is pending.
+
+The restore has five 000002 tables (`projected_plots`, `call_off_batches`,
+`call_off_requests`, `call_off_batch_operations` and
+`call_off_batch_operation_items`) with zero rows. `call_off_status_histories` and
+`portal_notifications` are absent. The operation-items table has **zero foreign
+keys**: its generated MySQL foreign-key identifier exceeds MySQL's 64-character
+limit, leaving a physical table without its intended relationships.
+
+Candidate branch `migration-000002-repair-candidate` makes 000002 safely resumable,
+uses short explicit operation-item foreign-key names, and adds those two missing
+restrict foreign keys when reconciling an existing table. It also names three other
+MySQL-overlong pending indexes in 000003, 000005 and 000007. The candidate was
+rehearsed successfully from a restored production copy, an empty MySQL database and
+a normal pre-000002 upgrade. No live schema, data, migration ledger, Forge setting or
+deployment was changed. The detailed runbook and recovery conditions are in the
+rehearsal report.
