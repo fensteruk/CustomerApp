@@ -70,18 +70,35 @@ return new class extends Migration
             $table->index('performed_by_user_id');
         });
 
-        $this->createTableIfMissing('call_off_batch_operation_items', function (Blueprint $table): void {
+        $operationItemsCreated = $this->createTableIfMissing('call_off_batch_operation_items', function (Blueprint $table): void {
             $table->id();
             $table->uuid('uuid')->unique();
-            $table->foreignId('call_off_batch_operation_id')->constrained()->restrictOnDelete();
-            $table->foreignId('call_off_request_id')->constrained()->restrictOnDelete();
+            $table->foreignId('call_off_batch_operation_id');
+            $table->foreignId('call_off_request_id');
             $table->json('before_state');
             $table->json('after_state');
             $table->timestamps();
 
+            $table->foreign('call_off_batch_operation_id', 'operation_items_operation_fk')->references('id')->on('call_off_batch_operations')->restrictOnDelete();
+            $table->foreign('call_off_request_id', 'operation_items_request_fk')->references('id')->on('call_off_requests')->restrictOnDelete();
             $table->unique(['call_off_batch_operation_id', 'call_off_request_id'], 'operation_request_unique');
             $table->index('call_off_request_id');
         });
+
+        if (! $operationItemsCreated) {
+            $this->ensureRestrictForeignKey(
+                'call_off_batch_operation_items',
+                'call_off_batch_operation_id',
+                'call_off_batch_operations',
+                'operation_items_operation_fk',
+            );
+            $this->ensureRestrictForeignKey(
+                'call_off_batch_operation_items',
+                'call_off_request_id',
+                'call_off_requests',
+                'operation_items_request_fk',
+            );
+        }
 
         $this->createTableIfMissing('call_off_status_histories', function (Blueprint $table): void {
             $table->id();
@@ -123,10 +140,34 @@ return new class extends Migration
      * only the missing structures; Laravel records the migration only after every callback
      * has completed. Schema parity is verified before using this reconciliation path.
      */
-    private function createTableIfMissing(string $tableName, Closure $definition): void
+    private function createTableIfMissing(string $tableName, Closure $definition): bool
     {
         if (! Schema::hasTable($tableName)) {
             Schema::create($tableName, $definition);
+
+            return true;
         }
+
+        return false;
+    }
+
+    private function ensureRestrictForeignKey(string $tableName, string $column, string $referencedTable, string $constraintName): void
+    {
+        $hasExpectedForeignKey = collect(Schema::getForeignKeys($tableName))
+            ->contains(fn (array $foreignKey): bool => $foreignKey['columns'] === [$column]
+                && $foreignKey['foreign_table'] === $referencedTable
+                && $foreignKey['foreign_columns'] === ['id']);
+
+        if ($hasExpectedForeignKey) {
+            return;
+        }
+
+        if (! Schema::hasColumn($tableName, $column)) {
+            throw new LogicException("Cannot reconcile {$tableName}: expected {$column} is missing.");
+        }
+
+        Schema::table($tableName, function (Blueprint $table) use ($column, $referencedTable, $constraintName): void {
+            $table->foreign($column, $constraintName)->references('id')->on($referencedTable)->restrictOnDelete();
+        });
     }
 };
