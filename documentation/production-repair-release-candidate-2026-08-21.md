@@ -134,8 +134,25 @@ tables or use `migrate:rollback` as recovery.
 - Forge configuration changes;
 - production deployment and database reconciliation.
 
-## Exact next production action
+## Original next production action (completed)
 
 Obtain explicit deployment approval for release SHA
 `1fe5293a62b2458a7edd4afbf3e2d55026a6870d`, then perform the documented preflight and
-one observed `main` merge/Quick Deploy. Until that approval, leave `main` untouched.
+one observed `main` merge/Quick Deploy. This instruction was completed as recorded below.
+
+## Deployment outcome — 21 August 2026
+
+The approved release was merged to `main` as
+`f801c91113bd13656c6cbffdd3d82c12d4a95846` and pushed once. Forge Quick Deploy created
+deployment `75938097`, which completed successfully in 36 seconds. Sprint 3E was not
+included.
+
+The deployment ran 000002 through 000008 successfully, activated release
+`/home/forge/fenstercustomer.on-forge.com/releases/75938097`, and that release's HEAD
+matches `f801c91113bd13656c6cbffdd3d82c12d4a95846`. Post-deployment checks confirmed
+11 migration rows, exactly one 000002 row, two operation-item foreign keys, four status
+history foreign keys and all four rehearsed named indexes. Login and the deployed CSS/JS
+assets returned HTTPS 200.
+
+This record was updated only on the non-deploying release branch after the deployment so
+that it did not create a second production deployment.
