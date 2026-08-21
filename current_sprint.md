@@ -1,35 +1,45 @@
 # Current Sprint
 
-Sprint 3D — Multi-Plot/Multi-Service Call-Off Backend Contract
+Sprint 3E — Date Agreement and Alternative-Date Negotiation
 
 Status:
-Dedicated Sprint 3D QA passed locally on 21 August 2026 after two contained corrections:
-the signed review retains selected plot/fixed service order, and Awaiting Fenster submission
-notifications carry request-level service/date context. Sprint 3E has not begun. This remains
-subject to the recorded holiday-provider, MySQL rehearsal and production-reconciliation
-limitations.
+Sprint 3E backend and UI implementation is complete locally on 21 August 2026. It adds the
+individual-request date-agreement and alternative-date loop on top of the QA-approved
+Sprint 3D submission contract. No deployment, production database action, source transport,
+amendment, attachment, calendar/PDF, reminder or SiteApp work was performed.
 
 Implementation result:
 
-- The old one-service/one-date creation route is replaced for new submissions by one
-  shared start → matrix → signed review → final submit workflow.
-- Dashboard multi-select and the separate New Call Off page validate UUIDs against the
-  active site and feed the same workflow; Office Staff cannot enter it.
-- The final endpoint posts only a server-stored confirmation signature, consumes it before
-  persistence and rebuilds current eligibility before one atomic submission transaction.
-- Each request holds its service/date/early-date facts and Date Requested history. Existing
-  legacy requests, lifecycle actions, notifications and Office review remain readable.
-- UI contract and deferred notification/holiday work are in
-  `documentation/sprint-3d-bulk-call-off-report.md`.
+- Office Staff may agree an individual requested date or propose a future weekday
+  alternative. Any authorised Site User assigned to that site may accept or reject the
+  alternative; rejection requires a customer-visible reason and returns the request to
+  Awaiting Fenster.
+- Agreement/proposal/respond actions lock current request, negotiation and proposal rows in
+  a transaction, preserve ordered immutable proposal history, record actor/timestamps and
+  re-check source completion immediately before persistence.
+- An early requested date requires explicit Office acknowledgement before agreement.
+  Alternative dates consult the existing HolidayProvider; production uses the documented
+  weekday-only placeholder until an owned UK bank-holiday provider is approved.
+- Date Agreed remains conflict-active. Withdrawal is allowed only while awaiting a date
+  decision. Source completion supersedes open alternatives and blocks stale responses.
+- Customer-safe in-app notification types now cover date agreement, alternative proposal,
+  acceptance and rejection. No email or external notification transport was added.
+- Office Staff now have the Awaiting Fenster queue and date-agreement/proposal UI. Site
+  Users reach an authorised request-detail screen from Plot Details and safe-open
+  notifications, can accept/reject an alternative, and can withdraw while awaiting a date.
+  The customer timeline retains repeated negotiation history without internal reasons.
 
 Verification:
 
-- Fresh local SQLite migration and seeding passed on 21 August 2026.
-- Sprint 3D QA covers a realistic three-plot/four-service browser journey, confirmation
-  mutations, stale conflict/completion/source/BF/access paths, atomicity, three external
-  roles and per-request notification context.
-- See `documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md` for final command
-  evidence (171 tests, 884 assertions) and remaining release limitations.
+- Local SQLite `migrate:fresh --seed` passed. Focused Sprint 3E Pest coverage passes:
+  16 tests, 89 assertions. The complete suite passes: 187 tests, 973 assertions. Pint,
+  `git diff --check` and the production Vite build also pass.
+- Local browser evidence covers early-date handling, Office alternative proposal, customer
+  acceptance and Date Agreed. The request screen had no document-level horizontal overflow
+  at 320, 390, 430, 768 or 1440px; console warnings/errors were absent. Physical-device and
+  assistive-technology evidence remain QA limitations.
+- See `documentation/sprint-3e-date-negotiation-report.md` for contract, routes, tests and
+  outstanding MySQL/holiday-provider/release limitations.
 
 Previous Sprint Context:
 

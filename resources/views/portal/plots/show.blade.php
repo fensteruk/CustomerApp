@@ -29,10 +29,22 @@
             <div class="mt-5 grid gap-4 sm:grid-cols-2">
                 @foreach (App\Enums\CallOffServiceType::cases() as $serviceType)
                     @php($service = $overview->services[$serviceType->value])
+                    @php($callOffRequest = $overview->plot->callOffRequests->filter(fn (App\Models\CallOffRequest $request) => $request->effectiveServiceIdentifier() === $serviceType && $request->status->isConflictActive())->sortByDesc('id')->first())
                     <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="service-{{ $serviceType->value }}">
                         <h3 id="service-{{ $serviceType->value }}" class="text-lg font-bold text-slate-950">{{ $serviceType->label() }}</h3>
                         <x-plot-service-status :service="$service" class="mt-4" />
-                        <p class="mt-4 text-sm leading-6 text-slate-600">Detailed service history will be available here in a later Portal update.</p>
+                        @if ($callOffRequest)
+                            <p class="mt-4 text-sm leading-6 text-slate-600">
+                                @if ($callOffRequest->status === App\Enums\CallOffRequestStatus::AwaitingFenster)
+                                    Fenster is reviewing your requested date.
+                                @elseif ($callOffRequest->status === App\Enums\CallOffRequestStatus::AwaitingSiteUser)
+                                    Fenster has proposed an alternative date. Your response is needed.
+                                @elseif (in_array($callOffRequest->status, [App\Enums\CallOffRequestStatus::DateAgreed, App\Enums\CallOffRequestStatus::Approved], true))
+                                    Date agreed: {{ ($callOffRequest->agreed_date ?? $callOffRequest->requested_date ?? $callOffRequest->batch->requested_date)?->format('j M Y') }}.
+                                @endif
+                            </p>
+                            <a href="{{ route('portal.call-offs.show', $callOffRequest) }}" class="secondary-button mt-4 w-full">View request</a>
+                        @endif
                     </article>
                 @endforeach
             </div>

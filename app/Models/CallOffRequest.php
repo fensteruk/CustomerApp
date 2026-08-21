@@ -140,6 +140,8 @@ class CallOffRequest extends Model
     {
         return [
             'status' => $this->status?->value,
+            'requested_date' => $this->requested_date?->toDateString(),
+            'agreed_date' => $this->agreed_date?->toDateString(),
             'active_conflict_key' => $this->active_conflict_key,
             'trashed_at' => $this->trashed_at?->toISOString(),
             'trash_expires_at' => $this->trash_expires_at?->toISOString(),

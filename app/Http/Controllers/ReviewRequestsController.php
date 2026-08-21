@@ -35,7 +35,11 @@ class ReviewRequestsController extends Controller
             ->orderBy('name')
             ->get(['sites.id', 'sites.name']);
 
-        $status = $validated['status'] ?? CallOffRequestStatus::Submitted->value;
+        $status = $validated['status'] ?? (CallOffRequest::query()
+            ->where('status', CallOffRequestStatus::AwaitingFenster)
+            ->exists()
+                ? CallOffRequestStatus::AwaitingFenster->value
+                : CallOffRequestStatus::Submitted->value);
 
         $requests = CallOffRequest::query()
             ->when($status !== '', fn ($query) => $query->where('status', $status))
@@ -152,13 +156,21 @@ class ReviewRequestsController extends Controller
 
         return $callOffRequest->load([
             'projectedPlot:id,site_id,plot_reference',
+            'projectedPlotService:id,projected_plot_id,service_identifier,source_completed_at,source_completion_observed_at',
             'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
             'batch.site:id,customer_organisation_id,name,location',
             'batch.site.customerOrganisation:id,name',
             'batch.submittedBy:id,name',
             'histories' => fn ($query) => $query
-                ->with('performedBy:id,name')
+                ->with('performedBy:id,name,portal_role_id', 'performedBy.portalRole:id,name,identifier')
                 ->orderBy('sequence'),
+            'dateNegotiations' => fn ($query) => $query
+                ->with([
+                    'proposals' => fn ($proposalQuery) => $proposalQuery
+                        ->with('proposedBy:id,name,portal_role_id', 'proposedBy.portalRole:id,name,identifier', 'respondedBy:id,name,portal_role_id', 'respondedBy.portalRole:id,name,identifier')
+                        ->orderBy('sequence'),
+                ])
+                ->orderBy('opened_at'),
         ]);
     }
 }

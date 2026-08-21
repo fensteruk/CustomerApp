@@ -4,7 +4,11 @@ namespace App\Providers;
 
 use App\Actions\CallOff\DetermineCallOffEligibilityAction;
 use App\Contracts\HolidayProvider;
+use App\Events\CallOffAlternativeAccepted;
+use App\Events\CallOffAlternativeProposed;
+use App\Events\CallOffAlternativeRejected;
 use App\Events\CallOffApproved;
+use App\Events\CallOffDateAgreed;
 use App\Events\CallOffRejected;
 use App\Events\CallOffSubmitted;
 use App\Listeners\CallOffNotificationListener;
@@ -46,6 +50,10 @@ class AppServiceProvider extends ServiceProvider
         Event::listen(CallOffSubmitted::class, [CallOffNotificationListener::class, 'submitted']);
         Event::listen(CallOffApproved::class, [CallOffNotificationListener::class, 'approved']);
         Event::listen(CallOffRejected::class, [CallOffNotificationListener::class, 'rejected']);
+        Event::listen(CallOffDateAgreed::class, [CallOffNotificationListener::class, 'dateAgreed']);
+        Event::listen(CallOffAlternativeProposed::class, [CallOffNotificationListener::class, 'alternativeProposed']);
+        Event::listen(CallOffAlternativeAccepted::class, [CallOffNotificationListener::class, 'alternativeAccepted']);
+        Event::listen(CallOffAlternativeRejected::class, [CallOffNotificationListener::class, 'alternativeRejected']);
 
         Gate::define('select-site', fn (User $user, Site $site): bool => $user->isSiteRole() && $user->canAccessSite($site));
 

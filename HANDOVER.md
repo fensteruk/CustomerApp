@@ -3,7 +3,9 @@
 ## Management Requirements Reset — 20 August 2026
 
 Status:
-Sprint 3D backend, UI and dedicated local QA are complete. New customer call-offs use the
+Sprint 3E date-agreement and alternative-date-negotiation backend and UI are complete
+locally and ready for dedicated QA.
+Sprint 3D backend, UI and dedicated local QA remain the creation foundation. New customer call-offs use the
 shared multi-plot/multi-service matrix,
 signed server-side review and atomic final submission. The exact UI contract is in
 `documentation/sprint-3d-bulk-call-off-report.md`; do not add a competing creation path.
@@ -23,8 +25,23 @@ The current target, gap analysis and safe implementation order are in:
 QA result:
 `documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md` records the passed local
 gate, two QA corrections and outstanding MySQL/holiday/accessibility/production limitations.
-Sprint 3E has not begun. Do not change the signed matrix, session or final-submit contract
-without backend review.
+Sprint 3E keeps the signed matrix, session and final-submit contract unchanged.
+
+Sprint 3E adds individual request-level Office agreement, Office alternative-date proposal,
+and assigned-site customer acceptance/rejection actions. The Office queue uses Awaiting
+Fenster as the actionable default, while Plot Details and authorised notification safe-open
+lead Site Users to the customer-safe request detail/timeline. Proposal and response records
+are ordered and auditable, source completion blocks stale responses, Date Agreed retains the
+conflict key, and withdrawal stays available only while awaiting a date decision. The
+weekday-only `HolidayProvider` remains a documented temporary assumption pending an owned
+UK bank-holiday data provider. See `documentation/sprint-3e-date-negotiation-report.md`.
+
+Sprint 3E UI verification: local SQLite `migrate:fresh --seed`, 16 focused tests / 89
+assertions, the full 187-test / 973-assertion suite, Pint, Vite production build and
+whitespace check passed. Browser evidence covered the early-date/alternative/acceptance
+flow and no document overflow at 320, 390, 430, 768 or 1440px. No browser console warnings
+or errors were captured. MySQL rehearsal, the holiday-data provider, physical-device and
+assistive-technology evidence remain separate QA/release limitations.
 
 The target glossary is now reflected in the UI: legacy Approved is customer-presented as
 Date Agreed, and source completion takes precedence. Excel integration, attachments,

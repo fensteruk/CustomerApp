@@ -8,7 +8,7 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 3D - Multi-Plot/Multi-Service Call-Off (local QA passed; Sprint 3E not started)`
+**Current Milestone:** `Sprint 3E - Date Agreement and Alternative-Date Negotiation (local backend and UI complete; dedicated QA pending)`
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain
@@ -42,14 +42,13 @@ small incremental Version 1 feature milestones with a controlled target-domain m
 1. Sprint 3A — Target domain and access migration contract.
 2. Sprint 3B — Source projection and service eligibility foundation.
 3. Sprint 3C — Plot-centric overview and plot details.
-4. Sprint 3D — Lead-time and eligibility engine.
-5. Sprint 3E — Multi-plot/multi-service New Call Off.
-6. Sprint 3F — Date negotiation and Office review.
-7. Sprint 3G — Amendments and source completion reconciliation.
-8. Sprint 3H — Structured attachments.
-9. Sprint 3I — Notifications and reminders.
-10. Sprint 3J — Calendar and PDF schedules.
-11. Sprint 3K — Integrated QA and company-test preparation.
+4. Sprint 3D — Multi-plot/multi-service New Call Off.
+5. Sprint 3E — Date negotiation and Office review.
+6. Sprint 3F — Amendments and source completion reconciliation.
+7. Sprint 3G — Structured attachments.
+8. Sprint 3H — Notifications and reminders.
+9. Sprint 3I — Calendar and PDF schedules.
+10. Sprint 3J — Integrated QA and company-test preparation.
 
 Sprint 3A has produced the additive schema/access migration spike and preservation tests.
 SQLite QA passed on 20 August 2026 after a non-empty legacy migration rehearsal and two
@@ -69,7 +68,14 @@ Sprint 3D has replaced new-submission creation with a shared active-site UUID se
 matrix, signed-review and atomic-final-submit backend flow. The dashboard selected-plots
 entry and New Call Off entry use the same contract. Details for UI consumption, error
 states, early-date exceptions, replay protection and notification limitations are in
-`documentation/sprint-3d-bulk-call-off-report.md`. No Sprint 3E work has started.
+`documentation/sprint-3d-bulk-call-off-report.md`.
+
+Sprint 3E implements the individual-request negotiation: Office agreement or weekday
+alternative proposals, authorised assigned-site customer responses, customer request detail
+and safe history, conflict preservation for Date Agreed, source-completion stale-response
+protection, and in-app notification events. It does not add amendments, attachments,
+calendar/PDF, reminders, email, live source transport or deployment. See
+`documentation/sprint-3e-date-negotiation-report.md`.
 
 ## Sprint 2A — Company Test Readiness
 

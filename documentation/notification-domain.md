@@ -4,7 +4,8 @@
 
 **Scope:** Version 1 in-app notifications for the Customer Portal
 
-This document defines the notification domain for Sprint 1E. It builds on the confirmed
+This document defines the notification domain for Sprint 1E and its Sprint 3E negotiation
+extension. It builds on the confirmed
 Customer Portal roles, assigned-site authorisation and call-off lifecycle. It does not
 introduce SiteApp workflow, operational statuses, integration events or internal Fenster
 records.
@@ -17,7 +18,7 @@ Sprint 1E covers the in-app notification centre for these confirmed call-off eve
 - a call-off is successfully approved by Fenster Office Staff;
 - a call-off is successfully rejected by Fenster Office Staff.
 
-The following are not notification triggers in Sprint 1E:
+The following are not notification triggers in Sprint 1E or Sprint 3E:
 
 - withdrawal;
 - Trash, restoration or quick Undo;
@@ -42,6 +43,10 @@ The initial types are:
 | `call_off_submitted` | A call-off request has been submitted for review. | `submitted` |
 | `call_off_approved` | Fenster Office Staff have approved the call-off request. | `approved` |
 | `call_off_rejected` | Fenster Office Staff have rejected the call-off request. | `rejected` |
+| `call_off_date_agreed` | Fenster Office Staff agreed the requested date. | `date_agreed` |
+| `call_off_alternative_proposed` | Fenster proposed a customer-visible alternative date. | `awaiting_site_user` |
+| `call_off_alternative_accepted` | An authorised Site User accepted an alternative date. | `date_agreed` |
+| `call_off_alternative_rejected` | An authorised Site User rejected an alternative date. | `awaiting_fenster` |
 
 Each notification must identify the affected Customer Portal call-off request by its
 public UUID. It may include the related batch UUID, site name, customer-facing plot
@@ -64,6 +69,10 @@ successfully persisted its state transition:
 | Call-off submitted | `SubmitCallOffBatchAction` | `call_off_submitted` |
 | Call-off approved | `ApproveCallOffRequestAction` | `call_off_approved` |
 | Call-off rejected | `RejectCallOffRequestAction` | `call_off_rejected` |
+| Requested date agreed | `AgreeRequestedCallOffDateAction` | `call_off_date_agreed` |
+| Alternative date proposed | `ProposeAlternativeCallOffDateAction` | `call_off_alternative_proposed` |
+| Alternative date accepted | `AcceptAlternativeCallOffDateAction` | `call_off_alternative_accepted` |
+| Alternative date rejected | `RejectAlternativeCallOffDateAction` | `call_off_alternative_rejected` |
 
 The event represents a successful Customer Portal transition. Validation failures,
 authorisation failures, stale decisions, duplicate conflicts and transaction rollbacks
@@ -84,9 +93,13 @@ The minimum Version 1 recipient mapping is:
 
 | Event | Recipient |
 |---|---|
-| Submitted | The site user who submitted the batch, and Fenster Office Staff assigned to the affected site so the request can enter their assigned-site review work. |
+| Submitted | The site user who submitted the batch, and active Fenster Office Staff with global Portal review scope. |
 | Approved | The site user who submitted the individual request. |
 | Rejected | The site user who submitted the individual request. |
+| Requested date agreed | The site user who submitted the individual request. |
+| Alternative date proposed | The site user who submitted the individual request. |
+| Alternative date accepted | Active Fenster Office Staff with global Portal review scope. |
+| Alternative date rejected | Active Fenster Office Staff with global Portal review scope. |
 
 The three site roles remain distinct but have identical Version 1 permissions. A site
 role's shared visibility of all requests for its active assigned site does not, by itself,

@@ -4,7 +4,7 @@
             <div>
                 <p class="eyebrow">Fenster Office Staff</p>
                 <h1 id="page-title" class="page-title">Review Requests</h1>
-                <p class="page-intro">Review call-offs for your assigned sites and publish clear customer-facing decisions.</p>
+                <p class="page-intro">Review the requests that need a Fenster response. Use the status filter to check customer responses, agreed dates and completed records.</p>
             </div>
         </div>
 
@@ -87,6 +87,15 @@
                     </dl>
 
                     <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-end">
+                        @if ($callOffRequest->status === App\Enums\CallOffRequestStatus::AwaitingFenster)
+                            <p class="mr-auto text-sm font-bold text-amber-900">Fenster action required</p>
+                        @elseif ($callOffRequest->status === App\Enums\CallOffRequestStatus::AwaitingSiteUser)
+                            <p class="mr-auto text-sm font-bold text-sky-900">Waiting for customer response</p>
+                        @elseif (in_array($callOffRequest->status, [App\Enums\CallOffRequestStatus::DateAgreed, App\Enums\CallOffRequestStatus::Approved], true))
+                            <p class="mr-auto text-sm font-bold text-emerald-900">Date agreed</p>
+                        @elseif ($callOffRequest->status === App\Enums\CallOffRequestStatus::Completed)
+                            <p class="mr-auto text-sm font-bold text-slate-700">Completed record</p>
+                        @endif
                         <a href="{{ route('portal.review-requests.show', $callOffRequest) }}" class="secondary-button">Review request</a>
                     </div>
                 </article>
