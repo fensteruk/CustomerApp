@@ -44,7 +44,7 @@ return new class extends Migration
 
             $table->unique(['projected_plot_id', 'service_identifier'], 'plot_service_identifier_unique');
             $table->unique(['source_call_number'], 'projected_plot_services_source_call_number_unique');
-            $table->index(['service_identifier', 'source_completed_at']);
+            $table->index(['service_identifier', 'source_completed_at'], 'plot_services_service_completion_index');
             $table->index(['source_call_type', 'source_job_stage']);
         });
 

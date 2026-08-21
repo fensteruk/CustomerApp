@@ -30,7 +30,7 @@ return new class extends Migration
             $table->timestamps();
 
             $table->unique(['notifiable_user_id', 'event_key']);
-            $table->index(['notifiable_user_id', 'dismissed_at', 'read_at']);
+            $table->index(['notifiable_user_id', 'dismissed_at', 'read_at'], 'portal_notifications_user_read_state_index');
             $table->index('request_uuid');
         });
     }

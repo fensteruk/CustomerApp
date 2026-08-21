@@ -58,8 +58,8 @@ return new class extends Migration
             $table->timestamp('occurred_at');
             $table->timestamps();
 
-            $table->index(['projected_plot_service_id', 'occurred_at']);
-            $table->index(['call_off_request_id', 'occurred_at']);
+            $table->index(['projected_plot_service_id', 'occurred_at'], 'source_projection_events_service_time_index');
+            $table->index(['call_off_request_id', 'occurred_at'], 'source_projection_events_request_time_index');
         });
     }
 

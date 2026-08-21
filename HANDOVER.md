@@ -3,7 +3,12 @@
 ## Management Requirements Reset — 20 August 2026
 
 Status:
-Planning complete; implementation has not started.
+Sprint 3D backend, UI and dedicated local QA are complete. New customer call-offs use the
+shared multi-plot/multi-service matrix,
+signed server-side review and atomic final submission. The exact UI contract is in
+`documentation/sprint-3d-bulk-call-off-report.md`; do not add a competing creation path.
+Local SQLite `migrate:fresh --seed`, the full Pest suite (162 tests, 771 assertions), Pint,
+diff check and production Vite build passed on 21 August 2026.
 
 The secure Sprint 1A–2A foundation remains in place, but its three-service,
 single-service/single-date batch, assigned-site Office Staff and Approved/Rejected
@@ -15,13 +20,39 @@ The current target, gap analysis and safe implementation order are in:
 - `brief.md` section 17
 - `documentation/management-gap-analysis-2026-08-20.md`
 
-Next implementation milestone:
-Sprint 3B — Source Projection and Service Eligibility Foundation, after Sprint 3A QA.
+QA result:
+`documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md` records the passed local
+gate, two QA corrections and outstanding MySQL/holiday/accessibility/production limitations.
+Sprint 3E has not begun. Do not change the signed matrix, session or final-submit contract
+without backend review.
 
-Before application changes, Product must freeze the target state glossary and treatment of
-historic rejected records. Backend then owns only the additive migration/access spike and
-SQLite/MySQL preservation tests. UI, Excel integration, attachments, calendar/PDF and
-company testing are explicitly deferred.
+The target glossary is now reflected in the UI: legacy Approved is customer-presented as
+Date Agreed, and source completion takes precedence. Excel integration, attachments,
+calendar/PDF and company testing remain deferred.
+
+## Sprint 3C — Plot-Centric Site Overview and Plot Details
+
+Status: Dedicated QA passed; safe to begin Sprint 3D planning only.
+
+- The dashboard is an active-site, plot-centric overview with Cavity Closers, Windows,
+  Snagging and CML in a fixed order.
+- Presentation logic is centralised in `PlotOverviewQueryService`; source completion wins
+  over legacy call-off state, and legacy Approved presents as Date Agreed.
+- Fully completed plots are hidden by default and can be included explicitly. Filtering,
+  source freshness, empty states and customer-safe product quantities are included.
+- `GET /portal/plots/{projectedPlot:uuid}` is active-site authorised and exposes only
+  permitted projection data.
+- Desktop uses semantic tables and mobile uses service-labelled cards. Browser checks found
+  no document-level horizontal overflow from 320px through 1440px.
+- The legacy withdrawal/resubmission/Trash controls remain secondary; their existing
+  server-side eligibility checks are retained.
+- No new call-off, bulk selection, negotiation, amendment, attachment, calendar/PDF, QR,
+  source transport or SiteApp integration was added.
+- QA corrected active-site UUID containment, so Plot Details no longer permits an
+  assigned-but-not-selected site to render under the wrong site context.
+- Evidence: `documentation/sprint-3c-plot-overview-qa-report-2026-08-21.md`.
+- The prior QA blocker was only the missing local fresh-migration/seed rehearsal. It now
+  passed against confirmed local SQLite; no MySQL, Forge or production target was used.
 
 ## Sprint 3A — Target Domain and Access Migration Contract
 
@@ -47,8 +78,8 @@ before source ingestion or release work. See
 
 ## Sprint 3B — Source Projection, Import Contract and MySQL Rehearsal
 
-Status: SQLite implementation complete; MySQL rehearsal is blocked by the absence of a
-safe disposable database target.
+Status: SQLite implementation and QA passed; MySQL rehearsal is blocked by the absence of
+a safe disposable database target.
 
 - Added a transport-neutral, internal-only importer and durable source audit, issue and
   completion/reversal event records.
@@ -58,6 +89,9 @@ safe disposable database target.
   SiteApp write-back was added.
 - See `documentation/source-integration-contract.md` and
   `documentation/sprint-3b-source-import-report.md`.
+- QA corrected Call No. rebinding, malformed-record rejection, idempotent audit counts,
+  missing-issue resolution, completion-date audit events, timestamp preservation and safe
+  failed-run logging. See `documentation/sprint-3b-source-qa-report-2026-08-21.md`.
 
 Historical note:
 Sprint 2A's 19 August QA evidence remains valid for the old implemented workflow, but it

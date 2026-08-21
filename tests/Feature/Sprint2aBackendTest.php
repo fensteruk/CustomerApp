@@ -73,16 +73,17 @@ it('paginates active-site dashboard requests and combines plot service and statu
 
     $this->actingAs($user)
         ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
-        ->get('/portal/site-dashboard?plot=Visible+Plot+02&service=cml&status=submitted')
+        ->get('/portal/site-dashboard?plot=Visible+Plot+02&service=cml&status=awaiting_date')
         ->assertOk()
         ->assertSee('Visible Plot 02')
         ->assertDontSee('Hidden Other Site');
 
     $paginatedResponse = $this->get('/portal/site-dashboard')
         ->assertOk()
-        ->assertSee('Visible Plot 16');
+        ->assertSee('Visible Plot 01')
+        ->assertSee('Showing 1–15 of 16 plots');
 
-    expect(substr_count($paginatedResponse->getContent(), 'class="request-card"'))->toBe(15);
+    expect(substr_count($paginatedResponse->getContent(), 'Visible Plot'))->toBeGreaterThanOrEqual(15);
 });
 
 it('paginates active-site recoverable Trash and excludes expired or foreign records', function (): void {

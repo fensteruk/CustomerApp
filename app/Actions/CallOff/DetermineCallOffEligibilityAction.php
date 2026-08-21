@@ -8,6 +8,7 @@ use App\Enums\CallOffServiceType;
 use App\Models\CallOffBatchOperation;
 use App\Models\CallOffRequest;
 use App\Models\ProjectedPlot;
+use App\Models\ProjectedPlotService;
 use App\Models\Site;
 use App\Models\User;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -131,6 +132,32 @@ class DetermineCallOffEligibilityAction
             && ($user->isFensterOfficeStaff() || ($user->isSiteRole() && $user->canAccessSite($plot->site)));
     }
 
+    public function ensureCanSubmitForSite(User $user, Site $site): void
+    {
+        $this->ensureActiveSiteUser($user, $site);
+    }
+
+    public function unavailableReasonForProjection(ProjectedPlot $plot, ?ProjectedPlotService $projection, Site $site, CallOffServiceType $serviceType, bool $hasActiveConflict, bool $requireProjection = false): ?string
+    {
+        if ((int) $plot->site_id !== (int) $site->id) {
+            return 'A selected plot does not belong to the active site.';
+        }
+
+        if ($plot->is_completed || $projection?->isSourceCompleted()) {
+            return 'This completed plot service cannot receive a new call-off.';
+        }
+
+        if (($requireProjection && $projection === null) || $projection?->source_present === false) {
+            return 'Source information is not available for this plot service.';
+        }
+
+        if ($hasActiveConflict) {
+            return 'A selected plot already has an active request for this service.';
+        }
+
+        return null;
+    }
+
     private function normaliseServiceType(CallOffServiceType|string $serviceType): CallOffServiceType
     {
         if ($serviceType instanceof CallOffServiceType) {
@@ -165,28 +192,19 @@ class DetermineCallOffEligibilityAction
 
     private function ensureProjectedPlotCanBeRequested(ProjectedPlot $plot, Site $site, CallOffServiceType $serviceType): void
     {
-        if ((int) $plot->site_id !== (int) $site->id) {
-            throw ValidationException::withMessages(['projected_plots' => 'A selected projected plot does not belong to the selected site.']);
-        }
-
-        if ($plot->is_completed) {
-            throw ValidationException::withMessages(['projected_plots' => 'Completed projected plots cannot receive new call-offs.']);
-        }
-
-        if ($plot->services()
-            ->where('service_identifier', $serviceType->value)
-            ->where(function ($query): void {
-                $query->whereNotNull('source_completed_at')
-                    ->orWhereNotNull('source_completion_observed_at');
-            })
-            ->exists()) {
-            throw ValidationException::withMessages(['projected_plots' => 'This completed projected plot service cannot receive a new call-off.']);
-        }
-
+        $projection = $plot->services()->where('service_identifier', $serviceType->value)->first();
         $conflictKey = UpdateConflictKeyAction::keyFor((int) $plot->id, $serviceType->value);
+        $reason = $this->unavailableReasonForProjection(
+            $plot,
+            $projection,
+            $site,
+            $serviceType,
+            CallOffRequest::query()->where('active_conflict_key', $conflictKey)->exists(),
+            false,
+        );
 
-        if (CallOffRequest::query()->where('active_conflict_key', $conflictKey)->exists()) {
-            throw ValidationException::withMessages(['projected_plots' => 'A selected projected plot already has an active request for this service.']);
+        if ($reason !== null) {
+            throw ValidationException::withMessages(['projected_plots' => $reason]);
         }
     }
 

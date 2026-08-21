@@ -14,7 +14,11 @@ class CallOffLeadTimeService
     public function earliestNormalDate(ProjectedPlotService $service, ?CarbonInterface $from = null): CarbonImmutable
     {
         $from = CarbonImmutable::instance($from ?? now())->startOfDay();
-        $weeks = $service->projectedPlot?->products()->get()->contains(fn ($product): bool => $product->isBifold()) ? 5 : 4;
+        $plot = $service->projectedPlot;
+        $products = $plot === null
+            ? collect()
+            : ($plot->relationLoaded('products') ? $plot->products : $plot->products()->get());
+        $weeks = $products->contains(fn ($product): bool => $product->isBifold()) ? 5 : 4;
 
         return $this->nextWorkingDay($from->addWeeks($weeks));
     }
@@ -24,13 +28,21 @@ class CallOffLeadTimeService
         return CarbonImmutable::instance($from ?? now())->startOfDay()->addMonthsNoOverflow(6);
     }
 
-    public function isWithinNormalWindow(ProjectedPlotService $service, CarbonInterface $requestedDate, ?CarbonInterface $from = null): bool
+    public function isPermittedRequestedDate(CarbonInterface $requestedDate, ?CarbonInterface $from = null): bool
     {
         $requestedDate = CarbonImmutable::instance($requestedDate)->startOfDay();
 
         return ! $requestedDate->isWeekend()
             && ! $this->holidays->isHoliday($requestedDate)
-            && $requestedDate->betweenIncluded($this->earliestNormalDate($service, $from), $this->latestNormalDate($from));
+            && $requestedDate->lessThanOrEqualTo($this->latestNormalDate($from));
+    }
+
+    public function isWithinNormalWindow(ProjectedPlotService $service, CarbonInterface $requestedDate, ?CarbonInterface $from = null): bool
+    {
+        $requestedDate = CarbonImmutable::instance($requestedDate)->startOfDay();
+
+        return $this->isPermittedRequestedDate($requestedDate, $from)
+            && $requestedDate->greaterThanOrEqualTo($this->earliestNormalDate($service, $from));
     }
 
     private function nextWorkingDay(CarbonImmutable $date): CarbonImmutable

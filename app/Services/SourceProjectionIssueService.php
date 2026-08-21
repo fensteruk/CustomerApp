@@ -25,4 +25,12 @@ class SourceProjectionIssueService
         $issue->first_detected_at ??= now();
         $issue->save();
     }
+
+    public function resolve(string $key): void
+    {
+        SourceProjectionIssue::query()
+            ->where('issue_key', $key)
+            ->whereNull('resolved_at')
+            ->update(['resolved_at' => now()]);
+    }
 }

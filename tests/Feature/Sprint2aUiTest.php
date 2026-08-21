@@ -58,7 +58,7 @@ it('renders the active-site browsing controls and retains filters in paginator l
     }
 
     $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id]);
-    $response = $this->get('/portal/site-dashboard?plot=UI+Plot&service=cml&status=submitted');
+    $response = $this->get('/portal/site-dashboard?plot=UI+Plot&service=cml&status=awaiting_date');
 
     $response->assertOk()
         ->assertSee('Find a plot')
@@ -81,7 +81,7 @@ it('renders a useful no-result state without leaking another sites call-offs', f
         ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
         ->get('/portal/site-dashboard?plot=nothing')
         ->assertOk()
-        ->assertSee('No call-offs match your filters')
+        ->assertSee('No projected plots')
         ->assertDontSee('Other Site UI Plot');
 });
 
