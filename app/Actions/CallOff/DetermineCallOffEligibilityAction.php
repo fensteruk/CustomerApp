@@ -57,8 +57,34 @@ class DetermineCallOffEligibilityAction
     public function ensureCanWithdraw(User $user, CallOffRequest $request): void
     {
         $this->ensureSiteUserCanActOnRequest($user, $request);
-        $this->ensureStatus($request, CallOffRequestStatus::Submitted, 'Only submitted requests may be withdrawn.');
+        if (! in_array($request->status, [CallOffRequestStatus::Submitted, CallOffRequestStatus::AwaitingFenster, CallOffRequestStatus::AwaitingSiteUser], true)) {
+            throw ValidationException::withMessages(['status' => 'Only call-offs awaiting a date decision may be withdrawn.']);
+        }
         $this->ensureNotTrashed($request);
+    }
+
+    public function ensureCanAgreeRequestedDate(User $user, CallOffRequest $request): void
+    {
+        $this->ensureOfficeStaffCanReview($user, $request);
+        $this->ensureStatus($request, CallOffRequestStatus::AwaitingFenster, 'Only call-offs awaiting Fenster may have their requested date agreed.');
+        $this->ensureNotTrashed($request);
+        $this->ensureRequestSourceIsAvailable($request);
+    }
+
+    public function ensureCanProposeAlternativeDate(User $user, CallOffRequest $request): void
+    {
+        $this->ensureOfficeStaffCanReview($user, $request);
+        $this->ensureStatus($request, CallOffRequestStatus::AwaitingFenster, 'Only call-offs awaiting Fenster may receive an alternative date.');
+        $this->ensureNotTrashed($request);
+        $this->ensureRequestSourceIsAvailable($request);
+    }
+
+    public function ensureCanRespondToAlternative(User $user, CallOffRequest $request): void
+    {
+        $this->ensureSiteUserCanActOnRequest($user, $request);
+        $this->ensureStatus($request, CallOffRequestStatus::AwaitingSiteUser, 'This alternative is no longer awaiting a customer response.');
+        $this->ensureNotTrashed($request);
+        $this->ensureRequestSourceIsAvailable($request);
     }
 
     public function ensureCanTrash(User $user, CallOffRequest $request): void
@@ -219,6 +245,15 @@ class DetermineCallOffEligibilityAction
     {
         if ($request->trashed_at !== null) {
             throw ValidationException::withMessages(['trash' => 'Trashed requests are not eligible for this action.']);
+        }
+    }
+
+    private function ensureRequestSourceIsAvailable(CallOffRequest $request): void
+    {
+        $request->loadMissing('projectedPlotService');
+
+        if ($request->status === CallOffRequestStatus::Completed || $request->projectedPlotService?->isSourceCompleted()) {
+            throw ValidationException::withMessages(['status' => 'This completed service can no longer be negotiated.']);
         }
     }
 }

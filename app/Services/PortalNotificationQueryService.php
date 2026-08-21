@@ -67,15 +67,15 @@ class PortalNotificationQueryService
             return $query->whereRaw('1 = 0');
         }
 
-        $routeName = $user->isFensterOfficeStaff()
-            ? 'portal.review-requests.show'
-            : ($user->isSiteRole() ? 'portal.site-dashboard' : null);
+        $routeNames = $user->isFensterOfficeStaff()
+            ? ['portal.review-requests.show']
+            : ($user->isSiteRole() ? ['portal.site-dashboard', 'portal.call-offs.show'] : []);
 
-        if ($routeName === null) {
+        if ($routeNames === []) {
             return $query->whereRaw('1 = 0');
         }
 
-        $query->where('route_name', $routeName);
+        $query->whereIn('route_name', $routeNames);
 
         if ($user->isFensterOfficeStaff()) {
             return $query;

@@ -4,7 +4,9 @@ use App\Http\Controllers\ActiveSiteController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\CallOffDateNegotiationController;
 use App\Http\Controllers\CallOffLifecycleController;
+use App\Http\Controllers\CallOffRequestDetailsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Development\PreviewRoleController;
 use App\Http\Controllers\NewCallOffController;
@@ -86,6 +88,12 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
             ->name('portal.call-offs.resubmit.confirm');
         Route::post('/portal/call-offs/{callOffRequest:uuid}/resubmit', [ResubmitRejectedCallOffController::class, 'store'])
             ->name('portal.call-offs.resubmit.store');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/alternative-dates/{callOffDateProposal:uuid}/accept', [CallOffDateNegotiationController::class, 'accept'])
+            ->withoutScopedBindings()
+            ->name('portal.call-offs.alternative-dates.accept');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/alternative-dates/{callOffDateProposal:uuid}/reject', [CallOffDateNegotiationController::class, 'reject'])
+            ->withoutScopedBindings()
+            ->name('portal.call-offs.alternative-dates.reject');
 
         Route::post('/portal/call-offs/lifecycle/confirm', [CallOffLifecycleController::class, 'confirm'])
             ->name('portal.call-offs.lifecycle.confirm');
@@ -97,6 +105,8 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
             ->name('portal.call-offs.operations.undo');
         Route::get('/portal/call-offs/trash', [CallOffLifecycleController::class, 'trash'])
             ->name('portal.call-offs.trash');
+        Route::get('/portal/call-offs/{callOffRequest:uuid}', CallOffRequestDetailsController::class)
+            ->name('portal.call-offs.show');
     });
 
     Route::get('/portal/review-requests', [ReviewRequestsController::class, 'index'])
@@ -107,6 +117,10 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
         ->name('portal.review-requests.approve');
     Route::post('/portal/review-requests/{callOffRequest:uuid}/reject', [ReviewRequestsController::class, 'reject'])
         ->name('portal.review-requests.reject');
+    Route::post('/portal/review-requests/{callOffRequest:uuid}/agree-requested-date', [CallOffDateNegotiationController::class, 'agree'])
+        ->name('portal.review-requests.agree-requested-date');
+    Route::post('/portal/review-requests/{callOffRequest:uuid}/alternative-date', [CallOffDateNegotiationController::class, 'propose'])
+        ->name('portal.review-requests.propose-alternative-date');
 });
 
 /*

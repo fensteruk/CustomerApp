@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Actions\CallOff\UpdateConflictKeyAction;
 use App\Data\SourceRecord;
+use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
 use App\Enums\CallOffServiceType;
@@ -189,6 +190,11 @@ class SourceProjectionImportService
     {
         $requests = $service->callOffRequests()->whereIn('status', [CallOffRequestStatus::Submitted, CallOffRequestStatus::Approved, CallOffRequestStatus::AwaitingFenster, CallOffRequestStatus::AwaitingSiteUser, CallOffRequestStatus::DateAgreed, CallOffRequestStatus::AmendmentOnHold])->lockForUpdate()->get();
         foreach ($requests as $request) {
+            $request->dateNegotiations()->where('status', CallOffNegotiationStatus::Open)->each(function ($negotiation): void {
+                $negotiation->proposals()
+                    ->where('status', CallOffDateProposalStatus::AwaitingResponse)
+                    ->update(['status' => CallOffDateProposalStatus::Superseded]);
+            });
             $request->dateNegotiations()->where('status', CallOffNegotiationStatus::Open)->update(['status' => CallOffNegotiationStatus::Completed, 'active_negotiation_key' => null, 'closed_at' => now()]);
             $previousStatus = $request->status;
             $request->status = CallOffRequestStatus::Completed;
