@@ -22,8 +22,10 @@ development checks do not substitute for that approval.
 ## Release branch and contents
 
 - branch: `release/production-migration-repair-2026-08-21`;
-- release code SHA: `1fe5293a62b2458a7edd4afbf3e2d55026a6870d`;
-- remote: `origin/release/production-migration-repair-2026-08-21` at the same SHA.
+- release code SHA: `1fe5293a62b2458a7edd4afbf3e2d55026a6870d`.
+
+The branch may contain documentation-only commits after this code SHA. The code SHA above
+is the exact migration/application content that was rehearsed and requires approval.
 
 The branch is the Sprint 3D baseline plus only these cherry-picked repair commits:
 
