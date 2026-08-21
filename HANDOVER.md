@@ -3,8 +3,8 @@
 ## Management Requirements Reset — 20 August 2026
 
 Status:
-Sprint 3D backend and UI implementation are complete, but dedicated final Sprint 3D QA is
-still required. New customer call-offs use the shared multi-plot/multi-service matrix,
+Sprint 3D backend, UI and dedicated local QA are complete. New customer call-offs use the
+shared multi-plot/multi-service matrix,
 signed server-side review and atomic final submission. The exact UI contract is in
 `documentation/sprint-3d-bulk-call-off-report.md`; do not add a competing creation path.
 Local SQLite `migrate:fresh --seed`, the full Pest suite (162 tests, 771 assertions), Pint,
@@ -20,9 +20,11 @@ The current target, gap analysis and safe implementation order are in:
 - `brief.md` section 17
 - `documentation/management-gap-analysis-2026-08-20.md`
 
-Next milestone:
-Dedicated Sprint 3D QA. Do not begin Sprint 3E or change the signed matrix, session or
-final-submit contract without backend review.
+QA result:
+`documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md` records the passed local
+gate, two QA corrections and outstanding MySQL/holiday/accessibility/production limitations.
+Sprint 3E has not begun. Do not change the signed matrix, session or final-submit contract
+without backend review.
 
 The target glossary is now reflected in the UI: legacy Approved is customer-presented as
 Date Agreed, and source completion takes precedence. Excel integration, attachments,

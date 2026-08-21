@@ -3,9 +3,11 @@
 Sprint 3D — Multi-Plot/Multi-Service Call-Off Backend Contract
 
 Status:
-Backend and UI implementation are complete, but the dedicated final Sprint 3D QA gate has
-not yet run. This is a development checkpoint, subject to the recorded holiday-provider,
-MySQL rehearsal and production-reconciliation limitations.
+Dedicated Sprint 3D QA passed locally on 21 August 2026 after two contained corrections:
+the signed review retains selected plot/fixed service order, and Awaiting Fenster submission
+notifications carry request-level service/date context. Sprint 3E has not begun. This remains
+subject to the recorded holiday-provider, MySQL rehearsal and production-reconciliation
+limitations.
 
 Implementation result:
 
@@ -23,10 +25,11 @@ Implementation result:
 Verification:
 
 - Fresh local SQLite migration and seeding passed on 21 August 2026.
-- Sprint 3D targeted controller/action checks cover direct final POST rejection, replay,
-  stale source state, Office Staff denial and cross-site UUID rejection.
-- Full suite passed: 162 tests, 771 assertions. Pint, `git diff --check` and the production
-  Vite build passed.
+- Sprint 3D QA covers a realistic three-plot/four-service browser journey, confirmation
+  mutations, stale conflict/completion/source/BF/access paths, atomicity, three external
+  roles and per-request notification context.
+- See `documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md` for final command
+  evidence (171 tests, 884 assertions) and remaining release limitations.
 
 Previous Sprint Context:
 

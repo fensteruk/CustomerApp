@@ -8,7 +8,7 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 3D - Multi-Plot/Multi-Service Call-Off (implementation complete; dedicated QA pending)`
+**Current Milestone:** `Sprint 3D - Multi-Plot/Multi-Service Call-Off (local QA passed; Sprint 3E not started)`
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain

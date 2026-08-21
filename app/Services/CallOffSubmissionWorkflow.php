@@ -20,7 +20,7 @@ class CallOffSubmissionWorkflow
     public function review(User $user, Site $site, array $plots, array $dates, array $excluded, array $reasons, ?string $message, Session $session): array
     {
         $rows = $this->matrix->handle($user, $site, $plots, $dates, $excluded, $reasons);
-        $payload = ['user_id' => $user->id, 'site_id' => $site->id, 'message' => $message ?? '', 'rows' => collect($rows)->sortBy('key')->values()->all(), 'request_count' => collect($rows)->where('included', true)->count()];
+        $payload = ['user_id' => $user->id, 'site_id' => $site->id, 'message' => $message ?? '', 'rows' => array_values($rows), 'request_count' => collect($rows)->where('included', true)->count()];
         if ($payload['request_count'] === 0) {
             throw ValidationException::withMessages(['combinations' => 'Select at least one available plot and service combination.']);
         }
@@ -41,7 +41,7 @@ class CallOffSubmissionWorkflow
         $excluded = collect($payload['rows'])->where('included', false)->pluck('key')->all();
         $reasons = collect($payload['rows'])->filter(fn ($row) => $row['is_early_exception'])->mapWithKeys(fn ($row) => [$row['key'] => $row['early_reason']])->all();
         $fresh = $this->matrix->handle($user, $site, $plots, $dates, $excluded, $reasons);
-        $freshPayload = ['user_id' => $user->id, 'site_id' => $site->id, 'message' => $payload['message'], 'rows' => collect($fresh)->sortBy('key')->values()->all(), 'request_count' => collect($fresh)->where('included', true)->count()];
+        $freshPayload = ['user_id' => $user->id, 'site_id' => $site->id, 'message' => $payload['message'], 'rows' => array_values($fresh), 'request_count' => collect($fresh)->where('included', true)->count()];
         if (! hash_equals($payload['signature'], hash_hmac('sha256', json_encode($freshPayload, JSON_THROW_ON_ERROR), (string) config('app.key')))) {
             throw ValidationException::withMessages(['request' => 'One or more plot services changed. Review the call-off again.']);
         }

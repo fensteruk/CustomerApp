@@ -26,13 +26,13 @@ class PortalNotificationService
             return;
         }
 
-        $expectedStatus = match ($type) {
-            PortalNotificationType::CallOffSubmitted => CallOffRequestStatus::Submitted,
-            PortalNotificationType::CallOffApproved => CallOffRequestStatus::Approved,
-            PortalNotificationType::CallOffRejected => CallOffRequestStatus::Rejected,
+        $expectedStatuses = match ($type) {
+            PortalNotificationType::CallOffSubmitted => [CallOffRequestStatus::Submitted, CallOffRequestStatus::AwaitingFenster],
+            PortalNotificationType::CallOffApproved => [CallOffRequestStatus::Approved],
+            PortalNotificationType::CallOffRejected => [CallOffRequestStatus::Rejected],
         };
 
-        if ($request->status !== $expectedStatus) {
+        if (! in_array($request->status, $expectedStatuses, true)) {
             return;
         }
 
@@ -111,8 +111,8 @@ class PortalNotificationService
                     'site_uuid' => null,
                     'site_name' => $site->name,
                     'plot_reference' => $request->projectedPlot->plot_reference,
-                    'service_identifier' => $request->batch->service_identifier,
-                    'requested_date' => $request->batch->requested_date,
+                    'service_identifier' => $request->effectiveServiceIdentifier(),
+                    'requested_date' => $request->requested_date ?? $request->batch->requested_date,
                     'current_status' => $request->status,
                     'customer_response' => $customerResponse,
                     'route_name' => $routeName,

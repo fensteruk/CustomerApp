@@ -5,7 +5,10 @@
 Sprint 3D supplies the secure backend contract and its initial UI for a multi-plot,
 multi-service customer call-off. It remains a Customer Portal request workflow: it reads
 only local projected source facts and does not recreate SiteApp operations, planning or
-write-back. Dedicated final UI/browser QA remains pending.
+write-back. Dedicated final UI/browser QA passed on 21 August 2026 after two contained
+corrections: review rows now retain selected plot/fixed service order, and per-request
+submission notifications now recognise Awaiting Fenster and use the individual request
+service/date. See `documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md`.
 
 ## Route and controller contract
 
