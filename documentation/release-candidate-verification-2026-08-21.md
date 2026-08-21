@@ -5,8 +5,9 @@ _21 August 2026_
 ## Classification
 
 **A — development checkpoint / release candidate suitable for a non-deploying Git push.**
-It is not production-approved. Sprint 3D's UI is implemented but awaits its dedicated
-final QA gate, and the Forge production database reconciliation remains blocked.
+It is not production-approved. Sprint 3D's dedicated local QA gate has passed, but
+production database recovery/reconciliation and the remaining production release gates are
+separate work.
 
 ## Repository and remote baseline
 
@@ -31,6 +32,17 @@ Ignored local-only files were deliberately excluded: `.env`, the local SQLite da
 `node_modules`, `vendor`, generated build/cache/storage files, the local presentation and
 the password file. No generated build artefact is versioned by repository convention.
 
+## Sprint 3D QA correction checkpoint
+
+- Original remote checkpoint: `10be06f6d910f266819d707e627459ee356ad550`.
+- QA correction commit: `34531d2` (`fix: complete Sprint 3D QA corrections`).
+- The reviewed changes preserve submitted plot/service order through signed-review
+  revalidation and emit Awaiting Fenster notifications with each request's own service and
+  requested date.
+- The commit includes the dedicated 3D QA coverage and QA/status documentation only; it
+  does not introduce Sprint 3E work, production configuration, credentials or generated
+  artefacts.
+
 ## Verification
 
 - PHP 8.4.23, Composer 2.10.1, Node 26.5.0, npm 11.17.0 and Git 2.55.0.windows.3 available.
@@ -53,14 +65,17 @@ the password file. No generated build artefact is versioned by repository conven
   markers found.
 - `npm run build` — passed. The sandboxed attempt was blocked by its Windows process-spawn
   restriction; the equivalent local build passed outside that restriction.
+- The final Sprint 3D focused verification passed: 29 tests / 218 assertions.
+- Fresh local SQLite migration/seeding passed; the final full suite passed: 171 tests /
+  884 assertions. Pint, whitespace checking and the approved local Vite production build
+  also passed.
 
 ## Production blockers
 
 - Forge production's migration ledger and schema are unreconciled following the failed
-  Sprint 3A deployment. No verified database recovery point exists.
+  Sprint 3A deployment. Production recovery/reconciliation remains a separate gate.
 - MySQL-compatible migration and concurrency rehearsal remains outstanding.
-- Sprint 3D UI dedicated QA, physical-device evidence and screen-reader evidence remain
-  outstanding.
+- Physical-device and screen-reader evidence remain outstanding.
 
 ## Deployment safety
 
@@ -72,7 +87,7 @@ environment change was performed. The release-candidate branch must not be merge
 
 Checkpoint commit subject: `feat: add Sprint 3A-3D portal checkpoint`.
 
-The exact object SHA is reported in the release handoff after creation: a Git commit cannot
-truthfully contain its own final SHA because changing this document changes that SHA. Push
-and remote-tracking verification are completed before the release handoff; deployment is
-not triggered.
+The Sprint 3D correction commit is `34531d2`. The final remote-tracking SHA is recorded in
+the release handoff after the non-deploying push: a Git commit cannot truthfully contain its
+own final SHA because changing this document changes that SHA. `main` remains untouched and
+no Forge deployment is triggered by this release-candidate checkpoint.
