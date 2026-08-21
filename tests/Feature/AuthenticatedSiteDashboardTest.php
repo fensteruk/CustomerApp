@@ -126,14 +126,12 @@ it('shows the authenticated site dashboard with real projected plots and call-of
         ->assertSee('2')
         ->assertSee('Plot 101')
         ->assertSee('Windows')
-        ->assertSee('20 Aug 2026')
-        ->assertSee('Submitted')
+        ->assertSee('Called Off — Awaiting Date')
         ->assertSee('Plot 102')
         ->assertSee('Cavity Closers')
-        ->assertSee('Approved')
-        ->assertSee('Approved for the requested date.')
+        ->assertSee('Date Agreed')
+        ->assertSee('24 Aug 2026')
         ->assertDontSee('Private office reason')
-        ->assertDontSee('Completed Plot')
         ->assertDontSee('Hidden Plot')
         ->assertDontSee('Delete');
 });
@@ -147,7 +145,7 @@ it('shows no projected plots and no requests empty states', function (): void {
         ->get('/portal/site-dashboard')
         ->assertOk()
         ->assertSee('No projected plots')
-        ->assertSee('No requests');
+        ->assertSee('Source data not yet synchronised');
 });
 
 it('routes office staff to the review requests queue', function (): void {

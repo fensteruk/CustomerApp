@@ -1,14 +1,42 @@
 # Current Sprint
 
-Sprint 3B — Source Projection, Import Contract and MySQL Rehearsal
+Sprint 3D — Multi-Plot/Multi-Service Call-Off Backend Contract
 
 Status:
-SQLite source-projection/import implementation is complete. MySQL rehearsal is blocked by
-the absence of a safe disposable database target and remains required before production-like
-source ingestion.
-Sprint 2A is retained below as historical QA evidence, but its controlled-company-test
-permission is superseded by the 20 August management decision to implement the full
-confirmed programme first.
+Backend and UI implementation are complete, but the dedicated final Sprint 3D QA gate has
+not yet run. This is a development checkpoint, subject to the recorded holiday-provider,
+MySQL rehearsal and production-reconciliation limitations.
+
+Implementation result:
+
+- The old one-service/one-date creation route is replaced for new submissions by one
+  shared start → matrix → signed review → final submit workflow.
+- Dashboard multi-select and the separate New Call Off page validate UUIDs against the
+  active site and feed the same workflow; Office Staff cannot enter it.
+- The final endpoint posts only a server-stored confirmation signature, consumes it before
+  persistence and rebuilds current eligibility before one atomic submission transaction.
+- Each request holds its service/date/early-date facts and Date Requested history. Existing
+  legacy requests, lifecycle actions, notifications and Office review remain readable.
+- UI contract and deferred notification/holiday work are in
+  `documentation/sprint-3d-bulk-call-off-report.md`.
+
+Verification:
+
+- Fresh local SQLite migration and seeding passed on 21 August 2026.
+- Sprint 3D targeted controller/action checks cover direct final POST rejection, replay,
+  stale source state, Office Staff denial and cross-site UUID rejection.
+- Full suite passed: 162 tests, 771 assertions. Pint, `git diff --check` and the production
+  Vite build passed.
+
+Previous Sprint Context:
+
+Sprint 3C — Plot-Centric Site Overview and Plot Details
+
+Status:
+Sprint 3C dedicated QA passed. The authorised local SQLite fresh-migration-and-seed
+rehearsal passed after confirmation that the target was the local CustomerApp SQLite
+database, not MySQL, Forge or production. The final full Pest suite passes (162 tests,
+792 assertions). Sprint 3D has not been started.
 
 Authoritative planning:
 
@@ -18,13 +46,30 @@ Authoritative planning:
 - `documentation/target-domain-v3.md`
 - `documentation/source-integration-contract.md`
 
-Sprint 3B implementation result:
+Sprint 3C implementation result:
 
-- Internal-only, transport-neutral source import maps Call No., site/plot identity, Call
-  Type, completion and product quantities into Portal projections.
-- Durable reconciliation issues cover unknown/duplicate Call No. data, association changes,
-  missing source records, completion inconsistencies and unsafe reversals.
-- No real source transport, parser, scheduler, dashboard or customer import endpoint exists.
+- Replaced the request-card dashboard with an assigned-site plot overview using the fixed
+  Cavity Closers, Windows, Snagging and CML order.
+- Centralised source-aware service and overall presentation state outside Blade. Source
+  completion wins; legacy Approved is displayed as Date Agreed.
+- Added responsive semantic-table/mobile-card browsing, safe UUID plot details, source
+  freshness messaging, filters, default-hidden fully completed plots and customer-safe
+  product quantities.
+- Kept the existing withdrawal, resubmission and Trash panel secondary, retaining its
+  server-side eligibility checks. No source transport or new workflow was added.
+
+QA result — 21 August 2026:
+
+- QA corrected direct UUID access across an assigned-but-not-selected site, which could
+  otherwise render Plot Details under the wrong active-site context. Out-of-context UUIDs
+  now fail without revealing the plot.
+- Full Pest suite passed: 162 tests, 792 assertions. Pint and the production Vite build
+  passed. Browser checks at 320px, 390px, 430px, 768px and 1440px found no document-level
+  horizontal overflow.
+- See `documentation/sprint-3c-plot-overview-qa-report-2026-08-21.md` for the dedicated
+  QA evidence.
+- The authorised local fresh migration/seed rehearsal passed. No production-like MySQL
+  rehearsal was run or implied.
 
 Purpose:
 Define and rehearse the additive, non-destructive migration from the three-service,

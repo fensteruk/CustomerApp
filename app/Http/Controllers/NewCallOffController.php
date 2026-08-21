@@ -2,191 +2,137 @@
 
 namespace App\Http\Controllers;
 
-use App\Actions\CallOff\DetermineCallOffEligibilityAction;
-use App\Actions\CallOff\SubmitCallOffBatchAction;
+use App\Actions\CallOff\BuildCallOffMatrixAction;
 use App\Enums\CallOffServiceType;
-use App\Http\Requests\NewCallOffRequest;
+use App\Http\Requests\BuildCallOffMatrixRequest;
+use App\Http\Requests\DashboardCallOffSelectionRequest;
+use App\Http\Requests\SubmitCallOffConfirmationRequest;
 use App\Models\ProjectedPlot;
 use App\Models\Site;
+use App\Services\CallOffSubmissionWorkflow;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 class NewCallOffController extends Controller
 {
-    public const CONFIRMATION_SIGNATURE_SESSION_KEY = 'call_off_confirmation_signature';
-
-    public function create(Request $request, DetermineCallOffEligibilityAction $eligibility): View
+    public function create(Request $request): View
     {
-        $activeSite = $request->attributes->get('activeSite')->load('customerOrganisation');
+        $site = $this->activeSite($request);
+        Gate::authorize('submit-call-off', $site);
+
+        $selected = $request->validate([
+            'plots' => ['nullable', 'array'],
+            'plots.*' => ['required', 'string', 'uuid', 'distinct'],
+        ])['plots'] ?? [];
+        $this->ensurePlotsBelongToSite($site, $selected);
 
         return view('portal.call-offs.create', [
-            'activeSite' => $activeSite,
+            'activeSite' => $site->load('customerOrganisation'),
             'serviceTypes' => CallOffServiceType::cases(),
-            'eligiblePlotsByService' => $this->eligiblePlotsByService($request, $activeSite, $eligibility),
+            'plots' => $site->projectedPlots()->orderBy('plot_reference')->get(['uuid', 'plot_reference', 'is_completed']),
+            'selectedPlotUuids' => $selected,
         ]);
     }
 
-    public function confirm(NewCallOffRequest $request, DetermineCallOffEligibilityAction $eligibility): View|RedirectResponse
+    public function dashboardSelection(DashboardCallOffSelectionRequest $request): RedirectResponse
     {
-        $activeSite = $request->attributes->get('activeSite')->load('customerOrganisation');
+        $site = $this->activeSite($request);
+        $plots = $request->validated('plots');
+        $this->ensurePlotsBelongToSite($site, $plots);
+
+        return redirect()->route('portal.call-offs.create', ['plots' => $plots]);
+    }
+
+    public function matrix(BuildCallOffMatrixRequest $request, BuildCallOffMatrixAction $matrix): View|RedirectResponse
+    {
+        $site = $this->activeSite($request);
+        $data = $request->validated();
 
         try {
-            $selectedPlots = $this->selectedProjectedPlots($request, $activeSite);
-            $eligibility->ensureCanSubmitBatch($request->user(), $activeSite, $request->serviceType(), $selectedPlots);
+            $rows = $matrix->handle($request->user(), $site, $data['plots'], $data['service_dates'], requireEarlyReasons: false);
         } catch (ValidationException $exception) {
-            return redirect()
-                ->route('portal.call-offs.create')
-                ->withErrors($exception->errors())
-                ->withInput();
+            return redirect()->route('portal.call-offs.create')->withErrors($exception->errors())->withInput();
         }
 
-        $confirmationPayload = $this->confirmationPayload($request);
-        $confirmationSignature = $this->confirmationSignature($confirmationPayload);
-
-        $request->session()->put(self::CONFIRMATION_SIGNATURE_SESSION_KEY, $confirmationSignature);
-
-        return view('portal.call-offs.confirm', [
-            'activeSite' => $activeSite,
-            'serviceType' => $request->serviceType(),
-            'requestedDate' => $request->date('requested_date'),
-            'customerResponse' => $request->validated('customer_response'),
-            'selectedPlots' => $selectedPlots,
-            'formData' => $confirmationPayload,
-            'confirmationSignature' => $confirmationSignature,
+        return view('portal.call-offs.matrix', [
+            'activeSite' => $site,
+            'rows' => $rows,
+            'plots' => $data['plots'],
+            'serviceDates' => $data['service_dates'],
+            'customerResponse' => $data['customer_response'] ?? '',
         ]);
     }
 
-    public function store(NewCallOffRequest $request, SubmitCallOffBatchAction $submitCallOffBatch): RedirectResponse
+    public function review(BuildCallOffMatrixRequest $request, CallOffSubmissionWorkflow $workflow): View|RedirectResponse
     {
-        $activeSite = $request->attributes->get('activeSite');
+        $site = $this->activeSite($request);
+        $data = $request->validated();
 
         try {
-            $this->ensureConfirmedPayload($request);
-
-            $selectedPlots = $this->selectedProjectedPlots($request, $activeSite);
-
-            $batch = $submitCallOffBatch->handle(
-                user: $request->user(),
-                site: $activeSite,
-                serviceType: $request->serviceType(),
-                requestedDate: $request->validated('requested_date'),
-                projectedPlots: $selectedPlots,
-                customerResponse: $request->validated('customer_response'),
+            $payload = $workflow->review(
+                $request->user(),
+                $site,
+                $data['plots'],
+                $data['service_dates'],
+                $data['excluded'] ?? [],
+                $data['early_reasons'] ?? [],
+                $data['customer_response'] ?? null,
+                $request->session(),
             );
         } catch (ValidationException $exception) {
-            return redirect()
-                ->route('portal.call-offs.create')
-                ->withErrors($exception->errors())
-                ->withInput();
+            return redirect()->route('portal.call-offs.create')->withErrors($exception->errors())->withInput();
         }
 
-        $request->session()->forget(self::CONFIRMATION_SIGNATURE_SESSION_KEY);
+        return view('portal.call-offs.confirm', [
+            'activeSite' => $site,
+            'review' => $this->customerSafeReview($payload),
+            'confirmationSignature' => $payload['signature'],
+        ]);
+    }
+
+    public function store(SubmitCallOffConfirmationRequest $request, CallOffSubmissionWorkflow $workflow): RedirectResponse
+    {
+        $site = $this->activeSite($request);
+
+        try {
+            $batch = $workflow->submit($request->user(), $site, (string) $request->validated('confirmation_signature'), $request->session());
+        } catch (ValidationException $exception) {
+            return redirect()->route('portal.call-offs.create')->withErrors($exception->errors());
+        }
 
         $requestCount = $batch->requests->count();
+        $plotCount = $batch->requests->pluck('projected_plot_id')->unique()->count();
 
         return redirect()
             ->route('portal.site-dashboard')
-            ->with('status', 'Call-off submitted for '.$requestCount.' projected '.str('plot')->plural($requestCount).'.');
+            ->with('status', 'Call-off submitted for '.$plotCount.' '.str('plot')->plural($plotCount).' / '.$requestCount.' service '.str('request')->plural($requestCount).'.');
     }
 
-    /**
-     * @return array<string, Collection<int, ProjectedPlot>>
-     */
-    private function eligiblePlotsByService(Request $request, Site $site, DetermineCallOffEligibilityAction $eligibility): array
+    private function activeSite(Request $request): Site
     {
-        $plots = $site->projectedPlots()
-            ->outstanding()
-            ->orderBy('plot_reference')
-            ->get(['id', 'uuid', 'site_id', 'plot_reference', 'is_completed']);
-
-        $eligiblePlots = [];
-
-        foreach (CallOffServiceType::cases() as $serviceType) {
-            $eligiblePlots[$serviceType->value] = $plots
-                ->filter(function (ProjectedPlot $plot) use ($request, $site, $serviceType, $eligibility): bool {
-                    try {
-                        $eligibility->ensureCanSubmitBatch($request->user(), $site, $serviceType, [$plot]);
-                    } catch (ValidationException) {
-                        return false;
-                    }
-
-                    return true;
-                })
-                ->values();
-        }
-
-        return $eligiblePlots;
+        return $request->attributes->get('activeSite');
     }
 
-    /**
-     * @return Collection<int, ProjectedPlot>
-     */
-    private function selectedProjectedPlots(NewCallOffRequest $request, Site $site): Collection
+    /** @param array<int, string> $uuids */
+    private function ensurePlotsBelongToSite(Site $site, array $uuids): void
     {
-        $selectedUuids = Collection::make($request->validated('projected_plots'))
-            ->map(fn (string $uuid): string => trim($uuid))
-            ->values();
-
-        $plots = ProjectedPlot::query()
-            ->where('site_id', $site->id)
-            ->whereIn('uuid', $selectedUuids->all())
-            ->get(['id', 'uuid', 'site_id', 'plot_reference', 'is_completed'])
-            ->keyBy('uuid');
-
-        if ($plots->count() !== $selectedUuids->count()) {
+        if (ProjectedPlot::query()->where('site_id', $site->id)->whereIn('uuid', $uuids)->count() !== count($uuids)) {
             throw ValidationException::withMessages([
-                'projected_plots' => 'One or more selected projected plots are not available for this site.',
+                'plots' => 'One or more selected plots are not available for this site.',
             ]);
         }
-
-        return $selectedUuids
-            ->map(fn (string $uuid): ProjectedPlot => $plots->get($uuid))
-            ->values();
     }
 
-    /**
-     * @return array{service_identifier: string, requested_date: string, customer_response: string, projected_plots: array<int, string>}
-     */
-    private function confirmationPayload(NewCallOffRequest $request): array
+    /** @param array<string, mixed> $payload @return array<string, mixed> */
+    private function customerSafeReview(array $payload): array
     {
-        $validated = $request->validated();
-
         return [
-            'service_identifier' => (string) $validated['service_identifier'],
-            'requested_date' => (string) $validated['requested_date'],
-            'customer_response' => (string) ($validated['customer_response'] ?? ''),
-            'projected_plots' => Collection::make($validated['projected_plots'])
-                ->map(fn (string $uuid): string => trim($uuid))
-                ->values()
-                ->all(),
+            'message' => $payload['message'],
+            'request_count' => $payload['request_count'],
+            'rows' => collect($payload['rows'])->map(fn (array $row): array => collect($row)->except(['plot_service_id'])->all())->all(),
         ];
-    }
-
-    /**
-     * @param  array{service_identifier: string, requested_date: string, customer_response: string, projected_plots: array<int, string>}  $payload
-     */
-    private function confirmationSignature(array $payload): string
-    {
-        return hash_hmac(
-            'sha256',
-            json_encode($payload, JSON_THROW_ON_ERROR),
-            (string) config('app.key'),
-        );
-    }
-
-    private function ensureConfirmedPayload(NewCallOffRequest $request): void
-    {
-        $expectedSignature = $request->session()->get(self::CONFIRMATION_SIGNATURE_SESSION_KEY);
-        $providedSignature = (string) $request->input('confirmation_signature', '');
-        $actualSignature = $this->confirmationSignature($this->confirmationPayload($request));
-
-        if (! is_string($expectedSignature) || ! hash_equals($expectedSignature, $providedSignature) || ! hash_equals($expectedSignature, $actualSignature)) {
-            throw ValidationException::withMessages([
-                'request' => 'Review the call-off details again before submitting.',
-            ]);
-        }
     }
 }

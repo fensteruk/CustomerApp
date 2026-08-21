@@ -47,7 +47,9 @@ The transport-independent `SourceProjectionImportService` processes one Call No.
 database transaction. A malformed row is isolated and recorded; valid rows continue.
 Product quantities are synchronised once per affected plot after its valid records are
 processed. Repeating an identical payload updates freshness but does not duplicate plots,
-services, products, events or issue identities.
+services, products, events or issue identities. The first observed Call No. for an existing
+blank plot/service row counts as a created source projection; subsequent run counts change
+only for source facts, not for Portal observation timestamps.
 
 Products omitted from the latest authoritative plot snapshot are retained at quantity zero.
 This preserves the source truth and auditability while allowing future presentation to hide
@@ -57,6 +59,8 @@ zero quantities.
 
 After a snapshot, known Call Nos. absent from it are never deleted. They remain visible from
 their last known projection, are marked source-missing and create an idempotent issue.
+When that Call No. returns, its existing projection is reused and the missing-source issue
+is resolved rather than duplicated.
 
 When source completion is newly established, active requests on that plot service become
 Completed, open negotiations close as source-completed, their conflict keys clear, and a
@@ -72,3 +76,7 @@ No XLSX/CSV parser, source path, credential or scheduler is configured in Sprint
 future adapter may parse named headers from XLSX, CSV or an API, validate into this contract
 and invoke the importer. Source ownership, credentials and the 1–2 hour production cadence
 remain TBC.
+
+Unexpected importer failures mark their import run as failed and write only safe diagnostic
+metadata (source name, import-run UUID and exception class) to the application log. Raw
+payloads, credentials and exception messages must not be logged by this layer.

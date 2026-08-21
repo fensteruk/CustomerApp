@@ -1,6 +1,6 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 20 August 2026*
+*Last Updated: 21 August 2026*
 
 # Project Overview
 
@@ -8,7 +8,7 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 3B - Source Projection, Import Contract and MySQL Rehearsal (SQLite implemented; MySQL blocked)`
+**Current Milestone:** `Sprint 3D - Multi-Plot/Multi-Service Call-Off (implementation complete; dedicated QA pending)`
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain
@@ -22,7 +22,11 @@ corrections. Sprint 1E backend notifications have been implemented; notification
 UI has been implemented and QA verified after recipient-authorisation, preview-user and
 no-JavaScript form corrections.
 
-Sprint 1G locally verifiable hardening and Sprint 2A readiness evidence remain historical
+Sprint 3C has delivered the source-aware, plot-centric dashboard and authorised plot
+details using the Sprint 3A/3B projections. Dedicated QA passed after an active-site UUID
+containment correction; the full Pest suite passes (162 tests, 792 assertions), and the
+expressly authorised local SQLite `migrate:fresh --seed` rehearsal passed. Sprint 1G locally
+verifiable hardening and Sprint 2A readiness evidence remain historical
 baselines. Management's 20 August requirements supersede the old three-service,
 single-service/single-date batch, assigned-site Office Staff and Approved/Rejected product
 assumptions. The Portal is therefore not ready for company testing until the full
@@ -37,8 +41,8 @@ small incremental Version 1 feature milestones with a controlled target-domain m
 
 1. Sprint 3A — Target domain and access migration contract.
 2. Sprint 3B — Source projection and service eligibility foundation.
-3. Sprint 3C — Lead-time and eligibility engine.
-4. Sprint 3D — Plot-centric overview.
+3. Sprint 3C — Plot-centric overview and plot details.
+4. Sprint 3D — Lead-time and eligibility engine.
 5. Sprint 3E — Multi-plot/multi-service New Call Off.
 6. Sprint 3F — Date negotiation and Office review.
 7. Sprint 3G — Amendments and source completion reconciliation.
@@ -49,8 +53,23 @@ small incremental Version 1 feature milestones with a controlled target-domain m
 
 Sprint 3A has produced the additive schema/access migration spike and preservation tests.
 SQLite QA passed on 20 August 2026 after a non-empty legacy migration rehearsal and two
-narrow data-integrity corrections. MySQL rehearsal remains mandatory before production or
-Sprint 3B source integration.
+narrow data-integrity corrections. Sprint 3B SQLite QA passed on 21 August 2026 after a
+non-empty source-contract rehearsal and import-integrity corrections. MySQL rehearsal
+remains mandatory before production or live source integration.
+
+Sprint 3C implementation adds the four-service plot overview, central source-completion
+precedence, completed-plot visibility control, filters, responsive card/table layouts and
+authorised UUID plot detail pages. It deliberately excludes new call-off, negotiation,
+attachment, calendar/PDF and source-transport work. See
+`documentation/sprint-3c-plot-overview-report.md`.
+Dedicated QA evidence is recorded in
+`documentation/sprint-3c-plot-overview-qa-report-2026-08-21.md`.
+
+Sprint 3D has replaced new-submission creation with a shared active-site UUID selection,
+matrix, signed-review and atomic-final-submit backend flow. The dashboard selected-plots
+entry and New Call Off entry use the same contract. Details for UI consumption, error
+states, early-date exceptions, replay protection and notification limitations are in
+`documentation/sprint-3d-bulk-call-off-report.md`. No Sprint 3E work has started.
 
 ## Sprint 2A — Company Test Readiness
 

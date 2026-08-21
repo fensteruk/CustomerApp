@@ -8,6 +8,7 @@ use App\Http\Controllers\CallOffLifecycleController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Development\PreviewRoleController;
 use App\Http\Controllers\NewCallOffController;
+use App\Http\Controllers\PlotDetailsController;
 use App\Http\Controllers\PortalNotificationController;
 use App\Http\Controllers\ResubmitRejectedCallOffController;
 use App\Http\Controllers\ReviewRequestsController;
@@ -67,10 +68,16 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
         ->name('portal.site-dashboard');
 
     Route::middleware('active.site')->group(function (): void {
+        Route::get('/portal/plots/{projectedPlot:uuid}', PlotDetailsController::class)
+            ->name('portal.plots.show');
         Route::get('/portal/call-offs/new', [NewCallOffController::class, 'create'])
             ->name('portal.call-offs.create');
-        Route::post('/portal/call-offs/confirm', [NewCallOffController::class, 'confirm'])
-            ->name('portal.call-offs.confirm');
+        Route::post('/portal/call-offs/dashboard-selection', [NewCallOffController::class, 'dashboardSelection'])
+            ->name('portal.call-offs.dashboard-selection');
+        Route::post('/portal/call-offs/matrix', [NewCallOffController::class, 'matrix'])
+            ->name('portal.call-offs.matrix');
+        Route::post('/portal/call-offs/review', [NewCallOffController::class, 'review'])
+            ->name('portal.call-offs.review');
         Route::post('/portal/call-offs', [NewCallOffController::class, 'store'])
             ->name('portal.call-offs.store');
         Route::get('/portal/call-offs/{callOffRequest:uuid}/resubmit', [ResubmitRejectedCallOffController::class, 'create'])

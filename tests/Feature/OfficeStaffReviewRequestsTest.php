@@ -271,11 +271,11 @@ it('updates the site-user dashboard after approval and rejection without exposin
         ->get('/portal/site-dashboard')
         ->assertOk()
         ->assertSee('Plot 801')
-        ->assertSee('Approved')
-        ->assertSee('Approved customer response.')
+        ->assertSee('Date Agreed')
         ->assertSee('Plot 802')
-        ->assertSee('Rejected')
-        ->assertSee('Rejected customer response.')
+        ->assertSee('Not Called Off')
+        ->assertDontSee('Approved customer response.')
+        ->assertDontSee('Rejected customer response.')
         ->assertDontSee('Private approval note')
         ->assertDontSee('Private rejection note');
 });
