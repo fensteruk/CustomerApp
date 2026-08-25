@@ -1,9 +1,6 @@
 name: Sprint 3E MySQL release gate
 
 on:
-  push:
-    branches:
-      - release/sprint-3e-date-negotiation-2026-08-25
   workflow_dispatch:
 
 permissions:
