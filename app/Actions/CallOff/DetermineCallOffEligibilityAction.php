@@ -252,7 +252,11 @@ class DetermineCallOffEligibilityAction
     {
         $request->loadMissing('projectedPlotService');
 
-        if ($request->status === CallOffRequestStatus::Completed || $request->projectedPlotService?->isSourceCompleted()) {
+        if ($request->projectedPlotService === null || ! $request->projectedPlotService->source_present) {
+            throw ValidationException::withMessages(['status' => 'This service is no longer available from the source data.']);
+        }
+
+        if ($request->status === CallOffRequestStatus::Completed || $request->projectedPlotService->isSourceCompleted()) {
             throw ValidationException::withMessages(['status' => 'This completed service can no longer be negotiated.']);
         }
     }

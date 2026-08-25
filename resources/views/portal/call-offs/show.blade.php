@@ -3,6 +3,7 @@
         $requestDate = $callOffRequest->requested_date ?? $callOffRequest->batch->requested_date;
         $agreedDate = $callOffRequest->agreed_date ?? ($callOffRequest->isLegacyDateAgreed() ? $requestDate : null);
         $isCompleted = $callOffRequest->status === App\Enums\CallOffRequestStatus::Completed || $callOffRequest->projectedPlotService?->isSourceCompleted();
+        $isSourceAvailable = $callOffRequest->projectedPlotService?->source_present ?? false;
         $proposals = $callOffRequest->dateNegotiations->flatMap(fn ($negotiation) => $negotiation->proposals)->sortBy('sequence')->values();
         $currentProposal = $proposals->first(fn ($proposal) => $proposal->status === App\Enums\CallOffDateProposalStatus::AwaitingResponse && $proposal->proposal_type === App\Enums\CallOffDateProposalType::FensterAlternativeDate);
         $canWithdraw = ! $isCompleted && in_array($callOffRequest->status, [App\Enums\CallOffRequestStatus::Submitted, App\Enums\CallOffRequestStatus::AwaitingFenster, App\Enums\CallOffRequestStatus::AwaitingSiteUser], true);
@@ -49,7 +50,7 @@
                 <h2 id="awaiting-fenster-heading" class="text-lg font-bold text-amber-950">Fenster is reviewing your requested date</h2>
                 <p class="mt-2 text-sm leading-6 text-amber-950">No action is needed from your site at the moment. We will let the original submitter know when Fenster responds.</p>
             </section>
-        @elseif (! $isCompleted && $callOffRequest->status === App\Enums\CallOffRequestStatus::AwaitingSiteUser && $currentProposal)
+        @elseif (! $isCompleted && $isSourceAvailable && $callOffRequest->status === App\Enums\CallOffRequestStatus::AwaitingSiteUser && $currentProposal)
             <section class="mt-6 rounded-xl border border-sky-300 bg-sky-50 p-5" aria-labelledby="alternative-heading">
                 <h2 id="alternative-heading" class="text-xl font-bold text-sky-950">Fenster has proposed an alternative date</h2>
                 <p class="mt-2 text-sm leading-6 text-sky-950">A currently assigned site user needs to accept or reject this date.</p>
