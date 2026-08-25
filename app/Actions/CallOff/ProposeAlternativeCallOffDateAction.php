@@ -23,6 +23,7 @@ class ProposeAlternativeCallOffDateAction
     public function __construct(
         private readonly HolidayProvider $holidays,
         private readonly DetermineCallOffEligibilityAction $eligibility = new DetermineCallOffEligibilityAction,
+        private readonly LockCallOffDateNegotiationAggregateAction $locks = new LockCallOffDateNegotiationAggregateAction,
         private readonly RecordCallOffStatusHistoryAction $history = new RecordCallOffStatusHistoryAction,
     ) {}
 
@@ -31,7 +32,7 @@ class ProposeAlternativeCallOffDateAction
         $date = $this->validDate($proposedDate);
 
         $proposal = DB::transaction(function () use ($actor, $request, $date, $customerMessage, $internalReason): CallOffDateProposal {
-            $request = CallOffRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            [$request] = $this->locks->handle($request);
             $this->eligibility->ensureCanProposeAlternativeDate($actor, $request);
             $negotiation = CallOffDateNegotiation::query()
                 ->where('call_off_request_id', $request->id)
@@ -91,9 +92,21 @@ class ProposeAlternativeCallOffDateAction
     {
         $request->loadMissing('batch');
 
-        return CallOffDateProposal::query()->firstOrCreate(
-            ['call_off_date_negotiation_id' => $negotiation->id, 'proposal_type' => CallOffDateProposalType::CustomerRequestedDate],
-            ['sequence' => 1, 'status' => CallOffDateProposalStatus::AwaitingResponse, 'proposed_date' => $request->requested_date, 'proposed_by_user_id' => $request->batch->submitted_by_user_id, 'customer_response' => $request->customer_response, 'is_earlier_date_exception' => $request->is_early_date_exception, 'proposed_at' => now()],
-        );
+        return CallOffDateProposal::query()
+            ->where('call_off_date_negotiation_id', $negotiation->id)
+            ->where('proposal_type', CallOffDateProposalType::CustomerRequestedDate)
+            ->lockForUpdate()
+            ->first()
+            ?? CallOffDateProposal::query()->create([
+                'call_off_date_negotiation_id' => $negotiation->id,
+                'proposal_type' => CallOffDateProposalType::CustomerRequestedDate,
+                'sequence' => 1,
+                'status' => CallOffDateProposalStatus::AwaitingResponse,
+                'proposed_date' => $request->requested_date,
+                'proposed_by_user_id' => $request->batch->submitted_by_user_id,
+                'customer_response' => $request->customer_response,
+                'is_earlier_date_exception' => $request->is_early_date_exception,
+                'proposed_at' => now(),
+            ]);
     }
 }

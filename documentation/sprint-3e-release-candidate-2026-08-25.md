@@ -2,7 +2,7 @@
 
 ## Overall Result
 
-**BLOCKED.** The validated Sprint 3E and QA corrections were transplanted cleanly onto current `main`, and all available local release checks passed. The mandatory disposable MySQL migration/index/locking/concurrency gate could not be run because no safe MySQL target exists in this environment.
+**BLOCKED — concurrency remediation in progress.** The disposable GitHub-hosted MySQL 8.4 gate subsequently reproduced a source-completion-versus-customer-acceptance deadlock twice. Production and Forge were not contacted. A non-deploying release-branch remediation is aligning source and portal transaction locks before the gate is rerun.
 
 ## Baselines
 
@@ -54,7 +54,12 @@ Confirmed `APP_ENV=local` and `DB_CONNECTION=sqlite`. `php artisan migrate:fresh
 
 ## MySQL Clean Install / Upgrade / Concurrency
 
-**Not run — blocking gate.** PHP has the MySQL driver, but this environment has no MySQL client, Docker runtime, MySQL/MariaDB service, configured host, database or credentials. No unknown or production database was contacted. Consequently clean install, normal upgrade, constraint inspection and the seven requested race scenarios have no new MySQL evidence.
+The GitHub-hosted disposable MySQL 8.4 workflow later supplied the required isolated target. Its clean migration and main-to-Sprint-3E upgrade job passed, but the concurrency job reproduced two release blockers:
+
+- Source completion racing alternative acceptance deadlocked (`SQLSTATE[40001]`, MySQL 1213) while the source path locked the projected service and the portal path locked the request first.
+- Source availability removal racing a date decision demonstrated that the assertion/evidence path needed durable state capture, and confirmed the availability check must occur after authoritative aggregate locks.
+
+The gate is not yet passed. The remediation adds a single source-first aggregate-lock action, source-side negotiation/proposal locks in the same order, post-lock source revalidation, bounded source-record retry for MySQL 1205/1213/40001 only, and durable race snapshots. It must be rerun against the disposable database before any merge or deployment decision.
 
 ## Tests
 
@@ -87,6 +92,6 @@ Sprint 3E adds portal-specific requested-date agreement, alternatives, controlle
 
 ## Release Recommendation
 
-Do not merge this exact branch to `main` and do not deploy. Supply a named, isolated disposable MySQL 8.x target, rerun the complete MySQL gate, then make a separate merge/deployment decision.
+Do not merge this branch to `main` and do not deploy. Complete the remediation's local regression, commit the non-deploying fix branch, then run the existing disposable MySQL 8.4 concurrency gate with repeated real process races. A separate release decision follows only if that gate passes.
 
-Sprint 3E release blocked — MySQL/reconciliation gate incomplete
+Sprint 3E release blocked — MySQL concurrency remediation incomplete

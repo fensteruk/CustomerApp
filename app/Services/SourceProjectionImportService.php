@@ -16,6 +16,7 @@ use App\Models\Site;
 use App\Models\SourceImportRun;
 use App\Models\SourceProjectionEvent;
 use App\Models\SourceProjectionIssue;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -70,7 +71,7 @@ class SourceProjectionImportService
                 }
 
                 try {
-                    $result = DB::transaction(fn (): array => $this->applyRecord($run, $sourceName, $record));
+                    $result = $this->applyRecordTransactionally($run, $sourceName, $record);
                     $counts['records_applied']++;
                     $counts[$result['outcome']]++;
                     $productsByPlot[$result['plot_id']] = array_merge($productsByPlot[$result['plot_id']] ?? [], $record->products);
@@ -188,14 +189,34 @@ class SourceProjectionImportService
     /** @param array<string, mixed> $before */
     private function applyCompletion(ProjectedPlotService $service, SourceImportRun $run, array $before): void
     {
-        $requests = $service->callOffRequests()->whereIn('status', [CallOffRequestStatus::Submitted, CallOffRequestStatus::Approved, CallOffRequestStatus::AwaitingFenster, CallOffRequestStatus::AwaitingSiteUser, CallOffRequestStatus::DateAgreed, CallOffRequestStatus::AmendmentOnHold])->lockForUpdate()->get();
+        $requests = $service->callOffRequests()
+            ->whereIn('status', [CallOffRequestStatus::Submitted, CallOffRequestStatus::Approved, CallOffRequestStatus::AwaitingFenster, CallOffRequestStatus::AwaitingSiteUser, CallOffRequestStatus::DateAgreed, CallOffRequestStatus::AmendmentOnHold])
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->get();
+
         foreach ($requests as $request) {
-            $request->dateNegotiations()->where('status', CallOffNegotiationStatus::Open)->each(function ($negotiation): void {
+            $negotiations = $request->dateNegotiations()
+                ->where('status', CallOffNegotiationStatus::Open)
+                ->orderBy('id')
+                ->lockForUpdate()
+                ->get();
+
+            foreach ($negotiations as $negotiation) {
                 $negotiation->proposals()
                     ->where('status', CallOffDateProposalStatus::AwaitingResponse)
-                    ->update(['status' => CallOffDateProposalStatus::Superseded]);
-            });
-            $request->dateNegotiations()->where('status', CallOffNegotiationStatus::Open)->update(['status' => CallOffNegotiationStatus::Completed, 'active_negotiation_key' => null, 'closed_at' => now()]);
+                    ->orderBy('id')
+                    ->lockForUpdate()
+                    ->get()
+                    ->each(fn ($proposal) => $proposal->update(['status' => CallOffDateProposalStatus::Superseded]));
+
+                $negotiation->update([
+                    'status' => CallOffNegotiationStatus::Completed,
+                    'active_negotiation_key' => null,
+                    'closed_at' => now(),
+                ]);
+            }
+
             $previousStatus = $request->status;
             $request->status = CallOffRequestStatus::Completed;
             $this->conflicts->handle($request);
@@ -204,6 +225,41 @@ class SourceProjectionImportService
         if ($requests->isEmpty()) {
             SourceProjectionEvent::query()->create(['source_import_run_id' => $run->id, 'projected_plot_service_id' => $service->id, 'event_type' => 'completion_recorded', 'before_state' => $before, 'after_state' => ['completed_at' => $service->source_completed_at?->toDateString()], 'occurred_at' => now()]);
         }
+    }
+
+    /** @return array{outcome: string, plot_id: int} */
+    private function applyRecordTransactionally(SourceImportRun $run, string $sourceName, SourceRecord $record): array
+    {
+        $maximumAttempts = DB::connection()->getDriverName() === 'mysql' ? 3 : 1;
+
+        for ($attempt = 1; $attempt <= $maximumAttempts; $attempt++) {
+            try {
+                return DB::transaction(fn (): array => $this->applyRecord($run, $sourceName, $record));
+            } catch (QueryException $exception) {
+                if (! $this->isRetryableMysqlConcurrencyFailure($exception) || $attempt === $maximumAttempts) {
+                    throw $exception;
+                }
+
+                // The whole source record transaction is retried from fresh state.
+                // The short bounded delay only covers residual engine deadlocks; it
+                // does not substitute for the canonical lock order above.
+                usleep($attempt * 25_000);
+            }
+        }
+
+        throw new \LogicException('Source transaction retry loop unexpectedly exhausted.');
+    }
+
+    private function isRetryableMysqlConcurrencyFailure(QueryException $exception): bool
+    {
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return false;
+        }
+
+        $errorInfo = $exception->errorInfo ?? [];
+
+        return $exception->getCode() === '40001'
+            || in_array($errorInfo[1] ?? null, [1205, 1213], true);
     }
 
     /** @param array<string, mixed> $before */

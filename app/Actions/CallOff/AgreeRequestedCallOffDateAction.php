@@ -20,6 +20,7 @@ class AgreeRequestedCallOffDateAction
 {
     public function __construct(
         private readonly DetermineCallOffEligibilityAction $eligibility = new DetermineCallOffEligibilityAction,
+        private readonly LockCallOffDateNegotiationAggregateAction $locks = new LockCallOffDateNegotiationAggregateAction,
         private readonly UpdateConflictKeyAction $updateConflictKey = new UpdateConflictKeyAction,
         private readonly RecordCallOffStatusHistoryAction $history = new RecordCallOffStatusHistoryAction,
     ) {}
@@ -27,7 +28,7 @@ class AgreeRequestedCallOffDateAction
     public function handle(User $actor, CallOffRequest $request, bool $acknowledgeEarlyDate = false): CallOffRequest
     {
         $agreedRequest = DB::transaction(function () use ($actor, $request, $acknowledgeEarlyDate): CallOffRequest {
-            $request = CallOffRequest::query()->whereKey($request->id)->lockForUpdate()->firstOrFail();
+            [$request] = $this->locks->handle($request);
             $this->eligibility->ensureCanAgreeRequestedDate($actor, $request);
 
             if ($request->requested_date === null) {
@@ -67,19 +68,40 @@ class AgreeRequestedCallOffDateAction
 
     private function initialNegotiation(CallOffRequest $request): CallOffDateNegotiation
     {
-        return CallOffDateNegotiation::query()->firstOrCreate(
-            ['call_off_request_id' => $request->id, 'purpose' => CallOffNegotiationPurpose::Initial, 'active_negotiation_key' => 'initial:'.$request->id],
-            ['status' => CallOffNegotiationStatus::Open, 'opened_at' => now()],
-        );
+        return CallOffDateNegotiation::query()
+            ->where('call_off_request_id', $request->id)
+            ->where('purpose', CallOffNegotiationPurpose::Initial)
+            ->lockForUpdate()
+            ->first()
+            ?? CallOffDateNegotiation::query()->create([
+                'call_off_request_id' => $request->id,
+                'purpose' => CallOffNegotiationPurpose::Initial,
+                'active_negotiation_key' => 'initial:'.$request->id,
+                'status' => CallOffNegotiationStatus::Open,
+                'opened_at' => now(),
+            ]);
     }
 
     private function requestedDateProposal(CallOffDateNegotiation $negotiation, CallOffRequest $request, bool $acknowledged): CallOffDateProposal
     {
         $request->loadMissing('batch');
 
-        return CallOffDateProposal::query()->firstOrCreate(
-            ['call_off_date_negotiation_id' => $negotiation->id, 'proposal_type' => CallOffDateProposalType::CustomerRequestedDate],
-            ['sequence' => 1, 'status' => CallOffDateProposalStatus::AwaitingResponse, 'proposed_date' => $request->requested_date, 'proposed_by_user_id' => $request->batch->submitted_by_user_id, 'customer_response' => $request->customer_response, 'is_earlier_date_exception' => $request->is_early_date_exception, 'earlier_date_acknowledged_at' => $acknowledged ? now() : null, 'proposed_at' => now()],
-        );
+        return CallOffDateProposal::query()
+            ->where('call_off_date_negotiation_id', $negotiation->id)
+            ->where('proposal_type', CallOffDateProposalType::CustomerRequestedDate)
+            ->lockForUpdate()
+            ->first()
+            ?? CallOffDateProposal::query()->create([
+                'call_off_date_negotiation_id' => $negotiation->id,
+                'proposal_type' => CallOffDateProposalType::CustomerRequestedDate,
+                'sequence' => 1,
+                'status' => CallOffDateProposalStatus::AwaitingResponse,
+                'proposed_date' => $request->requested_date,
+                'proposed_by_user_id' => $request->batch->submitted_by_user_id,
+                'customer_response' => $request->customer_response,
+                'is_earlier_date_exception' => $request->is_early_date_exception,
+                'earlier_date_acknowledged_at' => $acknowledged ? now() : null,
+                'proposed_at' => now(),
+            ]);
     }
 }
