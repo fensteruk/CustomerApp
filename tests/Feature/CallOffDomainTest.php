@@ -356,6 +356,22 @@ it('quick undoes eligible withdrawal operations within five seconds', function (
         ->and(CallOffStatusHistory::query()->where('event_type', CallOffHistoryEventType::UndoApplied)->count())->toBe(1);
 });
 
+it('quick undoes a withdrawal when the stored JSON snapshot has a different key order', function (): void {
+    $user = callOffUser(PortalRoleIdentifier::SiteManager);
+    $site = callOffAssignedSite($user);
+    $request = callOffSubmit($user, $site, [callOffPlot($site)])->requests()->firstOrFail();
+    $operation = app(WithdrawCallOffRequestsAction::class)->handle($user, [$request]);
+    $item = $operation->items->sole();
+
+    // MySQL's binary JSON representation does not guarantee the PHP insertion order.
+    $item->after_state = array_reverse($item->after_state, true);
+    $item->save();
+
+    app(QuickUndoCallOffOperationAction::class)->handle($user, $operation);
+
+    expect($request->fresh()->status)->toBe(CallOffRequestStatus::Submitted);
+});
+
 it('rejects expired or diverged quick Undo operations atomically', function (): void {
     $user = callOffUser(PortalRoleIdentifier::SiteManager);
     $site = callOffAssignedSite($user);
