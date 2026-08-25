@@ -1,13 +1,27 @@
 # Current Sprint
 
+## Release-management status — 25 August 2026
+
+Production is serving `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` after
+the controlled MySQL migration-recovery deployment recorded in
+`documentation/production-deployment-recovery-2026-08-21.md`. The MySQL-safe migration
+repairs are production-critical and must remain unchanged unless a later MySQL-rehearsed,
+approved replacement exists.
+
+Sprint 3E implementation exists only on `release-candidate/sprint-3d` at `47e8ccc`; its
+own report classifies it as ready for dedicated QA, not QA-approved. It is therefore
+excluded from `main` and production. Current work is release reconciliation only; do not
+begin or deploy Sprint 3E without its dedicated QA and a separately approved release.
+
 Sprint 3D — Multi-Plot/Multi-Service Call-Off Backend Contract
 
 Status:
 Dedicated Sprint 3D QA passed locally on 21 August 2026 after two contained corrections:
 the signed review retains selected plot/fixed service order, and Awaiting Fenster submission
-notifications carry request-level service/date context. Sprint 3E has not begun. This remains
-subject to the recorded holiday-provider, MySQL rehearsal and production-reconciliation
-limitations.
+notifications carry request-level service/date context. The historical statement that
+Sprint 3E had not begun is superseded by the release-management status above: an unapproved
+Sprint 3E implementation exists on a side branch and remains excluded. This remains subject
+to the recorded holiday-provider, MySQL rehearsal and production-reconciliation limitations.
 
 Implementation result:
 

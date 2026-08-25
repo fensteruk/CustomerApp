@@ -1,6 +1,6 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 21 August 2026*
+*Last Updated: 25 August 2026*
 
 # Project Overview
 
@@ -8,7 +8,14 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 3D - Multi-Plot/Multi-Service Call-Off (local QA passed; Sprint 3E not started)`
+**Current Milestone:** `Release reconciliation (Sprint 3D deployed; Sprint 3E awaiting dedicated QA)`
+
+Release-management update: production serves `main`
+`f801c91113bd13656c6cbffdd3d82c12d4a95846`, deployed successfully after the documented
+MySQL migration repair. The four repaired historical migrations are production-critical.
+Sprint 3E implementation is present only in side-branch commit `47e8ccc`; the associated
+report says it is ready for dedicated QA, not that the QA gate has passed. It is excluded
+from `main` and production pending that gate and an explicit release decision.
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain
@@ -69,7 +76,8 @@ Sprint 3D has replaced new-submission creation with a shared active-site UUID se
 matrix, signed-review and atomic-final-submit backend flow. The dashboard selected-plots
 entry and New Call Off entry use the same contract. Details for UI consumption, error
 states, early-date exceptions, replay protection and notification limitations are in
-`documentation/sprint-3d-bulk-call-off-report.md`. No Sprint 3E work has started.
+`documentation/sprint-3d-bulk-call-off-report.md`. A later Sprint 3E implementation exists
+only on the excluded side branch described above; it is not current approved work.
 
 ## Sprint 2A — Company Test Readiness
 

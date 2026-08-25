@@ -1,5 +1,17 @@
 # Fenster Customer Portal Handover
 
+## Release-management status — 25 August 2026
+
+Production serves `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` through the
+successful controlled migration-recovery deployment. The exact evidence is retained in
+`documentation/production-deployment-recovery-2026-08-21.md`; do not replace the four
+MySQL-safe repaired historical migrations with older variants.
+
+Sprint 3E has implementation only on `release-candidate/sprint-3d` at `47e8ccc`. Its
+implementation report records readiness for dedicated QA, not a QA pass. It is not on
+`main` or production and must remain excluded until its whole intended release passes that
+gate and receives separate release approval.
+
 ## Management Requirements Reset — 20 August 2026
 
 Status:
@@ -23,8 +35,9 @@ The current target, gap analysis and safe implementation order are in:
 QA result:
 `documentation/sprint-3d-bulk-call-off-qa-report-2026-08-21.md` records the passed local
 gate, two QA corrections and outstanding MySQL/holiday/accessibility/production limitations.
-Sprint 3E has not begun. Do not change the signed matrix, session or final-submit contract
-without backend review.
+The historical statement that Sprint 3E had not begun is superseded by the
+release-management status above. Do not change the signed matrix, session or final-submit
+contract without backend review.
 
 The target glossary is now reflected in the UI: legacy Approved is customer-presented as
 Date Agreed, and source completion takes precedence. Excel integration, attachments,
