@@ -82,6 +82,7 @@ jobs:
           test_exit=$?
           if [ "$test_exit" -ne 0 ]; then
             tail -n 240 "$RUNNER_TEMP/full-mysql.xml"
+            php -r '$xml = simplexml_load_file($argv[1]); $cases = $xml === false ? [] : $xml->xpath("//testcase[failure or error or warning]"); if ($cases) { $case = $cases[0]; $detail = ""; foreach (["failure", "error", "warning"] as $type) { if (isset($case->{$type})) { $detail = trim((string) $case->{$type}); break; } } $detail = substr(preg_replace("/\\s+/", " ", $detail), 0, 1800); echo "::error title=MySQL test failure::".(string) $case["classname"]." :: ".(string) $case["name"]." — ".$detail.PHP_EOL; }' "$RUNNER_TEMP/full-mysql.xml"
             exit "$test_exit"
           fi
 
@@ -98,6 +99,7 @@ jobs:
           test_exit=$?
           if [ "$test_exit" -ne 0 ]; then
             tail -n 240 "$RUNNER_TEMP/focused-mysql.xml"
+            php -r '$xml = simplexml_load_file($argv[1]); $cases = $xml === false ? [] : $xml->xpath("//testcase[failure or error or warning]"); if ($cases) { $case = $cases[0]; $detail = ""; foreach (["failure", "error", "warning"] as $type) { if (isset($case->{$type})) { $detail = trim((string) $case->{$type}); break; } } $detail = substr(preg_replace("/\\s+/", " ", $detail), 0, 1800); echo "::error title=MySQL test failure::".(string) $case["classname"]." :: ".(string) $case["name"]." — ".$detail.PHP_EOL; }' "$RUNNER_TEMP/focused-mysql.xml"
             exit "$test_exit"
           fi
 
@@ -157,5 +159,6 @@ jobs:
           test_exit=$?
           if [ "$test_exit" -ne 0 ]; then
             tail -n 240 "$RUNNER_TEMP/upgrade-mysql.xml"
+            php -r '$xml = simplexml_load_file($argv[1]); $cases = $xml === false ? [] : $xml->xpath("//testcase[failure or error or warning]"); if ($cases) { $case = $cases[0]; $detail = ""; foreach (["failure", "error", "warning"] as $type) { if (isset($case->{$type})) { $detail = trim((string) $case->{$type}); break; } } $detail = substr(preg_replace("/\\s+/", " ", $detail), 0, 1800); echo "::error title=MySQL test failure::".(string) $case["classname"]." :: ".(string) $case["name"]." — ".$detail.PHP_EOL; }' "$RUNNER_TEMP/upgrade-mysql.xml"
             exit "$test_exit"
           fi
