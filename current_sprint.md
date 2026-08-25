@@ -8,10 +8,10 @@ the controlled MySQL migration-recovery deployment recorded in
 repairs are production-critical and must remain unchanged unless a later MySQL-rehearsed,
 approved replacement exists.
 
-Sprint 3E implementation exists only on `release-candidate/sprint-3d` at `47e8ccc`; its
-own report classifies it as ready for dedicated QA, not QA-approved. It is therefore
-excluded from `main` and production. Current work is release reconciliation only; do not
-begin or deploy Sprint 3E without its dedicated QA and a separately approved release.
+Sprint 3E passed dedicated QA and has been reconstructed on the non-deploying release branch
+`release/sprint-3e-date-negotiation-2026-08-25`. It remains excluded from `main` and production:
+the mandatory disposable MySQL clean-install, upgrade, index and concurrency gate is blocked by
+the absence of a safe target. See `documentation/sprint-3e-release-candidate-2026-08-25.md`.
 
 Sprint 3D — Multi-Plot/Multi-Service Call-Off Backend Contract
 

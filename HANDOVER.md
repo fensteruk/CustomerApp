@@ -7,10 +7,12 @@ successful controlled migration-recovery deployment. The exact evidence is retai
 `documentation/production-deployment-recovery-2026-08-21.md`; do not replace the four
 MySQL-safe repaired historical migrations with older variants.
 
-Sprint 3E has implementation only on `release-candidate/sprint-3d` at `47e8ccc`. Its
-implementation report records readiness for dedicated QA, not a QA pass. It is not on
-`main` or production and must remain excluded until its whole intended release passes that
-gate and receives separate release approval.
+Sprint 3E passed dedicated QA and was transplanted from `47e8ccc` plus QA commit `a38d557`
+onto `release/sprint-3e-date-negotiation-2026-08-25`, which starts from current `main`.
+It is not on `main` or production. The mandatory disposable MySQL clean-install, upgrade,
+index and concurrency gate is unavailable in this environment, so the release candidate is
+blocked pending a safe target and separate merge/deployment approval. See
+`documentation/sprint-3e-release-candidate-2026-08-25.md`.
 
 ## Management Requirements Reset — 20 August 2026
 

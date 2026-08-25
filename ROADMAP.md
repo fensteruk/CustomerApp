@@ -8,14 +8,14 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Release reconciliation (Sprint 3D deployed; Sprint 3E awaiting dedicated QA)`
+**Current Milestone:** `Sprint 3E release candidate (MySQL gate blocked)`
 
 Release-management update: production serves `main`
 `f801c91113bd13656c6cbffdd3d82c12d4a95846`, deployed successfully after the documented
 MySQL migration repair. The four repaired historical migrations are production-critical.
-Sprint 3E implementation is present only in side-branch commit `47e8ccc`; the associated
-report says it is ready for dedicated QA, not that the QA gate has passed. It is excluded
-from `main` and production pending that gate and an explicit release decision.
+Sprint 3E dedicated QA passed and its validated work has been transplanted onto a release branch
+from current `main`. It remains excluded from `main` and production pending the mandatory
+disposable MySQL release gate and explicit merge/deployment approval.
 
 Status: Laravel project and SiteApp-matched dependency stack created. Sprint 1A secure
 access and domain foundation has been implemented and verified. Sprint 1B call-off domain
