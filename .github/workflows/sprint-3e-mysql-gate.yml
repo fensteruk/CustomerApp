@@ -76,17 +76,30 @@ jobs:
         run: vendor/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlSchemaTest.php
 
       - name: Run full MySQL suite
-        run: vendor/bin/pest --configuration=phpunit.mysql.xml
+        run: |
+          set +e
+          vendor/bin/pest --configuration=phpunit.mysql.xml --no-output --log-junit "$RUNNER_TEMP/full-mysql.xml"
+          test_exit=$?
+          if [ "$test_exit" -ne 0 ]; then
+            tail -n 240 "$RUNNER_TEMP/full-mysql.xml"
+            exit "$test_exit"
+          fi
 
       - name: Run focused Sprint 3D, 3E, source and notification suite
-        run: >-
-          vendor/bin/pest --configuration=phpunit.mysql.xml
-          tests/Feature/Sprint3dBulkCallOffQaTest.php
-          tests/Feature/Sprint3eDateNegotiationTest.php
-          tests/Feature/Sprint3eDateNegotiationUiTest.php
-          tests/Feature/Sprint3eDateNegotiationQaTest.php
-          tests/Feature/Sprint3bSourceProjectionImportTest.php
-          tests/Feature/PortalNotificationsTest.php
+        run: |
+          set +e
+          vendor/bin/pest --configuration=phpunit.mysql.xml --no-output --log-junit "$RUNNER_TEMP/focused-mysql.xml" \
+            tests/Feature/Sprint3dBulkCallOffQaTest.php \
+            tests/Feature/Sprint3eDateNegotiationTest.php \
+            tests/Feature/Sprint3eDateNegotiationUiTest.php \
+            tests/Feature/Sprint3eDateNegotiationQaTest.php \
+            tests/Feature/Sprint3bSourceProjectionImportTest.php \
+            tests/Feature/PortalNotificationsTest.php
+          test_exit=$?
+          if [ "$test_exit" -ne 0 ]; then
+            tail -n 240 "$RUNNER_TEMP/focused-mysql.xml"
+            exit "$test_exit"
+          fi
 
       - name: Run true concurrent-write MySQL gate
         run: vendor/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlConcurrencyTest.php
@@ -136,7 +149,13 @@ jobs:
         run: |
           php artisan migrate --force
           php artisan migrate:status
-          vendor/bin/pest --configuration=phpunit.mysql.xml \
+          set +e
+          vendor/bin/pest --configuration=phpunit.mysql.xml --no-output --log-junit "$RUNNER_TEMP/upgrade-mysql.xml" \
             tests/Feature/Sprint3eDateNegotiationTest.php \
             tests/Feature/Sprint3eDateNegotiationUiTest.php \
             tests/Feature/Sprint3eDateNegotiationQaTest.php
+          test_exit=$?
+          if [ "$test_exit" -ne 0 ]; then
+            tail -n 240 "$RUNNER_TEMP/upgrade-mysql.xml"
+            exit "$test_exit"
+          fi
