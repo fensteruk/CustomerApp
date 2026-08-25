@@ -14,11 +14,12 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
         FROM information_schema.key_column_usage
         WHERE constraint_schema = DATABASE()
           AND referenced_table_name IS NOT NULL
-        SQL))->mapWithKeys(fn (object $key): array => [$key->constraint_name => [
-        'table' => $key->table_name,
-        'column' => $key->column_name,
-        'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
-    ]]);
+        SQL))->map(fn (object $key): object => (object) array_change_key_case((array) $key, CASE_LOWER))
+        ->mapWithKeys(fn (object $key): array => [$key->constraint_name => [
+            'table' => $key->table_name,
+            'column' => $key->column_name,
+            'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
+        ]]);
 
     expect($foreignKeys->only([
         'operation_items_operation_fk',
@@ -40,7 +41,7 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
         FROM information_schema.statistics
         WHERE table_schema = DATABASE()
         GROUP BY table_name, index_name, non_unique
-        SQL));
+        SQL))->map(fn (object $index): object => (object) array_change_key_case((array) $index, CASE_LOWER));
 
     $indexNames = $indexes->pluck('index_name')->all();
     expect($indexNames)->toContain(
@@ -78,7 +79,8 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
               ('call_off_requests', 'active_conflict_key'),
               ('call_off_date_proposals', 'responded_by_user_id')
           )
-        SQL))->mapWithKeys(fn (object $column): array => ["{$column->table_name}.{$column->column_name}" => $column->is_nullable]);
+        SQL))->map(fn (object $column): object => (object) array_change_key_case((array) $column, CASE_LOWER))
+        ->mapWithKeys(fn (object $column): array => ["{$column->table_name}.{$column->column_name}" => $column->is_nullable]);
     expect($columns)->toBe([
         'call_off_requests.projected_plot_service_id' => 'YES',
         'call_off_requests.active_conflict_key' => 'YES',

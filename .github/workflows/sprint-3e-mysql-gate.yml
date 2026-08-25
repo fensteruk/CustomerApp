@@ -72,14 +72,14 @@ jobs:
           php artisan migrate:status
 
       - name: Inspect MySQL schema and production-repaired constraints
-        run: php artisan test --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlSchemaTest.php
+        run: vendor/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlSchemaTest.php
 
       - name: Run full MySQL suite
-        run: php artisan test --configuration=phpunit.mysql.xml
+        run: vendor/bin/pest --configuration=phpunit.mysql.xml
 
       - name: Run focused Sprint 3D, 3E, source and notification suite
         run: >-
-          php artisan test --configuration=phpunit.mysql.xml
+          vendor/bin/pest --configuration=phpunit.mysql.xml
           tests/Feature/Sprint3dBulkCallOffQaTest.php
           tests/Feature/Sprint3eDateNegotiationTest.php
           tests/Feature/Sprint3eDateNegotiationUiTest.php
@@ -88,7 +88,7 @@ jobs:
           tests/Feature/PortalNotificationsTest.php
 
       - name: Run true concurrent-write MySQL gate
-        run: php artisan test --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlConcurrencyTest.php
+        run: vendor/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlConcurrencyTest.php
 
   mysql-main-to-release-upgrade:
     name: Main-to-Sprint-3E MySQL upgrade gate
@@ -135,7 +135,7 @@ jobs:
         run: |
           php artisan migrate --force
           php artisan migrate:status
-          php artisan test --configuration=phpunit.mysql.xml \
+          vendor/bin/pest --configuration=phpunit.mysql.xml \
             tests/Feature/Sprint3eDateNegotiationTest.php \
             tests/Feature/Sprint3eDateNegotiationUiTest.php \
             tests/Feature/Sprint3eDateNegotiationQaTest.php
