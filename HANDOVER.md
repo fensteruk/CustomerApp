@@ -3,8 +3,8 @@
 ## Management Requirements Reset — 20 August 2026
 
 Status:
-Sprint 3E date-agreement and alternative-date-negotiation backend and UI are complete
-locally and ready for dedicated QA.
+Sprint 3E date-agreement and alternative-date-negotiation dedicated QA passed locally on
+25 August 2026. It is ready for non-deploying release-branch preparation only.
 Sprint 3D backend, UI and dedicated local QA remain the creation foundation. New customer call-offs use the
 shared multi-plot/multi-service matrix,
 signed server-side review and atomic final submission. The exact UI contract is in
@@ -36,12 +36,18 @@ conflict key, and withdrawal stays available only while awaiting a date decision
 weekday-only `HolidayProvider` remains a documented temporary assumption pending an owned
 UK bank-holiday data provider. See `documentation/sprint-3e-date-negotiation-report.md`.
 
-Sprint 3E UI verification: local SQLite `migrate:fresh --seed`, 16 focused tests / 89
-assertions, the full 187-test / 973-assertion suite, Pint, Vite production build and
-whitespace check passed. Browser evidence covered the early-date/alternative/acceptance
-flow and no document overflow at 320, 390, 430, 768 or 1440px. No browser console warnings
-or errors were captured. MySQL rehearsal, the holiday-data provider, physical-device and
-assistive-technology evidence remain separate QA/release limitations.
+Sprint 3E QA verification: confirmed local SQLite `migrate:fresh --seed`, 25 focused/hostile
+tests / 133 assertions and the full 196-test / 1,017-assertion suite passed. Composer validation,
+Pint, Vite production build and whitespace check passed. Browser evidence covered the
+customer/Office proposal-and-acceptance flow at 320, 768 and 1440px with no document overflow or
+private Office context in customer DOM. QA fixed history truthfulness, source-availability
+revalidation and stale response controls. MySQL rehearsal, holiday-data ownership, physical-device
+and assistive-technology evidence remain release limitations. See
+`documentation/sprint-3e-date-negotiation-qa-report-2026-08-25.md`.
+
+Release preparation note: the QA candidate predates current `main`'s production recovery commits.
+Create a new release branch from current `main`, transplant the validated Sprint 3E and QA commits,
+then rerun checks. Do not merge, deploy or run production migrations from this QA branch.
 
 The target glossary is now reflected in the UI: legacy Approved is customer-presented as
 Date Agreed, and source completion takes precedence. Excel integration, attachments,

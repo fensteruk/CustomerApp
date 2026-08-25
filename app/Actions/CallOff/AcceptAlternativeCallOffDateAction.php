@@ -37,12 +37,12 @@ class AcceptAlternativeCallOffDateAction
             $before = $request->stateSnapshot();
             $previous = $request->status;
             $proposal->update(['status' => CallOffDateProposalStatus::Accepted, 'responded_by_user_id' => $actor->id, 'responded_at' => now()]);
+            $this->history->handle($request, $actor, CallOffHistoryEventType::AlternativeDateAccepted, $previous, $previous, $before, $before);
             $negotiation->update(['status' => CallOffNegotiationStatus::DateAgreed, 'active_negotiation_key' => null, 'closed_at' => now()]);
             $request->update(['status' => CallOffRequestStatus::DateAgreed, 'agreed_date' => $proposal->proposed_date]);
             $this->updateConflictKey->handle($request);
             $request->refresh();
-            $this->history->handle($request, $actor, CallOffHistoryEventType::AlternativeDateAccepted, $previous, CallOffRequestStatus::DateAgreed, $before, $request->stateSnapshot());
-            $this->history->handle($request, $actor, CallOffHistoryEventType::DateAgreed, CallOffRequestStatus::DateAgreed, CallOffRequestStatus::DateAgreed, $request->stateSnapshot(), $request->stateSnapshot());
+            $this->history->handle($request, $actor, CallOffHistoryEventType::DateAgreed, $previous, CallOffRequestStatus::DateAgreed, $before, $request->stateSnapshot());
 
             return $request;
         });

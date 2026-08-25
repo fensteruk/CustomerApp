@@ -3,7 +3,7 @@
 Sprint 3E — Date Agreement and Alternative-Date Negotiation
 
 Status:
-Sprint 3E backend and UI implementation is complete locally on 21 August 2026. It adds the
+Dedicated Sprint 3E QA passed locally on 25 August 2026. The candidate adds the
 individual-request date-agreement and alternative-date loop on top of the QA-approved
 Sprint 3D submission contract. No deployment, production database action, source transport,
 amendment, attachment, calendar/PDF, reminder or SiteApp work was performed.
@@ -31,15 +31,15 @@ Implementation result:
 
 Verification:
 
-- Local SQLite `migrate:fresh --seed` passed. Focused Sprint 3E Pest coverage passes:
-  16 tests, 89 assertions. The complete suite passes: 187 tests, 973 assertions. Pint,
-  `git diff --check` and the production Vite build also pass.
-- Local browser evidence covers early-date handling, Office alternative proposal, customer
-  acceptance and Date Agreed. The request screen had no document-level horizontal overflow
-  at 320, 390, 430, 768 or 1440px; console warnings/errors were absent. Physical-device and
-  assistive-technology evidence remain QA limitations.
-- See `documentation/sprint-3e-date-negotiation-report.md` for contract, routes, tests and
-  outstanding MySQL/holiday-provider/release limitations.
+- Confirmed local SQLite and ran `migrate:fresh --seed` successfully. The hostile Sprint 3E
+  suite passes with 25 tests / 133 assertions; the full suite passes with 196 tests / 1,017
+  assertions. Composer validation, Pint, diff check and production Vite build pass.
+- QA corrected truthful alternative-acceptance history, source-availability revalidation and
+  stale customer controls. Browser evidence covers the full customer/Office path with no
+  document-level overflow at 320, 768 or 1440px and no private Office context in customer DOM.
+- The QA branch is based on the pre-recovery candidate. Prepare a new release branch from current
+  `main`, transplant validated Sprint 3E and QA commits, then re-run checks; do not merge or deploy.
+- See `documentation/sprint-3e-date-negotiation-qa-report-2026-08-25.md` for the dedicated gate.
 
 Previous Sprint Context:
 

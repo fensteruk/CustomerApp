@@ -163,6 +163,19 @@ it('removes stale negotiation actions when source completion is visible', functi
         ->assertDontSee('Withdraw request');
 });
 
+it('does not present alternative response controls when the source service is unavailable', function (): void {
+    [, $office, $request, $site, $secondSiteUser] = sprint3eUiRequest();
+    app(ProposeAlternativeCallOffDateAction::class)->handle($office, $request, sprint3eUiWeekday(2));
+    $request->projectedPlotService->update(['source_present' => false]);
+
+    $this->actingAs($secondSiteUser)
+        ->withSession(['active_site_id' => $site->id])
+        ->get(route('portal.call-offs.show', $request->fresh()))
+        ->assertOk()
+        ->assertDontSee('Accept Date')
+        ->assertDontSee('Reject Date');
+});
+
 it('uses the detailed authorised request context when opening a site-user notification', function (): void {
     [$submitter, $office, $request, $site] = sprint3eUiRequest();
     app(AgreeRequestedCallOffDateAction::class)->handle($office, $request);

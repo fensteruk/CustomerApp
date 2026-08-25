@@ -89,6 +89,28 @@ it('supports repeated alternatives and dates the request only when an alternativ
         ->and(PortalNotification::query()->where('notifiable_user_id', $office->id)->where('type', PortalNotificationType::CallOffAlternativeAccepted)->exists())->toBeTrue();
 });
 
+it('records an alternative acceptance and Date Agreed as truthful ordered history events', function (): void {
+    [$siteUser, $office, $request] = sprint3eRequest();
+    $proposal = app(ProposeAlternativeCallOffDateAction::class)->handle($office, $request, sprint3eWeekday(2));
+
+    app(AcceptAlternativeCallOffDateAction::class)->handle($siteUser, $request->fresh(), $proposal);
+
+    $histories = $request->fresh()->histories()
+        ->whereIn('event_type', [CallOffHistoryEventType::AlternativeDateAccepted, CallOffHistoryEventType::DateAgreed])
+        ->orderBy('sequence')
+        ->get();
+
+    expect($histories)->toHaveCount(2)
+        ->and($histories[0]->event_type)->toBe(CallOffHistoryEventType::AlternativeDateAccepted)
+        ->and($histories[0]->previous_status)->toBe(CallOffRequestStatus::AwaitingSiteUser)
+        ->and($histories[0]->new_status)->toBe(CallOffRequestStatus::AwaitingSiteUser)
+        ->and($histories[1]->event_type)->toBe(CallOffHistoryEventType::DateAgreed)
+        ->and($histories[1]->previous_status)->toBe(CallOffRequestStatus::AwaitingSiteUser)
+        ->and($histories[1]->new_status)->toBe(CallOffRequestStatus::DateAgreed)
+        ->and($histories[1]->before_state['status'])->toBe(CallOffRequestStatus::AwaitingSiteUser->value)
+        ->and($histories[1]->after_state['status'])->toBe(CallOffRequestStatus::DateAgreed->value);
+});
+
 it('enforces office and assigned-site authority immediately before date decisions', function (): void {
     [$siteUser, $office, $request, $site] = sprint3eRequest();
     $unassignedUser = sprint3eUser(PortalRoleIdentifier::AssistantSiteManager, $site->customerOrganisation);
@@ -112,6 +134,23 @@ it('rejects stale customer responses once the source service is completed', func
         ->toThrow(ValidationException::class);
 
     expect($proposal->fresh()->status)->toBe(CallOffDateProposalStatus::AwaitingResponse);
+});
+
+it('blocks date decisions when the source service becomes unavailable', function (): void {
+    [$siteUser, $office, $request] = sprint3eRequest();
+    $request->projectedPlotService->update(['source_present' => false]);
+
+    expect(fn () => app(AgreeRequestedCallOffDateAction::class)->handle($office, $request->fresh()))
+        ->toThrow(ValidationException::class);
+
+    $request->projectedPlotService->update(['source_present' => true]);
+    $proposal = app(ProposeAlternativeCallOffDateAction::class)->handle($office, $request->fresh(), sprint3eWeekday(2));
+    $request->projectedPlotService->update(['source_present' => false]);
+
+    expect(fn () => app(AcceptAlternativeCallOffDateAction::class)->handle($siteUser, $request->fresh(), $proposal))
+        ->toThrow(ValidationException::class)
+        ->and($request->fresh()->status)->toBe(CallOffRequestStatus::AwaitingSiteUser)
+        ->and($proposal->fresh()->status)->toBe(CallOffDateProposalStatus::AwaitingResponse);
 });
 
 it('rejects a second response to the same alternative', function (): void {
