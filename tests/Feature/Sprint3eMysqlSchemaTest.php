@@ -21,19 +21,18 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
             'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
         ]]);
 
-    expect($foreignKeys->only([
-        'operation_items_operation_fk',
-        'operation_items_request_fk',
-        'call_off_status_histories_call_off_request_id_foreign',
-        'call_off_status_histories_call_off_batch_id_foreign',
-        'call_off_status_histories_performed_by_user_id_foreign',
-    ])->all())->toBe([
+    $expectedForeignKeys = [
         'operation_items_operation_fk' => ['table' => 'call_off_batch_operation_items', 'column' => 'call_off_batch_operation_id', 'references' => 'call_off_batch_operations.id'],
         'operation_items_request_fk' => ['table' => 'call_off_batch_operation_items', 'column' => 'call_off_request_id', 'references' => 'call_off_requests.id'],
         'call_off_status_histories_call_off_request_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'call_off_request_id', 'references' => 'call_off_requests.id'],
         'call_off_status_histories_call_off_batch_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'call_off_batch_id', 'references' => 'call_off_batches.id'],
+        'call_off_status_histories_call_off_batch_operation_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'call_off_batch_operation_id', 'references' => 'call_off_batch_operations.id'],
         'call_off_status_histories_performed_by_user_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'performed_by_user_id', 'references' => 'users.id'],
-    ]);
+    ];
+
+    foreach ($expectedForeignKeys as $name => $expected) {
+        expect($foreignKeys->get($name))->toBe($expected);
+    }
 
     $indexes = collect(DB::select(<<<'SQL'
         SELECT table_name, index_name, non_unique,
