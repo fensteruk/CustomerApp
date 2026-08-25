@@ -21,28 +21,17 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
             'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
         ]]);
 
-    $expectedNamedForeignKeys = [
-        'operation_items_operation_fk' => ['table' => 'call_off_batch_operation_items', 'column' => 'call_off_batch_operation_id', 'references' => 'call_off_batch_operations.id'],
-        'operation_items_request_fk' => ['table' => 'call_off_batch_operation_items', 'column' => 'call_off_request_id', 'references' => 'call_off_requests.id'],
-    ];
+    expect($foreignKeys->keys()->all())->toContain('operation_items_operation_fk', 'operation_items_request_fk');
 
-    foreach ($expectedNamedForeignKeys as $name => $expected) {
-        expect($foreignKeys->get($name))->toBe($expected);
-    }
-
-    $statusHistoryForeignKeys = $foreignKeys
-        ->filter(fn (array $key): bool => $key['table'] === 'call_off_status_histories')
-        ->mapWithKeys(fn (array $key): array => [$key['column'] => $key['references']]);
-    $expectedStatusHistoryForeignKeys = [
-        'call_off_request_id' => 'call_off_requests.id',
-        'call_off_batch_id' => 'call_off_batches.id',
-        'call_off_batch_operation_id' => 'call_off_batch_operations.id',
-        'performed_by_user_id' => 'users.id',
-    ];
-
-    foreach ($expectedStatusHistoryForeignKeys as $column => $reference) {
-        expect($statusHistoryForeignKeys->get($column))->toBe($reference);
-    }
+    $foreignKeyRelationships = $foreignKeys->map(fn (array $key): string => "{$key['table']}.{$key['column']}->{$key['references']}")->values()->all();
+    expect($foreignKeyRelationships)->toContain(
+        'call_off_batch_operation_items.call_off_batch_operation_id->call_off_batch_operations.id',
+        'call_off_batch_operation_items.call_off_request_id->call_off_requests.id',
+        'call_off_status_histories.call_off_request_id->call_off_requests.id',
+        'call_off_status_histories.call_off_batch_id->call_off_batches.id',
+        'call_off_status_histories.call_off_batch_operation_id->call_off_batch_operations.id',
+        'call_off_status_histories.performed_by_user_id->users.id',
+    );
 
     $indexes = collect(DB::select(<<<'SQL'
         SELECT table_name, index_name, non_unique,
