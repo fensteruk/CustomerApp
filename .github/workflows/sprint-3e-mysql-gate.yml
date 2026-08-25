@@ -1,0 +1,141 @@
+name: Sprint 3E MySQL release gate
+
+on:
+  push:
+    branches:
+      - release/sprint-3e-date-negotiation-2026-08-25
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sprint-3e-mysql-gate-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  APP_ENV: testing
+  APP_DEBUG: false
+  APP_KEY: base64:QzBFejRFbXlTUUxHYXRlVGVzdEtleUZvckNpc0lzT2tleQ==
+  CACHE_STORE: array
+  MAIL_MAILER: array
+  QUEUE_CONNECTION: sync
+  SESSION_DRIVER: array
+  DB_CONNECTION: mysql
+  DB_HOST: 127.0.0.1
+  DB_PORT: 3306
+  DB_DATABASE: customerapp_test
+  DB_USERNAME: customerapp_test
+  DB_PASSWORD: customerapp_test_only
+
+jobs:
+  mysql-clean-and-tests:
+    name: Clean MySQL migration, schema and test gate
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: customerapp_test
+          MYSQL_USER: customerapp_test
+          MYSQL_PASSWORD: customerapp_test_only
+          MYSQL_ROOT_PASSWORD: root_test_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_test_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql, mbstring, dom, fileinfo, curl, pcntl
+          coverage: none
+
+      - name: Install locked PHP dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Record isolated environment versions
+        run: |
+          php -v
+          php -r "echo 'PDO MySQL: '.(extension_loaded('pdo_mysql') ? 'enabled' : 'missing').PHP_EOL;"
+          php -r "echo 'MySQL service: '.(new PDO('mysql:host=127.0.0.1;port=3306;dbname=customerapp_test', 'customerapp_test', 'customerapp_test_only'))->query('select version()')->fetchColumn().PHP_EOL;"
+
+      - name: Clean MySQL migration and status
+        run: |
+          php artisan migrate:fresh --seed --force
+          php artisan migrate:status
+
+      - name: Inspect MySQL schema and production-repaired constraints
+        run: php artisan test --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlSchemaTest.php
+
+      - name: Run full MySQL suite
+        run: php artisan test --configuration=phpunit.mysql.xml
+
+      - name: Run focused Sprint 3D, 3E, source and notification suite
+        run: >-
+          php artisan test --configuration=phpunit.mysql.xml
+          tests/Feature/Sprint3dBulkCallOffQaTest.php
+          tests/Feature/Sprint3eDateNegotiationTest.php
+          tests/Feature/Sprint3eDateNegotiationUiTest.php
+          tests/Feature/Sprint3eDateNegotiationQaTest.php
+          tests/Feature/Sprint3bSourceProjectionImportTest.php
+          tests/Feature/PortalNotificationsTest.php
+
+      - name: Run true concurrent-write MySQL gate
+        run: php artisan test --configuration=phpunit.mysql.xml tests/Feature/Sprint3eMysqlConcurrencyTest.php
+
+  mysql-main-to-release-upgrade:
+    name: Main-to-Sprint-3E MySQL upgrade gate
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.4
+        env:
+          MYSQL_DATABASE: customerapp_test
+          MYSQL_USER: customerapp_test
+          MYSQL_PASSWORD: customerapp_test_only
+          MYSQL_ROOT_PASSWORD: root_test_only
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 -uroot -proot_test_only"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 0
+
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: pdo_mysql, mbstring, dom, fileinfo, curl
+          coverage: none
+
+      - name: Install locked release dependencies
+        run: composer install --no-interaction --prefer-dist --no-progress
+
+      - name: Materialise the current main baseline
+        run: |
+          git worktree add --detach ../customerapp-main origin/main
+          composer --working-dir=../customerapp-main install --no-interaction --prefer-dist --no-progress
+
+      - name: Migrate the empty isolated database with current main
+        run: php ../customerapp-main/artisan migrate --force
+
+      - name: Confirm Sprint 3E needs no migration and boots on the main schema
+        run: |
+          php artisan migrate --force
+          php artisan migrate:status
+          php artisan test --configuration=phpunit.mysql.xml \
+            tests/Feature/Sprint3eDateNegotiationTest.php \
+            tests/Feature/Sprint3eDateNegotiationUiTest.php \
+            tests/Feature/Sprint3eDateNegotiationQaTest.php
