@@ -119,8 +119,9 @@ test('source completion wins over a concurrent customer acceptance without dupli
         ['source-complete', $service->id],
         ['accept', $siteUser->id, $request->id, $proposal->id],
     ]);
+    $sourceCompletion = $results->where('operation', 'source-complete')->first();
 
-    expect($results->where('operation', 'source-complete')->first()['ok'])->toBeTrue()
+    expect($sourceCompletion['ok'])->toBeTrue(($sourceCompletion['exception'] ?? 'Unknown exception').': '.($sourceCompletion['message'] ?? 'No message.'))
         ->and($service->fresh()->isSourceCompleted())->toBeTrue()
         ->and($request->fresh()->status)->toBe(CallOffRequestStatus::Completed)
         ->and($request->fresh()->dateNegotiations()->firstOrFail()->status)->toBe(CallOffNegotiationStatus::Completed)
