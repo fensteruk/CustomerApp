@@ -78,7 +78,7 @@ function mysqlGateCompleteSourceService(string $serviceId): void
             null,
             CarbonImmutable::today(),
             [],
-            now(),
+            CarbonImmutable::now(),
         ),
     ], 'mysql-gate-completion');
 }
