@@ -14,8 +14,12 @@ use Illuminate\Support\Facades\DB;
 
 class PortalNotificationService
 {
-    public function createForRequest(CallOffRequest $request, PortalNotificationType $type, ?string $eventReference = null): void
-    {
+    public function createForRequest(
+        CallOffRequest $request,
+        PortalNotificationType $type,
+        ?string $eventReference = null,
+        bool $allowHistoricalDateAgreement = false,
+    ): void {
         $request->loadMissing([
             'batch.site.customerOrganisation',
             'batch.submittedBy.portalRole',
@@ -35,7 +39,12 @@ class PortalNotificationService
             PortalNotificationType::CallOffAlternativeRejected => [CallOffRequestStatus::AwaitingFenster],
         };
 
-        if (! in_array($request->status, $expectedStatuses, true)) {
+        $hasHistoricalDateAgreement = $allowHistoricalDateAgreement
+            && $type === PortalNotificationType::CallOffDateAgreed
+            && $request->status === CallOffRequestStatus::Completed
+            && $request->histories()->where('event_type', 'date_agreed')->exists();
+
+        if (! in_array($request->status, $expectedStatuses, true) && ! $hasHistoricalDateAgreement) {
             return;
         }
 

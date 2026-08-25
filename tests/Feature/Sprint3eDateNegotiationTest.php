@@ -13,6 +13,8 @@ use App\Enums\CallOffRequestStatus;
 use App\Enums\CallOffServiceType;
 use App\Enums\PortalNotificationType;
 use App\Enums\PortalRoleIdentifier;
+use App\Events\CallOffDateAgreed;
+use App\Listeners\CallOffNotificationListener;
 use App\Models\CallOffBatch;
 use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
@@ -110,6 +112,22 @@ it('records an alternative acceptance and Date Agreed as truthful ordered histor
         ->and($histories[1]->new_status)->toBe(CallOffRequestStatus::DateAgreed)
         ->and($histories[1]->before_state['status'])->toBe(CallOffRequestStatus::AwaitingSiteUser->value)
         ->and($histories[1]->after_state['status'])->toBe(CallOffRequestStatus::DateAgreed->value);
+});
+
+it('creates the committed Date Agreed notification when later source completion changes current state', function (): void {
+    [$siteUser, $office, $request] = sprint3eRequest();
+    $proposal = app(ProposeAlternativeCallOffDateAction::class)->handle($office, $request, sprint3eWeekday(2));
+
+    app(AcceptAlternativeCallOffDateAction::class)->handle($siteUser, $request->fresh(), $proposal);
+    PortalNotification::query()->where('request_uuid', $request->uuid)->delete();
+    $request->fresh()->update(['status' => CallOffRequestStatus::Completed]);
+
+    app(CallOffNotificationListener::class)->dateAgreed(new CallOffDateAgreed($request->id));
+
+    expect(PortalNotification::query()
+        ->where('request_uuid', $request->uuid)
+        ->where('type', PortalNotificationType::CallOffDateAgreed)
+        ->count())->toBe(1);
 });
 
 it('enforces office and assigned-site authority immediately before date decisions', function (): void {

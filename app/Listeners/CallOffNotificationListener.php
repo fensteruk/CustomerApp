@@ -35,7 +35,7 @@ class CallOffNotificationListener
 
     public function dateAgreed(CallOffDateAgreed $event): void
     {
-        $this->create($event->callOffRequestId, PortalNotificationType::CallOffDateAgreed);
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffDateAgreed, allowHistoricalDateAgreement: true);
     }
 
     public function alternativeProposed(CallOffAlternativeProposed $event): void
@@ -53,13 +53,17 @@ class CallOffNotificationListener
         $this->create($event->callOffRequestId, PortalNotificationType::CallOffAlternativeRejected, $event->proposalUuid);
     }
 
-    private function create(int $requestId, PortalNotificationType $type, ?string $eventReference = null): void
-    {
+    private function create(
+        int $requestId,
+        PortalNotificationType $type,
+        ?string $eventReference = null,
+        bool $allowHistoricalDateAgreement = false,
+    ): void {
         try {
             $request = CallOffRequest::query()->find($requestId);
 
             if ($request !== null) {
-                $this->notifications->createForRequest($request, $type, $eventReference);
+                $this->notifications->createForRequest($request, $type, $eventReference, $allowHistoricalDateAgreement);
             }
         } catch (\Throwable $exception) {
             Log::warning('Portal notification creation failed.', [

@@ -83,12 +83,14 @@ notification, so an alternative acceptance had no Date Agreed event to persist a
 
 The narrow local correction emits the existing `CallOffDateAgreed` event after a committed
 alternative acceptance, alongside the existing Office-facing alternative-accepted event.
-It retains after-commit dispatch, existing recipient authorisation and the existing
-per-recipient `date_agreed:<request UUID>` idempotency key. A rolled-back/stale acceptance
-still emits neither event; completion-first therefore remains zero. Acceptance-first is
-now eligible to create exactly one historical Date Agreed notification even if later source
-completion changes the current request state to `Completed`; completion emits no
-notification.
+The first implementation still failed because completion could commit between the event
+dispatch and listener reload. The listener now permits this event only where the current
+request is `Completed` *and* immutable `date_agreed` history exists. It retains
+after-commit dispatch, existing recipient authorisation and the existing per-recipient
+`date_agreed:<request UUID>` idempotency key. A rolled-back/stale acceptance still emits
+neither event; completion-first therefore remains zero. Acceptance-first is eligible to
+create exactly one historical Date Agreed notification even if later source completion
+changes current state to `Completed`; completion emits no notification.
 
 ## Remaining Work
 
