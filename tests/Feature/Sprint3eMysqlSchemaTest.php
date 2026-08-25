@@ -88,9 +88,9 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
           )
         SQL))->map(fn (object $column): object => (object) array_change_key_case((array) $column, CASE_LOWER))
         ->mapWithKeys(fn (object $column): array => ["{$column->table_name}.{$column->column_name}" => $column->is_nullable]);
-    expect($columns->all())->toBe([
-        'call_off_requests.projected_plot_service_id' => 'YES',
-        'call_off_requests.active_conflict_key' => 'YES',
+    expect($columns->sortKeys()->all())->toBe([
         'call_off_date_proposals.responded_by_user_id' => 'YES',
+        'call_off_requests.active_conflict_key' => 'YES',
+        'call_off_requests.projected_plot_service_id' => 'YES',
     ]);
 });
