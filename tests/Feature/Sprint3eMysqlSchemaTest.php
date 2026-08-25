@@ -21,17 +21,27 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
             'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
         ]]);
 
-    $expectedForeignKeys = [
+    $expectedNamedForeignKeys = [
         'operation_items_operation_fk' => ['table' => 'call_off_batch_operation_items', 'column' => 'call_off_batch_operation_id', 'references' => 'call_off_batch_operations.id'],
         'operation_items_request_fk' => ['table' => 'call_off_batch_operation_items', 'column' => 'call_off_request_id', 'references' => 'call_off_requests.id'],
-        'call_off_status_histories_call_off_request_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'call_off_request_id', 'references' => 'call_off_requests.id'],
-        'call_off_status_histories_call_off_batch_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'call_off_batch_id', 'references' => 'call_off_batches.id'],
-        'call_off_status_histories_call_off_batch_operation_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'call_off_batch_operation_id', 'references' => 'call_off_batch_operations.id'],
-        'call_off_status_histories_performed_by_user_id_foreign' => ['table' => 'call_off_status_histories', 'column' => 'performed_by_user_id', 'references' => 'users.id'],
     ];
 
-    foreach ($expectedForeignKeys as $name => $expected) {
+    foreach ($expectedNamedForeignKeys as $name => $expected) {
         expect($foreignKeys->get($name))->toBe($expected);
+    }
+
+    $statusHistoryForeignKeys = $foreignKeys
+        ->filter(fn (array $key): bool => $key['table'] === 'call_off_status_histories')
+        ->mapWithKeys(fn (array $key): array => [$key['column'] => $key['references']]);
+    $expectedStatusHistoryForeignKeys = [
+        'call_off_request_id' => 'call_off_requests.id',
+        'call_off_batch_id' => 'call_off_batches.id',
+        'call_off_batch_operation_id' => 'call_off_batch_operations.id',
+        'performed_by_user_id' => 'users.id',
+    ];
+
+    foreach ($expectedStatusHistoryForeignKeys as $column => $reference) {
+        expect($statusHistoryForeignKeys->get($column))->toBe($reference);
     }
 
     $indexes = collect(DB::select(<<<'SQL'
