@@ -14,7 +14,16 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
         FROM information_schema.key_column_usage
         WHERE constraint_schema = DATABASE()
           AND referenced_table_name IS NOT NULL
-        SQL))->map(fn (object $key): object => (object) array_change_key_case((array) $key, CASE_LOWER))
+        SQL))->map(function (object $key): object {
+            $key = (object) array_change_key_case((array) $key, CASE_LOWER);
+            $key->constraint_name = strtolower($key->constraint_name);
+            $key->table_name = strtolower($key->table_name);
+            $key->column_name = strtolower($key->column_name);
+            $key->referenced_table_name = strtolower($key->referenced_table_name);
+            $key->referenced_column_name = strtolower($key->referenced_column_name);
+
+            return $key;
+        })
         ->mapWithKeys(fn (object $key): array => [$key->constraint_name => [
             'table' => $key->table_name,
             'column' => $key->column_name,
