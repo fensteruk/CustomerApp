@@ -15,20 +15,20 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
         WHERE constraint_schema = DATABASE()
           AND referenced_table_name IS NOT NULL
         SQL))->map(function (object $key): object {
-            $key = (object) array_change_key_case((array) $key, CASE_LOWER);
-            $key->constraint_name = strtolower($key->constraint_name);
-            $key->table_name = strtolower($key->table_name);
-            $key->column_name = strtolower($key->column_name);
-            $key->referenced_table_name = strtolower($key->referenced_table_name);
-            $key->referenced_column_name = strtolower($key->referenced_column_name);
+        $key = (object) array_change_key_case((array) $key, CASE_LOWER);
+        $key->constraint_name = strtolower($key->constraint_name);
+        $key->table_name = strtolower($key->table_name);
+        $key->column_name = strtolower($key->column_name);
+        $key->referenced_table_name = strtolower($key->referenced_table_name);
+        $key->referenced_column_name = strtolower($key->referenced_column_name);
 
-            return $key;
-        })
+        return $key;
+    })
         ->mapWithKeys(fn (object $key): array => [$key->constraint_name => [
-            'table' => $key->table_name,
-            'column' => $key->column_name,
-            'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
-        ]]);
+        'table' => $key->table_name,
+        'column' => $key->column_name,
+        'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
+    ]]);
 
     expect($foreignKeys->keys()->all())->toContain('operation_items_operation_fk', 'operation_items_request_fk');
 
