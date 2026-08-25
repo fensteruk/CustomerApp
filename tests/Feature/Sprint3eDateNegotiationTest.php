@@ -85,6 +85,7 @@ it('supports repeated alternatives and dates the request only when an alternativ
         ->and($proposals->where('status', CallOffDateProposalStatus::Superseded))->toHaveCount(1)
         ->and($proposals->where('status', CallOffDateProposalStatus::Accepted))->toHaveCount(1)
         ->and(PortalNotification::query()->where('notifiable_user_id', $siteUser->id)->where('type', PortalNotificationType::CallOffAlternativeProposed)->exists())->toBeTrue()
+        ->and(PortalNotification::query()->where('notifiable_user_id', $siteUser->id)->where('type', PortalNotificationType::CallOffDateAgreed)->count())->toBe(1)
         ->and(PortalNotification::query()->where('notifiable_user_id', $office->id)->where('type', PortalNotificationType::CallOffAlternativeRejected)->exists())->toBeTrue()
         ->and(PortalNotification::query()->where('notifiable_user_id', $office->id)->where('type', PortalNotificationType::CallOffAlternativeAccepted)->exists())->toBeTrue();
 });

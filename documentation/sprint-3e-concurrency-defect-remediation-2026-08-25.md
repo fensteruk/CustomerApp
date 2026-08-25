@@ -64,7 +64,36 @@ accept alternative, accept requested, propose alternative and reject alternative
 availability loss versus both acceptance paths. The alternative-acceptance completion race
 alternates both precedence orderings over ten genuine separate-process iterations.
 
+## Date Agreed Notification Race — 25 August 2026
+
+The first isolated Forge MySQL 8.4.10 re-gate passed clean migration/seeding (11
+migrations) and the 20-assertion schema check, but the focused concurrency suite reported
+12/14 passing tests and 117 assertions. The two failures were the acceptance-first
+completion ordering and its ten-process repetition: source completion correctly left the
+service and request `Completed`, cleared the conflict key, retained one truthful
+`DateAgreed` history and recorded one source completion event, but there were zero
+`CallOffDateAgreed` notifications where exactly one was required.
+
+The trace showed this was not a mutable-state re-read or after-commit suppression. Both
+date-agreement events implement `ShouldDispatchAfterCommit`, and the listener reloads the
+request only after the committing transaction. Requested-date agreement emitted
+`CallOffDateAgreed`; alternative acceptance emitted only `CallOffAlternativeAccepted`.
+That Office-recipient event did not create the submitting site user's Date Agreed
+notification, so an alternative acceptance had no Date Agreed event to persist at T2.
+
+The narrow local correction emits the existing `CallOffDateAgreed` event after a committed
+alternative acceptance, alongside the existing Office-facing alternative-accepted event.
+It retains after-commit dispatch, existing recipient authorisation and the existing
+per-recipient `date_agreed:<request UUID>` idempotency key. A rolled-back/stale acceptance
+still emits neither event; completion-first therefore remains zero. Acceptance-first is
+now eligible to create exactly one historical Date Agreed notification even if later source
+completion changes the current request state to `Completed`; completion emits no
+notification.
+
 ## Remaining Work
 
-Run the complete local regression and the existing GitHub disposable MySQL 8.4 gate. Do
-not treat the code change as a release result until those races pass repeatedly.
+Local SQLite verification after the correction passed fresh migration/seeding, the focused
+date-negotiation suite (10 tests, 44 assertions), and the full suite (197 passed, 15
+skipped, 1,019 assertions). Pint, Composer validation/audit and the Vite build passed.
+The dedicated disposable MySQL re-gate, including ten acceptance-first/completion-first
+iterations and a diagnosable full suite, remains required before release.

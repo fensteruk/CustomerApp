@@ -7,6 +7,7 @@ use App\Enums\CallOffHistoryEventType;
 use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
 use App\Events\CallOffAlternativeAccepted;
+use App\Events\CallOffDateAgreed;
 use App\Models\CallOffDateNegotiation;
 use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
@@ -50,6 +51,7 @@ class AcceptAlternativeCallOffDateAction
         });
 
         event(new CallOffAlternativeAccepted($acceptedRequest->id, $proposal->uuid));
+        event(new CallOffDateAgreed($acceptedRequest->id));
 
         return $acceptedRequest;
     }

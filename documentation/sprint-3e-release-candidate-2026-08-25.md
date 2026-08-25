@@ -59,12 +59,20 @@ The GitHub-hosted disposable MySQL 8.4 workflow later supplied the required isol
 - Source completion racing alternative acceptance deadlocked (`SQLSTATE[40001]`, MySQL 1213) while the source path locked the projected service and the portal path locked the request first.
 - Source availability removal racing a date decision demonstrated that the assertion/evidence path needed durable state capture, and confirmed the availability check must occur after authoritative aggregate locks.
 
-The gate is not yet passed. The remediation adds a single source-first aggregate-lock action, source-side negotiation/proposal locks in the same order, post-lock source revalidation, bounded source-record retry for MySQL 1205/1213/40001 only, and durable race snapshots. It must be rerun against the disposable database before any merge or deployment decision.
+The first re-gate confirmed the state-race correction but found a narrow notification gap:
+alternative acceptance committed a truthful Date Agreed history before later completion,
+yet emitted only the Office-facing alternative-accepted event and no Date Agreed event for
+the authorised submitting site user. The local correction emits the existing after-commit
+`CallOffDateAgreed` event for committed alternative acceptance. It uses the established
+recipient checks and idempotency key, does not notify for stale/rolled-back acceptance or
+source completion, and does not alter locking, precedence or source retry.
+
+The gate is not yet passed. The remediation adds a single source-first aggregate-lock action, source-side negotiation/proposal locks in the same order, post-lock source revalidation, bounded source-record retry for MySQL 1205/1213/40001 only, durable race snapshots, and the narrow committed-event notification correction. It must be rerun against the disposable database before any merge or deployment decision.
 
 ## Tests
 
-- Full release suite: **196 tests, 1,017 assertions passed**.
-- Sprint 3E + Sprint 3D + source + notifications: **59 tests, 358 assertions passed**.
+- Full local release suite after the notification correction: **197 passed, 15 skipped, 1,019 assertions**.
+- Focused date-negotiation regression after the notification correction: **10 tests, 44 assertions passed**.
 - Fresh SQLite Sprint 3E hostile suite is included in the full result.
 
 ## Composer / npm / Build / Pint
@@ -92,6 +100,6 @@ Sprint 3E adds portal-specific requested-date agreement, alternatives, controlle
 
 ## Release Recommendation
 
-Do not merge this branch to `main` and do not deploy. Complete the remediation's local regression, commit the non-deploying fix branch, then run the existing disposable MySQL 8.4 concurrency gate with repeated real process races. A separate release decision follows only if that gate passes.
+Do not merge this branch to `main` and do not deploy. Commit the non-deploying notification correction only after review, then run the existing disposable MySQL 8.4 gate with repeated real-process acceptance-first/completion-first races, the remaining source races and an auditable full suite. A separate release decision follows only if that gate passes.
 
 Sprint 3E release blocked — MySQL concurrency remediation incomplete
