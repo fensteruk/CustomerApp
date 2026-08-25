@@ -25,10 +25,10 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
         return $key;
     })
         ->mapWithKeys(fn (object $key): array => [$key->constraint_name => [
-        'table' => $key->table_name,
-        'column' => $key->column_name,
-        'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
-    ]]);
+            'table' => $key->table_name,
+            'column' => $key->column_name,
+            'references' => $key->referenced_table_name.'.'.$key->referenced_column_name,
+        ]]);
 
     expect($foreignKeys->keys()->all())->toContain('operation_items_operation_fk', 'operation_items_request_fk');
 
@@ -88,7 +88,7 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
           )
         SQL))->map(fn (object $column): object => (object) array_change_key_case((array) $column, CASE_LOWER))
         ->mapWithKeys(fn (object $column): array => ["{$column->table_name}.{$column->column_name}" => $column->is_nullable]);
-    expect($columns)->toBe([
+    expect($columns->all())->toBe([
         'call_off_requests.projected_plot_service_id' => 'YES',
         'call_off_requests.active_conflict_key' => 'YES',
         'call_off_date_proposals.responded_by_user_id' => 'YES',
