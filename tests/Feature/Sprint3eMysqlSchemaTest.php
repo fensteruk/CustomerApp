@@ -66,7 +66,7 @@ test('the MySQL release schema has the repaired constraints, indexes and safe id
     $duplicateIndexes = $indexes
         ->groupBy(fn (object $index): string => implode('|', [$index->table_name, $index->non_unique, $index->columns_list]))
         ->filter(fn ($matching): bool => $matching->count() > 1);
-    expect($duplicateIndexes)->toBeEmpty();
+    expect($duplicateIndexes->all())->toBeEmpty();
 
     $overlongNames = DB::select(<<<'SQL'
         SELECT constraint_name AS name FROM information_schema.table_constraints
