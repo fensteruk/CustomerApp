@@ -111,3 +111,23 @@ reviewed before any explicit `main` merge/push approval.
 Push `reconcile/main-2026-08-25` only, verify its remote SHA, obtain review/approval, then
 perform no further action until explicit approval is given for a controlled merge/push to
 `main`.
+
+## Approved main restoration outcome
+
+The authorised restoration completed on 25 August 2026. At the point of approval,
+`main` was fast-forwarded to the already-pushed reconciliation branch rather than creating
+an additional merge commit. The resulting and pushed `main` SHA is
+`20d5f123906b7c88f1264f7df5ff90be02c15ec2`.
+
+Forge created deployment `76148211` from `main`, which completed successfully in 27
+seconds. The deployment reported **Nothing to migrate**, activated release
+`/home/forge/fenstercustomer.on-forge.com/releases/76148211`, and the active release HEAD
+is `20d5f123906b7c88f1264f7df5ff90be02c15ec2`.
+
+Read-only post-deployment verification confirmed HTTPS login and each observed CSS/JS
+asset returned 200; `migrate:status` found no pending migration; and the Laravel log has
+no entry newer than 23 August 2026. The protected migration repair remains unchanged and
+Sprint 3E remains outside `main` awaiting its dedicated QA gate.
+
+This outcome is recorded on the non-deploying reconciliation branch to avoid an
+unnecessary second production deployment.
