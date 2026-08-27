@@ -52,9 +52,17 @@ class UserFactory extends Factory
 
     public function role(PortalRoleIdentifier $role): static
     {
-        return $this->state(fn (array $attributes) => [
-            'portal_role_id' => PortalRole::query()->where('identifier', $role->value)->value('id'),
-        ]);
+        return $this->state(function (array $attributes) use ($role): array {
+            $state = [
+                'portal_role_id' => PortalRole::query()->where('identifier', $role->value)->value('id'),
+            ];
+
+            if ($role === PortalRoleIdentifier::FensterOfficeStaff) {
+                $state['customer_organisation_id'] = null;
+            }
+
+            return $state;
+        });
     }
 
     public function inactive(): static

@@ -93,14 +93,12 @@ class User extends Authenticatable
 
     public function hasPortalRole(PortalRoleIdentifier $role): bool
     {
-        return $this->portalRole?->identifier === $role->value;
+        return $this->currentPortalRoleIdentifier() === $role;
     }
 
     public function isSiteRole(): bool
     {
-        $role = PortalRoleIdentifier::tryFrom((string) $this->portalRole?->identifier);
-
-        return $role?->isSiteRole() ?? false;
+        return $this->currentPortalRoleIdentifier()?->isSiteRole() ?? false;
     }
 
     public function isFensterOfficeStaff(): bool
@@ -110,9 +108,15 @@ class User extends Authenticatable
 
     public function hasCompletePortalProfile(): bool
     {
-        return $this->is_active
-            && $this->customer_organisation_id !== null
-            && $this->portal_role_id !== null;
+        if (! $this->is_active || $this->portal_role_id === null) {
+            return false;
+        }
+
+        if ($this->isFensterOfficeStaff()) {
+            return true;
+        }
+
+        return $this->isSiteRole() && $this->customer_organisation_id !== null;
     }
 
     public function canAccessSite(Site $site): bool
@@ -124,5 +128,16 @@ class User extends Authenticatable
         return $this->assignedSites()
             ->whereKey($site->getKey())
             ->exists();
+    }
+
+    private function currentPortalRoleIdentifier(): ?PortalRoleIdentifier
+    {
+        $role = $this->portalRole;
+
+        if ($role === null || (int) $role->getKey() !== (int) $this->portal_role_id) {
+            return null;
+        }
+
+        return PortalRoleIdentifier::tryFrom((string) $role->identifier);
     }
 }

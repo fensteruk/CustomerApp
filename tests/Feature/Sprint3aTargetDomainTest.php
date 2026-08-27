@@ -164,14 +164,18 @@ test('Fenster Office Staff have global review access while Site Users stay restr
     $organisation = CustomerOrganisation::factory()->create();
     $otherOrganisation = CustomerOrganisation::factory()->create();
     $site = Site::factory()->create(['customer_organisation_id' => $otherOrganisation->id]);
-    $office = sprint3aUser(PortalRoleIdentifier::FensterOfficeStaff, $organisation);
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
+        'customer_organisation_id' => null,
+    ]);
     $siteUser = sprint3aUser(PortalRoleIdentifier::SiteManager, $organisation);
     $plot = ProjectedPlot::factory()->create(['site_id' => $site->id]);
     $request = sprint3aRequest($siteUser, $site, $plot);
 
-    expect(Gate::forUser($office)->allows('review-call-off', $request))->toBeTrue()
+    expect($office->hasCompletePortalProfile())->toBeTrue()
+        ->and(Gate::forUser($office)->allows('review-call-off', $request))->toBeTrue()
         ->and(Gate::forUser($office)->allows('manage-portal-accounts'))->toBeTrue()
         ->and(Gate::forUser($office)->allows('manage-site-assignments'))->toBeTrue()
+        ->and(Gate::forUser($office)->allows('view-projected-plot', $plot))->toBeTrue()
         ->and($siteUser->canAccessSite($site))->toBeFalse();
 });
 

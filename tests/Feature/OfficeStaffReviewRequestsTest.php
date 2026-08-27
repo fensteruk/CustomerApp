@@ -74,7 +74,11 @@ function reviewPeople(): array
 {
     $organisation = CustomerOrganisation::factory()->create(['name' => 'Acme Homes']);
     $siteUser = reviewUser(PortalRoleIdentifier::SiteManager, $organisation, ['name' => 'Sam Site']);
-    $officeUser = reviewUser(PortalRoleIdentifier::FensterOfficeStaff, $organisation, ['name' => 'Olivia Office']);
+    $officeUser = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
+        'customer_organisation_id' => null,
+        'name' => 'Olivia Office',
+        'password' => Hash::make('password'),
+    ]);
     $site = reviewAssignedSite($siteUser, ['name' => 'Maple Rise']);
     $officeUser->assignedSites()->attach($site);
 
