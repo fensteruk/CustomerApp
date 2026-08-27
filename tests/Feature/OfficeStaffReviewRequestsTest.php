@@ -9,9 +9,12 @@ use App\Enums\CallOffRequestStatus;
 use App\Enums\CallOffServiceType;
 use App\Enums\PortalRoleIdentifier;
 use App\Http\Middleware\EnsureActiveSiteIsAssigned;
+use App\Models\CallOffDateNegotiation;
+use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
 use App\Models\CallOffStatusHistory;
 use App\Models\CustomerOrganisation;
+use App\Models\PortalNotification;
 use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
@@ -251,6 +254,83 @@ it('removes approved and rejected requests from the default submitted queue', fu
         ->assertOk()
         ->assertSee('Plot 702')
         ->assertDontSee('Plot 701');
+});
+
+it('uses one Date Agreed filter for legacy approved and modern date agreed requests without changing stored truth', function (): void {
+    [, $siteUser, $officeUser, $site] = reviewPeople();
+    $legacyApproved = reviewRequestFor($siteUser, $site, 'Legacy Approved Plot');
+    $modernDateAgreed = reviewRequestFor($siteUser, $site, 'Modern Date Agreed Plot');
+    $awaitingFenster = reviewRequestFor($siteUser, $site, 'Awaiting Fenster Plot');
+    $awaitingSiteUser = reviewRequestFor($siteUser, $site, 'Awaiting Site User Plot');
+    $completed = reviewRequestFor($siteUser, $site, 'Completed Plot');
+
+    $legacyApproved->forceFill([
+        'status' => CallOffRequestStatus::Approved,
+        'agreed_date' => Carbon::today()->addDays(10),
+    ])->save();
+    $modernDateAgreed->forceFill([
+        'status' => CallOffRequestStatus::DateAgreed,
+        'agreed_date' => Carbon::today()->addDays(11),
+    ])->save();
+    $awaitingFenster->forceFill(['status' => CallOffRequestStatus::AwaitingFenster])->save();
+    $awaitingSiteUser->forceFill(['status' => CallOffRequestStatus::AwaitingSiteUser])->save();
+    $completed->forceFill(['status' => CallOffRequestStatus::Completed])->save();
+
+    $historyCount = CallOffStatusHistory::query()->count();
+    $negotiationCount = CallOffDateNegotiation::query()->count();
+    $proposalCount = CallOffDateProposal::query()->count();
+    $notificationCount = PortalNotification::query()->count();
+
+    $this->actingAs($officeUser)
+        ->get('/portal/review-requests?status=date_agreed')
+        ->assertOk()
+        ->assertSee('Legacy Approved Plot')
+        ->assertSee('Modern Date Agreed Plot')
+        ->assertDontSee('Awaiting Fenster Plot')
+        ->assertDontSee('Awaiting Site User Plot')
+        ->assertDontSee('Completed Plot')
+        ->assertSeeInOrder(['value="date_agreed" selected', '>Date Agreed</option>'], false)
+        ->assertDontSee('value="approved"', false)
+        ->assertViewHas('requests', fn ($requests): bool => $requests->total() === 2)
+        ->assertViewHas('statuses', function (array $statuses): bool {
+            $labels = collect($statuses)->map(fn (CallOffRequestStatus $status): string => $status->label());
+
+            return $labels->count() === $labels->unique()->count();
+        });
+
+    expect($legacyApproved->fresh()->status)->toBe(CallOffRequestStatus::Approved)
+        ->and($modernDateAgreed->fresh()->status)->toBe(CallOffRequestStatus::DateAgreed)
+        ->and(CallOffStatusHistory::query()->count())->toBe($historyCount)
+        ->and(CallOffDateNegotiation::query()->count())->toBe($negotiationCount)
+        ->and(CallOffDateProposal::query()->count())->toBe($proposalCount)
+        ->and(PortalNotification::query()->count())->toBe($notificationCount);
+});
+
+it('normalises legacy approved filter URLs to the canonical Date Agreed filter', function (): void {
+    [, $siteUser, $officeUser, $site] = reviewPeople();
+    $legacyApproved = reviewRequestFor($siteUser, $site, 'Legacy URL Plot');
+    $modernDateAgreed = reviewRequestFor($siteUser, $site, 'Modern URL Plot');
+
+    $legacyApproved->forceFill(['status' => CallOffRequestStatus::Approved])->save();
+    $modernDateAgreed->forceFill(['status' => CallOffRequestStatus::DateAgreed])->save();
+
+    $this->actingAs($officeUser)
+        ->get('/portal/review-requests?status=approved')
+        ->assertOk()
+        ->assertSee('Legacy URL Plot')
+        ->assertSee('Modern URL Plot')
+        ->assertSee('value="date_agreed" selected', false)
+        ->assertDontSee('value="approved"', false)
+        ->assertViewHas('filters', fn (array $filters): bool => $filters['status'] === CallOffRequestStatus::DateAgreed->value);
+});
+
+it('rejects malformed Office Review status filters safely', function (): void {
+    [, , $officeUser] = reviewPeople();
+
+    $this->actingAs($officeUser)
+        ->get('/portal/review-requests?status=not-a-real-status')
+        ->assertRedirect()
+        ->assertSessionHasErrors('status');
 });
 
 it('updates the site-user dashboard after approval and rejection without exposing internal reason', function (): void {

@@ -41,8 +41,24 @@ class ReviewRequestsController extends Controller
                 ? CallOffRequestStatus::AwaitingFenster->value
                 : CallOffRequestStatus::Submitted->value);
 
+        if ($status === CallOffRequestStatus::Approved->value) {
+            $status = CallOffRequestStatus::DateAgreed->value;
+            $request->query->set('status', $status);
+        }
+
         $requests = CallOffRequest::query()
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($status !== '', function ($query) use ($status): void {
+                if ($status === CallOffRequestStatus::DateAgreed->value) {
+                    $query->whereIn('status', [
+                        CallOffRequestStatus::Approved->value,
+                        CallOffRequestStatus::DateAgreed->value,
+                    ]);
+
+                    return;
+                }
+
+                $query->where('status', $status);
+            })
             ->when(isset($validated['site']), function ($query) use ($validated): void {
                 $query->whereHas('batch', fn ($batchQuery) => $batchQuery
                     ->where('site_id', (int) $validated['site']));
@@ -66,7 +82,10 @@ class ReviewRequestsController extends Controller
             'assignedSites' => $assignedSites,
             'requests' => $requests,
             'serviceTypes' => CallOffServiceType::cases(),
-            'statuses' => CallOffRequestStatus::cases(),
+            'statuses' => array_values(array_filter(
+                CallOffRequestStatus::cases(),
+                fn (CallOffRequestStatus $status): bool => $status !== CallOffRequestStatus::Approved,
+            )),
             'filters' => [
                 'status' => $status,
                 'site' => $validated['site'] ?? '',
