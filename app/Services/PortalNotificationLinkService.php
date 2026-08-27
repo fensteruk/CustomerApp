@@ -31,13 +31,13 @@ class PortalNotificationLinkService
             ];
         }
 
-        if ($notification->route_name === 'portal.site-dashboard') {
+        if (in_array($notification->route_name, ['portal.site-dashboard', 'portal.call-offs.show'], true)) {
             if (! $user->isSiteRole() || ! $user->canAccessSite($request->batch->site)) {
                 return null;
             }
 
             return [
-                'route' => route('portal.site-dashboard'),
+                'route' => route('portal.call-offs.show', $request),
                 'site_id' => $request->batch->site->id,
             ];
         }

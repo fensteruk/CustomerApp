@@ -18,7 +18,7 @@ enum CallOffRequestStatus: string
     {
         return match ($this) {
             self::Submitted => 'Submitted',
-            self::Approved => 'Approved',
+            self::Approved => 'Date Agreed',
             self::Rejected => 'Rejected',
             self::Withdrawn => 'Withdrawn',
             self::AwaitingFenster => 'Awaiting Fenster',

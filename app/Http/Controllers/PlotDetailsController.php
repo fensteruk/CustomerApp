@@ -28,7 +28,7 @@ class PlotDetailsController extends Controller
             'services:id,projected_plot_id,service_identifier,source_completed_at,source_completion_observed_at,source_present,source_missing_since',
             'products:id,projected_plot_id,product_code,quantity',
             'callOffRequests' => fn ($query) => $query
-                ->select(['id', 'call_off_batch_id', 'projected_plot_id', 'projected_plot_service_id', 'service_identifier', 'requested_date', 'agreed_date', 'status', 'trashed_at'])
+                ->select(['id', 'uuid', 'call_off_batch_id', 'projected_plot_id', 'projected_plot_service_id', 'service_identifier', 'requested_date', 'agreed_date', 'status', 'trashed_at'])
                 ->whereNull('trashed_at')
                 ->with('batch:id,service_identifier,requested_date'),
         ]);

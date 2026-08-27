@@ -28,7 +28,7 @@ Site → CallOffBatch → CallOffRequest → CallOffDateNegotiation → CallOffD
   means a request cannot have two open cycles of the same kind.
 - `CallOffDateProposal` is ordered and append-only in practice: each customer requested
   date or Fenster alternative is a separate row, preserving proposer, responder, explicit
-  customer response/private internal reason and earlier-date acknowledgement. Sprint 3F's
+  customer response/private internal reason and earlier-date acknowledgement. Sprint 3E's
   Actions must lock the negotiation, allow at most one awaiting-response proposal, reject
   responses to superseded/closed proposals, and preserve completed proposal fields rather
   than overwriting them.
@@ -43,9 +43,9 @@ respectively. A non-null source Completed Date independently proves completion. 
 clears that projected source completion fact without deleting the projection or history.
 
 Source completion events and reversals are represented by the extended immutable history
-vocabulary. Sprint 3G will add the authorised source reconciliation Actions that record
-those events, close open negotiations and update current request state. Portal staff have
-no manual completion Action.
+vocabulary. The implemented source projection importer closes open negotiations and
+supersedes unanswered alternatives before it marks an affected request Completed. Portal
+staff have no manual completion Action.
 
 ## Legacy compatibility
 
@@ -90,15 +90,16 @@ checks remain mandatory for every external read/action. No plot-level assignment
 `CallOffLeadTimeService` is backend-only. It calculates four weeks for standard products
 and five weeks where a positive-quantity BF product applies, skips weekends and exposes a
 six-month maximum. Its `HolidayProvider` dependency is intentionally unconfigured for UK
-bank holidays until a managed holiday data source and owner are approved. Sprint 3C must
-replace that temporary provider before normal-date enforcement is enabled.
+bank holidays until a managed holiday data source and owner are approved. Sprint 3E uses
+that replaceable provider for alternative-date validation; its current production binding
+therefore rejects weekends but has no invented UK bank-holiday dataset.
 
 ## Deferred work
 
 Sprint 3A does not introduce source import, a dashboard redesign, new submission routes,
 negotiation Actions/UI, amendments, attachments, calendar/PDF, reminders or a migration
 that deletes legacy data. Sprint 3B owns source projection ingestion; 3C lead-time
-enforcement; 3E new multi-service submission; 3F negotiation; and 3G amendments plus
+enforcement; 3D new multi-service submission; 3E negotiation; and 3G amendments plus
 source completion reconciliation.
 
 ## Sprint 3B source-projection update

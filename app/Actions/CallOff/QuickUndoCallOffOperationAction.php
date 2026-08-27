@@ -33,7 +33,7 @@ class QuickUndoCallOffOperationAction
             foreach ($operation->items as $item) {
                 $request = $requests->get($item->call_off_request_id);
 
-                if ($request === null || $request->stateSnapshot() !== $item->after_state) {
+                if ($request === null || ! $this->statesMatch($request->stateSnapshot(), $item->after_state)) {
                     throw ValidationException::withMessages(['operation' => 'This operation can no longer be undone because a request has changed.']);
                 }
 
@@ -88,5 +88,20 @@ class QuickUndoCallOffOperationAction
 
             return $undoOperation->load('items');
         });
+    }
+
+    /**
+     * JSON object member ordering is not stable across supported database engines.
+     * Preserve strict value comparison while normalising the flat audit snapshot keys.
+     *
+     * @param  array<string, mixed>  $current
+     * @param  array<string, mixed>  $recorded
+     */
+    private function statesMatch(array $current, array $recorded): bool
+    {
+        ksort($current);
+        ksort($recorded);
+
+        return $current === $recorded;
     }
 }

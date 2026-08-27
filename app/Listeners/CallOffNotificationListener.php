@@ -3,7 +3,11 @@
 namespace App\Listeners;
 
 use App\Enums\PortalNotificationType;
+use App\Events\CallOffAlternativeAccepted;
+use App\Events\CallOffAlternativeProposed;
+use App\Events\CallOffAlternativeRejected;
 use App\Events\CallOffApproved;
+use App\Events\CallOffDateAgreed;
 use App\Events\CallOffRejected;
 use App\Events\CallOffSubmitted;
 use App\Models\CallOffRequest;
@@ -29,13 +33,37 @@ class CallOffNotificationListener
         $this->create($event->callOffRequestId, PortalNotificationType::CallOffRejected);
     }
 
-    private function create(int $requestId, PortalNotificationType $type): void
+    public function dateAgreed(CallOffDateAgreed $event): void
     {
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffDateAgreed, allowHistoricalDateAgreement: true);
+    }
+
+    public function alternativeProposed(CallOffAlternativeProposed $event): void
+    {
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffAlternativeProposed, $event->proposalUuid);
+    }
+
+    public function alternativeAccepted(CallOffAlternativeAccepted $event): void
+    {
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffAlternativeAccepted, $event->proposalUuid);
+    }
+
+    public function alternativeRejected(CallOffAlternativeRejected $event): void
+    {
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffAlternativeRejected, $event->proposalUuid);
+    }
+
+    private function create(
+        int $requestId,
+        PortalNotificationType $type,
+        ?string $eventReference = null,
+        bool $allowHistoricalDateAgreement = false,
+    ): void {
         try {
             $request = CallOffRequest::query()->find($requestId);
 
             if ($request !== null) {
-                $this->notifications->createForRequest($request, $type);
+                $this->notifications->createForRequest($request, $type, $eventReference, $allowHistoricalDateAgreement);
             }
         } catch (\Throwable $exception) {
             Log::warning('Portal notification creation failed.', [

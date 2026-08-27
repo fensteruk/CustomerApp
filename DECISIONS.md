@@ -642,3 +642,36 @@ Rules:
 Reason:
 This gives later sprints stable, auditable data structures without disrupting the working
 legacy workflow or making unsupported source-integration assumptions.
+
+---
+
+## DEC-037
+
+Date:
+21 August 2026
+
+Decision:
+Sprint 3E implements date agreement and alternative-date negotiation only for individual
+target-domain `CallOffRequest` records. Legacy Approved remains a truthful historical
+status but is presented as Date Agreed; its history is not rewritten.
+
+Rules:
+
+- Office Staff have global portal review scope. Any active Site User assigned to the
+  request site may accept or reject an outstanding alternative; rejection has a mandatory
+  customer-visible reason.
+- An early requested date requires explicit Office acknowledgement before agreement.
+  Alternative dates must be future weekdays and consult the replaceable `HolidayProvider`.
+  The current provider intentionally has no UK bank-holiday dataset pending an approved
+  data source and owner.
+- The request, negotiation and proposal are locked and revalidated immediately before
+  persistence. Proposals/history remain append-only; Date Agreed remains conflict-active.
+- Source completion takes precedence: it closes open negotiations, supersedes unanswered
+  alternatives and rejects stale agreement/response attempts.
+- Notifications remain in-app, customer-safe and post-commit only. No email, live source
+  write-back, operational scheduling, amendment, attachment, calendar/PDF or deployment is
+  authorised by this decision.
+
+Reason:
+This creates an auditable, portal-specific date conversation without importing SiteApp
+workflow or inventing holiday or scheduling rules.
