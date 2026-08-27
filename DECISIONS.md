@@ -675,3 +675,35 @@ Rules:
 Reason:
 This creates an auditable, portal-specific date conversation without importing SiteApp
 workflow or inventing holiday or scheduling rules.
+
+---
+
+## DEC-038
+
+Date:
+27 August 2026
+
+Decision:
+Fenster Office Staff are internal, globally scoped Portal users and do not require a
+customer organisation. `customer_organisation_id` remains the external customer-tenancy
+relationship for Site Manager, Assistant Site Manager and Finishing Foreman users.
+
+Rules:
+
+- Active Office Staff require their Fenster Office Staff role but may have
+  `customer_organisation_id = NULL`.
+- Every external Site User continues to require a legitimate customer organisation and an
+  assigned site for site-scoped access.
+- A fake or sentinel Fenster customer organisation must not be created to satisfy profile
+  validation.
+- Existing Office Staff rows with a historical customer organisation remain valid until a
+  separate data-cleanup decision is made; this correction does not rewrite them.
+- Global Office access remains role-based and must not weaken external customer/site
+  isolation.
+
+Reason:
+The existing entity is explicitly a customer organisation and has no internal/customer
+classification. The users foreign key has always been nullable, while a historical
+application profile check incorrectly required it for every role. Making the requirement
+role-specific implements the already-confirmed global Office model without inventing a
+Fenster customer record.

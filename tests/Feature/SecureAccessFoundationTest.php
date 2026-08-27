@@ -57,6 +57,56 @@ it('logs in with valid credentials', function (): void {
     $this->assertAuthenticatedAs($user);
 });
 
+it('authenticates active Office Staff without assigning a customer organisation', function (): void {
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
+        'customer_organisation_id' => null,
+        'password' => 'office-password',
+    ]);
+    $firstCustomer = CustomerOrganisation::factory()->create();
+    $secondCustomer = CustomerOrganisation::factory()->create();
+    Site::factory()->create(['customer_organisation_id' => $firstCustomer->id, 'name' => 'Customer Alpha']);
+    Site::factory()->create(['customer_organisation_id' => $secondCustomer->id, 'name' => 'Customer Beta']);
+
+    expect($office->customer_organisation_id)->toBeNull()
+        ->and($office->hasCompletePortalProfile())->toBeTrue()
+        ->and(Hash::check('office-password', $office->password))->toBeTrue();
+
+    $this->post('/login', [
+        'email' => $office->email,
+        'password' => 'office-password',
+    ])->assertRedirect('/dashboard');
+
+    $this->assertAuthenticatedAs($office);
+    $this->get('/dashboard')->assertRedirect('/portal/review-requests');
+    $this->get('/portal/review-requests')
+        ->assertOk()
+        ->assertSee('Customer Alpha')
+        ->assertSee('Customer Beta');
+});
+
+it('still requires every external Site User role to belong to a customer organisation', function (PortalRoleIdentifier $role): void {
+    $user = User::factory()->role($role)->create([
+        'customer_organisation_id' => null,
+        'password' => 'site-password',
+    ]);
+
+    expect($user->hasCompletePortalProfile())->toBeFalse();
+
+    $this->post('/login', [
+        'email' => $user->email,
+        'password' => 'site-password',
+    ])->assertSessionHasErrors('email');
+
+    $this->assertGuest();
+})->with(PortalRoleIdentifier::siteRoles());
+
+it('keeps existing Office Staff with a historical customer organisation compatible', function (): void {
+    $office = portalUserForTest(PortalRoleIdentifier::FensterOfficeStaff);
+
+    expect($office->customer_organisation_id)->not->toBeNull()
+        ->and($office->hasCompletePortalProfile())->toBeTrue();
+});
+
 it('rejects invalid credentials', function (): void {
     $user = portalUserForTest(PortalRoleIdentifier::SiteManager);
 

@@ -154,8 +154,10 @@ class DetermineCallOffEligibilityAction
         $plot->loadMissing('site');
 
         return $user->hasCompletePortalProfile()
-            && $user->customer_organisation_id === $plot->site->customer_organisation_id
-            && ($user->isFensterOfficeStaff() || ($user->isSiteRole() && $user->canAccessSite($plot->site)));
+            && ($user->isFensterOfficeStaff()
+                || ($user->isSiteRole()
+                    && $user->customer_organisation_id === $plot->site->customer_organisation_id
+                    && $user->canAccessSite($plot->site)));
     }
 
     public function ensureCanSubmitForSite(User $user, Site $site): void

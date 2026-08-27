@@ -56,8 +56,8 @@ function notificationCallOff(User $siteUser, Site $site, string $plotReference =
 it('notifies the submitter and all active Office Staff for submission', function (): void {
     $organisation = CustomerOrganisation::factory()->create();
     $siteUser = notificationUser(PortalRoleIdentifier::SiteManager, $organisation);
-    $office = notificationUser(PortalRoleIdentifier::FensterOfficeStaff, $organisation);
-    $unassignedOffice = notificationUser(PortalRoleIdentifier::FensterOfficeStaff, $organisation);
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create();
+    $unassignedOffice = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create();
     $site = notificationSite($siteUser);
     $office->assignedSites()->attach($site);
     $request = notificationCallOff($siteUser, $site);
