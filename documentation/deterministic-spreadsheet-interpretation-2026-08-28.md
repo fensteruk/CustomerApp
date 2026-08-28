@@ -2,7 +2,7 @@
 
 Date: 2026-08-28
 
-Status: local backend implementation complete; reference-workbook and disposable MySQL evidence remain outstanding.
+Status: local backend implementation and reference-workbook inspection complete; source Call Type semantics and disposable MySQL evidence remain outstanding.
 
 ## Boundary
 
@@ -28,17 +28,70 @@ XLSX
 `DeterministicSpreadsheetStructureInterpreter`. There is deliberately no AI implementation
 or provider hook.
 
-## Reference Workbook Status
+## Reference Workbook Evidence
 
-`Copy of siteapp1.xlsx` was not present in the project, the Codex attachment store, Desktop,
-Downloads or Documents paths available to this task. Therefore no claim is made about its
-actual worksheet names, hidden state, physical header row, formulas, date system, row count,
-snapshot scope or complete product set.
+`Copy of siteapp1.xlsx` was inspected locally and read-only on 2026-08-28. Its SHA-256 is
+`ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`. The operational file
+is not copied into the feature branch or test fixtures, and row values are not documented.
 
-The implementation and automated fixtures use only the semantics explicitly confirmed in
-the task: Call No., Site Name, Plot Ref, Items Ordered Status, Plot To Be Installed,
-`complete`, Call Type, product-code quantities and Site Value. `Items Ordered Status` remains
-UNKNOWN because no persistence meaning was approved. It is not treated as a completion stage.
+The workbook has one visible worksheet, `Sheet1`, with used range `A1:AA49`. Row 1 is the
+header, row 20 is physically blank, and there are 47 data rows across 13 distinct source
+site names. This proves a multi-site export, but does not prove that it is a complete global
+snapshot. Missing-source evaluation therefore remains limited to exact represented and bound
+site keys.
+
+It uses the Excel 1900 date system. `Plot To Be Installed` cells are genuine date-formatted
+numeric cells and were read as `DateTimeImmutable`; `Site Value` is GBP currency-formatted.
+There are no hidden sheets, rows or columns, formulas, merged cells, filters, frozen panes,
+macros, embeddings, external links or workbook connections.
+
+There is no Job Stage or Completed Date column. Completion evidence is the `complete` flag:
+20 rows are true-like and 27 are false-like across mixed casing. A true flag therefore uses
+the existing completion-without-date reconciliation path; it never borrows `Plot To Be
+Installed` or invents a completion date. All observed product candidates are non-negative;
+the data includes zeroes and one blank product quantity.
+
+The exact 27 headers, in order, are:
+
+1. `Call No.`
+2. `Site Name`
+3. `Plot Ref`
+4. `Items` + line break + `Ordered Status`
+5. `Plot To Be` + line break + `Installed`
+6. `complete`
+7. `Call type`
+8. `CAS`
+9. `FLU`
+10. `VS`
+11. `TT`
+12. `BAY`
+13. `PFD`
+14. `PSU`
+15. `PSG`
+16. `CDF`
+17. `CDU`
+18. `CDG`
+19. `GLS`
+20. `PSP`
+21. `BF`
+22. `ALI`
+23. `AOV`
+24. `FI`
+25. `WP`
+26. `MISC`
+27. `Site Value`
+
+The interpreter selects `Sheet1`/row 1 with confidence 99. It classifies all four critical
+fields safely, classifies the operational date and commercial value under their safety
+roles, recognises the completion flag, and proposes all 19 code-like numeric columns as
+products. `CAS`, `PFD` and `BF` score 96; the other 16 product candidates score 82 and need
+Office confirmation. `Items Ordered Status` remains UNKNOWN because no persistence meaning
+is approved; it must be explicitly ignored or mapped only after a source decision.
+
+The reference workbook exposed and now regression-tests a real defect: typed Excel dates
+could throw while non-header rows were scored as header candidates. Profiling now converts
+`DateTimeInterface` values through one deterministic date-only string boundary instead of
+casting date objects directly.
 
 Confirmed manual-workbook Call Types are deliberately limited to:
 
@@ -51,6 +104,17 @@ Confirmed manual-workbook Call Types are deliberately limited to:
 The transport-independent importer retains its older source-contract mappings for other
 namespaces, but the `siteapp-xlsx` analysis boundary does not accept `CM1` or `CM2` without a
 new explicit source decision. Unknown values produce `UNKNOWN_CALL_TYPE` and cannot commit.
+
+The reference workbook contains 21 `PC1`, 17 `CC1`, 7 `CC!`, 1 `CM1` and 1 `CM2` rows. It
+contains no `CML` row. Under the latest source-family instruction, the 9 `CC!`/`CM1`/`CM2`
+rows remain blocking rather than inheriting older cross-namespace mappings. The source owner
+must confirm whether those codes are valid for `siteapp-xlsx` before this workbook can commit.
+
+A dedicated rolled-back local HTTP preview gate confirmed 47 normalised rows, one blank row,
+13 distinct unmapped site keys, 47 `SITE_MAPPING_REQUIRED` errors and 9 additional
+`UNKNOWN_CALL_TYPE` errors. It created no source import run or projected plot. Unknown Call
+Types are now reported even when their row also requires a site binding, so one blocker no
+longer hides the other.
 
 ## Structural Inspection
 
@@ -204,7 +268,8 @@ and Sprint 3B services.
 
 ## Test Coverage and Limitations
 
-Automated coverage includes shifted headers and title rows, reordered columns, aliases,
+Automated coverage includes a fictional structure-equivalent 27-column reference fixture,
+typed Excel-date regression coverage, shifted headers and title rows, reordered columns, aliases,
 blank/irrelevant columns, unknown columns, product movement, completion casing, ambiguous plot
 candidates, missing critical fields, multiple plausible sheets, commercial/operational safety,
 formulas without cache, exact/near profile matching, profile versioning, source-site binding,
@@ -217,24 +282,28 @@ overall confidence of 96. The automated gate additionally requires less than 12 
 less than 160 MiB incremental peak allocation to avoid a gross regression; it is a development
 sanity bound, not a production throughput guarantee.
 
-Remaining evidence:
+Remaining evidence and decisions:
 
-1. Supply `Copy of siteapp1.xlsx` in an accessible local path so its real structure can be
-   inspected, rendered and exercised without committing confidential row data.
-2. Run migration/profile uniqueness, versioning and import-transaction checks on a disposable
+1. Confirm whether `CC!`, `CM1` and `CM2` are valid `siteapp-xlsx` codes and, if so, their
+   exact Portal services. No mapping is inferred from the older transport-independent source
+   contract.
+2. Confirm the 16 newly observed product headers before committing them as product quantities.
+3. Run migration/profile uniqueness, versioning and import-transaction checks on a disposable
    MySQL 8.4 database. This host currently has no MySQL client/server, Docker runtime or local
    port 3306 listener. Production is not an acceptable substitute.
-3. Confirm whether the real workbook is one-site, selected multi-site or global. Until then,
-   every profile remains `represented_sites`; global missing-source evaluation is impossible.
+4. Confirm whether the observed multi-site workbook is a selected-site export or a complete
+   global export. Until then, every profile remains `represented_sites`; global missing-source
+   evaluation is impossible.
 
 ## Local Verification
 
-- clean SQLite `migrate:fresh --seed`: passed through 12 migrations, including `000009` and
-  `000010`;
-- deterministic interpreter suite: 16 passed, 87 assertions;
-- focused interpreter/manual-import/Sprint 3B suite: 47 passed, 239 assertions;
-- complete Pest suite: 254 passed, 1,381 assertions; 15 existing MySQL-only concurrency
-  cases skipped on SQLite;
+- clean SQLite `migrate:fresh --seed`: passed through all 12 migrations, including `000009`
+  and `000010`;
+- actual-workbook rolled-back preview gate: 1 passed, 21 assertions;
+- deterministic interpreter suite: 18 passed, 104 assertions;
+- focused interpreter/manual-import/Sprint 3B suite: 49 passed, 257 assertions;
+- complete Pest suite: 271 total, 256 passed, 1,399 assertions; 15 existing MySQL-only
+  concurrency cases skipped on SQLite;
 - Pint: passed;
 - Composer validation: passed;
 - Composer audit: no security vulnerability advisories;
@@ -242,5 +311,6 @@ Remaining evidence:
   denied the sandboxed child process with `spawn EPERM`;
 - Git whitespace check: passed.
 
-No Forge, production database, deployment, external AI/API or GitHub Actions workflow was
+The actual workbook was rendered and inspected locally with no external network/API use. No
+Forge, production database, deployment, external AI/API or GitHub Actions workflow was
 contacted or changed.

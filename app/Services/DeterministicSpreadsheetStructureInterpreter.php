@@ -121,7 +121,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         $columns = [];
 
         for ($index = 0; $index < $maxColumns; $index++) {
-            $header = trim((string) ($headerCells[$index]->value ?? ''));
+            $header = trim($this->stringValue($headerCells[$index]->value ?? ''));
             $profile = $this->profileColumn($sheet, $headerRow, $index);
             $columns[] = $this->classifyColumn($index + 1, $header, $profile);
         }
@@ -198,7 +198,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
             return null;
         }
 
-        $values = array_map(fn (SpreadsheetCellData $cell): string => trim((string) $cell->value), $cells);
+        $values = array_map(fn (SpreadsheetCellData $cell): string => trim($this->stringValue($cell->value)), $cells);
         $nonEmptyIndexes = array_keys(array_filter($values, fn (string $value): bool => $value !== ''));
         if (count($nonEmptyIndexes) < 2) {
             return null;
@@ -227,7 +227,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
     private function recognisedRoleCount(array $cells): int
     {
         return collect($cells)
-            ->map(fn (SpreadsheetCellData $cell) => $this->normalisedAliases()[$this->normaliseHeader(trim((string) $cell->value))] ?? null)
+            ->map(fn (SpreadsheetCellData $cell) => $this->normalisedAliases()[$this->normaliseHeader(trim($this->stringValue($cell->value)))] ?? null)
             ->filter()
             ->uniqueStrict()
             ->count();
@@ -245,7 +245,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
             $populated = collect($columnIndexes)->filter(function (int $index) use ($cells): bool {
                 $value = $cells[$index]->value ?? null;
 
-                return $value !== null && trim((string) $value) !== '';
+                return $value !== null && trim($this->stringValue($value)) !== '';
             })->count();
 
             return $populated / max(1, count($columnIndexes));
@@ -261,16 +261,16 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
             ->take($limit)
             ->map(fn (array $row) => $row[$columnIndex] ?? new SpreadsheetCellData(null));
         $values = $cells->map(fn (SpreadsheetCellData $cell) => $cell->value);
-        $nonEmpty = $values->filter(fn ($value): bool => $value !== null && trim((string) $value) !== '')->values();
+        $nonEmpty = $values->filter(fn ($value): bool => $value !== null && trim($this->stringValue($value)) !== '')->values();
         $count = max(1, $nonEmpty->count());
         $numeric = $nonEmpty->filter(fn ($value): bool => is_int($value) || is_float($value) || (is_string($value) && is_numeric(trim($value))));
         $integers = $numeric->filter(fn ($value): bool => (float) $value === floor((float) $value));
         $dates = $nonEmpty->filter(fn ($value): bool => $value instanceof DateTimeInterface || $this->isDateString($value));
-        $booleans = $nonEmpty->filter(fn ($value): bool => is_bool($value) || in_array(mb_strtolower(trim((string) $value)), ['yes', 'no', 'y', 'n', 'true', 'false', 'complete', 'completed', '0', '1'], true));
+        $booleans = $nonEmpty->filter(fn ($value): bool => is_bool($value) || in_array(mb_strtolower(trim($this->stringValue($value))), ['yes', 'no', 'y', 'n', 'true', 'false', 'complete', 'completed', '0', '1'], true));
         $strings = $nonEmpty->filter(fn ($value): bool => is_string($value) && ! is_numeric(trim($value)) && ! $this->isDateString($value));
         $normalisedValues = $nonEmpty->map(fn ($value): string => mb_strtolower(trim($value instanceof DateTimeInterface ? $value->format(DATE_ATOM) : (string) $value)));
         $numericValues = $numeric->map(fn ($value): float => (float) $value);
-        $samples = $nonEmpty->take(5)->map(fn ($value): string => mb_substr($value instanceof DateTimeInterface ? $value->format('Y-m-d') : (string) $value, 0, 80))->all();
+        $samples = $nonEmpty->take(5)->map(fn ($value): string => mb_substr($this->stringValue($value), 0, 80))->all();
 
         return [
             'sample_size' => $values->count(),
@@ -283,11 +283,11 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
             'boolean_like_percent' => round(($booleans->count() / $count) * 100, 1),
             'unique_percent' => round(($normalisedValues->unique()->count() / $count) * 100, 1),
             'repeated_percent' => round((1 - ($normalisedValues->unique()->count() / $count)) * 100, 1),
-            'zero_or_blank_percent' => round((($values->filter(fn ($value): bool => $value === null || trim((string) $value) === '' || (is_numeric($value) && (float) $value === 0.0))->count()) / max(1, $values->count())) * 100, 1),
+            'zero_or_blank_percent' => round((($values->filter(fn ($value): bool => $value === null || trim($this->stringValue($value)) === '' || (is_numeric($value) && (float) $value === 0.0))->count()) / max(1, $values->count())) * 100, 1),
             'negative_count' => $numericValues->filter(fn (float $value): bool => $value < 0)->count(),
             'numeric_min' => $numericValues->isEmpty() ? null : $numericValues->min(),
             'numeric_max' => $numericValues->isEmpty() ? null : $numericValues->max(),
-            'average_string_length' => round((float) $nonEmpty->avg(fn ($value): int => mb_strlen((string) $value)), 1),
+            'average_string_length' => round((float) $nonEmpty->avg(fn ($value): int => mb_strlen($this->stringValue($value))), 1),
             'formula_count' => $cells->where('formula', true)->count(),
             'formula_without_cached_value_count' => $cells->filter(fn (SpreadsheetCellData $cell): bool => $cell->formula && ! $cell->hasCachedFormulaValue)->count(),
             'sample_values' => implode(' | ', $samples),
@@ -464,6 +464,13 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         }
 
         return false;
+    }
+
+    private function stringValue(mixed $value): string
+    {
+        return $value instanceof DateTimeInterface
+            ? $value->format('Y-m-d')
+            : (string) $value;
     }
 
     private function withConfirmation(WorkbookColumnInterpretation $column, bool $needed, string $reason): WorkbookColumnInterpretation

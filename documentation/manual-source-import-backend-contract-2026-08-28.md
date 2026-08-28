@@ -2,7 +2,7 @@
 
 Date: 2026-08-28
 
-Status: fixed-header backend contract superseded locally by the deterministic interpretation extension on `feature/deterministic-spreadsheet-interpreter`; reference-workbook evidence remains pending.
+Status: fixed-header backend contract superseded locally by the deterministic interpretation extension on `feature/deterministic-spreadsheet-interpreter`; reference workbook verified, source Call Type semantics and disposable MySQL evidence remain pending.
 
 ## Boundary
 
@@ -10,17 +10,33 @@ This adapter is an Office Staff transport into the existing Sprint 3B source pro
 
 The fixed source namespace is `siteapp-xlsx`. It is stored on bindings, projected plots, previews and import runs. `production-test-fixture` is not accepted by this adapter.
 
-## Operational Workbook Blocker
+## Operational Workbook Evidence
 
-No representative operational workbook was found in the repository or supplied attachment workspace on 2026-08-28. The following exact artifact is still required:
+`Copy of siteapp1.xlsx` was inspected locally and read-only on 2026-08-28. It has one visible
+worksheet (`Sheet1`), header row 1, used range `A1:AA49`, 47 data rows, one physical blank row
+and 13 distinct source site names. It uses the Excel 1900 date system. `Plot To Be Installed`
+is a genuine date-formatted column, and `Site Value` is GBP currency-formatted. There are no
+hidden sheets/rows/columns, formulas, macros, embeddings, external links or workbook
+connections.
 
-- an unmodified representative `.xlsx` export produced by the intended SiteApp/manual-export process;
-- with its real filename, all worksheets, hidden worksheet/column state, header row, exact header text, formulas, blank rows, typed date cells, numeric cells and a safe sample of each relevant call/product shape intact;
-- without production credentials and with confidential row values redacted only in a way that preserves cell types and structure.
+The file has no Job Stage or Completed Date column. Its `complete` flag contains 20 true-like
+and 27 false-like values. True uses the guarded completion-without-date path and raises the
+existing reconciliation warning; `Plot To Be Installed` is never substituted as completion.
 
-The adaptive interpreter no longer needs environment-backed fixed worksheet/header values. It proposes a worksheet, header row and closed-enum mapping from local deterministic evidence. Ambiguous/low-confidence mappings stop in `mapping_required` and must be confirmed by Office Staff. This does not remove the evidence blocker: the supplied reference workbook is still required before its real structure or snapshot scope can be claimed.
+The 27 headers and full non-sensitive structural findings are recorded in
+`documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`. The workbook's
+SHA-256 is `ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`; the operational
+file and its row values are not committed. Automated coverage uses a fictional
+structure-equivalent fixture.
 
-Mechanical XLSX files generated in automated tests use a clearly labelled test-only worksheet and headers. They prove parser mechanics, not the operational schema.
+The interpreter proposes `Sheet1`/row 1 with confidence 99. It still correctly returns
+`mapping_required`: 16 newly observed product candidates require Office confirmation, 13
+source-site names require explicit bindings, and 9 rows use source-family Call Types that
+are not yet approved by the latest task contract.
+
+A rolled-back local endpoint gate confirmed that the real file normalises to 47 rows and
+reports all 47 missing site bindings plus 9 unknown Call Types without creating a committed
+source run or projection. Both blockers are shown on the same row where applicable.
 
 ## Authorisation
 
@@ -140,9 +156,14 @@ The transport-independent mapper retains its existing mappings, while the adapti
 
 Whitespace/case is normalised for known codes. `CM1`, `CM2` and every other unconfirmed value are blocking for this adapter and never guessed. Older mappings remain available to previously approved non-XLSX source contracts.
 
+The inspected workbook contains `PC1` (21 rows), `CC1` (17), `CC!` (7), `CM1` (1) and
+`CM2` (1), with no `CML` row. Therefore 9 rows remain `UNKNOWN_CALL_TYPE` for this adapter
+until the source owner explicitly confirms their current meaning. The older global mapper is
+not used to bypass this source-family decision.
+
 `Call No.` remains the permanent idempotent identity under the existing projection schema, which currently enforces global uniqueness. A Call No. cannot change its site, plot or service association, and a projected plot/service cannot silently take a replacement Call No. Identity conflicts are blocking reconciliation results.
 
-The projected plot identity is the source namespace plus exact bound source-site key plus plot reference. Product cells configured from the approved workbook abbreviation list become existing `ProjectedPlotProduct` projections. Blank quantity means zero; numeric zero is retained; positive numerics are accepted; invalid and negative values block the row. Unconfigured fields are ignored. `Site Value` and other commercial fields must never be configured as product/source output and are never returned by the adapter.
+The projected plot identity is the source namespace plus exact bound source-site key plus plot reference. The reference workbook contains 19 code-like numeric candidates: `CAS`, `FLU`, `VS`, `TT`, `BAY`, `PFD`, `PSU`, `PSG`, `CDF`, `CDU`, `CDG`, `GLS`, `PSP`, `BF`, `ALI`, `AOV`, `FI`, `WP` and `MISC`. `CAS`, `PFD` and `BF` are already approved examples; the other 16 require Office confirmation before profile save/commit. Confirmed product cells become existing `ProjectedPlotProduct` projections. Blank quantity means zero; numeric zero is retained; positive numerics are accepted; invalid and negative values block the row. Unconfigured fields are ignored. `Site Value` and other commercial fields must never be configured as product/source output and are never returned by the adapter.
 
 `Plot To Be Installed` is deliberately ignored by the adapter at this stage. It is not a requested date, agreed date, proposal date or Date Agreed history fact.
 
@@ -163,7 +184,11 @@ Reconciliation readback includes severity, safe message, source row number when 
 
 ## Missing-source Scope
 
-The workbook's completeness level is not yet known because the representative workbook is absent. The backend therefore uses the safest supported rule: missing evaluation is limited to `siteapp-xlsx` projections whose binding keys are actually represented by at least one row in the upload. It never evaluates other bindings or namespaces. Missing rows are retained, marked absent and reconciled; they are never deleted.
+The representative workbook proves a multi-site export (13 distinct source site names) but
+does not prove a complete global snapshot. The backend therefore uses the safest supported
+rule: missing evaluation is limited to `siteapp-xlsx` projections whose binding keys are
+actually represented by at least one row in the upload. It never evaluates other bindings
+or namespaces. Missing rows are retained, marked absent and reconciled; they are never deleted.
 
 This supports one-site and multi-site files safely. A future global-snapshot claim requires evidence from the actual export contract before any broader scope may be enabled.
 

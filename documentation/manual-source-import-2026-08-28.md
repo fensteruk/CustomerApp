@@ -6,27 +6,28 @@ Date: 2026-08-28
 
 The transport-independent Sprint 3B source importer now has a manual XLSX adapter, explicit source-site bindings, a non-mutating preview, stale-preview protection, an explicit atomic commit and an Office-only audit/readback contract.
 
-The fixed-header parser configuration has been superseded locally by a deterministic adaptive interpreter. No matching reference workbook exists in the project, attachment workspace or usual local document paths inspected on 2026-08-28. The backend can now propose and confirm varying worksheet layouts safely, but the actual reference format and snapshot scope still cannot be claimed until the file is available.
+The fixed-header parser configuration has been superseded locally by a deterministic adaptive interpreter. `Copy of siteapp1.xlsx` has now been inspected locally and read-only. The backend proposes its real worksheet/header layout safely; source Call Type meanings, product confirmation, site bindings and global-snapshot status remain explicit gates rather than guesses.
 
 Detailed interpretation rules and the Office mapping/profile contract are documented in `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`.
 
-## Exact Workbook Evidence Still Required
+## Reference Workbook Evidence
 
-Provide one representative, unmodified `.xlsx` produced by the intended operational export. It must preserve:
+The workbook contains one visible `Sheet1`, header row 1, range `A1:AA49`, 47 data rows,
+one blank physical row and 13 distinct source site names. It uses the Excel 1900 date system;
+`Plot To Be Installed` is date-formatted and `Site Value` is GBP currency-formatted. There
+are no hidden sheets/rows/columns, formulas, macros, embeddings, external links or workbook
+connections. Its SHA-256 is
+`ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`.
 
-- original safe filename;
-- every worksheet name and worksheet visibility state;
-- hidden columns and their headers;
-- exact header row number and text;
-- the real source site identifier/name field;
-- Call No., plot, Call Type, job stage and Completed Date fields;
-- Excel date system and date cell types;
-- numeric, zero, blank, invalid and negative quantity examples where safely possible;
-- formulas and blank rows;
-- product abbreviation columns;
-- evidence whether an export covers one site, selected sites or a complete global snapshot.
+There is no Job Stage or Completed Date column. The `complete` flag contains 20 true-like
+and 27 false-like values. A true flag may establish source completion but produces the
+existing missing-completion-date reconciliation warning; no date is invented or copied from
+`Plot To Be Installed`.
 
-Values may be anonymised, but structure and cell types must remain unchanged. Do not supply credentials, macros or production secrets.
+The complete structural/header evidence is recorded in
+`documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`. The workbook is not
+committed and its row values are not reproduced. A fictional structure-equivalent fixture
+provides regression coverage.
 
 ## Namespace and Identity
 
@@ -55,13 +56,24 @@ The binding records its own UUID, exact key, source/original name, optional disp
 
 ## Mapping Rules
 
-- `PC1` maps to Windows.
-- `CC!` maps to Cavity Closers.
-- `CM1` maps to Snagging.
-- `CM2` maps to CML.
-- Unknown values are blocking; there is no guess/fallback mapping.
+The latest `siteapp-xlsx` source-family confirmations are:
 
-Only approved product abbreviation columns from the confirmed workbook contract are read. Test mechanics cover `CAS`, `PFD` and `BF`; that is not yet a claim that these are the complete operational column set. Blank means zero, zero is retained, positive numbers are accepted, and invalid/negative quantities block import. Other workbook columns are neither projected nor returned. In particular, Site Value and other commercial values are excluded.
+- `PC1` maps to Windows;
+- `CC1` maps to Cavity Closers;
+- `CML` maps to CML.
+
+Unknown values are blocking; there is no guess/fallback mapping. The workbook contains 21
+`PC1`, 17 `CC1`, 7 `CC!`, 1 `CM1` and 1 `CM2` rows and no `CML` row. The 9
+`CC!`/`CM1`/`CM2` rows are therefore deliberately blocked until the source owner confirms
+their meaning for this exact source family. Older mappings in the transport-independent
+importer do not silently broaden the XLSX adapter contract.
+
+The workbook contains 19 code-like numeric product candidates: `CAS`, `FLU`, `VS`, `TT`,
+`BAY`, `PFD`, `PSU`, `PSG`, `CDF`, `CDU`, `CDG`, `GLS`, `PSP`, `BF`, `ALI`, `AOV`, `FI`,
+`WP` and `MISC`. `CAS`, `PFD` and `BF` are approved examples; the remaining 16 need Office
+confirmation. Blank means zero, zero is retained, positive numbers are accepted, and
+invalid/negative quantities block import. `Items Ordered Status` is not mapped to a domain
+field. Site Value and other commercial values are excluded.
 
 `Plot To Be Installed` is source operational context only. The current adapter deliberately does not project it because the existing Sprint 3B contract has no customer-date destination for it. It never becomes requested, proposed, agreed or history data.
 
@@ -78,7 +90,11 @@ Completed Date also independently proves completion. Completion stage without a 
 
 ## Missing-source Rule
 
-Missing rows are never deletions. The adapter limits missing evaluation to the `siteapp-xlsx` namespace and exact mapped source-site keys present in the current upload. A one-site workbook therefore cannot mark another site's rows absent. This conservative scope remains mandatory until the representative workbook proves a broader snapshot boundary.
+Missing rows are never deletions. The inspected workbook proves a multi-site export but not a
+global one. The adapter limits missing evaluation to the `siteapp-xlsx` namespace and exact
+mapped source-site keys present in the current upload. A selected-site workbook therefore
+cannot mark other sites' rows absent. This conservative scope remains mandatory until the
+source owner proves a global snapshot boundary.
 
 ## Preview and Staleness
 
@@ -111,7 +127,12 @@ A future scheduled transport may produce the same validated `SourceRecord` colle
 
 ## Remaining Decisions
 
-The representative workbook must determine the exact worksheet/header/date/product contract and whether the source site field is a durable key or an exact exported name. The source owner must also confirm export cadence and whether each workbook is one-site, multi-site selection or global. Until then, the endpoint correctly returns `WORKBOOK_CONTRACT_REQUIRED`; no UI or production release should treat the adapter as operationally ready.
+The source owner must confirm `CC!`, `CM1` and `CM2` for the `siteapp-xlsx` namespace,
+confirm the 16 newly observed product headers, state whether `Site Name` is a durable exact
+key or only a display name, and state whether this multi-site workbook is a selected-site or
+complete global export. Export cadence/ownership also remains TBC. Until those decisions and
+site bindings exist, the preview remains blocking; no UI or production release should treat
+the adapter as operationally ready.
 
 ## Verification
 
@@ -130,9 +151,10 @@ Local isolated verification completed on 2026-08-28:
 
 A disposable MySQL 8.4 gate could not be run from this worktree. This host has no Docker engine, MySQL client/server or MySQL listener. The only repository workflow is the existing Sprint 3E workflow on a different release line; this branch does not contain it, and modifying/copying workflow definitions is outside this task. No Forge or production system was contacted. MySQL-specific migration, unique-key, transactional and concurrent-commit verification remains required after the representative workbook contract is finalised and before release.
 
-Deterministic interpreter extension verification on 2026-08-28: migration `000010` completed
-in a clean SQLite rebuild; the interpreter suite passed 16 tests/87 assertions; the full
-suite passed 254 tests/1,381 assertions with 15 MySQL-only cases skipped; Pint, Composer
-validation/audit, Vite build and Git whitespace checks passed. The disposable MySQL and real
-reference-workbook gates remain outstanding as documented in
+Reference-workbook remediation verification on 2026-08-28 passed locally: the actual
+workbook's rolled-back preview gate passed 1 test/21 assertions; the deterministic suite
+passed 18/104; focused interpreter/manual-import/Sprint 3B tests passed 49/257; the complete
+suite passed 256 tests/1,399 assertions with 15 MySQL-only cases skipped; clean SQLite
+migration/seed, Pint, Composer validation/audit, Vite build and Git whitespace checks passed.
+The disposable MySQL gate and source-semantics decisions remain outstanding as documented in
 `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`.

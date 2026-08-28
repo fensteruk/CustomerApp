@@ -143,12 +143,14 @@ test('dry-run analysis is non-mutating and returns explicit blocking categories'
     ], 0);
 
     $analysis = app(ManualSourceImportAnalysisService::class)->analyse(ManualSourceImport::SOURCE_NAMESPACE, $workbook);
+    $unmappedUnknown = collect($analysis->rows)->firstWhere('call_number', 'CALL-2');
 
     expect($analysis->summary['NEW'])->toBe(1)
         ->and($analysis->summary['SITE_MAPPING_REQUIRED'])->toBe(1)
         ->and($analysis->summary['UNKNOWN_CALL_TYPE'])->toBe(1)
         ->and($analysis->summary['INVALID'])->toBe(1)
-        ->and($analysis->blockingErrorCount)->toBe(3)
+        ->and(collect($unmappedUnknown['errors'])->pluck('code')->all())->toBe(['SITE_MAPPING_REQUIRED', 'UNKNOWN_CALL_TYPE'])
+        ->and($analysis->blockingErrorCount)->toBe(4)
         ->and(SourceImportRun::query()->count())->toBe(0)
         ->and(ProjectedPlotService::query()->count())->toBe(0);
 });

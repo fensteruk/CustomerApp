@@ -122,10 +122,14 @@ class ManualSourceImportAnalysisService
         if ($resolution === null && $row->sourceSiteKey !== '') {
             $category = ManualSourceImportCategory::SiteMappingRequired;
             $errors[] = $this->message('SITE_MAPPING_REQUIRED', 'The source site must be explicitly bound to an existing Portal site.');
-        } elseif ($serviceType === null && $row->callType !== '') {
-            $category = ManualSourceImportCategory::UnknownCallType;
+        }
+        if ($serviceType === null && $row->callType !== '') {
+            if ($resolution !== null) {
+                $category = ManualSourceImportCategory::UnknownCallType;
+            }
             $errors[] = $this->message('UNKNOWN_CALL_TYPE', "Unknown Call Type '{$row->callType}'.");
-        } elseif ($errors === [] && $resolution !== null && $serviceType !== null) {
+        }
+        if ($errors === [] && $resolution !== null && $serviceType !== null) {
             $associationChanged = $existing !== null && (
                 $existing->projectedPlot->external_source !== $sourceNamespace
                 || (int) $existing->projectedPlot->site_id !== (int) $resolution->site->id

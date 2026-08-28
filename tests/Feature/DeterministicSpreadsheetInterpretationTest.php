@@ -16,6 +16,7 @@ use App\Models\WorkbookInterpretationProfile;
 use App\Services\SourceSiteBindingService;
 use App\Services\WorkbookInterpretationProfileService;
 use App\Services\WorkbookMappingService;
+use App\Services\XlsxSourceReader;
 use App\Services\XlsxWorkbookInspector;
 use App\Support\ManualSourceImport;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -62,6 +63,86 @@ test('it deterministically detects shifted aliases dynamic products and safety o
         ->and($columns['Site Value']->role)->toBe(WorkbookColumnRole::CommercialValue)
         ->and($columns['complete']->role)->toBe(WorkbookColumnRole::CompletionFlag)
         ->and($columns['Notes']->role)->toBe(WorkbookColumnRole::Unknown);
+});
+
+test('the reference workbook shape is interpreted from a fictional structure-equivalent fixture', function (): void {
+    $headers = [
+        'Call No.', 'Site Name', 'Plot Ref', "Items\nOrdered Status", "Plot To Be \nInstalled ", 'complete', 'Call type',
+        'CAS', 'FLU', 'VS', 'TT', 'BAY', 'PFD', 'PSU', 'PSG', 'CDF', 'CDU', 'CDG', 'GLS', 'PSP', 'BF', 'ALI', 'AOV', 'FI', 'WP', 'MISC',
+        'Site Value',
+    ];
+    $dateStyle = (new Style)->setFormat('mm-dd-yy');
+    $referenceRow = static function (array $values) use ($dateStyle): Row {
+        return new Row(array_map(
+            static fn (mixed $value, int $index): Cell => Cell::fromValue($value, $index === 4 ? $dateStyle : null),
+            $values,
+            array_keys($values),
+        ));
+    };
+    $path = adaptiveWorkbook([[
+        'name' => 'Sheet1',
+        'rows' => [
+            $headers,
+            $referenceRow([9001, 'TEST — Willow Park', 'TEST — Plot 001', 'All In Stock', new DateTimeImmutable('2026-09-01'), 'No', 'PC1', 5, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 4, 0, 1, 0, 0, 0, 0, 0, 1250]),
+            $referenceRow([9002, 'TEST — Willow Park', 'TEST — Plot 002', 'Partly In Stock', new DateTimeImmutable('2026-09-02'), 'yes', 'CC1', 0, 2, 0, 0, 0, 0, 1, 0, 0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 900]),
+            [],
+            $referenceRow([9003, 'TEST — Riverside', 'TEST — Plot 003', 'To Be Checked', new DateTimeImmutable('2026-09-03'), 'YES', 'CML', 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 450]),
+        ],
+    ]]);
+
+    try {
+        $interpretation = app(SpreadsheetStructureInterpreter::class)->interpret(app(XlsxWorkbookInspector::class)->inspect($path));
+        $selected = $interpretation->selected();
+        $columns = collect($selected?->columns)->keyBy('originalHeader');
+        $mapping = app(WorkbookMappingService::class)->canonicalise($interpretation, [
+            'sheet' => 'Sheet1',
+            'header_row' => 1,
+            'columns' => collect($selected?->columns)->map(fn ($column): array => [
+                'source_index' => $column->sourceIndex,
+                'semantic_role' => ($column->role === WorkbookColumnRole::Unknown ? WorkbookColumnRole::Ignore : $column->role)->value,
+                'subtype' => $column->role === WorkbookColumnRole::ProductQuantity ? $column->subtype : null,
+            ])->all(),
+        ]);
+        $read = app(XlsxSourceReader::class)->readMapped($path, $mapping);
+    } finally {
+        @unlink($path);
+    }
+
+    expect($interpretation->selectedSheet)->toBe('Sheet1')
+        ->and($interpretation->headerRow)->toBe(1)
+        ->and($interpretation->overallConfidence)->toBeGreaterThanOrEqual(95)
+        ->and($selected?->columns)->toHaveCount(27)
+        ->and(collect($selected?->columns)->where('role', WorkbookColumnRole::ProductQuantity))->toHaveCount(19)
+        ->and($columns["Items\nOrdered Status"]->role)->toBe(WorkbookColumnRole::Unknown)
+        ->and($columns["Plot To Be \nInstalled"]->role)->toBe(WorkbookColumnRole::OperationalTargetDate)
+        ->and($columns["Plot To Be \nInstalled"]->profile['date_percent'])->toBe(100.0)
+        ->and($columns['complete']->profile['boolean_like_percent'])->toBe(100.0)
+        ->and($columns['Site Value']->role)->toBe(WorkbookColumnRole::CommercialValue)
+        ->and($columns['Site Value']->profile['sample_values'])->toBe('[commercial values withheld]')
+        ->and($read->rows)->toHaveCount(3)
+        ->and($read->blankRowCount)->toBe(1)
+        ->and(collect($read->rows)->pluck('completionFlag')->all())->toBe([false, true, true]);
+});
+
+test('typed Excel dates are safe during every header-candidate and profile pass', function (): void {
+    $workbook = new SpreadsheetWorkbookData([
+        new SpreadsheetSheetData('Calls', true, [
+            1 => array_map(fn (string $value): SpreadsheetCellData => new SpreadsheetCellData($value), ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'Plot To Be Installed']),
+            2 => [
+                new SpreadsheetCellData(9001),
+                new SpreadsheetCellData('TEST — Willow Park'),
+                new SpreadsheetCellData('TEST — Plot 001'),
+                new SpreadsheetCellData('PC1'),
+                new SpreadsheetCellData(new DateTimeImmutable('2026-09-01')),
+            ],
+        ], 2, 0),
+    ], '1900');
+
+    $interpretation = app(SpreadsheetStructureInterpreter::class)->interpret($workbook);
+    $operationalDate = collect($interpretation->selected()?->columns)->firstWhere('role', WorkbookColumnRole::OperationalTargetDate);
+
+    expect($interpretation->headerRow)->toBe(1)
+        ->and($operationalDate->profile['date_percent'])->toBe(100.0);
 });
 
 test('ambiguous critical candidates and multiple plausible sheets require explicit Office selection', function (): void {
