@@ -65,6 +65,10 @@ class AppServiceProvider extends ServiceProvider
 
         Gate::define('manage-site-assignments', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff());
 
+        Gate::define('manage-source-imports', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff() && ! $user->is_preview_user);
+
+        Gate::define('manage-source-site-bindings', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff() && ! $user->is_preview_user);
+
         Gate::define('view-projected-plot', fn (User $user, ProjectedPlot $plot): bool => app(DetermineCallOffEligibilityAction::class)->canViewProjectedPlot($user, $plot));
 
         Gate::define('submit-call-off', fn (User $user, Site $site): bool => $user->isSiteRole() && $user->canAccessSite($site));

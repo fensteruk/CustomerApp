@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 /**
@@ -17,6 +18,10 @@ class SourceImportRun extends Model
     protected $fillable = [
         'source_name',
         'source_version',
+        'initiated_by_user_id',
+        'original_filename',
+        'content_sha256',
+        'source_scope',
         'status',
         'started_at',
         'finished_at',
@@ -36,7 +41,14 @@ class SourceImportRun extends Model
         return [
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
+            'source_scope' => 'array',
         ];
+    }
+
+    /** @return BelongsTo<User, $this> */
+    public function initiator(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'initiated_by_user_id');
     }
 
     /** @return HasMany<ProjectedPlotService, $this> */

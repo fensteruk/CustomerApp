@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Site extends Model
 {
     /** @use HasFactory<SiteFactory> */
-    use HasFactory;
+    use HasFactory, HasUuid;
 
     protected $fillable = [
         'customer_organisation_id',
@@ -54,6 +55,12 @@ class Site extends Model
     public function projectedPlots(): HasMany
     {
         return $this->hasMany(ProjectedPlot::class);
+    }
+
+    /** @return HasMany<SourceSiteBinding, $this> */
+    public function sourceSiteBindings(): HasMany
+    {
+        return $this->hasMany(SourceSiteBinding::class);
     }
 
     /**

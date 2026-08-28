@@ -22,6 +22,7 @@ class ProjectedPlot extends Model
 
     protected $fillable = [
         'site_id',
+        'source_site_binding_id',
         'external_source',
         'external_identifier',
         'plot_reference',
@@ -45,6 +46,12 @@ class ProjectedPlot extends Model
     public function site(): BelongsTo
     {
         return $this->belongsTo(Site::class);
+    }
+
+    /** @return BelongsTo<SourceSiteBinding, $this> */
+    public function sourceSiteBinding(): BelongsTo
+    {
+        return $this->belongsTo(SourceSiteBinding::class);
     }
 
     /**

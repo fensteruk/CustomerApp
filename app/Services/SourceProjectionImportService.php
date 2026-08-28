@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Actions\CallOff\UpdateConflictKeyAction;
+use App\Data\SourceImportContext;
 use App\Data\SourceRecord;
 use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffNegotiationStatus;
@@ -12,7 +13,6 @@ use App\Enums\SourceProjectionIssueType;
 use App\Models\ProjectedPlot;
 use App\Models\ProjectedPlotProduct;
 use App\Models\ProjectedPlotService;
-use App\Models\Site;
 use App\Models\SourceImportRun;
 use App\Models\SourceProjectionEvent;
 use App\Models\SourceProjectionIssue;
@@ -23,12 +23,34 @@ use Illuminate\Support\Facades\Log;
 
 class SourceProjectionImportService
 {
-    public function __construct(private readonly SourceCallTypeMapper $callTypes, private readonly SourceProjectionIssueService $issues, private readonly UpdateConflictKeyAction $conflicts) {}
+    public function __construct(
+        private readonly SourceCallTypeMapper $callTypes,
+        private readonly SourceProjectionIssueService $issues,
+        private readonly UpdateConflictKeyAction $conflicts,
+        private readonly SourceSiteResolver $sites,
+    ) {}
 
     /** @param iterable<SourceRecord> $records */
-    public function import(string $sourceName, iterable $records, ?string $sourceVersion = null): SourceImportRun
+    public function import(string $sourceName, iterable $records, ?string $sourceVersion = null, ?SourceImportContext $context = null): SourceImportRun
     {
-        $run = SourceImportRun::query()->create(['source_name' => $sourceName, 'source_version' => $sourceVersion, 'status' => 'running', 'started_at' => now()]);
+        $sourceName = mb_strtolower(trim($sourceName));
+        $context ??= new SourceImportContext;
+        $representedSites = collect($context->representedSiteIdentifiers)
+            ->map(fn (string $site): string => trim($site))
+            ->filter()
+            ->uniqueStrict()
+            ->values()
+            ->all();
+        $run = SourceImportRun::query()->create([
+            'source_name' => $sourceName,
+            'source_version' => $sourceVersion,
+            'initiated_by_user_id' => $context->initiatedByUserId,
+            'original_filename' => $context->originalFilename,
+            'content_sha256' => $context->contentSha256,
+            'source_scope' => ['represented_site_keys' => $representedSites],
+            'status' => 'running',
+            'started_at' => now(),
+        ]);
 
         try {
             $records = Collection::make($records)
@@ -41,6 +63,7 @@ class SourceProjectionImportService
                     $record->completedDate,
                     $record->products,
                     $record->sourceUpdatedAt,
+                    $record->sourceRowNumber,
                 ))
                 ->values();
             $callNumbers = $records->pluck('callNumber')->filter();
@@ -50,21 +73,21 @@ class SourceProjectionImportService
 
             foreach ($records as $record) {
                 if ($record->callNumber === '') {
-                    $this->issues->record($run, SourceProjectionIssueType::InvalidSourceRecord, "invalid-source-record:{$sourceName}:blank-call-number", context: ['reason' => 'Call No. is required.']);
+                    $this->issues->record($run, SourceProjectionIssueType::InvalidSourceRecord, "invalid-source-record:{$sourceName}:blank-call-number", context: ['reason' => 'Call No. is required.', 'source_row_number' => $record->sourceRowNumber]);
                     $counts['records_rejected']++;
 
                     continue;
                 }
 
                 if ($duplicateNumbers->contains($record->callNumber)) {
-                    $this->issues->record($run, SourceProjectionIssueType::DuplicateCallNumber, "duplicate-call-number:{$sourceName}:{$record->callNumber}", $record->callNumber);
+                    $this->issues->record($run, SourceProjectionIssueType::DuplicateCallNumber, "duplicate-call-number:{$sourceName}:{$record->callNumber}", $record->callNumber, context: ['source_row_number' => $record->sourceRowNumber]);
                     $counts['records_rejected']++;
 
                     continue;
                 }
 
                 if ($this->callTypes->serviceFor($record->callType) === null) {
-                    $this->issues->record($run, SourceProjectionIssueType::UnknownCallType, "unknown-call-type:{$sourceName}:{$record->callNumber}", $record->callNumber, context: ['call_type' => $record->callType]);
+                    $this->issues->record($run, SourceProjectionIssueType::UnknownCallType, "unknown-call-type:{$sourceName}:{$record->callNumber}", $record->callNumber, context: ['call_type' => $record->callType, 'source_row_number' => $record->sourceRowNumber]);
                     $counts['records_rejected']++;
 
                     continue;
@@ -79,7 +102,7 @@ class SourceProjectionImportService
                     $type = $exception->getMessage() === 'Stable Call No. association changed.'
                         ? SourceProjectionIssueType::AssociationChanged
                         : SourceProjectionIssueType::InvalidSourceRecord;
-                    $this->issues->record($run, $type, ($type === SourceProjectionIssueType::AssociationChanged ? 'association-changed' : 'invalid-source-record').":{$sourceName}:{$record->callNumber}", $record->callNumber, context: ['reason' => $exception->getMessage()]);
+                    $this->issues->record($run, $type, ($type === SourceProjectionIssueType::AssociationChanged ? 'association-changed' : 'invalid-source-record').":{$sourceName}:{$record->callNumber}", $record->callNumber, context: ['reason' => $exception->getMessage(), 'source_row_number' => $record->sourceRowNumber, 'source_site_key' => $record->siteIdentifier, 'plot_reference' => $record->plotReference]);
                     $counts['records_rejected']++;
                 }
             }
@@ -88,7 +111,7 @@ class SourceProjectionImportService
                 DB::transaction(fn () => $this->syncProducts((int) $plotId, $products, $run));
             }
 
-            $counts['records_missing'] = $this->markMissing($run, $sourceName, $callNumbers->all());
+            $counts['records_missing'] = $this->markMissing($run, $sourceName, $callNumbers->all(), $representedSites);
             $run->update([...$counts, 'reconciliation_issue_count' => SourceProjectionIssue::query()->where('source_import_run_id', $run->id)->count(), 'status' => $counts['records_rejected'] > 0 ? 'partial' : 'completed', 'finished_at' => now()]);
 
             return $run->fresh();
@@ -117,10 +140,11 @@ class SourceProjectionImportService
             throw new \DomainException('Unknown Call Type.');
         }
 
-        $site = Site::query()->where('external_source', $sourceName)->where('external_identifier', $record->siteIdentifier)->first();
-        if ($site === null) {
+        $siteResolution = $this->sites->resolve($sourceName, $record->siteIdentifier);
+        if ($siteResolution === null) {
             throw new \DomainException('Unknown source site identity.');
         }
+        $site = $siteResolution->site;
 
         if ($record->plotReference === '') {
             throw new \DomainException('Plot reference is required.');
@@ -139,8 +163,17 @@ class SourceProjectionImportService
 
         $plot = $existing?->projectedPlot ?? ProjectedPlot::query()->firstOrCreate(
             ['external_source' => $sourceName, 'external_identifier' => $record->siteIdentifier.'|'.$record->plotReference],
-            ['site_id' => $site->id, 'plot_reference' => $record->plotReference, 'synchronised_at' => now()]
+            [
+                'site_id' => $site->id,
+                'source_site_binding_id' => $siteResolution->binding?->id,
+                'plot_reference' => $record->plotReference,
+                'synchronised_at' => now(),
+            ]
         );
+        if ($siteResolution->binding !== null && $plot->source_site_binding_id === null) {
+            $plot->source_site_binding_id = $siteResolution->binding->id;
+            $plot->save();
+        }
         $this->ensureServiceRows($plot);
         $service = $existing ?? ProjectedPlotService::query()->firstOrNew(['projected_plot_id' => $plot->id, 'service_identifier' => $serviceType->value]);
         if ($service->exists && $service->source_call_number !== null && $service->source_call_number !== $record->callNumber) {
@@ -150,7 +183,7 @@ class SourceProjectionImportService
         $wasComplete = $service->isSourceCompleted();
         $isComplete = $record->completedDate !== null || $this->callTypes->isCompletionStage($serviceType, $record->jobStage);
         if ($isComplete && $record->completedDate === null) {
-            $this->issues->record($run, SourceProjectionIssueType::CompletionDateMissing, "completion-date-missing:{$sourceName}:{$record->callNumber}", $record->callNumber, $service);
+            $this->issues->record($run, SourceProjectionIssueType::CompletionDateMissing, "completion-date-missing:{$sourceName}:{$record->callNumber}", $record->callNumber, $service, ['source_row_number' => $record->sourceRowNumber, 'source_site_key' => $record->siteIdentifier, 'plot_reference' => $record->plotReference]);
         }
         $before = ['completed_at' => $service->source_completed_at?->toDateString(), 'stage' => $service->source_job_stage];
         $sourceUpdatedAt = $record->sourceUpdatedAt ?? $service->source_updated_at;
@@ -287,9 +320,29 @@ class SourceProjectionImportService
     }
 
     /** @param array<int, string> $callNumbers */
-    private function markMissing(SourceImportRun $run, string $sourceName, array $callNumbers): int
+    private function markMissing(SourceImportRun $run, string $sourceName, array $callNumbers, array $representedSiteIdentifiers = []): int
     {
-        $services = ProjectedPlotService::query()->whereNotNull('source_call_number')->whereNotIn('source_call_number', $callNumbers)->whereHas('projectedPlot', fn ($query) => $query->where('external_source', $sourceName))->lockForUpdate()->get();
+        $bindingIds = collect($representedSiteIdentifiers)
+            ->map(fn (string $siteIdentifier) => $this->sites->resolve($sourceName, $siteIdentifier)?->binding?->id)
+            ->filter()
+            ->values();
+
+        $services = ProjectedPlotService::query()
+            ->whereNotNull('source_call_number')
+            ->whereNotIn('source_call_number', $callNumbers)
+            ->whereHas('projectedPlot', function ($query) use ($sourceName, $bindingIds, $representedSiteIdentifiers): void {
+                $query->where('external_source', $sourceName);
+
+                if ($representedSiteIdentifiers !== []) {
+                    if ($bindingIds->isEmpty()) {
+                        $query->whereRaw('1 = 0');
+                    } else {
+                        $query->whereIn('source_site_binding_id', $bindingIds);
+                    }
+                }
+            })
+            ->lockForUpdate()
+            ->get();
         foreach ($services as $service) {
             $service->update(['source_present' => false, 'source_missing_since' => $service->source_missing_since ?? now(), 'last_source_import_run_id' => $run->id]);
             $this->issues->record($run, SourceProjectionIssueType::MissingSourceRecord, "missing-source-record:{$sourceName}:{$service->source_call_number}", $service->source_call_number, $service);

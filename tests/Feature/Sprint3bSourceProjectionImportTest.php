@@ -20,6 +20,7 @@ use App\Models\User;
 use App\Services\SourceCallTypeMapper;
 use App\Services\SourceProjectionImportService;
 use App\Services\SourceProjectionIssueService;
+use App\Services\SourceSiteResolver;
 use Carbon\CarbonImmutable;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -234,6 +235,7 @@ test('an unexpected import failure is safely recorded against its import run', f
         },
         app(SourceProjectionIssueService::class),
         app(UpdateConflictKeyAction::class),
+        app(SourceSiteResolver::class),
     );
 
     expect(fn () => $importer->import('fixture', [sourceRecord('PC-failure', 'PC1', 'P-failure')]))

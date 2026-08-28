@@ -9,12 +9,14 @@ use App\Http\Controllers\CallOffLifecycleController;
 use App\Http\Controllers\CallOffRequestDetailsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Development\PreviewRoleController;
+use App\Http\Controllers\ManualSourceImportController;
 use App\Http\Controllers\NewCallOffController;
 use App\Http\Controllers\PlotDetailsController;
 use App\Http\Controllers\PortalNotificationController;
 use App\Http\Controllers\ResubmitRejectedCallOffController;
 use App\Http\Controllers\ReviewRequestsController;
 use App\Http\Controllers\SiteDashboardController;
+use App\Http\Controllers\SourceSiteBindingController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -61,6 +63,26 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
     Route::post('/portal/notifications/{notificationUuid}/dismiss', [PortalNotificationController::class, 'dismiss'])
         ->whereUuid('notificationUuid')
         ->name('portal.notifications.dismiss');
+
+    Route::get('/portal/source-site-bindings', [SourceSiteBindingController::class, 'index'])
+        ->name('portal.source-site-bindings.index');
+    Route::post('/portal/source-site-bindings', [SourceSiteBindingController::class, 'store'])
+        ->name('portal.source-site-bindings.store');
+    Route::put('/portal/source-site-bindings/{sourceSiteBinding:uuid}', [SourceSiteBindingController::class, 'update'])
+        ->whereUuid('sourceSiteBinding')
+        ->name('portal.source-site-bindings.update');
+
+    Route::post('/portal/source-imports/previews', [ManualSourceImportController::class, 'preview'])
+        ->name('portal.source-imports.previews.store');
+    Route::get('/portal/source-imports/previews/{manualSourceImportPreview:uuid}', [ManualSourceImportController::class, 'show'])
+        ->whereUuid('manualSourceImportPreview')
+        ->name('portal.source-imports.previews.show');
+    Route::post('/portal/source-imports/previews/{manualSourceImportPreview:uuid}/commit', [ManualSourceImportController::class, 'commit'])
+        ->whereUuid('manualSourceImportPreview')
+        ->name('portal.source-imports.previews.commit');
+    Route::get('/portal/source-imports/results/{sourceImportRun:uuid}', [ManualSourceImportController::class, 'result'])
+        ->whereUuid('sourceImportRun')
+        ->name('portal.source-imports.results.show');
 
     Route::get('/sites/select', [ActiveSiteController::class, 'index'])->name('sites.select');
     Route::post('/sites/active', [ActiveSiteController::class, 'store'])->name('sites.active.store');
