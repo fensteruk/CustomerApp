@@ -117,7 +117,7 @@ Local isolated verification completed on 2026-08-28:
 
 - clean SQLite migration plus seed: passed, including migration `000009`;
 - `000009` rollback and re-apply: passed;
-- complete test suite: 237 passed, 1,293 assertions; 15 existing MySQL-only Sprint 3E cases skipped on SQLite;
+- complete test suite: 238 passed, 1,294 assertions; 15 existing MySQL-only Sprint 3E cases skipped on SQLite;
 - focused manual import suite: 16 passed, 81 assertions;
 - focused Sprint 3B source suite: 15 passed, 71 assertions;
 - Pint: passed;
