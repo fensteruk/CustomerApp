@@ -44,6 +44,7 @@ class ManualSourceImportFingerprintService
                 'call_number' => $service->source_call_number,
                 'call_type' => $service->source_call_type,
                 'stage' => $service->source_job_stage,
+                'completion_flag' => $service->source_completion_flag,
                 'completed_at' => $service->source_completed_at?->toDateString(),
                 'present' => $service->source_present,
                 'updated_at' => $service->updated_at?->toJSON(),

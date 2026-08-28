@@ -6,7 +6,9 @@ Date: 2026-08-28
 
 The transport-independent Sprint 3B source importer now has a manual XLSX adapter, explicit source-site bindings, a non-mutating preview, stale-preview protection, an explicit atomic commit and an Office-only audit/readback contract.
 
-The operational parser configuration is intentionally disabled until the previously referenced representative SiteApp workbook is supplied. No matching workbook exists in the project or attachment workspace inspected on 2026-08-28. This prevents header, worksheet, date-system or snapshot-scope assumptions from reaching production.
+The fixed-header parser configuration has been superseded locally by a deterministic adaptive interpreter. No matching reference workbook exists in the project, attachment workspace or usual local document paths inspected on 2026-08-28. The backend can now propose and confirm varying worksheet layouts safely, but the actual reference format and snapshot scope still cannot be claimed until the file is available.
+
+Detailed interpretation rules and the Office mapping/profile contract are documented in `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`.
 
 ## Exact Workbook Evidence Still Required
 
@@ -127,3 +129,10 @@ Local isolated verification completed on 2026-08-28:
 - PHP syntax and Git whitespace checks: passed.
 
 A disposable MySQL 8.4 gate could not be run from this worktree. This host has no Docker engine, MySQL client/server or MySQL listener. The only repository workflow is the existing Sprint 3E workflow on a different release line; this branch does not contain it, and modifying/copying workflow definitions is outside this task. No Forge or production system was contacted. MySQL-specific migration, unique-key, transactional and concurrent-commit verification remains required after the representative workbook contract is finalised and before release.
+
+Deterministic interpreter extension verification on 2026-08-28: migration `000010` completed
+in a clean SQLite rebuild; the interpreter suite passed 16 tests/87 assertions; the full
+suite passed 254 tests/1,381 assertions with 15 MySQL-only cases skipped; Pint, Composer
+validation/audit, Vite build and Git whitespace checks passed. The disposable MySQL and real
+reference-workbook gates remain outstanding as documented in
+`documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`.

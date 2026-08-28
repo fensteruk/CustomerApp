@@ -64,6 +64,7 @@ class SourceProjectionImportService
                     $record->products,
                     $record->sourceUpdatedAt,
                     $record->sourceRowNumber,
+                    $record->completionFlag,
                 ))
                 ->values();
             $callNumbers = $records->pluck('callNumber')->filter();
@@ -181,22 +182,22 @@ class SourceProjectionImportService
         }
         $wasSourceProjection = $service->exists && $service->source_call_number !== null;
         $wasComplete = $service->isSourceCompleted();
-        $isComplete = $record->completedDate !== null || $this->callTypes->isCompletionStage($serviceType, $record->jobStage);
+        $isComplete = $record->completedDate !== null || $record->completionFlag === true || $this->callTypes->isCompletionStage($serviceType, $record->jobStage);
         if ($isComplete && $record->completedDate === null) {
             $this->issues->record($run, SourceProjectionIssueType::CompletionDateMissing, "completion-date-missing:{$sourceName}:{$record->callNumber}", $record->callNumber, $service, ['source_row_number' => $record->sourceRowNumber, 'source_site_key' => $record->siteIdentifier, 'plot_reference' => $record->plotReference]);
         }
-        $before = ['completed_at' => $service->source_completed_at?->toDateString(), 'stage' => $service->source_job_stage];
+        $before = ['completed_at' => $service->source_completed_at?->toDateString(), 'stage' => $service->source_job_stage, 'completion_flag' => $service->source_completion_flag];
         $sourceUpdatedAt = $record->sourceUpdatedAt ?? $service->source_updated_at;
-        $service->fill(['source_call_number' => $record->callNumber, 'source_call_type' => $record->callType, 'source_job_stage' => $record->jobStage, 'source_completed_at' => $record->completedDate, 'source_completion_observed_at' => $isComplete ? ($wasComplete ? $service->source_completion_observed_at : now()) : null, 'source_updated_at' => $sourceUpdatedAt, 'last_observed_at' => now(), 'source_present' => true, 'source_missing_since' => null, 'last_source_import_run_id' => $run->id]);
+        $service->fill(['source_call_number' => $record->callNumber, 'source_call_type' => $record->callType, 'source_job_stage' => $record->jobStage, 'source_completion_flag' => $record->completionFlag, 'source_completed_at' => $record->completedDate, 'source_completion_observed_at' => $isComplete ? ($wasComplete ? $service->source_completion_observed_at : now()) : null, 'source_updated_at' => $sourceUpdatedAt, 'last_observed_at' => now(), 'source_present' => true, 'source_missing_since' => null, 'last_source_import_run_id' => $run->id]);
         $outcome = ! $wasSourceProjection
             ? 'records_created'
-            : ($service->isDirty(['source_call_number', 'source_call_type', 'source_job_stage', 'source_completed_at', 'source_completion_observed_at', 'source_updated_at', 'source_present', 'source_missing_since']) ? 'records_updated' : 'records_unchanged');
+            : ($service->isDirty(['source_call_number', 'source_call_type', 'source_job_stage', 'source_completion_flag', 'source_completed_at', 'source_completion_observed_at', 'source_updated_at', 'source_present', 'source_missing_since']) ? 'records_updated' : 'records_unchanged');
         $service->save();
 
         $this->issues->resolve("missing-source-record:{$sourceName}:{$record->callNumber}");
         $this->issues->resolve("unknown-call-type:{$sourceName}:{$record->callNumber}");
         $this->issues->resolve("association-changed:{$sourceName}:{$record->callNumber}");
-        if ($record->completedDate !== null) {
+        if ($record->completedDate !== null || ! $isComplete) {
             $this->issues->resolve("completion-date-missing:{$sourceName}:{$record->callNumber}");
         }
 

@@ -77,6 +77,9 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
     Route::get('/portal/source-imports/previews/{manualSourceImportPreview:uuid}', [ManualSourceImportController::class, 'show'])
         ->whereUuid('manualSourceImportPreview')
         ->name('portal.source-imports.previews.show');
+    Route::post('/portal/source-imports/previews/{manualSourceImportPreview:uuid}/interpretation', [ManualSourceImportController::class, 'confirmInterpretation'])
+        ->whereUuid('manualSourceImportPreview')
+        ->name('portal.source-imports.previews.interpretation');
     Route::post('/portal/source-imports/previews/{manualSourceImportPreview:uuid}/commit', [ManualSourceImportController::class, 'commit'])
         ->whereUuid('manualSourceImportPreview')
         ->name('portal.source-imports.previews.commit');

@@ -10,9 +10,9 @@ class SourceCallTypeMapper
     {
         return match (mb_strtoupper(trim($callType))) {
             'PC1' => CallOffServiceType::Windows,
-            'CC!' => CallOffServiceType::CavityClosers,
+            'CC!', 'CC1' => CallOffServiceType::CavityClosers,
             'CM1' => CallOffServiceType::Snagging,
-            'CM2' => CallOffServiceType::Cml,
+            'CM2', 'CML' => CallOffServiceType::Cml,
             default => null,
         };
     }

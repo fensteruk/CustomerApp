@@ -5,8 +5,10 @@ namespace App\Services;
 use App\Data\ManualSourceImportAnalysis;
 use App\Data\XlsxSourceReadResult;
 use App\Data\XlsxSourceRow;
+use App\Enums\CallOffServiceType;
 use App\Enums\ManualSourceImportCategory;
 use App\Models\ProjectedPlotService;
+use App\Support\ManualSourceImport;
 
 class ManualSourceImportAnalysisService
 {
@@ -106,7 +108,7 @@ class ManualSourceImportAnalysisService
         $errors = $row->errors;
         $warnings = $row->warnings;
         $resolution = $this->sites->resolve($sourceNamespace, $row->sourceSiteKey);
-        $serviceType = $this->callTypes->serviceFor($row->callType);
+        $serviceType = $this->serviceForSource($sourceNamespace, $row->callType);
         $existing = $row->callNumber === '' ? null : ProjectedPlotService::query()
             ->with(['projectedPlot.site.customerOrganisation', 'projectedPlot.products', 'projectedPlot.sourceSiteBinding'])
             ->where('source_call_number', $row->callNumber)
@@ -141,7 +143,7 @@ class ManualSourceImportAnalysisService
                 $category = ManualSourceImportCategory::ReconciliationRequired;
                 $errors[] = $this->message('SOURCE_IDENTITY_CONFLICT', 'The permanent Call No. conflicts with an existing site, plot or service identity.');
             } else {
-                $incomingComplete = $row->completedDate !== null || $this->callTypes->isCompletionStage($serviceType, $row->jobStage);
+                $incomingComplete = $row->completedDate !== null || $row->completionFlag === true || $this->callTypes->isCompletionStage($serviceType, $row->jobStage);
                 $existingComplete = $existing?->isSourceCompleted() ?? false;
 
                 if ($incomingComplete && $row->completedDate === null) {
@@ -182,8 +184,9 @@ class ManualSourceImportAnalysisService
             'current_state' => $existing === null ? null : $this->currentState($existing),
             'incoming_state' => [
                 'job_stage' => $row->jobStage,
+                'completion_flag' => $row->completionFlag,
                 'completed_date' => $row->completedDate?->toDateString(),
-                'completed' => $serviceType === null ? null : ($row->completedDate !== null || $this->callTypes->isCompletionStage($serviceType, $row->jobStage)),
+                'completed' => $serviceType === null ? null : ($row->completedDate !== null || $row->completionFlag === true || $this->callTypes->isCompletionStage($serviceType, $row->jobStage)),
             ],
             'diff_category' => $category->value,
             'warnings' => $warnings,
@@ -199,6 +202,7 @@ class ManualSourceImportAnalysisService
 
         return $existing->source_call_type !== $row->callType
             || $existing->source_job_stage !== $row->jobStage
+            || $existing->source_completion_flag !== $row->completionFlag
             || $existing->source_completed_at?->toDateString() !== $row->completedDate?->toDateString()
             || ! $existing->source_present
             || $incomingProducts->contains(fn (float $quantity, string $code): bool => (float) ($existingProducts[$code] ?? 0) !== $quantity);
@@ -210,6 +214,7 @@ class ManualSourceImportAnalysisService
         return [
             'source_present' => $service->source_present,
             'job_stage' => $service->source_job_stage,
+            'completion_flag' => $service->source_completion_flag,
             'completed_date' => $service->source_completed_at?->toDateString(),
             'completed' => $service->isSourceCompleted(),
         ];
@@ -228,5 +233,16 @@ class ManualSourceImportAnalysisService
     private function message(string $code, string $message): array
     {
         return ['code' => $code, 'message' => $message, 'blocking' => true];
+    }
+
+    private function serviceForSource(string $sourceNamespace, string $callType): ?CallOffServiceType
+    {
+        $normalised = mb_strtoupper(trim($callType));
+        if ($sourceNamespace === ManualSourceImport::SOURCE_NAMESPACE
+            && ! in_array($normalised, config('manual_source_import.confirmed_interpreter_call_types', []), true)) {
+            return null;
+        }
+
+        return $this->callTypes->serviceFor($normalised);
     }
 }

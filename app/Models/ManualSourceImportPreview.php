@@ -19,6 +19,11 @@ class ManualSourceImportPreview extends Model
         'storage_disk',
         'storage_path',
         'workbook_contract_fingerprint',
+        'workbook_interpretation_profile_id',
+        'workbook_interpretation',
+        'confirmed_mapping',
+        'mapping_confirmed_by_user_id',
+        'mapping_confirmed_at',
         'source_fingerprint',
         'status',
         'metadata',
@@ -34,10 +39,13 @@ class ManualSourceImportPreview extends Model
     {
         return [
             'metadata' => 'array',
+            'workbook_interpretation' => 'array',
+            'confirmed_mapping' => 'array',
             'summary' => 'array',
             'rows' => 'array',
             'expires_at' => 'datetime',
             'committed_at' => 'datetime',
+            'mapping_confirmed_at' => 'datetime',
         ];
     }
 
@@ -51,6 +59,12 @@ class ManualSourceImportPreview extends Model
     public function importRun(): BelongsTo
     {
         return $this->belongsTo(SourceImportRun::class, 'source_import_run_id');
+    }
+
+    /** @return BelongsTo<WorkbookInterpretationProfile, $this> */
+    public function workbookProfile(): BelongsTo
+    {
+        return $this->belongsTo(WorkbookInterpretationProfile::class, 'workbook_interpretation_profile_id');
     }
 
     public function isExpired(): bool

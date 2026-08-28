@@ -8,6 +8,8 @@ final class ManualSourceImport
 
     public const PREVIEW_STATUS_READY = 'ready';
 
+    public const PREVIEW_STATUS_MAPPING_REQUIRED = 'mapping_required';
+
     public const PREVIEW_STATUS_COMMITTED = 'committed';
 
     public const PREVIEW_STATUS_FAILED = 'failed';

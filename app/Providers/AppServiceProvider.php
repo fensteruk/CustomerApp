@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Actions\CallOff\DetermineCallOffEligibilityAction;
 use App\Contracts\HolidayProvider;
+use App\Contracts\SpreadsheetStructureInterpreter;
 use App\Events\CallOffAlternativeAccepted;
 use App\Events\CallOffAlternativeProposed;
 use App\Events\CallOffAlternativeRejected;
@@ -17,6 +18,7 @@ use App\Models\CallOffRequest;
 use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\DeterministicSpreadsheetStructureInterpreter;
 use App\Services\PortalNotificationQueryService;
 use App\Services\WeekdayHolidayProvider;
 use Illuminate\Support\Facades\Event;
@@ -32,6 +34,7 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(HolidayProvider::class, WeekdayHolidayProvider::class);
+        $this->app->singleton(SpreadsheetStructureInterpreter::class, DeterministicSpreadsheetStructureInterpreter::class);
     }
 
     /**

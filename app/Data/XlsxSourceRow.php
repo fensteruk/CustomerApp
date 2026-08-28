@@ -24,6 +24,7 @@ readonly class XlsxSourceRow
         public ?CarbonImmutable $sourceUpdatedAt = null,
         public array $errors = [],
         public array $warnings = [],
+        public ?bool $completionFlag = null,
     ) {}
 
     public function toSourceRecord(): SourceRecord
@@ -38,11 +39,23 @@ readonly class XlsxSourceRow
             collect($this->products)->map(fn ($quantity): float => (float) ($quantity ?? 0))->all(),
             $this->sourceUpdatedAt,
             $this->rowNumber,
+            $this->completionFlag,
         );
     }
 
     public function hasBlockingErrors(): bool
     {
         return collect($this->errors)->contains(fn (array $error): bool => $error['blocking']);
+    }
+
+    public function isMappedBlank(): bool
+    {
+        return $this->callNumber === ''
+            && $this->sourceSiteKey === ''
+            && $this->plotReference === ''
+            && $this->callType === ''
+            && $this->completedDate === null
+            && $this->completionFlag === null
+            && collect($this->products)->every(fn ($quantity): bool => $quantity === null || (is_numeric($quantity) && (float) $quantity === 0.0));
     }
 }

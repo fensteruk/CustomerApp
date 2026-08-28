@@ -25,6 +25,7 @@ class ProjectedPlotService extends Model
         'source_call_number',
         'source_call_type',
         'source_job_stage',
+        'source_completion_flag',
         'source_completed_at',
         'source_completion_observed_at',
         'source_updated_at',
@@ -39,6 +40,7 @@ class ProjectedPlotService extends Model
         return [
             'service_identifier' => CallOffServiceType::class,
             'source_completed_at' => 'date',
+            'source_completion_flag' => 'boolean',
             'source_completion_observed_at' => 'datetime',
             'source_updated_at' => 'datetime',
             'last_observed_at' => 'datetime',
@@ -67,6 +69,6 @@ class ProjectedPlotService extends Model
 
     public function isSourceCompleted(): bool
     {
-        return $this->source_completed_at !== null || $this->source_completion_observed_at !== null;
+        return $this->source_completed_at !== null || $this->source_completion_observed_at !== null || $this->source_completion_flag === true;
     }
 }

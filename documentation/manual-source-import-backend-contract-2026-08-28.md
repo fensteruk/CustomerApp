@@ -2,11 +2,11 @@
 
 Date: 2026-08-28
 
-Status: backend contract implemented on `feature/manual-source-import-backend`; operational workbook contract blocked pending the representative SiteApp XLSX export.
+Status: fixed-header backend contract superseded locally by the deterministic interpretation extension on `feature/deterministic-spreadsheet-interpreter`; reference-workbook evidence remains pending.
 
 ## Boundary
 
-This adapter is an Office Staff transport into the existing Sprint 3B source projection importer. It does not duplicate source-to-domain rules and does not make the Customer Portal an operational system. SiteApp remains authoritative. Excel objects stop at `XlsxSourceReader`; only validated `SourceRecord` DTOs enter `SourceProjectionImportService`.
+This adapter is an Office Staff transport into the existing Sprint 3B source projection importer. It does not duplicate source-to-domain rules and does not make the Customer Portal an operational system. SiteApp remains authoritative. Excel objects stop at the local inspector/reader boundary; only validated `SourceRecord` DTOs enter `SourceProjectionImportService`.
 
 The fixed source namespace is `siteapp-xlsx`. It is stored on bindings, projected plots, previews and import runs. `production-test-fixture` is not accepted by this adapter.
 
@@ -18,7 +18,7 @@ No representative operational workbook was found in the repository or supplied a
 - with its real filename, all worksheets, hidden worksheet/column state, header row, exact header text, formulas, blank rows, typed date cells, numeric cells and a safe sample of each relevant call/product shape intact;
 - without production credentials and with confidential row values redacted only in a way that preserves cell types and structure.
 
-Until that file is inspected, these environment-backed contract values intentionally have no defaults: worksheet name, Excel date system (`1900` or `1904`), exact source site key/name headers, Call No., plot, call type, job stage, Completed Date, optional source timestamp/Plot To Be Installed headers, and approved product abbreviation headers. Upload therefore returns `409 WORKBOOK_CONTRACT_REQUIRED` rather than guessing.
+The adaptive interpreter no longer needs environment-backed fixed worksheet/header values. It proposes a worksheet, header row and closed-enum mapping from local deterministic evidence. Ambiguous/low-confidence mappings stop in `mapping_required` and must be confirmed by Office Staff. This does not remove the evidence blocker: the supplied reference workbook is still required before its real structure or snapshot scope can be claimed.
 
 Mechanical XLSX files generated in automated tests use a clearly labelled test-only worksheet and headers. They prove parser mechanics, not the operational schema.
 
@@ -44,6 +44,7 @@ No endpoint creates customers, sites, site assignments or source identities impl
 | `PUT` | `/portal/source-site-bindings/{binding_uuid}` | Change display label or mapped Portal site before projections exist. |
 | `POST` | `/portal/source-imports/previews` | Upload one XLSX and build a non-mutating preview. |
 | `GET` | `/portal/source-imports/previews/{preview_uuid}` | Read the initiating user's preview. |
+| `POST` | `/portal/source-imports/previews/{preview_uuid}/interpretation` | Confirm/change/ignore proposed columns and save a structural profile. |
 | `POST` | `/portal/source-imports/previews/{preview_uuid}/commit` | Confirm the file hash and commit the authoritative rebuilt import. |
 | `GET` | `/portal/source-imports/results/{result_uuid}` | Read import counts and reconciliation results. |
 
@@ -71,7 +72,11 @@ Unknown workbook site keys yield the blocking category and code `SITE_MAPPING_RE
 
 ## Upload and Preview
 
-The upload request is multipart with one `workbook` file. It accepts `.xlsx` only, with a 10 MiB default limit. Validation checks extension and allowed MIME, then verifies the ZIP signature and mandatory XLSX container entries. Macro payloads and embedded objects are rejected. The configured worksheet must exist and be visible; required exact headers must be unique and present. Formulas in imported source/product cells are blocking. `.xlsm` is not accepted.
+The upload request is multipart with one `workbook` file. It accepts `.xlsx` only, with a 10 MiB default limit. Validation checks extension and allowed MIME, then verifies the ZIP signature and mandatory XLSX container entries. Macro payloads and embedded objects are rejected. Every sheet is profiled; hidden sheets are not auto-selected. Header candidates are inspected in the first 30 rows. Formulas in imported fields require a usable cached value. `.xlsm` is not accepted.
+
+The preview response now includes `workbook_interpretation`: selected/proposed sheet, header row, overall confidence, structural fingerprint, date system, profile match, issues, and every sheet/column's deterministic mapping evidence. Status is `mapping_required` when Office confirmation is needed. Such a preview retains its private file but has `can_commit=false`.
+
+Mapping confirmation accepts only sheet, header row, closed-enum column mappings, optional product codes and `confirm=true`. The server re-inspects and validates the file; it never accepts client-authored confidence, evidence, rows or diffs. Safety overrides prevent operational dates or commercial values being remapped as products/customer dates. Exact confirmed profiles may be reused after revalidation; likely changed-layout profiles are suggestions only.
 
 The file is stored on the private Laravel `local` disk outside the public root using a random internal name. The original basename is retained only for audit. Temporary content is deleted after successful commit, on failed preview creation, or by the hourly expiry command. Ready previews expire after 30 minutes by default.
 
@@ -125,16 +130,15 @@ Blocking errors reject commit. A successful commit calls the existing transactio
 
 ## Source Mapping and Identity
 
-Confirmed Call Type mapping remains central in `SourceCallTypeMapper`:
+The transport-independent mapper retains its existing mappings, while the adaptive `siteapp-xlsx` contract accepts only the workbook codes confirmed for this source family:
 
 | Source Call Type | Portal service |
 |---|---|
 | `PC1` | Windows |
-| `CC!` | Cavity Closers |
-| `CM1` | Snagging |
-| `CM2` | CML |
+| `CC1` | Cavity Closers |
+| `CML` | CML |
 
-Whitespace/case is normalised for known codes. Unknown codes are blocking and never guessed.
+Whitespace/case is normalised for known codes. `CM1`, `CM2` and every other unconfirmed value are blocking for this adapter and never guessed. Older mappings remain available to previously approved non-XLSX source contracts.
 
 `Call No.` remains the permanent idempotent identity under the existing projection schema, which currently enforces global uniqueness. A Call No. cannot change its site, plot or service association, and a projected plot/service cannot silently take a replacement Call No. Identity conflicts are blocking reconciliation results.
 
@@ -167,7 +171,8 @@ This supports one-site and multi-site files safely. A future global-snapshot cla
 
 | HTTP | Code | Meaning |
 |---|---|---|
-| `409` | `WORKBOOK_CONTRACT_REQUIRED` | Operational worksheet/header/date contract is not configured. |
+| `422` | `MAPPING_REJECTED` | Confirmed mapping violates structure, critical-field, formula, product or safety rules. |
+| `409` | `PREVIEW_NOT_MAPPABLE` | Preview is expired, changed, unavailable or no longer accepts mapping confirmation. |
 | `422` | `INVALID_SOURCE_WORKBOOK` | File/container/header/row validation failed during preview. |
 | `422` | `IMPORT_BLOCKED` | Authoritative commit revalidation found blocking rows. |
 | `409` | `PREVIEW_NOT_COMMITTABLE` | Preview is expired, stale, altered, already unavailable or confirmation does not match. |

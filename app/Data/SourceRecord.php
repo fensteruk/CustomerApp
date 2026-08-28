@@ -18,5 +18,6 @@ readonly class SourceRecord
         public array $products = [],
         public ?CarbonImmutable $sourceUpdatedAt = null,
         public ?int $sourceRowNumber = null,
+        public ?bool $completionFlag = null,
     ) {}
 }

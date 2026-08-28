@@ -135,7 +135,7 @@ test('dry-run analysis is non-mutating and returns explicit blocking categories'
         manualXlsxRow(2, 'CALL-1', 'SITE-A', 'P-001', 'PC1', products: ['CAS' => 1]),
         manualXlsxRow(3, 'CALL-2', 'UNKNOWN-SITE', 'P-002', 'CC!'),
         manualXlsxRow(4, 'CALL-3', 'SITE-A', 'P-003', 'NOPE'),
-        manualXlsxRow(5, 'CALL-4', 'SITE-A', 'P-004', 'CM1', errors: [[
+        manualXlsxRow(5, 'CALL-4', 'SITE-A', 'P-004', 'CC1', errors: [[
             'code' => 'INVALID_PRODUCT_QUANTITY',
             'message' => 'BF must be non-negative.',
             'blocking' => true,

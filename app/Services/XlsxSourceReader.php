@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Data\XlsxSourceReadResult;
 use App\Data\XlsxSourceRow;
+use App\Enums\WorkbookColumnRole;
 use App\Exceptions\InvalidSourceWorkbook;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
@@ -15,7 +16,79 @@ use ZipArchive;
 
 class XlsxSourceReader
 {
-    public function __construct(private readonly ManualSourceWorkbookContract $contract) {}
+    public function __construct(
+        private readonly ManualSourceWorkbookContract $contract,
+        private readonly XlsxWorkbookInspector $inspector,
+    ) {}
+
+    /**
+     * @param  array{sheet: string, header_row: int, columns: list<array{source_index: int, semantic_role: string, subtype?: string|null}>}  $mapping
+     */
+    public function readMapped(string $path, array $mapping): XlsxSourceReadResult
+    {
+        $dateSystem = $this->inspector->assertSafeContainerAndDateSystem($path);
+        $options = new Options;
+        $options->SHOULD_PRESERVE_EMPTY_ROWS = true;
+        $options->SHOULD_USE_1904_DATES = $dateSystem === '1904';
+        $reader = new Reader($options);
+        $reader->open($path);
+
+        try {
+            $worksheetNames = [];
+            $rows = [];
+            $blankRows = 0;
+            $found = false;
+            $headers = [];
+
+            foreach ($reader->getSheetIterator() as $sheet) {
+                $worksheetNames[] = $sheet->getName();
+                if ($sheet->getName() !== $mapping['sheet']) {
+                    continue;
+                }
+
+                $found = true;
+                if (! $sheet->isVisible()) {
+                    throw new InvalidSourceWorkbook([$this->message('WORKSHEET_HIDDEN', 'The selected source worksheet must be visible.')]);
+                }
+
+                foreach ($sheet->getRowIterator() as $rowNumber => $row) {
+                    if ($rowNumber < $mapping['header_row']) {
+                        continue;
+                    }
+                    if ($rowNumber === $mapping['header_row']) {
+                        $headers = $this->headerValues($row->getCells());
+
+                        continue;
+                    }
+                    if ($row->isEmpty()) {
+                        $blankRows++;
+
+                        continue;
+                    }
+
+                    $normalised = $this->normaliseMappedRow($rowNumber, $row->getCells(), $mapping, $dateSystem);
+                    if ($normalised->isMappedBlank()) {
+                        $blankRows++;
+
+                        continue;
+                    }
+                    $rows[] = $normalised;
+                    $maximumRows = (int) config('manual_source_import.max_rows', 5000);
+                    if (count($rows) > $maximumRows) {
+                        throw new InvalidSourceWorkbook([$this->message('ROW_LIMIT_EXCEEDED', "The workbook exceeds the {$maximumRows}-row import limit.")]);
+                    }
+                }
+            }
+
+            if (! $found) {
+                throw new InvalidSourceWorkbook([$this->message('WORKSHEET_REQUIRED', 'The selected worksheet was not found.')]);
+            }
+
+            return new XlsxSourceReadResult($mapping['sheet'], $worksheetNames, $headers, $rows, $blankRows);
+        } finally {
+            $reader->close();
+        }
+    }
 
     public function read(string $path): XlsxSourceReadResult
     {
@@ -222,6 +295,118 @@ class XlsxSourceReader
             $errors,
             $warnings,
         );
+    }
+
+    /**
+     * @param  list<Cell>  $cells
+     * @param  array{sheet: string, header_row: int, columns: list<array{source_index: int, semantic_role: string, subtype?: string|null}>}  $mapping
+     */
+    private function normaliseMappedRow(int $rowNumber, array $cells, array $mapping, string $dateSystem): XlsxSourceRow
+    {
+        $values = [];
+        $formulaWithoutCache = [];
+        foreach ($mapping['columns'] as $column) {
+            $role = WorkbookColumnRole::from($column['semantic_role']);
+            if (in_array($role, [WorkbookColumnRole::Ignore, WorkbookColumnRole::Unknown, WorkbookColumnRole::CommercialValue, WorkbookColumnRole::OperationalTargetDate], true)) {
+                continue;
+            }
+
+            $cell = $cells[$column['source_index'] - 1] ?? null;
+            if ($cell instanceof FormulaCell) {
+                $values[$role->value][$column['subtype'] ?? ''] = $cell->getComputedValue();
+                if ($cell->getComputedValue() === null || (is_string($cell->getComputedValue()) && trim($cell->getComputedValue()) === '')) {
+                    $formulaWithoutCache[] = $column['source_index'];
+                }
+            } else {
+                $values[$role->value][$column['subtype'] ?? ''] = $cell?->getValue();
+            }
+        }
+
+        $errors = [];
+        $warnings = [];
+        foreach ($formulaWithoutCache as $sourceIndex) {
+            $errors[] = $this->message('CRITICAL_FORMULA_VALUE_MISSING', "Column {$sourceIndex} contains a formula without a usable cached value.");
+        }
+
+        $scalar = function (WorkbookColumnRole $role) use ($values): mixed {
+            $roleValues = $values[$role->value] ?? [];
+
+            return $roleValues === [] ? null : reset($roleValues);
+        };
+        $siteName = trim((string) ($scalar(WorkbookColumnRole::SiteName) ?? ''));
+        $siteExternalId = trim((string) ($scalar(WorkbookColumnRole::SiteExternalId) ?? ''));
+        $callNumber = trim((string) ($scalar(WorkbookColumnRole::CallNumber) ?? ''));
+        $plotReference = trim((string) ($scalar(WorkbookColumnRole::PlotReference) ?? ''));
+        $callType = trim((string) ($scalar(WorkbookColumnRole::CallType) ?? ''));
+
+        foreach ([
+            'Call No.' => $callNumber,
+            'Site' => $siteExternalId !== '' ? $siteExternalId : $siteName,
+            'Plot' => $plotReference,
+            'Call Type' => $callType,
+        ] as $label => $value) {
+            if ($value === '') {
+                $errors[] = $this->message('REQUIRED_VALUE_MISSING', "{$label} is required.");
+            }
+        }
+
+        $completedDate = $this->dateValue($scalar(WorkbookColumnRole::CompletedDate), 'Completed Date', $errors, $dateSystem);
+        $completionFlag = $this->completionFlag($scalar(WorkbookColumnRole::CompletionFlag), $errors);
+        $products = [];
+        foreach ($values[WorkbookColumnRole::ProductQuantity->value] ?? [] as $productCode => $rawQuantity) {
+            $productCode = mb_strtoupper(trim((string) $productCode));
+            if ($rawQuantity === null || trim((string) $rawQuantity) === '') {
+                $products[$productCode] = 0.0;
+
+                continue;
+            }
+            if (! is_numeric($rawQuantity) || (float) $rawQuantity < 0) {
+                $errors[] = $this->message('INVALID_PRODUCT_QUANTITY', "{$productCode} must be blank, zero or a non-negative number.");
+                $products[$productCode] = $rawQuantity;
+
+                continue;
+            }
+            $products[$productCode] = (float) $rawQuantity;
+        }
+
+        return new XlsxSourceRow(
+            $rowNumber,
+            $callNumber,
+            $siteExternalId !== '' ? $siteExternalId : $siteName,
+            $siteName === '' ? null : $siteName,
+            $plotReference,
+            $callType,
+            null,
+            $completedDate,
+            $products,
+            null,
+            $errors,
+            $warnings,
+            $completionFlag,
+        );
+    }
+
+    /** @param list<array{code: string, message: string, blocking: bool}> $errors */
+    private function completionFlag(mixed $value, array &$errors): ?bool
+    {
+        if ($value === null || trim((string) $value) === '') {
+            return null;
+        }
+        if (is_bool($value)) {
+            return $value;
+        }
+
+        $normalised = mb_strtolower(trim((string) $value));
+        if (in_array($normalised, ['1', 'yes', 'y', 'true', 'complete', 'completed'], true)) {
+            return true;
+        }
+        if (in_array($normalised, ['0', 'no', 'n', 'false', 'incomplete', 'not complete'], true)) {
+            return false;
+        }
+
+        $errors[] = $this->message('INVALID_COMPLETION_FLAG', 'Completion flag must be blank or a recognised true/false value.');
+
+        return null;
     }
 
     /** @param list<Cell> $cells

@@ -5,8 +5,28 @@ return [
     'max_upload_kilobytes' => 10 * 1024,
     'preview_ttl_minutes' => 30,
     'max_rows' => 5000,
+    'header_scan_rows' => 30,
+    'profile_sample_rows' => 500,
+    'auto_mapping_score' => 95,
+    'confirmation_mapping_score' => 75,
+    'sheet_selection_margin' => 10,
     'storage_disk' => 'local',
     'storage_directory' => 'manual-source-imports/previews',
+
+    'aliases' => [
+        'CALL_NUMBER' => ['Call No.', 'Call No', 'Call Number', 'Call #', 'CallNo', 'Call Ref', 'Call Reference'],
+        'SITE_NAME' => ['Site', 'Site Name', 'Development', 'Development Name', 'Project', 'Project Name'],
+        'PLOT_REFERENCE' => ['Plot', 'Plot Ref', 'Plot Reference', 'Plot No.', 'Plot Number', 'Unit', 'Unit No.'],
+        'CALL_TYPE' => ['Call Type', 'Type', 'Call Code', 'Call Type Code'],
+        'COMPLETION_FLAG' => ['complete', 'Complete', 'Completed', 'Complete?', 'Is Complete'],
+        'COMPLETED_DATE' => ['Completed Date', 'Completion Date', 'Date Completed'],
+        'OPERATIONAL_TARGET_DATE' => ['Plot To Be Installed', 'Install Date', 'Installation Date', 'Target Install Date'],
+        'COMMERCIAL_VALUE' => ['Site Value', 'Value', 'Plot Value'],
+    ],
+
+    /* Evidence used only by the deterministic interpreter for this XLSX export family. */
+    'confirmed_interpreter_call_types' => ['PC1', 'CC1', 'CML'],
+    'known_product_examples' => ['CAS', 'PFD', 'BF'],
 
     /*
      * These values intentionally have no guessed defaults. They must be filled from the
