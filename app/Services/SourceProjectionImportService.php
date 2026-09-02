@@ -28,6 +28,7 @@ class SourceProjectionImportService
         private readonly SourceProjectionIssueService $issues,
         private readonly UpdateConflictKeyAction $conflicts,
         private readonly SourceSiteResolver $sites,
+        private readonly SiteAppImportDataDictionary $dictionary,
     ) {}
 
     /** @param iterable<SourceRecord> $records */
@@ -152,8 +153,8 @@ class SourceProjectionImportService
         }
 
         foreach ($record->products as $code => $quantity) {
-            if (trim((string) $code) === '' || ! is_numeric($quantity) || (float) $quantity < 0) {
-                throw new \DomainException('Product quantities must use non-negative numeric values and product codes.');
+            if (trim((string) $code) === '' || ! $this->dictionary->isKnownProduct((string) $code) || ! is_numeric($quantity) || (float) $quantity < 0) {
+                throw new \DomainException('Product quantities must use confirmed product codes and non-negative numeric values.');
             }
         }
 
@@ -309,7 +310,9 @@ class SourceProjectionImportService
     /** @param array<string, int|float|string> $products */
     private function syncProducts(int $plotId, array $products, SourceImportRun $run): void
     {
-        $normalised = collect($products)->mapWithKeys(fn ($quantity, $code) => [trim((string) $code) => (float) $quantity])->filter(fn ($quantity, $code) => $code !== '');
+        $normalised = collect($products)
+            ->mapWithKeys(fn ($quantity, $code) => [mb_strtoupper(trim((string) $code)) => (float) $quantity])
+            ->filter(fn ($quantity, $code) => $code !== '');
         ProjectedPlotProduct::query()->where('projected_plot_id', $plotId)->get()->each(function (ProjectedPlotProduct $product) use ($normalised, $run): void {
             if (! $normalised->has($product->product_code)) {
                 $product->update(['quantity' => 0, 'last_source_import_run_id' => $run->id]);

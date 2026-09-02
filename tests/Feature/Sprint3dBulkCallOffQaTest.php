@@ -76,8 +76,8 @@ test('the matrix keeps all four services in order and safely distinguishes each 
     $bifold = sprint3dQaPlot($site, 'Plot 13');
     $unavailable = sprint3dQaPlot($site, 'Plot 14');
     $normal = sprint3dQaPlot($site, 'Plot 15');
-    ProjectedPlotProduct::query()->create(['projected_plot_id' => $standard->id, 'product_code' => 'CAS', 'quantity' => 2]);
-    ProjectedPlotProduct::query()->create(['projected_plot_id' => $standard->id, 'product_code' => 'PFD', 'quantity' => 1]);
+    ProjectedPlotProduct::query()->create(['projected_plot_id' => $standard->id, 'product_code' => 'VS', 'quantity' => 2]);
+    ProjectedPlotProduct::query()->create(['projected_plot_id' => $standard->id, 'product_code' => 'PSU', 'quantity' => 1]);
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $standard->id, 'product_code' => 'BF', 'quantity' => 0]);
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $bifold->id, 'product_code' => 'BF', 'quantity' => 1]);
 
@@ -101,8 +101,8 @@ test('the matrix keeps all four services in order and safely distinguishes each 
     expect($rows)->toHaveCount(16)
         ->and(collect($rows)->where('plot_reference', 'Plot 12')->pluck('service')->all())->toBe(array_map(fn (CallOffServiceType $service) => $service->value, CallOffServiceType::cases()))
         ->and(collect($rows)->where('plot_reference', 'Plot 12')->first()['products'])->toHaveCount(2)
-        ->and(collect($rows)->where('plot_reference', 'Plot 12')->first()['products'])->toContain(['code' => 'CAS', 'quantity' => '2.000'])
-        ->and(collect($rows)->where('plot_reference', 'Plot 12')->first()['products'])->toContain(['code' => 'PFD', 'quantity' => '1.000'])
+        ->and(collect($rows)->where('plot_reference', 'Plot 12')->first()['products'])->toContain(['code' => 'Total Windows', 'quantity' => 2.0])
+        ->and(collect($rows)->where('plot_reference', 'Plot 12')->first()['products'])->toContain(['code' => 'Total Doors', 'quantity' => 1.0])
         ->and(collect($rows)->firstWhere('key', $unavailable->uuid.'|cavity_closers')['reason'])->toBe('A selected plot already has an active request for this service.')
         ->and(collect($rows)->firstWhere('key', $unavailable->uuid.'|windows')['reason'])->toBe('This completed plot service cannot receive a new call-off.')
         ->and(collect($rows)->firstWhere('key', $unavailable->uuid.'|snagging')['reason'])->toBe('Source information is not available for this plot service.')

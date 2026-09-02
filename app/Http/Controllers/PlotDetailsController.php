@@ -4,14 +4,19 @@ namespace App\Http\Controllers;
 
 use App\Models\ProjectedPlot;
 use App\Services\PlotOverviewQueryService;
+use App\Services\SiteAppImportDataDictionary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\View\View;
 
 class PlotDetailsController extends Controller
 {
-    public function __invoke(Request $request, ProjectedPlot $projectedPlot, PlotOverviewQueryService $overview): View
-    {
+    public function __invoke(
+        Request $request,
+        ProjectedPlot $projectedPlot,
+        PlotOverviewQueryService $overview,
+        SiteAppImportDataDictionary $dictionary,
+    ): View {
         $activeSite = $request->attributes->get('activeSite');
 
         // A public UUID must not let a Site User leave their selected site context, nor
@@ -36,10 +41,11 @@ class PlotDetailsController extends Controller
         return view('portal.plots.show', [
             'overview' => $overview->present($projectedPlot),
             'activeSite' => $activeSite,
-            'products' => $projectedPlot->products
-                ->filter->hasPositiveQuantity()
-                ->sortBy('product_code')
-                ->values(),
+            'products' => collect($dictionary->customerRollups($projectedPlot->products))
+                ->map(fn (array $rollup): object => (object) [
+                    'product_code' => $rollup['label'],
+                    'quantity' => $rollup['quantity'],
+                ]),
         ]);
     }
 }

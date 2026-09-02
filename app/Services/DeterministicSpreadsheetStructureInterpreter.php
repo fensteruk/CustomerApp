@@ -17,6 +17,8 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
     /** @var array<string, WorkbookColumnRole>|null */
     private ?array $normalisedAliases = null;
 
+    public function __construct(private readonly SiteAppImportDataDictionary $dictionary) {}
+
     public function interpret(SpreadsheetWorkbookData $workbook): WorkbookInterpretation
     {
         $sheets = array_map(fn (SpreadsheetSheetData $sheet): WorkbookSheetInterpretation => $this->interpretSheet($sheet), $workbook->sheets);
@@ -148,6 +150,13 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         foreach ($columns as $column) {
             if ($column->criticalFormulaWithoutCachedValue) {
                 $issues[] = $this->issue('CRITICAL_FORMULA_VALUE_MISSING', "{$column->originalHeader} contains a formula without a usable cached value.", true);
+            }
+            if ($this->dictionary->isUnconfirmedHeader($column->originalHeader)) {
+                $issues[] = $this->issue(
+                    'UNCONFIRMED_SOURCE_FIELD',
+                    $this->dictionary->unconfirmedHeaderReason($column->originalHeader) ?? 'This source field has no approved Portal meaning.',
+                    false,
+                );
             }
         }
 
@@ -316,16 +325,21 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
             $score = $generic ? 84 : 97;
             $reasons[] = $generic ? 'Recognised generic header alias.' : 'Recognised specific header alias.';
             $score += $this->profileEvidenceAdjustment($role, $profile, $reasons);
-        } elseif ($this->isKnownProductExample($header) || $this->isProductCandidate($header, $profile)) {
+        } elseif ($this->dictionary->isUnconfirmedHeader($header)) {
+            $role = WorkbookColumnRole::Unknown;
+            $score = 90;
+            $reasons[] = $this->dictionary->unconfirmedHeaderReason($header) ?? 'The field meaning is not confirmed.';
+            $reasons[] = 'It is retained as structural evidence but cannot drive an import fact.';
+        } elseif ($this->isKnownProduct($header) || $this->isProductCandidate($header, $profile)) {
             $role = WorkbookColumnRole::ProductQuantity;
             $subtype = mb_strtoupper(trim($header));
-            $known = $this->isKnownProductExample($header);
+            $known = $this->isKnownProduct($header);
             $numericPercent = (float) $profile['integer_percent'] + (float) $profile['decimal_percent'];
             $validKnownProfile = $numericPercent >= 70 && (int) $profile['negative_count'] === 0;
             $score = $known ? ($validKnownProfile ? 96 : 60) : 82;
             $reasons[] = $known
-                ? ($validKnownProfile ? 'Known product-code example with a non-negative quantity profile.' : 'Known product-code example has invalid or negative quantity evidence and requires correction.')
-                : 'Short code-like header with a predominantly non-negative numeric/blank quantity profile.';
+                ? ($validKnownProfile ? 'Confirmed SiteApp product code with a non-negative quantity profile.' : 'Confirmed SiteApp product code has invalid or negative quantity evidence and requires correction.')
+                : 'Structurally product-like code column; business meaning is unconfirmed.';
         } else {
             $role = WorkbookColumnRole::Unknown;
             $score = 25;
@@ -382,7 +396,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         if ($role === WorkbookColumnRole::CallType) {
             $known = collect(explode(' | ', (string) $profile['sample_values']))
                 ->map(fn (string $value): string => mb_strtoupper(trim($value)))
-                ->filter(fn (string $value): bool => in_array($value, config('manual_source_import.confirmed_interpreter_call_types', []), true));
+                ->filter(fn (string $value): bool => $this->dictionary->isKnownCallType($value));
             if ($known->isNotEmpty()) {
                 $adjustment += 3;
                 $reasons[] = 'Sample contains a confirmed workbook Call Type code.';
@@ -390,7 +404,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         }
         if ($role === WorkbookColumnRole::CompletionFlag && (float) $profile['boolean_like_percent'] >= 80) {
             $adjustment += 3;
-            $reasons[] = 'Values are predominantly completion/boolean-like.';
+            $reasons[] = 'Values are predominantly boolean-like; this is structural evidence only.';
         }
         if (in_array($role, [WorkbookColumnRole::CompletedDate, WorkbookColumnRole::OperationalTargetDate], true) && (float) $profile['date_percent'] >= 70) {
             $adjustment += 3;
@@ -408,18 +422,18 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         }
 
         $numericPercent = (float) $profile['integer_percent'] + (float) $profile['decimal_percent'];
-        $knownProductExample = $this->isKnownProductExample($header);
+        $knownProduct = $this->isKnownProduct($header);
 
         return $numericPercent >= 70
             && (float) $profile['date_percent'] < 50
             && (int) $profile['negative_count'] === 0
-            && ($knownProductExample || (float) $profile['zero_or_blank_percent'] >= 15)
+            && ($knownProduct || (float) $profile['zero_or_blank_percent'] >= 15)
             && ! in_array($this->normaliseHeader($header), ['value', 'status', 'date', 'complete', 'completed'], true);
     }
 
-    private function isKnownProductExample(string $header): bool
+    private function isKnownProduct(string $header): bool
     {
-        return in_array(mb_strtoupper(trim($header)), array_map('mb_strtoupper', config('manual_source_import.known_product_examples', [])), true);
+        return $this->dictionary->isKnownProduct($header);
     }
 
     /** @return array<string, WorkbookColumnRole> */

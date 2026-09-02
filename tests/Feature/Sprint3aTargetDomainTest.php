@@ -124,7 +124,7 @@ test('the lead-time foundation calculates standard and BF dates without a holida
 
     expect($calculator->earliestNormalDate($service, $from)->toDateString())->toBe('2026-09-14');
 
-    ProjectedPlotProduct::create(['projected_plot_id' => $plot->id, 'product_code' => 'BF-100', 'quantity' => 1]);
+    ProjectedPlotProduct::create(['projected_plot_id' => $plot->id, 'product_code' => 'BF', 'quantity' => 1]);
 
     expect($calculator->earliestNormalDate($service, $from)->toDateString())->toBe('2026-09-21')
         ->and($calculator->latestNormalDate($from)->toDateString())->toBe('2027-02-17');
@@ -133,7 +133,7 @@ test('the lead-time foundation calculates standard and BF dates without a holida
 test('zero-quantity BF products do not extend the lead time', function (): void {
     [, , $plot] = sprint3aSiteUser();
     $service = ProjectedPlotService::create(['projected_plot_id' => $plot->id, 'service_identifier' => CallOffServiceType::Windows]);
-    ProjectedPlotProduct::create(['projected_plot_id' => $plot->id, 'product_code' => 'BF-100', 'quantity' => 0]);
+    ProjectedPlotProduct::create(['projected_plot_id' => $plot->id, 'product_code' => 'BF', 'quantity' => 0]);
 
     expect(app(CallOffLeadTimeService::class)->earliestNormalDate($service, CarbonImmutable::parse('2026-08-17'))->toDateString())
         ->toBe('2026-09-14');

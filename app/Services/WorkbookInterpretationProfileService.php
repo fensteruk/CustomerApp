@@ -9,6 +9,8 @@ use App\Models\WorkbookInterpretationProfile;
 
 class WorkbookInterpretationProfileService
 {
+    public function __construct(private readonly SiteAppImportDataDictionary $dictionary) {}
+
     /** @return array{kind: 'exact'|'likely'|'none', score: int, profile: WorkbookInterpretationProfile|null, matched_sheet: string|null} */
     public function match(string $sourceNamespace, WorkbookInterpretation $interpretation): array
     {
@@ -22,6 +24,7 @@ class WorkbookInterpretationProfileService
             }
             $exact = WorkbookInterpretationProfile::query()
                 ->where('source_namespace', $sourceNamespace)
+                ->where('semantic_version', $this->dictionary->semanticVersion())
                 ->where('structural_fingerprint', $this->fingerprintForSheet($sheet))
                 ->latest('version')
                 ->first();
@@ -33,7 +36,12 @@ class WorkbookInterpretationProfileService
         $best = null;
         $bestSheet = null;
         $bestScore = 0;
-        $candidates = WorkbookInterpretationProfile::query()->where('source_namespace', $sourceNamespace)->latest()->limit(50)->get();
+        $candidates = WorkbookInterpretationProfile::query()
+            ->where('source_namespace', $sourceNamespace)
+            ->where('semantic_version', $this->dictionary->semanticVersion())
+            ->latest()
+            ->limit(50)
+            ->get();
         foreach ($interpretation->sheets as $sheet) {
             if (! $sheet->visible) {
                 continue;
@@ -74,6 +82,7 @@ class WorkbookInterpretationProfileService
         $structuralFingerprint = $this->fingerprintForSheet($sheet);
         $existing = WorkbookInterpretationProfile::query()
             ->where('source_namespace', $sourceNamespace)
+            ->where('semantic_version', $this->dictionary->semanticVersion())
             ->where('structural_fingerprint', $structuralFingerprint)
             ->latest('version')
             ->first();
@@ -84,6 +93,7 @@ class WorkbookInterpretationProfileService
 
         return WorkbookInterpretationProfile::query()->create([
             'source_namespace' => $sourceNamespace,
+            'semantic_version' => $this->dictionary->semanticVersion(),
             'sheet_identifier' => $mapping['sheet'],
             'structural_fingerprint' => $structuralFingerprint,
             'normalised_headers' => $data['headers'],
@@ -113,6 +123,7 @@ class WorkbookInterpretationProfileService
     public function fingerprintForSheet(WorkbookSheetInterpretation $sheet): string
     {
         return hash('sha256', json_encode([
+            'semantic_version' => $this->dictionary->semanticVersion(),
             'sheet' => trim((string) preg_replace('/[^\pL\pN]+/u', ' ', mb_strtolower(trim($sheet->sheet)))),
             'headers' => array_map(fn ($column): string => $column->normalisedHeader, $sheet->columns),
             'types' => array_map(fn ($column): array => [

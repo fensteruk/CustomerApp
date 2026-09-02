@@ -47,6 +47,6 @@ class ProjectedPlotProduct extends Model
     public function isBifold(): bool
     {
         return $this->hasPositiveQuantity()
-            && str_contains(mb_strtoupper($this->product_code), 'BF');
+            && mb_strtoupper(trim($this->product_code)) === 'BF';
     }
 }

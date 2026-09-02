@@ -6,15 +6,11 @@ use App\Enums\CallOffServiceType;
 
 class SourceCallTypeMapper
 {
+    public function __construct(private readonly SiteAppImportDataDictionary $dictionary) {}
+
     public function serviceFor(string $callType): ?CallOffServiceType
     {
-        return match (mb_strtoupper(trim($callType))) {
-            'PC1' => CallOffServiceType::Windows,
-            'CC!', 'CC1' => CallOffServiceType::CavityClosers,
-            'CM1' => CallOffServiceType::Snagging,
-            'CM2', 'CML' => CallOffServiceType::Cml,
-            default => null,
-        };
+        return $this->dictionary->portalServiceFor($callType);
     }
 
     public function isCompletionStage(CallOffServiceType $service, ?string $jobStage): bool

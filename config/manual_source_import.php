@@ -18,15 +18,10 @@ return [
         'SITE_NAME' => ['Site', 'Site Name', 'Development', 'Development Name', 'Project', 'Project Name'],
         'PLOT_REFERENCE' => ['Plot', 'Plot Ref', 'Plot Reference', 'Plot No.', 'Plot Number', 'Unit', 'Unit No.'],
         'CALL_TYPE' => ['Call Type', 'Type', 'Call Code', 'Call Type Code'],
-        'COMPLETION_FLAG' => ['complete', 'Complete', 'Completed', 'Complete?', 'Is Complete'],
         'COMPLETED_DATE' => ['Completed Date', 'Completion Date', 'Date Completed'],
         'OPERATIONAL_TARGET_DATE' => ['Plot To Be Installed', 'Install Date', 'Installation Date', 'Target Install Date'],
         'COMMERCIAL_VALUE' => ['Site Value', 'Value', 'Plot Value'],
     ],
-
-    /* Evidence used only by the deterministic interpreter for this XLSX export family. */
-    'confirmed_interpreter_call_types' => ['PC1', 'CC1', 'CML'],
-    'known_product_examples' => ['CAS', 'PFD', 'BF'],
 
     /*
      * These values intentionally have no guessed defaults. They must be filled from the

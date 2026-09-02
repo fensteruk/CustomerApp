@@ -17,6 +17,7 @@ use App\Models\SourceImportRun;
 use App\Models\SourceProjectionEvent;
 use App\Models\SourceProjectionIssue;
 use App\Models\User;
+use App\Services\SiteAppImportDataDictionary;
 use App\Services\SourceCallTypeMapper;
 use App\Services\SourceProjectionImportService;
 use App\Services\SourceProjectionIssueService;
@@ -30,9 +31,11 @@ test('Call Type and completion-stage mappings are explicit, tolerant of whitespa
     $mapper = app(SourceCallTypeMapper::class);
 
     expect($mapper->serviceFor(' pc1 '))->toBe(CallOffServiceType::Windows)
-        ->and($mapper->serviceFor('CC!'))->toBe(CallOffServiceType::CavityClosers)
-        ->and($mapper->serviceFor('cm1'))->toBe(CallOffServiceType::Snagging)
-        ->and($mapper->serviceFor('CM2'))->toBe(CallOffServiceType::Cml)
+        ->and($mapper->serviceFor('cc1'))->toBe(CallOffServiceType::CavityClosers)
+        ->and($mapper->serviceFor('CML'))->toBe(CallOffServiceType::Cml)
+        ->and($mapper->serviceFor('CC!'))->toBeNull()
+        ->and($mapper->serviceFor('cm1'))->toBeNull()
+        ->and($mapper->serviceFor('CM2'))->toBeNull()
         ->and($mapper->serviceFor('PC2'))->toBeNull()
         ->and($mapper->isCompletionStage(CallOffServiceType::CavityClosers, 'CC08'))->toBeTrue()
         ->and($mapper->isCompletionStage(CallOffServiceType::Windows, 'CA02'))->toBeTrue()
@@ -42,12 +45,12 @@ test('Call Type and completion-stage mappings are explicit, tolerant of whitespa
         ->and($mapper->isCompletionStage(CallOffServiceType::Windows, 'CC08'))->toBeFalse();
 });
 
-test('the importer centrally maps all four Call Types and creates a four-service plot projection', function (): void {
+test('the importer maps only confirmed Portal services and still creates a four-service plot projection', function (): void {
     $site = sourceSite();
     $importer = app(SourceProjectionImportService::class);
     $records = [
-        sourceRecord('CC-1', 'CC!', 'P-100'), sourceRecord('PC-1', 'PC1', 'P-100'),
-        sourceRecord('SN-1', 'CM1', 'P-100'), sourceRecord('CM-1', 'CM2', 'P-100'),
+        sourceRecord('CC-1', 'CC1', 'P-100'), sourceRecord('PC-1', 'PC1', 'P-100'),
+        sourceRecord('CM-1', 'CML', 'P-100'),
     ];
 
     $run = $importer->import('fixture', $records, 'snapshot-1');
@@ -58,7 +61,7 @@ test('the importer centrally maps all four Call Types and creates a four-service
 
 test('repeat imports are idempotent and retain zero product quantities', function (): void {
     sourceSite();
-    $record = sourceRecord('PC-1', 'PC1', 'P-101', products: ['BF-101' => 1, 'CAS' => 0]);
+    $record = sourceRecord('PC-1', 'PC1', 'P-101', products: ['BF' => 1, 'CAS' => 0]);
     $importer = app(SourceProjectionImportService::class);
 
     $importer->import('fixture', [$record]);
@@ -77,7 +80,7 @@ test('blank identities and malformed product quantities are rejected without cre
 
     $run = $importer->import('fixture', [
         sourceRecord('', 'PC1', 'P-blank'),
-        sourceRecord('PC-invalid-product', 'PC1', 'P-invalid', products: ['BF-1' => 'not-a-number']),
+        sourceRecord('PC-invalid-product', 'PC1', 'P-invalid', products: ['BF' => 'not-a-number']),
     ]);
 
     expect($run->records_rejected)->toBe(2)
@@ -100,8 +103,8 @@ test('unknown Call Types and missing source records create reconciliation issues
 test('stage mappings and Completed Date independently establish completion without inventing a date', function (): void {
     sourceSite();
     $importer = app(SourceProjectionImportService::class);
-    $stageComplete = new SourceRecord('CC-2', 'SITE-1', 'P-105', 'CC!', 'CC08', null);
-    $dateComplete = sourceRecord('CM-2', 'CM2', 'P-106', completedDate: '2026-08-20');
+    $stageComplete = new SourceRecord('CC-2', 'SITE-1', 'P-105', 'CC1', 'CC08', null);
+    $dateComplete = sourceRecord('CM-2', 'CML', 'P-106', completedDate: '2026-08-20');
 
     $importer->import('fixture', [$stageComplete, $dateComplete]);
 
@@ -129,7 +132,7 @@ test('a stable Call No. cannot change service and a plot service cannot be rebou
     $importer = app(SourceProjectionImportService::class);
     $importer->import('fixture', [sourceRecord('PC-stable', 'PC1', 'P-identity')]);
 
-    $changedType = $importer->import('fixture', [sourceRecord('PC-stable', 'CM2', 'P-identity')]);
+    $changedType = $importer->import('fixture', [sourceRecord('PC-stable', 'CC1', 'P-identity')]);
     $replacement = $importer->import('fixture', [sourceRecord('PC-replacement', 'PC1', 'P-identity')]);
 
     expect($changedType->records_rejected)->toBe(1)
@@ -175,7 +178,7 @@ test('source timestamps remain source facts and the plot retains the newest know
 
     $importer->import('fixture', [
         new SourceRecord('PC-fresh', 'SITE-1', 'P-fresh', 'PC1', null, null, [], $newer),
-        new SourceRecord('CC-stale', 'SITE-1', 'P-fresh', 'CC!', null, null, [], $older),
+        new SourceRecord('CC-stale', 'SITE-1', 'P-fresh', 'CC1', null, null, [], $older),
     ]);
     $importer->import('fixture', [new SourceRecord('PC-fresh', 'SITE-1', 'P-fresh', 'PC1', null, null)]);
 
@@ -187,24 +190,23 @@ test('source timestamps remain source facts and the plot retains the newest know
         ->and($service->projectedPlot->synchronised_at)->not->toBeNull();
 });
 
-test('a representative four-service snapshot imports one hundred plots without projection growth', function (): void {
+test('a representative importable snapshot imports one hundred plots without projection growth', function (): void {
     sourceSite();
     $records = collect(range(1, 100))->flatMap(function (int $plot): array {
         $reference = 'P-'.str_pad((string) $plot, 3, '0', STR_PAD_LEFT);
 
         return [
-            sourceRecord('CC-'.$plot, 'CC!', $reference, ['CAS' => 1]),
+            sourceRecord('CC-'.$plot, 'CC1', $reference, ['CAS' => 1]),
             sourceRecord('PC-'.$plot, 'PC1', $reference, ['PFD' => 1]),
-            sourceRecord('SN-'.$plot, 'CM1', $reference, ['BF-'.$plot => $plot === 1 ? 1 : 0]),
-            sourceRecord('CM-'.$plot, 'CM2', $reference),
+            sourceRecord('CM-'.$plot, 'CML', $reference, ['BF' => $plot === 1 ? 1 : 0]),
         ];
     });
 
     $run = app(SourceProjectionImportService::class)->import('fixture', $records, 'performance-fixture');
 
-    expect($run->records_seen)->toBe(400)
-        ->and($run->records_created)->toBe(400)
-        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->count())->toBe(400)
+    expect($run->records_seen)->toBe(300)
+        ->and($run->records_created)->toBe(300)
+        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->count())->toBe(300)
         ->and(ProjectedPlotService::query()->count())->toBe(400);
 });
 
@@ -225,8 +227,9 @@ test('a malformed source row rolls back independently while valid rows continue'
 
 test('an unexpected import failure is safely recorded against its import run', function (): void {
     sourceSite();
+    $dictionary = app(SiteAppImportDataDictionary::class);
     $importer = new SourceProjectionImportService(
-        new class extends SourceCallTypeMapper
+        new class($dictionary) extends SourceCallTypeMapper
         {
             public function serviceFor(string $callType): ?CallOffServiceType
             {
@@ -236,6 +239,7 @@ test('an unexpected import failure is safely recorded against its import run', f
         app(SourceProjectionIssueService::class),
         app(UpdateConflictKeyAction::class),
         app(SourceSiteResolver::class),
+        $dictionary,
     );
 
     expect(fn () => $importer->import('fixture', [sourceRecord('PC-failure', 'PC1', 'P-failure')]))

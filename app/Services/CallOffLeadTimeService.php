@@ -9,7 +9,10 @@ use Carbon\CarbonInterface;
 
 class CallOffLeadTimeService
 {
-    public function __construct(private readonly HolidayProvider $holidays) {}
+    public function __construct(
+        private readonly HolidayProvider $holidays,
+        private readonly SiteAppImportDataDictionary $dictionary,
+    ) {}
 
     public function earliestNormalDate(ProjectedPlotService $service, ?CarbonInterface $from = null): CarbonImmutable
     {
@@ -18,7 +21,7 @@ class CallOffLeadTimeService
         $products = $plot === null
             ? collect()
             : ($plot->relationLoaded('products') ? $plot->products : $plot->products()->get());
-        $weeks = $products->contains(fn ($product): bool => $product->isBifold()) ? 5 : 4;
+        $weeks = $this->dictionary->hasPositiveBifold($products) ? 5 : 4;
 
         return $this->nextWorkingDay($from->addWeeks($weeks));
     }

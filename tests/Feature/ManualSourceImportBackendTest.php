@@ -205,7 +205,7 @@ test('the generic XLSX reader handles typed dates quantities blanks and ignores 
     $path = mechanicalWorkbook([
         ['CALL-1', 'SITE-A', 'Site A', 'P-001', 'PC1', 'CA02', new DateTimeImmutable('2026-08-28'), new DateTimeImmutable('2026-09-15'), 2, 0, null],
         [null, null, null, null, null, null, null, null, null, null, null],
-        ['CALL-2', 'SITE-A', 'Site A', 'P-002', 'CC!', null, null, null, 0, null, 1],
+        ['CALL-2', 'SITE-A', 'Site A', 'P-002', 'CC1', null, null, null, 0, null, 1],
     ]);
 
     try {

@@ -6,7 +6,10 @@ Date: 2026-08-28
 
 The transport-independent Sprint 3B source importer now has a manual XLSX adapter, explicit source-site bindings, a non-mutating preview, stale-preview protection, an explicit atomic commit and an Office-only audit/readback contract.
 
-The fixed-header parser configuration has been superseded locally by a deterministic adaptive interpreter. `Copy of siteapp1.xlsx` has now been inspected locally and read-only. The backend proposes its real worksheet/header layout safely; source Call Type meanings, product confirmation, site bindings and global-snapshot status remain explicit gates rather than guesses.
+The fixed-header parser configuration has been superseded locally by a deterministic
+adaptive interpreter. `Copy of siteapp1.xlsx` has been reinterpreted locally and read-only
+against the confirmed SiteApp dictionary. Source-site bindings, unresolved fields, revisit
+service mappings and global-snapshot status remain explicit gates rather than guesses.
 
 Detailed interpretation rules and the Office mapping/profile contract are documented in `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`.
 
@@ -19,10 +22,9 @@ are no hidden sheets/rows/columns, formulas, macros, embeddings, external links 
 connections. Its SHA-256 is
 `ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`.
 
-There is no Job Stage or Completed Date column. The `complete` flag contains 20 true-like
-and 27 false-like values. A true flag may establish source completion but produces the
-existing missing-completion-date reconciliation warning; no date is invented or copied from
-`Plot To Be Installed`.
+There is no Job Stage or Completed Date column. The `complete` field contains 20 true-like
+and 27 false-like values, but its meaning is unresolved. It is ignored for import and cannot
+complete or reverse a service. No date is invented or copied from `Plot To Be Installed`.
 
 The complete structural/header evidence is recorded in
 `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`. The workbook is not
@@ -56,24 +58,24 @@ The binding records its own UUID, exact key, source/original name, optional disp
 
 ## Mapping Rules
 
-The latest `siteapp-xlsx` source-family confirmations are:
+The authoritative `siteapp-xlsx` source-family confirmations are:
 
 - `PC1` maps to Windows;
 - `CC1` maps to Cavity Closers;
 - `CML` maps to CML.
 
-Unknown values are blocking; there is no guess/fallback mapping. The workbook contains 21
-`PC1`, 17 `CC1`, 7 `CC!`, 1 `CM1` and 1 `CM2` rows and no `CML` row. The 9
-`CC!`/`CM1`/`CM2` rows are therefore deliberately blocked until the source owner confirms
-their meaning for this exact source family. Older mappings in the transport-independent
-importer do not silently broaden the XLSX adapter contract.
+`CM1` is Revisit 1 and `CM2` is Revisit 2. Both are valid source codes, but neither has a
+confirmed four-service Portal mapping, so they require reconciliation. `CC!` is invalid (a
+Shift+1 typo for CC1), remains unknown/likely typo and is never silently corrected. The
+workbook contains 21 PC1, 17 CC1, seven literal CC!, one CM1 and one CM2 rows and no CML row.
 
-The workbook contains 19 code-like numeric product candidates: `CAS`, `FLU`, `VS`, `TT`,
-`BAY`, `PFD`, `PSU`, `PSG`, `CDF`, `CDU`, `CDG`, `GLS`, `PSP`, `BF`, `ALI`, `AOV`, `FI`,
-`WP` and `MISC`. `CAS`, `PFD` and `BF` are approved examples; the remaining 16 need Office
-confirmation. Blank means zero, zero is retained, positive numbers are accepted, and
-invalid/negative quantities block import. `Items Ordered Status` is not mapped to a domain
-field. Site Value and other commercial values are excluded.
+All 19 product columns now have confirmed classifications. Customer Total Windows is
+`VS + TT + BAY + ALI + AOV + FI`; Total Doors is
+`PSU + PSG + CDF + CDU + CDG + PSP + BF`. `CAS`, `FLU`, `PFD`, `GLS`, `WP` and `MISC`
+are excluded from customer totals and remain Office/audit detail only. Blank means zero,
+zero is retained, positive numbers are accepted and invalid/negative quantities block
+import. Only exact positive BF affects lead time. `Items Ordered Status`, `complete`, Site
+Value policy and Plot To Be Installed's final meaning remain unresolved.
 
 `Plot To Be Installed` is source operational context only. The current adapter deliberately does not project it because the existing Sprint 3B contract has no customer-date destination for it. It never becomes requested, proposed, agreed or history data.
 
@@ -102,6 +104,10 @@ The preview categories are `NEW`, `UNCHANGED`, `UPDATED`, `COMPLETED`, `COMPLETI
 
 A preview is bound to its active Office Staff initiator, file SHA-256, workbook-contract fingerprint, relevant bindings/projections fingerprint and expiry. Commit never trusts client rows or categories. It serialises commits for one preview and reparses under the commit lock. A replay returns the existing result rather than importing again.
 
+Confirmed profiles use semantic version 2. Earlier profiles are excluded from exact and
+likely matching, preventing reuse of invalid CC!, wrong CM service mappings, arbitrary
+product meanings or completion-flag assumptions.
+
 ## Audit and Reconciliation
 
 Committed source runs retain namespace, original safe filename, SHA-256, initiator, represented site keys, timestamps, status, record counts and reconciliation count. Local machine paths are not stored in the committed run or returned.
@@ -127,12 +133,12 @@ A future scheduled transport may produce the same validated `SourceRecord` colle
 
 ## Remaining Decisions
 
-The source owner must confirm `CC!`, `CM1` and `CM2` for the `siteapp-xlsx` namespace,
-confirm the 16 newly observed product headers, state whether `Site Name` is a durable exact
-key or only a display name, and state whether this multi-site workbook is a selected-site or
-complete global export. Export cadence/ownership also remains TBC. Until those decisions and
-site bindings exist, the preview remains blocking; no UI or production release should treat
-the adapter as operationally ready.
+The remaining answers are: map Revisit 1/CM1 and Revisit 2/CM2 to a Portal service only if
+management confirms one; define the meaning of `complete`; decide the final use of Items
+Ordered Status, Plot To Be Installed and Site Value; state whether Site Name is a durable
+exact key or only a display name; and state whether the normal export is selected-site,
+multi-site or complete global. Export cadence/ownership also remains TBC. Literal CC! is not
+an open decision: it is invalid. Site bindings are still required before a real commit.
 
 ## Verification
 
@@ -158,3 +164,11 @@ suite passed 256 tests/1,399 assertions with 15 MySQL-only cases skipped; clean 
 migration/seed, Pint, Composer validation/audit, Vite build and Git whitespace checks passed.
 The disposable MySQL gate and source-semantics decisions remain outstanding as documented in
 `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`.
+
+Semantic correction verification on 2 September 2026 replaced the call/product assumptions
+with `documentation/siteapp-import-data-dictionary.md`. Focused coverage passed 93 tests and
+519 assertions; the full suite passed 262 of 277 tests with 1,455 assertions and 15
+MySQL-only skips. Clean local migrate/seed, migration 000011 rollback/re-apply, Pint,
+Composer validation, Vite build and Git whitespace checks passed. Composer audit reported
+seven advisories affecting locked Filament 5.6.8 and CommonMark 2.9.0; no dependency change
+was authorised. Disposable MySQL 8.4 remains unavailable locally and is still required.

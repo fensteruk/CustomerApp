@@ -123,7 +123,7 @@ Already called-off or ineligible combinations remain visible but disabled with a
 
 ### 12. Products and quantities
 
-Product information comes automatically from Excel/SiteApp. Customers do not enter or edit quantities. Show product codes exactly as Fenster uses them, including CAS, PFD and BF. Only products with quantity greater than zero are customer-visible; hide zero-value products. All four roles can see non-zero quantities.
+Product information comes automatically from Excel/SiteApp. Customers do not enter or edit quantities. Following the confirmed 2 September 2026 source-dictionary correction, customer-facing output contains only non-zero Total Windows and Total Doors from the approved product groups. Individual codes remain Office/audit detail; excluded codes such as CAS, PFD and MISC are not customer product types. The current dictionary is `documentation/siteapp-import-data-dictionary.md`.
 
 Do not clutter the main overview with products. Show them on Plot Details and during relevant call-off selection/review.
 
@@ -133,7 +133,7 @@ Provide a dedicated Plot Details page. Prominently show Overall Status, then non
 
 ### 14. Lead times and dates
 
-Normal minimum manufacturing/service lead time is three weeks for standard products and four weeks where BF/bifold affects the relevant call-off. The customer-facing normal request window includes an additional one-week buffer: the earliest normal date is four weeks away for a standard plot/service and five weeks away where BF applies.
+Normal minimum manufacturing/service lead time is three weeks for standard products and four weeks only where exact source code `BF` has a positive quantity. The customer-facing normal request window includes an additional one-week buffer: the earliest normal date is four weeks normally and five weeks only for positive `BF`. Other door codes and Total Doors do not trigger the BF rule.
 
 Calculate lead time per plot/service. In bulk call-offs, do not force every plot to use the longest lead time; calculate independently and show the earliest normal date for each plot/service.
 
@@ -186,9 +186,9 @@ Initial integration is read-only from the Portal: **Excel/SiteApp → Customer P
 
 The Portal owns customer requested dates, negotiation, Date Agreed, amendments and Portal communication/history. Excel/SiteApp owns product quantities, operational completion and source identifiers.
 
-`Call No.` is a permanent unique identifier, never reused or changed, and safe as an external source reference. Known call types are `PC1` = Plot Calloff Installation Date, `CC!` = Cavity Closers Delivery Date, `CM1` = Snagging Arrival Date, and `CM2` = CML Arrival Date. Do not expose codes as customer-facing names; use Windows, Cavity Closers, Snagging and CML.
+`Call No.` is a permanent unique identifier, never reused or changed, and safe as an external source reference. The corrected call-type dictionary is `PC1` = Plot Install, `CC1` = Cavity Closer 1, `CM1` = Revisit 1, `CM2` = Revisit 2 and `CML` = CML Call Off. PC1, CC1 and CML currently map to Windows, Cavity Closers and CML respectively. CM1 and CM2 have no confirmed four-service Portal mapping and require reconciliation. `CC!` is invalid (a Shift+1 typo for CC1) and must never be silently mapped.
 
-`Plot To Be Installed` is currently a placeholder where the real date is unknown. Do not treat it as confirmed/planned customer date or expose it as Date Agreed. `Site Value` remains internal/commercial. Do not confuse operational statuses/codes with Portal request statuses.
+The meanings/final uses of `complete`, `Items Ordered Status`, `Plot To Be Installed`, `Site Value`, Site Name durability and normal export scope remain unresolved. `complete` does not currently prove completion. Plot To Be Installed is operational context only and never becomes a requested, proposed, agreed or completion date. Site Value is commercial and excluded from customer output. Do not confuse operational statuses/codes with Portal request statuses.
 
 Refresh approximately every one to two hours, not necessarily in real time. If sync fails or is delayed, show the last successfully synchronised data and visibly display **Last updated: [date/time]**. If a known Call No. disappears, retain last known data and Portal history, flag it internally to Fenster staff, and do not silently delete or hide it. Ownership of the process that updates the Excel/source data remains TBC.
 

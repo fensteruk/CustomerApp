@@ -8,7 +8,10 @@ use App\Exceptions\InvalidSourceWorkbook;
 
 class WorkbookMappingService
 {
-    public function __construct(private readonly WorkbookInterpretationProfileService $profiles) {}
+    public function __construct(
+        private readonly WorkbookInterpretationProfileService $profiles,
+        private readonly SiteAppImportDataDictionary $dictionary,
+    ) {}
 
     /** @return array{sheet: string, header_row: int, columns: list<array{source_index: int, semantic_role: string, subtype: string|null}>}|null */
     public function automatic(WorkbookInterpretation $interpretation): ?array
@@ -65,11 +68,18 @@ class WorkbookMappingService
                 && ! in_array($role, [WorkbookColumnRole::CommercialValue, WorkbookColumnRole::Ignore], true)) {
                 $errors[] = $this->issue('COMMERCIAL_VALUE_SAFETY_OVERRIDE', 'Commercial values cannot be mapped as products or customer-visible data.');
             }
+            if ($this->dictionary->isUnconfirmedHeader($observed->originalHeader)
+                && ! in_array($role, [WorkbookColumnRole::Ignore, WorkbookColumnRole::Unknown, WorkbookColumnRole::OperationalTargetDate, WorkbookColumnRole::CommercialValue], true)) {
+                $errors[] = $this->issue('UNCONFIRMED_FIELD_SAFETY_OVERRIDE', "{$observed->originalHeader} has no approved Portal meaning and cannot be mapped into an import fact.");
+            }
 
             $subtype = isset($column['subtype']) ? mb_strtoupper(trim((string) $column['subtype'])) : null;
             if ($role === WorkbookColumnRole::ProductQuantity) {
                 if ($subtype === null || ! preg_match('/^[A-Z][A-Z0-9_-]{1,31}$/', $subtype)) {
                     $errors[] = $this->issue('PRODUCT_CODE_REQUIRED', "Column {$sourceIndex} requires a safe product code.");
+                }
+                if ($subtype !== null && ! $this->dictionary->isKnownProduct($subtype)) {
+                    $errors[] = $this->issue('UNCONFIRMED_PRODUCT_CODE', "Product code {$subtype} has no confirmed SiteApp meaning.");
                 }
                 if ((int) $observed->profile['negative_count'] > 0) {
                     $errors[] = $this->issue('NEGATIVE_PRODUCT_QUANTITY', "Column {$sourceIndex} contains a negative quantity.");
@@ -127,6 +137,7 @@ class WorkbookMappingService
         $sheet = collect($interpretation->sheets)->firstWhere('sheet', $mapping['sheet']);
 
         return hash('sha256', json_encode([
+            'semantic_version' => $this->dictionary->semanticVersion(),
             'structure' => $sheet === null ? null : $this->profiles->fingerprintForSheet($sheet),
             'mapping' => $mapping,
         ], JSON_THROW_ON_ERROR));

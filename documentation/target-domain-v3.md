@@ -22,8 +22,10 @@ Site → CallOffBatch → CallOffRequest → CallOffDateNegotiation → CallOffD
 - `ProjectedPlotService` is the independent source projection and future call-off target.
   It has a stable service identifier, source Call No./type/stage/completion snapshots and
   source observation timestamps.
-- `ProjectedPlotProduct` retains exact source product codes and quantities. It is source
-  owned; a positive `BF` product is the current lead-time input.
+- `ProjectedPlotProduct` retains confirmed source product codes and quantities for Office
+  audit fidelity. Customer output is the non-zero Total Windows/Total Doors projection in
+  `documentation/siteapp-import-data-dictionary.md`; exact positive `BF` is the sole
+  product-driven lead-time input.
 - `CallOffDateNegotiation` is an initial or amendment cycle. Its nullable unique active key
   means a request cannot have two open cycles of the same kind.
 - `CallOffDateProposal` is ordered and append-only in practice: each customer requested
@@ -87,8 +89,8 @@ checks remain mandatory for every external read/action. No plot-level assignment
 
 ## Lead-time contract
 
-`CallOffLeadTimeService` is backend-only. It calculates four weeks for standard products
-and five weeks where a positive-quantity BF product applies, skips weekends and exposes a
+`CallOffLeadTimeService` is backend-only. It calculates four weeks normally and five weeks
+only where exact product code `BF` has a positive quantity, skips weekends and exposes a
 six-month maximum. Its `HolidayProvider` dependency is intentionally unconfigured for UK
 bank holidays until a managed holiday data source and owner are approved. Sprint 3E uses
 that replaceable provider for alternative-date validation; its current production binding

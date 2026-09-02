@@ -61,7 +61,8 @@ test('it deterministically detects shifted aliases dynamic products and safety o
         ->and($columns['CAS']->role)->toBe(WorkbookColumnRole::ProductQuantity)
         ->and($columns['Plot To Be Installed']->role)->toBe(WorkbookColumnRole::OperationalTargetDate)
         ->and($columns['Site Value']->role)->toBe(WorkbookColumnRole::CommercialValue)
-        ->and($columns['complete']->role)->toBe(WorkbookColumnRole::CompletionFlag)
+        ->and($columns['complete']->role)->toBe(WorkbookColumnRole::Unknown)
+        ->and($columns['complete']->reasons)->toContain('The source meaning of complete is not confirmed.')
         ->and($columns['Notes']->role)->toBe(WorkbookColumnRole::Unknown);
 });
 
@@ -121,7 +122,7 @@ test('the reference workbook shape is interpreted from a fictional structure-equ
         ->and($columns['Site Value']->profile['sample_values'])->toBe('[commercial values withheld]')
         ->and($read->rows)->toHaveCount(3)
         ->and($read->blankRowCount)->toBe(1)
-        ->and(collect($read->rows)->pluck('completionFlag')->all())->toBe([false, true, true]);
+        ->and(collect($read->rows)->pluck('completionFlag')->all())->toBe([null, null, null]);
 });
 
 test('typed Excel dates are safe during every header-candidate and profile pass', function (): void {
@@ -227,7 +228,7 @@ test('the central alias dictionary recognises approved punctuation and wording v
         ->and($roles['Development Name'])->toBe(WorkbookColumnRole::SiteName)
         ->and($roles['Unit No.'])->toBe(WorkbookColumnRole::PlotReference)
         ->and($roles['Call Type Code'])->toBe(WorkbookColumnRole::CallType)
-        ->and($roles['Is Complete'])->toBe(WorkbookColumnRole::CompletionFlag)
+        ->and($roles['Is Complete'])->toBe(WorkbookColumnRole::Unknown)
         ->and($roles['Completion Date'])->toBe(WorkbookColumnRole::CompletedDate)
         ->and($roles['Installation Date'])->toBe(WorkbookColumnRole::OperationalTargetDate)
         ->and($roles['Plot Value'])->toBe(WorkbookColumnRole::CommercialValue);
@@ -310,7 +311,7 @@ test('Office confirmation saves a structural profile and exact reuse is revalida
     $path = adaptiveWorkbook([[
         'name' => 'Calls',
         'rows' => [
-            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'XYZ'],
+            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'VS'],
             ['CALL-1', 'SITE-A', 'P-001', 'PC1', 2],
             ['CALL-2', 'SITE-A', 'P-002', 'CC1', 0],
         ],
@@ -319,14 +320,14 @@ test('Office confirmation saves a structural profile and exact reuse is revalida
     $first = $this->actingAs($office)->postJson('/portal/source-imports/previews', [
         'workbook' => new UploadedFile($path, 'first-name.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
     ])->assertCreated()
-        ->assertJsonPath('status', ManualSourceImport::PREVIEW_STATUS_MAPPING_REQUIRED)
-        ->assertJsonPath('can_commit', false);
+        ->assertJsonPath('status', ManualSourceImport::PREVIEW_STATUS_READY)
+        ->assertJsonPath('can_commit', true);
     $preview = ManualSourceImportPreview::query()->sole();
     $columns = collect($first->json('workbook_interpretation.sheets.0.columns'))
         ->map(fn (array $column): array => [
             'source_index' => $column['source_index'],
             'semantic_role' => $column['semantic_role'],
-            'subtype' => $column['semantic_role'] === WorkbookColumnRole::ProductQuantity->value ? 'XYZ' : null,
+            'subtype' => $column['semantic_role'] === WorkbookColumnRole::ProductQuantity->value ? 'VS' : null,
         ])->all();
 
     $this->postJson("/portal/source-imports/previews/{$preview->uuid}/interpretation", [
@@ -345,7 +346,7 @@ test('Office confirmation saves a structural profile and exact reuse is revalida
     $secondPath = adaptiveWorkbook([[
         'name' => 'Calls',
         'rows' => [
-            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'XYZ'],
+            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'VS'],
             ['CALL-9', 'SITE-A', 'P-009', 'CML', 4],
             ['CALL-10', 'SITE-A', 'P-010', 'PC1', 0],
         ],
@@ -371,7 +372,7 @@ test('minor layout changes surface likely saved mappings but require reconfirmat
     $baseline = adaptiveWorkbook([[
         'name' => 'Calls',
         'rows' => [
-            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'XYZ'],
+            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'VS'],
             ['CALL-1', 'SITE-A', 'P-001', 'PC1', 2],
             ['CALL-2', 'SITE-A', 'P-002', 'CC1', 0],
         ],
@@ -383,7 +384,7 @@ test('minor layout changes surface likely saved mappings but require reconfirmat
     $columns = collect($response->json('workbook_interpretation.sheets.0.columns'))->map(fn (array $column): array => [
         'source_index' => $column['source_index'],
         'semantic_role' => $column['semantic_role'],
-        'subtype' => $column['semantic_role'] === WorkbookColumnRole::ProductQuantity->value ? 'XYZ' : null,
+        'subtype' => $column['semantic_role'] === WorkbookColumnRole::ProductQuantity->value ? 'VS' : null,
     ])->all();
     $this->postJson("/portal/source-imports/previews/{$preview->uuid}/interpretation", [
         'sheet' => 'Calls', 'header_row' => 1, 'columns' => $columns, 'confirm' => true,
@@ -392,7 +393,7 @@ test('minor layout changes surface likely saved mappings but require reconfirmat
     $changed = adaptiveWorkbook([[
         'name' => 'Calls',
         'rows' => [
-            ['Plot Ref', 'Call Type', 'Call No.', 'XYZ', 'Site Name', 'Irrelevant'],
+            ['Plot Ref', 'Call Type', 'Call No.', 'VS', 'Site Name', 'Irrelevant'],
             ['P-001', 'PC1', 'CALL-1', 2, 'SITE-A', 'x'],
             ['P-002', 'CC1', 'CALL-2', 0, 'SITE-A', 'y'],
         ],
@@ -419,7 +420,7 @@ test('profile fingerprint versions are unique and changed confirmations create a
     $path = adaptiveWorkbook([[
         'name' => 'Calls',
         'rows' => [
-            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'XYZ'],
+            ['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'VS'],
             ['CALL-1', 'SITE-A', 'P-001', 'PC1', 2],
             ['CALL-2', 'SITE-A', 'P-002', 'CC1', 0],
         ],
@@ -435,7 +436,7 @@ test('profile fingerprint versions are unique and changed confirmations create a
         'columns' => collect($interpretation->selected()?->columns)->map(fn ($column): array => [
             'source_index' => $column->sourceIndex,
             'semantic_role' => $column->role->value,
-            'subtype' => $column->role === WorkbookColumnRole::ProductQuantity ? 'XYZ' : null,
+            'subtype' => $column->role === WorkbookColumnRole::ProductQuantity ? 'VS' : null,
         ])->all(),
     ];
     $mapping = app(WorkbookMappingService::class)->canonicalise($interpretation, $base);
@@ -443,7 +444,8 @@ test('profile fingerprint versions are unique and changed confirmations create a
     $first = $profiles->save($office, ManualSourceImport::SOURCE_NAMESPACE, $interpretation, $mapping);
     $repeat = $profiles->save($office, ManualSourceImport::SOURCE_NAMESPACE, $interpretation, $mapping);
     $changed = $mapping;
-    $changed['columns'][4]['subtype'] = 'XYZ_RENAMED';
+    $changed['columns'][4]['semantic_role'] = WorkbookColumnRole::Ignore->value;
+    $changed['columns'][4]['subtype'] = null;
     $second = $profiles->save($office, ManualSourceImport::SOURCE_NAMESPACE, $interpretation, $changed);
 
     expect($repeat->id)->toBe($first->id)
@@ -517,7 +519,7 @@ test('known product columns with negative evidence cannot be silently ignored or
     }
 });
 
-test('confirmed completion flags and current workbook Call Types flow through the existing importer', function (): void {
+test('the unresolved complete field is ignored and cannot drive source completion', function (): void {
     Storage::fake('local');
     $office = adaptiveOfficeUser();
     $site = adaptiveSite();
@@ -533,7 +535,9 @@ test('confirmed completion flags and current workbook Call Types flow through th
     try {
         $response = $this->actingAs($office)->postJson('/portal/source-imports/previews', [
             'workbook' => new UploadedFile($path, 'completion.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
-        ])->assertCreated()->assertJsonPath('can_commit', true);
+        ])->assertCreated()
+            ->assertJsonPath('can_commit', true)
+            ->assertJsonPath('workbook_interpretation.sheets.0.columns.4.semantic_role', WorkbookColumnRole::Unknown->value);
         $preview = ManualSourceImportPreview::query()->sole();
         $this->postJson("/portal/source-imports/previews/{$preview->uuid}/commit", [
             'confirm' => true,
@@ -543,11 +547,11 @@ test('confirmed completion flags and current workbook Call Types flow through th
         @unlink($path);
     }
 
-    expect(ProjectedPlotService::query()->where('source_call_number', 'CALL-CC')->firstOrFail()->isSourceCompleted())->toBeTrue()
+    expect(ProjectedPlotService::query()->where('source_call_number', 'CALL-CC')->firstOrFail()->isSourceCompleted())->toBeFalse()
         ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-CML')->firstOrFail()->service_identifier->value)->toBe('cml');
 });
 
-test('unconfirmed CM1 and CM2 codes remain blocking for the adaptive SiteApp XLSX source', function (): void {
+test('valid but unmapped CM1 and CM2 codes require reconciliation for the adaptive SiteApp XLSX source', function (): void {
     Storage::fake('local');
     $office = adaptiveOfficeUser();
     $site = adaptiveSite();
@@ -569,7 +573,8 @@ test('unconfirmed CM1 and CM2 codes remain blocking for the adaptive SiteApp XLS
         @unlink($path);
     }
 
-    expect(collect($response->json('rows'))->pluck('diff_category')->all())->toBe(['UNKNOWN_CALL_TYPE', 'UNKNOWN_CALL_TYPE'])
+    expect(collect($response->json('rows'))->pluck('diff_category')->all())->toBe(['RECONCILIATION_REQUIRED', 'RECONCILIATION_REQUIRED'])
+        ->and(collect($response->json('rows'))->flatMap(fn (array $row): array => $row['errors'])->pluck('code')->unique()->all())->toBe(['CALL_TYPE_SERVICE_MAPPING_REQUIRED'])
         ->and(SourceImportRun::query()->count())->toBe(0);
 });
 

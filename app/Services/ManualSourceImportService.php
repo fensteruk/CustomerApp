@@ -386,6 +386,10 @@ class ManualSourceImportService
 
         if ($profileMatch['kind'] === 'exact' && $profile !== null) {
             $mapping = $this->mappings->canonicalise($interpretation, $profile->confirmed_mappings);
+        } elseif ($profileMatch['kind'] === 'likely') {
+            // A structurally changed workbook may receive deterministic suggestions,
+            // but it must not silently reuse or bypass the changed profile.
+            $mapping = null;
         } else {
             $mapping = $this->mappings->automatic($interpretation);
         }

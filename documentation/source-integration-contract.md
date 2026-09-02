@@ -20,7 +20,7 @@ Each transport adapter must convert its input into one `SourceRecord` containing
 | Call No. | Required permanent, unique source identity; never reused. |
 | Site identity | Required source-specific stable site identifier. |
 | Plot reference | Required customer-safe source plot reference. |
-| Call Type | Required operational code: PC1, CC!, CM1 or CM2. |
+| Call Type | Required operational code from `documentation/siteapp-import-data-dictionary.md`. |
 | Job Stage | Optional operational completion signal. |
 | Completed Date | Optional actual completion date; never substitute another date. |
 | Products | Product-code-to-quantity map; zero is valid. |
@@ -32,7 +32,10 @@ contract.
 
 ## Mapping and validation
 
-- PC1 → Windows; CC! → Cavity Closers; CM1 → Snagging; CM2 → CML.
+- PC1 → Windows; CC1 → Cavity Closers; CML → CML.
+- CM1 (Revisit 1) and CM2 (Revisit 2) are valid source codes but have no confirmed Portal
+  service mapping. They require reconciliation and are not imported into a guessed service.
+- `CC!` is invalid and remains unknown/likely typo for CC1. It is never silently corrected.
 - Completion is indicated by CC08, CA02/CA03, SN05 or CML4 for the mapped service, or by a
   Completed Date regardless of stage.
 - A completion stage without Completed Date remains complete but creates a reconciliation
@@ -45,7 +48,8 @@ contract.
 
 The transport-independent `SourceProjectionImportService` processes one Call No. in a
 database transaction. A malformed row is isolated and recorded; valid rows continue.
-Product quantities are synchronised once per affected plot after its valid records are
+Only confirmed product codes from `documentation/siteapp-import-data-dictionary.md` are
+accepted. Product quantities are synchronised once per affected plot after its valid records are
 processed. Repeating an identical payload updates freshness but does not duplicate plots,
 services, products, events or issue identities. The first observed Call No. for an existing
 blank plot/service row counts as a created source projection; subsequent run counts change
@@ -53,7 +57,9 @@ only for source facts, not for Portal observation timestamps.
 
 Products omitted from the latest authoritative plot snapshot are retained at quantity zero.
 This preserves the source truth and auditability while allowing future presentation to hide
-zero quantities.
+zero quantities. Customer presentation derives only Total Windows and Total Doors; Office
+audit detail may retain individual confirmed quantities. Exact positive `BF`, not Total Doors
+or a code containing those letters, is the only BF lead-time signal.
 
 ## Missing, completion and reversal policy
 
@@ -72,10 +78,9 @@ it creates an unsafe-reversal reconciliation issue and preserves that newer requ
 
 ## Transport and scheduling
 
-No XLSX/CSV parser, source path, credential or scheduler is configured in Sprint 3B. A
-future adapter may parse named headers from XLSX, CSV or an API, validate into this contract
-and invoke the importer. Source ownership, credentials and the 1–2 hour production cadence
-remain TBC.
+Sprint 3B itself introduced no transport. The later manual `siteapp-xlsx` adapter parses a
+secure local XLSX through deterministic interpretation and invokes this same importer.
+Source ownership, credentials and the 1–2 hour production cadence remain TBC.
 
 Unexpected importer failures mark their import run as failed and write only safe diagnostic
 metadata (source name, import-run UUID and exception class) to the application log. Raw

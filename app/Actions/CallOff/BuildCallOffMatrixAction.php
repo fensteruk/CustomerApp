@@ -8,12 +8,17 @@ use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\CallOffLeadTimeService;
+use App\Services\SiteAppImportDataDictionary;
 use Carbon\CarbonImmutable;
 use Illuminate\Validation\ValidationException;
 
 class BuildCallOffMatrixAction
 {
-    public function __construct(private readonly DetermineCallOffEligibilityAction $eligibility, private readonly CallOffLeadTimeService $leadTimes) {}
+    public function __construct(
+        private readonly DetermineCallOffEligibilityAction $eligibility,
+        private readonly CallOffLeadTimeService $leadTimes,
+        private readonly SiteAppImportDataDictionary $dictionary,
+    ) {}
 
     /** @param array<int,string> $plotUuids @param array<string,string> $serviceDates @param array<int,string> $excludedKeys @param array<string,string> $earlyReasons */
     public function handle(User $user, Site $site, array $plotUuids, array $serviceDates, array $excludedKeys = [], array $earlyReasons = [], bool $requireEarlyReasons = true): array
@@ -57,7 +62,7 @@ class BuildCallOffMatrixAction
                 if ($included && $early && $requireEarlyReasons && blank($earlyReasons[$key] ?? null)) {
                     throw ValidationException::withMessages(['early_reasons.'.$key => 'Explain this earlier-date request.']);
                 }
-                $rows[] = ['key' => $key, 'plot_uuid' => $plot->uuid, 'plot_reference' => $plot->plot_reference, 'service' => $service->value, 'requested_date' => $date->toDateString(), 'included' => $included, 'available' => $reason === null, 'reason' => $reason, 'normal_earliest_date' => $earliest?->toDateString(), 'is_early_exception' => $early, 'early_reason' => $early ? ($earlyReasons[$key] ?? null) : null, 'products' => $plot->products->filter->hasPositiveQuantity()->map(fn ($product) => ['code' => $product->product_code, 'quantity' => $product->quantity])->values()->all(), 'plot_service_id' => $projection?->id];
+                $rows[] = ['key' => $key, 'plot_uuid' => $plot->uuid, 'plot_reference' => $plot->plot_reference, 'service' => $service->value, 'requested_date' => $date->toDateString(), 'included' => $included, 'available' => $reason === null, 'reason' => $reason, 'normal_earliest_date' => $earliest?->toDateString(), 'is_early_exception' => $early, 'early_reason' => $early ? ($earlyReasons[$key] ?? null) : null, 'products' => collect($this->dictionary->customerRollups($plot->products))->map(fn (array $rollup): array => ['code' => $rollup['label'], 'quantity' => $rollup['quantity']])->all(), 'plot_service_id' => $projection?->id];
             }
         }
 

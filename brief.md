@@ -554,9 +554,12 @@ operational data. Existing, completed, ineligible and unresolved plot/service
 combinations stay visible but disabled with an explanation; they are never silently
 removed.
 
-Product information is projected from Excel/SiteApp. Show exact Fenster product codes,
-including CAS, PFD and BF, only where quantity is greater than zero. Do not show products
-in the main overview; show them in Plot Details and relevant call-off selection/review.
+Product information is projected from Excel/SiteApp. Customer-facing product output is
+limited to non-zero Total Windows and Total Doors, calculated from the confirmed registry
+in `documentation/siteapp-import-data-dictionary.md`. Individual source codes remain
+Office/audit detail and excluded codes such as CAS, PFD and MISC are not customer product
+types. Do not show products in the main overview; show the approved totals in Plot Details
+and relevant call-off selection/review.
 
 A call-off batch represents one Site User submission action for one active site. It may
 contain one or many plot/service combinations. Each individual request owns its plot,
@@ -573,10 +576,11 @@ service, requested date, status and full history.
 - Where supported, bulk Undo and restoration remain atomic: all eligible records change
   or none do.
 
-Normal minimum lead time is three weeks for standard products and four weeks where
-BF/bifold affects that plot/service. The customer-facing normal request window adds a
-one-week buffer, so the earliest normal date is four weeks for a standard item and five
-weeks for a BF/bifold-affected item. Calculate this independently per plot/service.
+Normal minimum lead time is three weeks for standard products and four weeks where the
+exact source product code `BF` has a positive quantity. The customer-facing normal request
+window adds a one-week buffer, so the earliest normal date is four weeks normally and five
+weeks only for positive `BF`. Other door codes and Total Doors do not trigger this rule.
+Calculate this independently per plot/service from current source truth.
 
 Normal requested dates are Monday–Friday only, exclude UK bank holidays and may be no
 more than six months ahead. The date picker prevents dates earlier than the individually
@@ -654,11 +658,14 @@ The Portal does not write agreed dates to Excel/SiteApp. It owns requested dates
 negotiation, Date Agreed, amendments and Portal communication/history. Excel/SiteApp own
 product quantities, operational completion and source identifiers.
 
-`Call No.` is a permanent unique source identifier. Known call types are `PC1` (Windows /
-Plot Calloff Installation Date), `CC!` (Cavity Closers Delivery Date), `CM1` (Snagging
-Arrival Date) and `CM2` (CML Arrival Date). These codes are not customer-facing names.
-`Plot To Be Installed` is a placeholder, never a Date Agreed or planned Portal date, and
-`Site Value` is internal/commercial.
+`Call No.` is a permanent unique source identifier. Confirmed call types are `PC1` (Plot
+Install), `CC1` (Cavity Closer 1), `CM1` (Revisit 1), `CM2` (Revisit 2) and `CML` (CML Call
+Off). Only PC1, CC1 and CML currently have confirmed four-service Portal mappings. CM1 and
+CM2 require reconciliation rather than an invented service mapping. `CC!` is invalid and a
+literal value is treated as a likely typo for CC1, never silently corrected. The complete
+field, Items Ordered Status, Site Name durability, export scope and the final use of Plot To
+Be Installed and Site Value remain unresolved as recorded in
+`documentation/siteapp-import-data-dictionary.md`.
 
 Source data refreshes approximately every one to two hours. On a failed or delayed sync,
 show the last successful information and **Last updated: [date/time]**. If a known Call

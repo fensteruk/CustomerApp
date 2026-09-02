@@ -13,6 +13,7 @@ class WorkbookInterpretationProfile extends Model
 
     protected $fillable = [
         'source_namespace',
+        'semantic_version',
         'sheet_identifier',
         'structural_fingerprint',
         'normalised_headers',

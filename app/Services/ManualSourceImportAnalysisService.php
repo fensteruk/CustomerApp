@@ -8,12 +8,12 @@ use App\Data\XlsxSourceRow;
 use App\Enums\CallOffServiceType;
 use App\Enums\ManualSourceImportCategory;
 use App\Models\ProjectedPlotService;
-use App\Support\ManualSourceImport;
 
 class ManualSourceImportAnalysisService
 {
     public function __construct(
         private readonly SourceCallTypeMapper $callTypes,
+        private readonly SiteAppImportDataDictionary $dictionary,
         private readonly SourceSiteResolver $sites,
         private readonly ManualSourceImportFingerprintService $fingerprints,
     ) {}
@@ -124,10 +124,25 @@ class ManualSourceImportAnalysisService
             $errors[] = $this->message('SITE_MAPPING_REQUIRED', 'The source site must be explicitly bound to an existing Portal site.');
         }
         if ($serviceType === null && $row->callType !== '') {
-            if ($resolution !== null) {
-                $category = ManualSourceImportCategory::UnknownCallType;
+            $normalisedCallType = mb_strtoupper(trim($row->callType));
+            if ($this->dictionary->isKnownCallType($normalisedCallType)) {
+                if ($resolution !== null) {
+                    $category = ManualSourceImportCategory::ReconciliationRequired;
+                }
+                $errors[] = $this->message(
+                    'CALL_TYPE_SERVICE_MAPPING_REQUIRED',
+                    "Call Type '{$normalisedCallType}' is valid source data but has no confirmed Portal service mapping.",
+                );
+            } else {
+                if ($resolution !== null) {
+                    $category = ManualSourceImportCategory::UnknownCallType;
+                }
+                $correction = $this->dictionary->likelyCallTypeCorrection($normalisedCallType);
+                $message = $correction === null
+                    ? "Unknown Call Type '{$row->callType}'."
+                    : "Unknown Call Type '{$row->callType}'; it is a likely typo for {$correction} and requires Office confirmation.";
+                $errors[] = $this->message('UNKNOWN_CALL_TYPE', $message);
             }
-            $errors[] = $this->message('UNKNOWN_CALL_TYPE', "Unknown Call Type '{$row->callType}'.");
         }
         if ($errors === [] && $resolution !== null && $serviceType !== null) {
             $associationChanged = $existing !== null && (
@@ -241,12 +256,6 @@ class ManualSourceImportAnalysisService
 
     private function serviceForSource(string $sourceNamespace, string $callType): ?CallOffServiceType
     {
-        $normalised = mb_strtoupper(trim($callType));
-        if ($sourceNamespace === ManualSourceImport::SOURCE_NAMESPACE
-            && ! in_array($normalised, config('manual_source_import.confirmed_interpreter_call_types', []), true)) {
-            return null;
-        }
-
-        return $this->callTypes->serviceFor($normalised);
+        return $this->callTypes->serviceFor($callType);
     }
 }

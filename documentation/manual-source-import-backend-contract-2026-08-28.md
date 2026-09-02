@@ -2,7 +2,9 @@
 
 Date: 2026-08-28
 
-Status: fixed-header backend contract superseded locally by the deterministic interpretation extension on `feature/deterministic-spreadsheet-interpreter`; reference workbook verified, source Call Type semantics and disposable MySQL evidence remain pending.
+Status: deterministic backend contract corrected against the confirmed SiteApp dictionary on
+`feature/deterministic-spreadsheet-interpreter`; reference workbook verified, remaining
+business fields and disposable MySQL evidence remain pending.
 
 ## Boundary
 
@@ -19,9 +21,10 @@ is a genuine date-formatted column, and `Site Value` is GBP currency-formatted. 
 hidden sheets/rows/columns, formulas, macros, embeddings, external links or workbook
 connections.
 
-The file has no Job Stage or Completed Date column. Its `complete` flag contains 20 true-like
-and 27 false-like values. True uses the guarded completion-without-date path and raises the
-existing reconciliation warning; `Plot To Be Installed` is never substituted as completion.
+The file has no Job Stage or Completed Date column. Its `complete` field contains 20
+true-like and 27 false-like values, but the field's meaning is unresolved. The interpreter
+therefore retains it as structural evidence and ignores it for import; it cannot complete or
+reverse a service. `Plot To Be Installed` is never substituted as completion.
 
 The 27 headers and full non-sensitive structural findings are recorded in
 `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`. The workbook's
@@ -29,14 +32,14 @@ SHA-256 is `ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`; t
 file and its row values are not committed. Automated coverage uses a fictional
 structure-equivalent fixture.
 
-The interpreter proposes `Sheet1`/row 1 with confidence 99. It still correctly returns
-`mapping_required`: 16 newly observed product candidates require Office confirmation, 13
-source-site names require explicit bindings, and 9 rows use source-family Call Types that
-are not yet approved by the latest task contract.
+The corrected interpreter proposes `Sheet1`/row 1 with confidence 99 and recognises all 19
+product columns against the confirmed registry. Commit remains blocked until 13 source-site
+names have explicit bindings; the seven literal `CC!` rows are unknown typo cases and the
+one `CM1` plus one `CM2` row require reconciliation because no Portal service mapping exists.
 
-A rolled-back local endpoint gate confirmed that the real file normalises to 47 rows and
-reports all 47 missing site bindings plus 9 unknown Call Types without creating a committed
-source run or projection. Both blockers are shown on the same row where applicable.
+A read-only corrected parser pass confirmed that the real file normalises to 47 rows, one
+blank row and 13 represented source sites. All 47 completion flags are null because
+`complete` is not an approved completion fact. No source run or projection was created.
 
 ## Authorisation
 
@@ -92,7 +95,12 @@ The upload request is multipart with one `workbook` file. It accepts `.xlsx` onl
 
 The preview response now includes `workbook_interpretation`: selected/proposed sheet, header row, overall confidence, structural fingerprint, date system, profile match, issues, and every sheet/column's deterministic mapping evidence. Status is `mapping_required` when Office confirmation is needed. Such a preview retains its private file but has `can_commit=false`.
 
-Mapping confirmation accepts only sheet, header row, closed-enum column mappings, optional product codes and `confirm=true`. The server re-inspects and validates the file; it never accepts client-authored confidence, evidence, rows or diffs. Safety overrides prevent operational dates or commercial values being remapped as products/customer dates. Exact confirmed profiles may be reused after revalidation; likely changed-layout profiles are suggestions only.
+Mapping confirmation accepts only sheet, header row, closed-enum column mappings, confirmed
+product codes and `confirm=true`. The server re-inspects and validates the file; it never
+accepts client-authored confidence, evidence, rows or diffs. Safety overrides prevent
+unconfirmed `complete`, operational dates or commercial values being remapped as import
+facts/products/customer dates. Exact confirmed profiles may be reused after revalidation;
+likely changed-layout profiles are suggestions only.
 
 The file is stored on the private Laravel `local` disk outside the public root using a random internal name. The original basename is retained only for audit. Temporary content is deleted after successful commit, on failed preview creation, or by the hourly expiry command. Ready previews expire after 30 minutes by default.
 
@@ -150,22 +158,32 @@ The transport-independent mapper retains its existing mappings, while the adapti
 
 | Source Call Type | Portal service |
 |---|---|
-| `PC1` | Windows |
-| `CC1` | Cavity Closers |
-| `CML` | CML |
+| `PC1` — Plot Install | Windows |
+| `CC1` — Cavity Closer 1 | Cavity Closers |
+| `CML` — CML Call Off | CML |
 
-Whitespace/case is normalised for known codes. `CM1`, `CM2` and every other unconfirmed value are blocking for this adapter and never guessed. Older mappings remain available to previously approved non-XLSX source contracts.
+Whitespace/case is normalised for known codes. `CM1` (Revisit 1) and `CM2` (Revisit 2)
+are valid source values but have no confirmed four-service mapping, so they produce blocking
+`RECONCILIATION_REQUIRED` results. `CC!` is invalid, reported as a likely typo for CC1 and
+never silently corrected. No older cross-namespace assumption can broaden this contract.
 
-The inspected workbook contains `PC1` (21 rows), `CC1` (17), `CC!` (7), `CM1` (1) and
-`CM2` (1), with no `CML` row. Therefore 9 rows remain `UNKNOWN_CALL_TYPE` for this adapter
-until the source owner explicitly confirms their current meaning. The older global mapper is
-not used to bypass this source-family decision.
+The inspected workbook contains `PC1` (21 rows), `CC1` (17), literal invalid `CC!` (7),
+`CM1` (1) and `CM2` (1), with no `CML` row. The seven typo rows are
+`UNKNOWN_CALL_TYPE`; the two valid revisit rows are `RECONCILIATION_REQUIRED`.
 
 `Call No.` remains the permanent idempotent identity under the existing projection schema, which currently enforces global uniqueness. A Call No. cannot change its site, plot or service association, and a projected plot/service cannot silently take a replacement Call No. Identity conflicts are blocking reconciliation results.
 
-The projected plot identity is the source namespace plus exact bound source-site key plus plot reference. The reference workbook contains 19 code-like numeric candidates: `CAS`, `FLU`, `VS`, `TT`, `BAY`, `PFD`, `PSU`, `PSG`, `CDF`, `CDU`, `CDG`, `GLS`, `PSP`, `BF`, `ALI`, `AOV`, `FI`, `WP` and `MISC`. `CAS`, `PFD` and `BF` are already approved examples; the other 16 require Office confirmation before profile save/commit. Confirmed product cells become existing `ProjectedPlotProduct` projections. Blank quantity means zero; numeric zero is retained; positive numerics are accepted; invalid and negative values block the row. Unconfigured fields are ignored. `Site Value` and other commercial fields must never be configured as product/source output and are never returned by the adapter.
+The projected plot identity is the source namespace plus exact bound source-site key plus plot reference. The reference workbook's 19 product columns all belong to the confirmed registry. Windows are `VS`, `TT`, `BAY`, `ALI`, `AOV`, `FI`; doors are `PSU`, `PSG`, `CDF`, `CDU`, `CDG`, `PSP`, `BF`; `CAS`, `FLU`, `PFD`, `GLS`, `WP`, `MISC` are excluded/redundant customer fields retained only for Office audit where useful. Blank means zero; zero is retained; positive numerics are accepted; invalid/negative values block import. Customer output contains only non-zero Total Windows and Total Doors. `Site Value` never becomes a product or customer field.
+
+Only exact positive `BF` selects the five-week earliest normal request window. Other door
+codes and Total Doors do not. A later import that removes BF resets its projected quantity
+to zero, so the lead-time rule returns to four weeks.
 
 `Plot To Be Installed` is deliberately ignored by the adapter at this stage. It is not a requested date, agreed date, proposal date or Date Agreed history fact.
+
+Saved profiles carry semantic version 2. Profiles from version 1 are excluded from exact and
+likely matching, so mappings based on `CC!`, wrong CM meanings, arbitrary product codes or
+the `complete` assumption cannot be silently reused.
 
 ## Completion and Reconciliation
 
@@ -196,7 +214,7 @@ This supports one-site and multi-site files safely. A future global-snapshot cla
 
 | HTTP | Code | Meaning |
 |---|---|---|
-| `422` | `MAPPING_REJECTED` | Confirmed mapping violates structure, critical-field, formula, product or safety rules. |
+| `422` | `MAPPING_REJECTED` | Confirmed mapping violates structure, semantic version, critical-field, formula, confirmed-product or safety rules. |
 | `409` | `PREVIEW_NOT_MAPPABLE` | Preview is expired, changed, unavailable or no longer accepts mapping confirmation. |
 | `422` | `INVALID_SOURCE_WORKBOOK` | File/container/header/row validation failed during preview. |
 | `422` | `IMPORT_BLOCKED` | Authoritative commit revalidation found blocking rows. |
@@ -212,3 +230,11 @@ This supports one-site and multi-site files safely. A future global-snapshot cla
 ## UI Handoff
 
 A later Office-only UI may consume these JSON routes. It must display the SHA-256, summary, categories and all blocking messages; require explicit confirmation; submit only the preview UUID, confirmation boolean and preview hash; and never send editable diff rows back as truth. Site mapping must be a deliberate selection of an existing Portal site. Customer-facing UI is outside this contract.
+
+The 2 September semantic correction is covered by the authoritative
+`documentation/siteapp-import-data-dictionary.md`. Local focused coverage passed 93 tests /
+519 assertions and the full suite passed 262 of 277 tests / 1,455 assertions with 15
+MySQL-only skips. Migration 000011 passed local clean install and rollback/re-apply. A
+disposable MySQL 8.4 runtime is unavailable on this host, so MySQL profile/version/import
+proof remains mandatory. Composer audit also reports seven advisories in the locked
+Filament/CommonMark versions; no dependency or lockfile change was made in this task.

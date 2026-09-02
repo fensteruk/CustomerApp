@@ -205,6 +205,7 @@ it('renders customer-safe Plot Details with only positive product quantities', f
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'CAS', 'quantity' => 6]);
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'PFD', 'quantity' => 1]);
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'BF', 'quantity' => 1]);
+    ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'VS', 'quantity' => 2]);
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'ZERO', 'quantity' => 0]);
 
     $this->actingAs($user)
@@ -213,9 +214,11 @@ it('renders customer-safe Plot Details with only positive product quantities', f
         ->assertOk()
         ->assertSee('Plot Product Detail')
         ->assertSeeInOrder(['Cavity Closers', 'Windows', 'Snagging', 'CML'])
-        ->assertSee('CAS')
-        ->assertSee('PFD')
-        ->assertSee('BF')
+        ->assertSee('Total Windows')
+        ->assertSee('Total Doors')
+        ->assertDontSee('CAS')
+        ->assertDontSee('PFD')
+        ->assertDontSee('>BF<', false)
         ->assertDontSee('ZERO')
         ->assertDontSee('projected_plot_id', false)
         ->assertDontSee($plot->external_identifier);

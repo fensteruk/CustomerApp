@@ -2,7 +2,8 @@
 
 Date: 2026-08-28
 
-Status: local backend implementation and reference-workbook inspection complete; source Call Type semantics and disposable MySQL evidence remain outstanding.
+Status: local backend implementation and corrected SiteApp semantic interpretation complete;
+remaining business fields and disposable MySQL evidence remain outstanding.
 
 ## Boundary
 
@@ -45,11 +46,12 @@ numeric cells and were read as `DateTimeImmutable`; `Site Value` is GBP currency
 There are no hidden sheets, rows or columns, formulas, merged cells, filters, frozen panes,
 macros, embeddings, external links or workbook connections.
 
-There is no Job Stage or Completed Date column. Completion evidence is the `complete` flag:
-20 rows are true-like and 27 are false-like across mixed casing. A true flag therefore uses
-the existing completion-without-date reconciliation path; it never borrows `Plot To Be
-Installed` or invents a completion date. All observed product candidates are non-negative;
-the data includes zeroes and one blank product quantity.
+There is no Job Stage or Completed Date column. The `complete` field has 20 true-like and 27
+false-like values across mixed casing, but its business meaning is unresolved. It is now
+UNKNOWN structural evidence and all 47 normalised rows carry a null completion flag. It
+cannot complete or reverse a service, never borrows `Plot To Be Installed`, and never
+invents a completion date. All observed product columns are non-negative; the data includes
+zeroes and one blank quantity.
 
 The exact 27 headers, in order, are:
 
@@ -83,38 +85,37 @@ The exact 27 headers, in order, are:
 
 The interpreter selects `Sheet1`/row 1 with confidence 99. It classifies all four critical
 fields safely, classifies the operational date and commercial value under their safety
-roles, recognises the completion flag, and proposes all 19 code-like numeric columns as
-products. `CAS`, `PFD` and `BF` score 96; the other 16 product candidates score 82 and need
-Office confirmation. `Items Ordered Status` remains UNKNOWN because no persistence meaning
-is approved; it must be explicitly ignored or mapped only after a source decision.
+roles, and recognises all 19 columns from the confirmed product registry. Both `complete`
+and `Items Ordered Status` remain UNKNOWN because no persistence meaning is approved.
+Plot To Be Installed and Site Value keep their restrictive safety classifications but their
+final uses remain unresolved.
 
 The reference workbook exposed and now regression-tests a real defect: typed Excel dates
 could throw while non-header rows were scored as header candidates. Profiling now converts
 `DateTimeInterface` values through one deterministic date-only string boundary instead of
 casting date objects directly.
 
-Confirmed manual-workbook Call Types are deliberately limited to:
+Confirmed call types and their current Portal import status are:
 
 | Workbook code | Portal service |
 |---|---|
-| `PC1` | Windows |
-| `CC1` | Cavity Closers |
-| `CML` | CML |
+| `PC1` — Plot Install | Windows |
+| `CC1` — Cavity Closer 1 | Cavity Closers |
+| `CM1` — Revisit 1 | No confirmed mapping; reconciliation required |
+| `CM2` — Revisit 2 | No confirmed mapping; reconciliation required |
+| `CML` — CML Call Off | CML |
 
-The transport-independent importer retains its older source-contract mappings for other
-namespaces, but the `siteapp-xlsx` analysis boundary does not accept `CM1` or `CM2` without a
-new explicit source decision. Unknown values produce `UNKNOWN_CALL_TYPE` and cannot commit.
+`CC!` is invalid. A literal value is an `UNKNOWN_CALL_TYPE`, reported as a likely Shift+1
+typo for CC1, and is never silently corrected. CM1 and CM2 are not unknown; they are
+valid-but-not-importable source codes until a Portal service mapping is confirmed.
 
-The reference workbook contains 21 `PC1`, 17 `CC1`, 7 `CC!`, 1 `CM1` and 1 `CM2` rows. It
-contains no `CML` row. Under the latest source-family instruction, the 9 `CC!`/`CM1`/`CM2`
-rows remain blocking rather than inheriting older cross-namespace mappings. The source owner
-must confirm whether those codes are valid for `siteapp-xlsx` before this workbook can commit.
+The reference workbook contains 21 PC1, 17 CC1, seven literal invalid CC!, one CM1 and one
+CM2 rows. It contains no CML row. The seven typo rows are unknown and the two revisit rows
+require reconciliation; no code-similarity fallback exists.
 
-A dedicated rolled-back local HTTP preview gate confirmed 47 normalised rows, one blank row,
-13 distinct unmapped site keys, 47 `SITE_MAPPING_REQUIRED` errors and 9 additional
-`UNKNOWN_CALL_TYPE` errors. It created no source import run or projected plot. Unknown Call
-Types are now reported even when their row also requires a site binding, so one blocker no
-longer hides the other.
+A corrected read-only parser pass confirmed 47 normalised rows, one blank row, 13 distinct
+site keys and null completion flags on every row. It created no source import run or
+projected plot.
 
 ## Structural Inspection
 
@@ -175,8 +176,14 @@ serial number.
 
 Dynamic PRODUCT_QUANTITY proposals require a short code-like header, a predominantly
 non-negative numeric profile, no date/operational/commercial classification and either a
-known example (`CAS`, `PFD`, `BF`) or meaningful zero/blank evidence. Unknown product codes
-remain confirmable; the product set is not fixed. Negative quantities block mapping/import.
+confirmed registry entry or meaningful zero/blank evidence. An unregistered column may be
+shown as structurally product-like, but it cannot be confirmed into an import mapping until
+its business meaning enters the authoritative registry. Negative quantities block mapping/import.
+
+The exact registry is `documentation/siteapp-import-data-dictionary.md`. Customer output is
+derived only as Total Windows (`VS + TT + BAY + ALI + AOV + FI`) and Total Doors
+(`PSU + PSG + CDF + CDU + CDG + PSP + BF`). CAS, FLU, PFD, GLS, WP and MISC remain excluded
+from customer totals. Office preview/audit may retain individual confirmed quantities.
 
 ## Closed Roles and Confidence
 
@@ -205,6 +212,9 @@ headers, missing critical roles and ambiguous worksheet selection block automati
   products and their samples are withheld from the API.
 - Unknown Call Types remain unknown. The mapping screen cannot turn them into a service;
   service mapping remains central and server-side.
+- The unconfirmed `complete` field may only remain UNKNOWN or be ignored. It cannot be mapped
+  to COMPLETION_FLAG.
+- Only confirmed product registry codes can be mapped as PRODUCT_QUANTITY.
 - Negative product quantities block the row/mapping. Blank becomes zero and numeric zero is
   retained.
 - A formula in an imported field is accepted only when the workbook supplies a usable cached
@@ -239,7 +249,7 @@ External Site Users receive 403 and cannot inspect, confirm or commit mappings.
 
 ## Saved Profiles and Similarity
 
-`workbook_interpretation_profiles` stores UUID, source namespace, selected sheet, structural
+`workbook_interpretation_profiles` stores UUID, source namespace, semantic version, selected sheet, structural
 fingerprint, normalised ordered headers, type profile, confirmed closed-enum mappings,
 represented-sites snapshot scope, confirmer, version and timestamps. Filename is not part of
 the identity.
@@ -249,6 +259,10 @@ column-type evidence. Exact matches reuse the latest confirmed mapping but re-in
 workbook and revalidate every safety/value rule. Changed confirmation for the same fingerprint
 creates the next version; an identical confirmation reuses its version.
 
+Only profiles with the current SiteApp semantic version participate in exact or likely
+matching. The correction pass advances that version to 2, invalidating profiles that could
+contain the old CC!, CM or completion assumptions.
+
 Near matches use a deterministic weighted comparison: Jaccard header-set similarity, ordered
 header overlap, per-header type compatibility and sheet-name agreement. A likely match is
 returned as a suggestion and always requires Office confirmation. Material differences are
@@ -257,10 +271,8 @@ interpreted afresh.
 ## Normalisation and Existing Importer
 
 Confirmed mappings are converted into `XlsxSourceRow` and then the existing `SourceRecord`.
-Excel objects never enter the importer. A confirmed completion flag is represented as an
-optional source completion fact; true completes the projected service, false permits the
-existing guarded reversal behavior, and completion without a real Completed Date creates the
-existing reconciliation warning without inventing a date.
+Excel objects never enter the importer. The reference workbook's unconfirmed `complete`
+field is not mapped, so completion remains dependent on approved stage/Completed Date facts.
 
 Source-site binding, Call No. idempotency, missing-source represented-site scope, completion
 precedence, rollback, run audit and reconciliation remain owned by the existing manual-import
@@ -284,16 +296,14 @@ sanity bound, not a production throughput guarantee.
 
 Remaining evidence and decisions:
 
-1. Confirm whether `CC!`, `CM1` and `CM2` are valid `siteapp-xlsx` codes and, if so, their
-   exact Portal services. No mapping is inferred from the older transport-independent source
-   contract.
-2. Confirm the 16 newly observed product headers before committing them as product quantities.
-3. Run migration/profile uniqueness, versioning and import-transaction checks on a disposable
+1. Confirm a Portal service mapping for CM1/Revisit 1 and CM2/Revisit 2, or retain them as
+   reconciliation-only source rows. CC! is conclusively invalid.
+2. Define `complete`, Items Ordered Status, Plot To Be Installed and Site Value policy.
+3. Confirm whether Site Name is durable and whether the normal export scope is selected-site,
+   multi-site or global.
+4. Run migration/profile uniqueness, versioning and import-transaction checks on a disposable
    MySQL 8.4 database. This host currently has no MySQL client/server, Docker runtime or local
    port 3306 listener. Production is not an acceptable substitute.
-4. Confirm whether the observed multi-site workbook is a selected-site export or a complete
-   global export. Until then, every profile remains `represented_sites`; global missing-source
-   evaluation is impossible.
 
 ## Local Verification
 
@@ -314,3 +324,23 @@ Remaining evidence and decisions:
 The actual workbook was rendered and inspected locally with no external network/API use. No
 Forge, production database, deployment, external AI/API or GitHub Actions workflow was
 contacted or changed.
+
+## SiteApp Semantic Correction Verification — 2 September 2026
+
+- Read-only actual-workbook pass: Sheet1, A1:AA49, 47 data rows, one blank row, 13 source
+  sites, confidence 99; 19 confirmed product columns; `complete` and Items Ordered Status
+  remain UNKNOWN; every normalised completion flag is null.
+- Focused semantic/interpreter/import/lead-time/customer-projection regressions: 93 tests,
+  519 assertions, all passed.
+- Full Pest suite: 277 total, 262 passed, 1,455 assertions; 15 MySQL-only concurrency tests
+  skipped on SQLite.
+- Clean local SQLite migrate/seed passed through 14 migrations. Migration 000011 rollback
+  and re-apply passed, and all migrations report Ran.
+- Pint passed after formatting; Composer validation passed; Vite production build passed;
+  Git whitespace check passed.
+- Composer audit is not green: seven advisories published on 1 September affect the locked
+  `filament/filament` 5.6.8 and `league/commonmark` 2.9.0 packages. Package/lockfile upgrades
+  were outside this narrow task and were not made.
+- Disposable MySQL 8.4 remains unavailable on this host: no MySQL client/server, Docker,
+  Podman or port 3306 listener exists. MySQL migration/profile/import verification remains
+  required before this branch can be considered release-ready.
