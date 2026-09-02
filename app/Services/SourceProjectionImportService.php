@@ -9,6 +9,7 @@ use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
 use App\Enums\CallOffServiceType;
+use App\Enums\SourceImportScope;
 use App\Enums\SourceProjectionIssueType;
 use App\Models\ProjectedPlot;
 use App\Models\ProjectedPlotProduct;
@@ -42,13 +43,24 @@ class SourceProjectionImportService
             ->uniqueStrict()
             ->values()
             ->all();
+        $completeSites = collect($context->completeSiteIdentifiers)
+            ->map(fn (string $site): string => trim($site))
+            ->filter()
+            ->uniqueStrict()
+            ->values()
+            ->all();
         $run = SourceImportRun::query()->create([
             'source_name' => $sourceName,
             'source_version' => $sourceVersion,
+            'import_scope' => $context->scope,
             'initiated_by_user_id' => $context->initiatedByUserId,
             'original_filename' => $context->originalFilename,
             'content_sha256' => $context->contentSha256,
-            'source_scope' => ['represented_site_keys' => $representedSites],
+            'source_scope' => [
+                'classification' => $context->scope->value,
+                'represented_site_keys' => $representedSites,
+                'complete_site_keys' => $completeSites,
+            ],
             'status' => 'running',
             'started_at' => now(),
         ]);
@@ -66,6 +78,7 @@ class SourceProjectionImportService
                     $record->sourceUpdatedAt,
                     $record->sourceRowNumber,
                     $record->completionFlag,
+                    $record->operationalTargetDate,
                 ))
                 ->values();
             $callNumbers = $records->pluck('callNumber')->filter();
@@ -113,7 +126,13 @@ class SourceProjectionImportService
                 DB::transaction(fn () => $this->syncProducts((int) $plotId, $products, $run));
             }
 
-            $counts['records_missing'] = $this->markMissing($run, $sourceName, $callNumbers->all(), $representedSites);
+            $counts['records_missing'] = $this->markMissing(
+                $run,
+                $sourceName,
+                $callNumbers->all(),
+                $context->scope,
+                $completeSites,
+            );
             $run->update([...$counts, 'reconciliation_issue_count' => SourceProjectionIssue::query()->where('source_import_run_id', $run->id)->count(), 'status' => $counts['records_rejected'] > 0 ? 'partial' : 'completed', 'finished_at' => now()]);
 
             return $run->fresh();
@@ -157,6 +176,9 @@ class SourceProjectionImportService
                 throw new \DomainException('Product quantities must use confirmed product codes and non-negative numeric values.');
             }
         }
+        if ($record->operationalTargetDate !== null && mb_strtoupper($record->callType) !== 'PC1') {
+            throw new \DomainException('Operational target date is accepted only for PC1 Plot Install records.');
+        }
 
         $existing = ProjectedPlotService::query()->with('projectedPlot')->where('source_call_number', $record->callNumber)->lockForUpdate()->first();
         if ($existing !== null && ((int) $existing->projectedPlot->site_id !== (int) $site->id || $existing->projectedPlot->plot_reference !== $record->plotReference || $existing->service_identifier !== $serviceType)) {
@@ -189,10 +211,10 @@ class SourceProjectionImportService
         }
         $before = ['completed_at' => $service->source_completed_at?->toDateString(), 'stage' => $service->source_job_stage, 'completion_flag' => $service->source_completion_flag];
         $sourceUpdatedAt = $record->sourceUpdatedAt ?? $service->source_updated_at;
-        $service->fill(['source_call_number' => $record->callNumber, 'source_call_type' => $record->callType, 'source_job_stage' => $record->jobStage, 'source_completion_flag' => $record->completionFlag, 'source_completed_at' => $record->completedDate, 'source_completion_observed_at' => $isComplete ? ($wasComplete ? $service->source_completion_observed_at : now()) : null, 'source_updated_at' => $sourceUpdatedAt, 'last_observed_at' => now(), 'source_present' => true, 'source_missing_since' => null, 'last_source_import_run_id' => $run->id]);
+        $service->fill(['source_call_number' => $record->callNumber, 'source_call_type' => $record->callType, 'source_job_stage' => $record->jobStage, 'source_completion_flag' => $record->completionFlag, 'source_operational_target_date' => $record->operationalTargetDate, 'source_completed_at' => $record->completedDate, 'source_completion_observed_at' => $isComplete ? ($wasComplete ? $service->source_completion_observed_at : now()) : null, 'source_updated_at' => $sourceUpdatedAt, 'last_observed_at' => now(), 'source_present' => true, 'source_missing_since' => null, 'last_source_import_run_id' => $run->id]);
         $outcome = ! $wasSourceProjection
             ? 'records_created'
-            : ($service->isDirty(['source_call_number', 'source_call_type', 'source_job_stage', 'source_completion_flag', 'source_completed_at', 'source_completion_observed_at', 'source_updated_at', 'source_present', 'source_missing_since']) ? 'records_updated' : 'records_unchanged');
+            : ($service->isDirty(['source_call_number', 'source_call_type', 'source_job_stage', 'source_completion_flag', 'source_operational_target_date', 'source_completed_at', 'source_completion_observed_at', 'source_updated_at', 'source_present', 'source_missing_since']) ? 'records_updated' : 'records_unchanged');
         $service->save();
 
         $this->issues->resolve("missing-source-record:{$sourceName}:{$record->callNumber}");
@@ -324,25 +346,29 @@ class SourceProjectionImportService
     }
 
     /** @param array<int, string> $callNumbers */
-    private function markMissing(SourceImportRun $run, string $sourceName, array $callNumbers, array $representedSiteIdentifiers = []): int
+    private function markMissing(SourceImportRun $run, string $sourceName, array $callNumbers, SourceImportScope $scope, array $completeSiteIdentifiers = []): int
     {
-        $bindingIds = collect($representedSiteIdentifiers)
+        if ($scope === SourceImportScope::PartialFilteredExport) {
+            return 0;
+        }
+
+        $bindingIds = collect($completeSiteIdentifiers)
             ->map(fn (string $siteIdentifier) => $this->sites->resolve($sourceName, $siteIdentifier)?->binding?->id)
             ->filter()
             ->values();
 
+        if ($scope === SourceImportScope::SiteCompleteSnapshot && $bindingIds->isEmpty()) {
+            return 0;
+        }
+
         $services = ProjectedPlotService::query()
             ->whereNotNull('source_call_number')
             ->whereNotIn('source_call_number', $callNumbers)
-            ->whereHas('projectedPlot', function ($query) use ($sourceName, $bindingIds, $representedSiteIdentifiers): void {
+            ->whereHas('projectedPlot', function ($query) use ($sourceName, $bindingIds, $scope): void {
                 $query->where('external_source', $sourceName);
 
-                if ($representedSiteIdentifiers !== []) {
-                    if ($bindingIds->isEmpty()) {
-                        $query->whereRaw('1 = 0');
-                    } else {
-                        $query->whereIn('source_site_binding_id', $bindingIds);
-                    }
+                if ($scope === SourceImportScope::SiteCompleteSnapshot) {
+                    $query->whereIn('source_site_binding_id', $bindingIds);
                 }
             })
             ->lockForUpdate()

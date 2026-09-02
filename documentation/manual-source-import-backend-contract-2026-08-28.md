@@ -2,9 +2,9 @@
 
 Date: 2026-08-28
 
-Status: deterministic backend contract corrected against the confirmed SiteApp dictionary on
-`feature/deterministic-spreadsheet-interpreter`; reference workbook verified, remaining
-business fields and disposable MySQL evidence remain pending.
+Status: deterministic backend contract corrected against the final SiteApp dictionary and
+filtered-export scope rules on `feature/deterministic-spreadsheet-interpreter`; reference
+workbook verified, disposable MySQL evidence remains pending.
 
 ## Boundary
 
@@ -22,9 +22,10 @@ hidden sheets/rows/columns, formulas, macros, embeddings, external links or work
 connections.
 
 The file has no Job Stage or Completed Date column. Its `complete` field contains 20
-true-like and 27 false-like values, but the field's meaning is unresolved. The interpreter
-therefore retains it as structural evidence and ignores it for import; it cannot complete or
-reverse a service. `Plot To Be Installed` is never substituted as completion.
+true-like and 27 false-like values. `Yes` is now an authoritative completion signal for that
+specific source call-off part; it never invents a Completed Date. `Plot To Be Installed` is
+retained only for PC1 as the operational arrival-to-install target and is never substituted
+as completion or Portal date-agreement data.
 
 The 27 headers and full non-sensitive structural findings are recorded in
 `documentation/deterministic-spreadsheet-interpretation-2026-08-28.md`. The workbook's
@@ -34,12 +35,13 @@ structure-equivalent fixture.
 
 The corrected interpreter proposes `Sheet1`/row 1 with confidence 99 and recognises all 19
 product columns against the confirmed registry. Commit remains blocked until 13 source-site
-names have explicit bindings; the seven literal `CC!` rows are unknown typo cases and the
-one `CM1` plus one `CM2` row require reconciliation because no Portal service mapping exists.
+names have explicit bindings and the seven literal `CC!` rows remain unknown typo cases.
+The one `CM1` plus one `CM2` row now map to CML as confirmed CML-related revisits.
 
 A read-only corrected parser pass confirmed that the real file normalises to 47 rows, one
-blank row and 13 represented source sites. All 47 completion flags are null because
-`complete` is not an approved completion fact. No source run or projection was created.
+blank row and 13 represented source sites. It yields 20 true and 27 false completion flags,
+and retains operational target dates for all 21 PC1 rows and no non-PC1 row. No source run or
+projection was created.
 
 ## Authorisation
 
@@ -93,13 +95,28 @@ Unknown workbook site keys yield the blocking category and code `SITE_MAPPING_RE
 
 The upload request is multipart with one `workbook` file. It accepts `.xlsx` only, with a 10 MiB default limit. Validation checks extension and allowed MIME, then verifies the ZIP signature and mandatory XLSX container entries. Macro payloads and embedded objects are rejected. Every sheet is profiled; hidden sheets are not auto-selected. Header candidates are inspected in the first 30 rows. Formulas in imported fields require a usable cached value. `.xlsm` is not accepted.
 
+Scope fields are optional because omission deliberately means the safe default:
+
+```json
+{
+  "workbook": "binary XLSX upload",
+  "import_scope": "PARTIAL_FILTERED_EXPORT",
+  "complete_site_identifiers": [],
+  "confirm_scope": false
+}
+```
+
+`SITE_COMPLETE_SNAPSHOT` requires `confirm_scope=true` plus one or more exact, already-bound
+source site identifiers. `GLOBAL_COMPLETE_SNAPSHOT` requires `confirm_scope=true` and does
+not accept site identifiers. The global option is never the default.
+
 The preview response now includes `workbook_interpretation`: selected/proposed sheet, header row, overall confidence, structural fingerprint, date system, profile match, issues, and every sheet/column's deterministic mapping evidence. Status is `mapping_required` when Office confirmation is needed. Such a preview retains its private file but has `can_commit=false`.
 
 Mapping confirmation accepts only sheet, header row, closed-enum column mappings, confirmed
 product codes and `confirm=true`. The server re-inspects and validates the file; it never
 accepts client-authored confidence, evidence, rows or diffs. Safety overrides prevent
-unconfirmed `complete`, operational dates or commercial values being remapped as import
-facts/products/customer dates. Exact confirmed profiles may be reused after revalidation;
+operational dates or commercial values being remapped as products/customer dates. The
+confirmed completion flag remains completion-only. Exact confirmed profiles may be reused after revalidation;
 likely changed-layout profiles are suggestions only.
 
 The file is stored on the private Laravel `local` disk outside the public root using a random internal name. The original basename is retained only for audit. Temporary content is deleted after successful commit, on failed preview creation, or by the hourly expiry command. Ready previews expire after 30 minutes by default.
@@ -114,6 +131,9 @@ Preview metadata contains:
   "sha256": "64 lowercase hex characters",
   "row_count": 123,
   "namespace": "siteapp-xlsx",
+  "import_scope": "PARTIAL_FILTERED_EXPORT",
+  "import_scope_label": "This spreadsheet is a filtered/partial export.",
+  "complete_site_identifiers": [],
   "worksheet": "confirmed worksheet",
   "blank_row_count": 2,
   "expires_at": "ISO-8601 timestamp"
@@ -148,9 +168,9 @@ Commit requires:
 }
 ```
 
-The server never accepts client-produced rows or diff categories. Within a lock on the preview it verifies ownership, ready/unexpired status, confirmation hash, current workbook-contract fingerprint, private file existence and file hash. It reparses, revalidates and rebuilds the diff, then compares a fresh relevant-source fingerprint covering the represented site bindings and existing source projection state.
+The server never accepts client-produced rows or diff categories. Within a lock on the preview it verifies ownership, ready/unexpired status, confirmation hash, current workbook-contract fingerprint, private file existence and file hash. It reparses, revalidates and rebuilds the diff, then compares a fresh relevant-source fingerprint covering the represented site bindings, explicit complete scope and existing source projection state. A global-complete preview fingerprints the whole namespace.
 
-Blocking errors reject commit. A successful commit calls the existing transactional Sprint 3B importer with immutable context containing initiator, safe original filename, SHA-256 and represented exact source-site keys. The import run and committed preview are recorded atomically. Replaying a completed preview returns its existing result; it does not create another run.
+Blocking errors reject commit. A successful commit calls the existing transactional Sprint 3B importer with immutable context containing initiator, safe original filename, SHA-256, explicit import scope, represented exact source-site keys and any explicitly complete site keys. The import run and committed preview are recorded atomically. Replaying a completed preview returns its existing result; it does not create another run.
 
 ## Source Mapping and Identity
 
@@ -160,16 +180,17 @@ The transport-independent mapper retains its existing mappings, while the adapti
 |---|---|
 | `PC1` — Plot Install | Windows |
 | `CC1` — Cavity Closer 1 | Cavity Closers |
+| `CM1` — Revisit 1 | CML |
+| `CM2` — Revisit 2 | CML |
 | `CML` — CML Call Off | CML |
 
 Whitespace/case is normalised for known codes. `CM1` (Revisit 1) and `CM2` (Revisit 2)
-are valid source values but have no confirmed four-service mapping, so they produce blocking
-`RECONCILIATION_REQUIRED` results. `CC!` is invalid, reported as a likely typo for CC1 and
+are confirmed CML-related revisits. `CC!` is invalid, reported as a likely typo for CC1 and
 never silently corrected. No older cross-namespace assumption can broaden this contract.
 
 The inspected workbook contains `PC1` (21 rows), `CC1` (17), literal invalid `CC!` (7),
 `CM1` (1) and `CM2` (1), with no `CML` row. The seven typo rows are
-`UNKNOWN_CALL_TYPE`; the two valid revisit rows are `RECONCILIATION_REQUIRED`.
+`UNKNOWN_CALL_TYPE`; the two valid revisit rows map to CML.
 
 `Call No.` remains the permanent idempotent identity under the existing projection schema, which currently enforces global uniqueness. A Call No. cannot change its site, plot or service association, and a projected plot/service cannot silently take a replacement Call No. Identity conflicts are blocking reconciliation results.
 
@@ -179,11 +200,14 @@ Only exact positive `BF` selects the five-week earliest normal request window. O
 codes and Total Doors do not. A later import that removes BF resets its projected quantity
 to zero, so the lead-time rule returns to four weeks.
 
-`Plot To Be Installed` is deliberately ignored by the adapter at this stage. It is not a requested date, agreed date, proposal date or Date Agreed history fact.
+`Plot To Be Installed` is retained only on a PC1 source service as Fenster's operational
+arrival-to-install target date. It is not a requested date, agreed date, proposal date,
+completion date or Date Agreed history fact. Values on other call types are not projected.
 
-Saved profiles carry semantic version 2. Profiles from version 1 are excluded from exact and
-likely matching, so mappings based on `CC!`, wrong CM meanings, arbitrary product codes or
-the `complete` assumption cannot be silently reused.
+Saved profiles carry semantic version 3 and a safe partial/filtered default. Profiles from
+earlier semantic versions are excluded from exact and likely matching, so mappings based on
+`CC!`, wrong CM meanings, arbitrary product codes, unresolved `complete` assumptions or
+represented-site/global completeness cannot be silently reused.
 
 ## Completion and Reconciliation
 
@@ -196,19 +220,22 @@ The existing Sprint 3B rules remain authoritative:
 | Snagging | `SN05` |
 | CML | `CML4` |
 
-A real Completed Date independently proves completion. A completion stage without a date completes without inventing a date and emits a reconciliation issue. A date without a completion stage completes using the real supplied date. Reversal follows the existing source-projection logic and never reopens obsolete negotiation.
+A real Completed Date independently proves completion. A completion stage or `complete=Yes`
+without a date completes without inventing a date and emits a reconciliation issue. A date
+without a completion stage completes using the real supplied date. Reversal follows the
+existing source-projection logic and never reopens obsolete negotiation.
 
 Reconciliation readback includes severity, safe message, source row number when available, Call No., source site key, plot reference, blocking flag and resolution state. It covers unknown Call Type, mapping required, duplicate Call No., invalid values, identity conflict, missing source, missing completion date and unsafe completion reversal.
 
 ## Missing-source Scope
 
-The representative workbook proves a multi-site export (13 distinct source site names) but
-does not prove a complete global snapshot. The backend therefore uses the safest supported
-rule: missing evaluation is limited to `siteapp-xlsx` projections whose binding keys are
-actually represented by at least one row in the upload. It never evaluates other bindings
-or namespaces. Missing rows are retained, marked absent and reconciled; they are never deleted.
+The representative workbook is a filtered/partial export by default, even though it contains
+13 distinct source site names. Exporters can filter within one site or across any subset.
+Therefore `PARTIAL_FILTERED_EXPORT` performs no missing comparison from absence.
 
-This supports one-site and multi-site files safely. A future global-snapshot claim requires evidence from the actual export contract before any broader scope may be enabled.
+An explicitly confirmed `SITE_COMPLETE_SNAPSHOT` compares only its named bound site(s). An
+explicitly confirmed `GLOBAL_COMPLETE_SNAPSHOT` may compare the entire namespace. Every scope
+retains missing rows and records reconciliation; no scope silently deletes a projection.
 
 ## Errors
 
@@ -238,3 +265,20 @@ MySQL-only skips. Migration 000011 passed local clean install and rollback/re-ap
 disposable MySQL 8.4 runtime is unavailable on this host, so MySQL profile/version/import
 proof remains mandatory. Composer audit also reports seven advisories in the locked
 Filament/CommonMark versions; no dependency or lockfile change was made in this task.
+
+## Final Export Scope Integration Verification — 2 September 2026
+
+The upload contract now requires an explicit closed-enum scope. Omission safely selects
+`PARTIAL_FILTERED_EXPORT`. Stronger site-complete or global-complete claims require an
+explicit confirmation flag, and site-complete also requires exact bound source site keys.
+The selected scope and complete-site keys are stored on the preview, included in its
+fingerprint, rebuilt at commit, written to the source run and returned in preview/result
+metadata.
+
+Partial scope performs no absence-based missing comparison. Site-complete compares only the
+explicit complete sites; global-complete may compare the source namespace. All missing rows
+are retained and reconciled, never deleted. Regression coverage passed all five required
+scope cases as part of 59 focused tests / 340 assertions. The full local suite passed 266
+tests / 1,484 assertions with 15 MySQL-only skips. The disposable MySQL gate remains the only
+environmental release blocker and is specified in
+`documentation/siteapp-import-disposable-mysql-gate-2026-09-02.md`.

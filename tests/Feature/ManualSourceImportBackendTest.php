@@ -5,6 +5,7 @@ use App\Data\SourceRecord;
 use App\Data\XlsxSourceReadResult;
 use App\Data\XlsxSourceRow;
 use App\Enums\PortalRoleIdentifier;
+use App\Enums\SourceImportScope;
 use App\Exceptions\InvalidSourceWorkbook;
 use App\Exceptions\SourceWorkbookContractUnavailable;
 use App\Models\CustomerOrganisation;
@@ -171,13 +172,18 @@ test('manual imports retain audit attribution and are idempotent through the exi
         ->and($repeat->initiated_by_user_id)->toBe($office->id)
         ->and($repeat->original_filename)->toBe('source.xlsx')
         ->and($repeat->content_sha256)->toBe(str_repeat('a', 64))
-        ->and($repeat->source_scope)->toBe(['represented_site_keys' => ['SITE-A']])
+        ->and($repeat->import_scope)->toBe(SourceImportScope::PartialFilteredExport)
+        ->and($repeat->source_scope)->toBe([
+            'classification' => 'PARTIAL_FILTERED_EXPORT',
+            'represented_site_keys' => ['SITE-A'],
+            'complete_site_keys' => [],
+        ])
         ->and($service->projectedPlot->site_id)->toBe($site->id)
         ->and($service->projectedPlot->sourceSiteBinding)->not->toBeNull()
         ->and($service->projectedPlot->products()->where('product_code', 'CAS')->value('quantity'))->toBe('2.000');
 });
 
-test('missing-source evaluation is restricted to represented mapped site keys', function (): void {
+test('missing-source evaluation is restricted to explicitly confirmed complete site keys', function (): void {
     $office = manualImportUser(PortalRoleIdentifier::FensterOfficeStaff);
     $siteA = manualImportSite();
     $siteB = manualImportSite();
@@ -192,7 +198,12 @@ test('missing-source evaluation is restricted to represented mapped site keys', 
     $run = $importer->import(
         ManualSourceImport::SOURCE_NAMESPACE,
         [],
-        context: new SourceImportContext($office->id, representedSiteIdentifiers: ['SITE-A']),
+        context: new SourceImportContext(
+            $office->id,
+            representedSiteIdentifiers: ['SITE-A'],
+            scope: SourceImportScope::SiteCompleteSnapshot,
+            completeSiteIdentifiers: ['SITE-A'],
+        ),
     );
 
     expect($run->records_missing)->toBe(1)
@@ -200,7 +211,117 @@ test('missing-source evaluation is restricted to represented mapped site keys', 
         ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-B')->value('source_present'))->toBeTruthy();
 });
 
-test('the generic XLSX reader handles typed dates quantities blanks and ignores operational placeholder dates under a test-only contract', function (): void {
+test('a later partial Site A export leaves previously imported Site B untouched', function (): void {
+    $office = manualImportUser(PortalRoleIdentifier::FensterOfficeStaff);
+    $siteA = manualImportSite();
+    $siteB = manualImportSite();
+    app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-A', 'Site A', null, $siteA);
+    app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-B', 'Site B', null, $siteB);
+    $importer = app(SourceProjectionImportService::class);
+    $importer->import(ManualSourceImport::SOURCE_NAMESPACE, [
+        manualSourceRecord('CALL-A', 'SITE-A', 'P-001', 'PC1'),
+        manualSourceRecord('CALL-B', 'SITE-B', 'P-002', 'PC1'),
+    ]);
+
+    $run = $importer->import(
+        ManualSourceImport::SOURCE_NAMESPACE,
+        [manualSourceRecord('CALL-A', 'SITE-A', 'P-001', 'PC1')],
+        context: new SourceImportContext(representedSiteIdentifiers: ['SITE-A']),
+    );
+
+    expect($run->import_scope)->toBe(SourceImportScope::PartialFilteredExport)
+        ->and($run->records_missing)->toBe(0)
+        ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-B')->value('source_present'))->toBeTruthy()
+        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->count())->toBe(2);
+});
+
+test('a two-row filtered export never marks eight absent calls from the same site missing', function (): void {
+    $office = manualImportUser(PortalRoleIdentifier::FensterOfficeStaff);
+    $site = manualImportSite();
+    app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-A', 'Site A', null, $site);
+    $records = collect(range(1, 10))
+        ->map(fn (int $index): SourceRecord => manualSourceRecord("CALL-{$index}", 'SITE-A', "P-{$index}", 'PC1'))
+        ->all();
+    $importer = app(SourceProjectionImportService::class);
+    $importer->import(ManualSourceImport::SOURCE_NAMESPACE, $records);
+
+    $run = $importer->import(
+        ManualSourceImport::SOURCE_NAMESPACE,
+        array_slice($records, 0, 2),
+        context: new SourceImportContext(representedSiteIdentifiers: ['SITE-A']),
+    );
+
+    expect($run->records_missing)->toBe(0)
+        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->where('source_present', false)->count())->toBe(0)
+        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->count())->toBe(10);
+});
+
+test('an explicit global-complete scope permits namespace-wide retained missing reconciliation', function (): void {
+    $office = manualImportUser(PortalRoleIdentifier::FensterOfficeStaff);
+    $siteA = manualImportSite();
+    $siteB = manualImportSite();
+    app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-A', 'Site A', null, $siteA);
+    app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-B', 'Site B', null, $siteB);
+    $importer = app(SourceProjectionImportService::class);
+    $importer->import(ManualSourceImport::SOURCE_NAMESPACE, [
+        manualSourceRecord('CALL-A', 'SITE-A', 'P-001', 'PC1'),
+        manualSourceRecord('CALL-B', 'SITE-B', 'P-002', 'PC1'),
+    ]);
+
+    $run = $importer->import(
+        ManualSourceImport::SOURCE_NAMESPACE,
+        [],
+        context: new SourceImportContext(scope: SourceImportScope::GlobalCompleteSnapshot),
+    );
+
+    expect($run->records_missing)->toBe(2)
+        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->where('source_present', false)->count())->toBe(2)
+        ->and(ProjectedPlotService::query()->whereNotNull('source_call_number')->count())->toBe(2);
+});
+
+test('preview scope defaults safely and stronger scopes require explicit confirmation', function (): void {
+    Storage::fake('local');
+    configureMechanicalWorkbookContract();
+    $office = manualImportUser(PortalRoleIdentifier::FensterOfficeStaff);
+    $site = manualImportSite();
+    app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-A', 'Site A', null, $site);
+    $path = mechanicalWorkbook([
+        ['CALL-1', 'SITE-A', 'Site A', 'P-001', 'PC1', null, null, new DateTimeImmutable('2026-09-15'), 1, 0, null],
+    ]);
+
+    try {
+        $this->actingAs($office)->postJson('/portal/source-imports/previews', [
+            'workbook' => new UploadedFile($path, 'partial.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
+        ])->assertCreated()
+            ->assertJsonPath('import_scope.value', 'PARTIAL_FILTERED_EXPORT')
+            ->assertJsonPath('import_scope.label', 'This spreadsheet is a filtered/partial export.');
+
+        $path = mechanicalWorkbook([
+            ['CALL-2', 'SITE-A', 'Site A', 'P-002', 'PC1', null, null, new DateTimeImmutable('2026-09-16'), 1, 0, null],
+        ]);
+        $scopeResponse = $this->withHeader('Accept', 'application/json')->post('/portal/source-imports/previews', [
+            'workbook' => new UploadedFile($path, 'site-complete.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
+            'import_scope' => 'SITE_COMPLETE_SNAPSHOT',
+            'complete_site_identifiers' => ['SITE-A'],
+        ]);
+        $scopeResponse->assertRedirect()->assertSessionHasErrors('confirm_scope');
+
+        $this->postJson('/portal/source-imports/previews', [
+            'workbook' => new UploadedFile($path, 'site-complete.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
+            'import_scope' => 'SITE_COMPLETE_SNAPSHOT',
+            'complete_site_identifiers' => ['SITE-A'],
+            'confirm_scope' => true,
+        ])->assertCreated()
+            ->assertJsonPath('import_scope.value', 'SITE_COMPLETE_SNAPSHOT')
+            ->assertJsonPath('import_scope.complete_site_identifiers.0', 'SITE-A');
+
+        expect(ManualSourceImportPreview::query()->latest('id')->firstOrFail()->complete_site_identifiers)->toBe(['SITE-A']);
+    } finally {
+        @unlink($path);
+    }
+});
+
+test('the generic XLSX reader handles typed dates quantities blanks and limits operational dates to PC1', function (): void {
     configureMechanicalWorkbookContract();
     $path = mechanicalWorkbook([
         ['CALL-1', 'SITE-A', 'Site A', 'P-001', 'PC1', 'CA02', new DateTimeImmutable('2026-08-28'), new DateTimeImmutable('2026-09-15'), 2, 0, null],
@@ -218,6 +339,8 @@ test('the generic XLSX reader handles typed dates quantities blanks and ignores 
         ->and($result->blankRowCount)->toBe(1)
         ->and($result->rows)->toHaveCount(2)
         ->and($result->rows[0]->completedDate?->toDateString())->toBe('2026-08-28')
+        ->and($result->rows[0]->operationalTargetDate?->toDateString())->toBe('2026-09-15')
+        ->and($result->rows[1]->operationalTargetDate)->toBeNull()
         ->and($result->rows[0]->products)->toBe(['CAS' => 2.0, 'PFD' => 0.0, 'BF' => 0.0]);
 });
 
@@ -257,7 +380,7 @@ test('upload preview is non-mutating and explicit commit reparses imports once a
     $site = manualImportSite();
     app(SourceSiteBindingService::class)->create($office, ManualSourceImport::SOURCE_NAMESPACE, 'SITE-A', 'Site A', null, $site);
     $path = mechanicalWorkbook([
-        ['CALL-1', 'SITE-A', 'Site A', 'P-001', 'PC1', null, null, 'Plot To Be Installed', 1, 0, null],
+        ['CALL-1', 'SITE-A', 'Site A', 'P-001', 'PC1', null, null, new DateTimeImmutable('2026-09-15'), 1, 0, null],
     ]);
     $upload = new UploadedFile($path, 'representative-test-only.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true);
 
@@ -288,7 +411,8 @@ test('upload preview is non-mutating and explicit commit reparses imports once a
         ->assertJsonPath('result_uuid', $commitResponse->json('result_uuid'));
 
     expect(SourceImportRun::query()->count())->toBe(1)
-        ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-1')->count())->toBe(1);
+        ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-1')->count())->toBe(1)
+        ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-1')->firstOrFail()->source_operational_target_date?->toDateString())->toBe('2026-09-15');
     Storage::disk('local')->assertMissing($preview->storage_path);
 });
 

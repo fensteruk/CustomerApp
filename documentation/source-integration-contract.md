@@ -23,6 +23,8 @@ Each transport adapter must convert its input into one `SourceRecord` containing
 | Call Type | Required operational code from `documentation/siteapp-import-data-dictionary.md`. |
 | Job Stage | Optional operational completion signal. |
 | Completed Date | Optional actual completion date; never substitute another date. |
+| Completion flag | Optional source-part completion signal. For SiteApp XLSX, `complete=Yes` completes that specific call-off part without inventing a date. |
+| Operational target date | Optional PC1-only Fenster arrival-to-install target. Never a requested, proposed, agreed or completion date. |
 | Products | Product-code-to-quantity map; zero is valid. |
 | Source updated timestamp | Optional and only retained when supplied. |
 
@@ -32,9 +34,7 @@ contract.
 
 ## Mapping and validation
 
-- PC1 → Windows; CC1 → Cavity Closers; CML → CML.
-- CM1 (Revisit 1) and CM2 (Revisit 2) are valid source codes but have no confirmed Portal
-  service mapping. They require reconciliation and are not imported into a guessed service.
+- PC1 → Windows; CC1 → Cavity Closers; CM1/CM2 → CML-related revisits on CML; CML → CML.
 - `CC!` is invalid and remains unknown/likely typo for CC1. It is never silently corrected.
 - Completion is indicated by CC08, CA02/CA03, SN05 or CML4 for the mapped service, or by a
   Completed Date regardless of stage.
@@ -63,7 +63,10 @@ or a code containing those letters, is the only BF lead-time signal.
 
 ## Missing, completion and reversal policy
 
-After a snapshot, known Call Nos. absent from it are never deleted. They remain visible from
+Every import carries an explicit scope. `PARTIAL_FILTERED_EXPORT` is the manual-XLSX default
+and draws no conclusion from absence. `SITE_COMPLETE_SNAPSHOT` compares only explicitly
+confirmed complete bound sites. `GLOBAL_COMPLETE_SNAPSHOT` may compare the full namespace.
+Known Call Nos. absent from an explicitly complete scope are never deleted. They remain visible from
 their last known projection, are marked source-missing and create an idempotent issue.
 When that Call No. returns, its existing projection is reused and the missing-source issue
 is resolved rather than duplicated.

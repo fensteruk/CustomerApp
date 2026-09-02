@@ -61,8 +61,7 @@ test('it deterministically detects shifted aliases dynamic products and safety o
         ->and($columns['CAS']->role)->toBe(WorkbookColumnRole::ProductQuantity)
         ->and($columns['Plot To Be Installed']->role)->toBe(WorkbookColumnRole::OperationalTargetDate)
         ->and($columns['Site Value']->role)->toBe(WorkbookColumnRole::CommercialValue)
-        ->and($columns['complete']->role)->toBe(WorkbookColumnRole::Unknown)
-        ->and($columns['complete']->reasons)->toContain('The source meaning of complete is not confirmed.')
+        ->and($columns['complete']->role)->toBe(WorkbookColumnRole::CompletionFlag)
         ->and($columns['Notes']->role)->toBe(WorkbookColumnRole::Unknown);
 });
 
@@ -114,7 +113,7 @@ test('the reference workbook shape is interpreted from a fictional structure-equ
         ->and($interpretation->overallConfidence)->toBeGreaterThanOrEqual(95)
         ->and($selected?->columns)->toHaveCount(27)
         ->and(collect($selected?->columns)->where('role', WorkbookColumnRole::ProductQuantity))->toHaveCount(19)
-        ->and($columns["Items\nOrdered Status"]->role)->toBe(WorkbookColumnRole::Unknown)
+        ->and($columns["Items\nOrdered Status"]->role)->toBe(WorkbookColumnRole::Ignore)
         ->and($columns["Plot To Be \nInstalled"]->role)->toBe(WorkbookColumnRole::OperationalTargetDate)
         ->and($columns["Plot To Be \nInstalled"]->profile['date_percent'])->toBe(100.0)
         ->and($columns['complete']->profile['boolean_like_percent'])->toBe(100.0)
@@ -122,7 +121,9 @@ test('the reference workbook shape is interpreted from a fictional structure-equ
         ->and($columns['Site Value']->profile['sample_values'])->toBe('[commercial values withheld]')
         ->and($read->rows)->toHaveCount(3)
         ->and($read->blankRowCount)->toBe(1)
-        ->and(collect($read->rows)->pluck('completionFlag')->all())->toBe([null, null, null]);
+        ->and(collect($read->rows)->pluck('completionFlag')->all())->toBe([false, true, true])
+        ->and($read->rows[0]->operationalTargetDate?->toDateString())->toBe('2026-09-01')
+        ->and($read->rows[1]->operationalTargetDate)->toBeNull();
 });
 
 test('typed Excel dates are safe during every header-candidate and profile pass', function (): void {
@@ -228,7 +229,7 @@ test('the central alias dictionary recognises approved punctuation and wording v
         ->and($roles['Development Name'])->toBe(WorkbookColumnRole::SiteName)
         ->and($roles['Unit No.'])->toBe(WorkbookColumnRole::PlotReference)
         ->and($roles['Call Type Code'])->toBe(WorkbookColumnRole::CallType)
-        ->and($roles['Is Complete'])->toBe(WorkbookColumnRole::Unknown)
+        ->and($roles['Is Complete'])->toBe(WorkbookColumnRole::CompletionFlag)
         ->and($roles['Completion Date'])->toBe(WorkbookColumnRole::CompletedDate)
         ->and($roles['Installation Date'])->toBe(WorkbookColumnRole::OperationalTargetDate)
         ->and($roles['Plot Value'])->toBe(WorkbookColumnRole::CommercialValue);
@@ -339,7 +340,10 @@ test('Office confirmation saves a structural profile and exact reuse is revalida
         ->assertJsonPath('status', ManualSourceImport::PREVIEW_STATUS_READY)
         ->assertJsonPath('can_commit', true);
 
+    $profile = WorkbookInterpretationProfile::query()->sole();
     expect(WorkbookInterpretationProfile::query()->count())->toBe(1)
+        ->and($profile->semantic_version)->toBe(3)
+        ->and($profile->snapshot_scope)->toBe('PARTIAL_FILTERED_EXPORT')
         ->and(SourceImportRun::query()->count())->toBe(0)
         ->and(ProjectedPlotService::query()->count())->toBe(0);
 
@@ -519,7 +523,7 @@ test('known product columns with negative evidence cannot be silently ignored or
     }
 });
 
-test('the unresolved complete field is ignored and cannot drive source completion', function (): void {
+test('the confirmed complete field drives source completion without inventing a date', function (): void {
     Storage::fake('local');
     $office = adaptiveOfficeUser();
     $site = adaptiveSite();
@@ -537,7 +541,7 @@ test('the unresolved complete field is ignored and cannot drive source completio
             'workbook' => new UploadedFile($path, 'completion.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
         ])->assertCreated()
             ->assertJsonPath('can_commit', true)
-            ->assertJsonPath('workbook_interpretation.sheets.0.columns.4.semantic_role', WorkbookColumnRole::Unknown->value);
+            ->assertJsonPath('workbook_interpretation.sheets.0.columns.4.semantic_role', WorkbookColumnRole::CompletionFlag->value);
         $preview = ManualSourceImportPreview::query()->sole();
         $this->postJson("/portal/source-imports/previews/{$preview->uuid}/commit", [
             'confirm' => true,
@@ -547,11 +551,12 @@ test('the unresolved complete field is ignored and cannot drive source completio
         @unlink($path);
     }
 
-    expect(ProjectedPlotService::query()->where('source_call_number', 'CALL-CC')->firstOrFail()->isSourceCompleted())->toBeFalse()
+    expect(ProjectedPlotService::query()->where('source_call_number', 'CALL-CC')->firstOrFail()->isSourceCompleted())->toBeTrue()
+        ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-CC')->firstOrFail()->source_completed_at)->toBeNull()
         ->and(ProjectedPlotService::query()->where('source_call_number', 'CALL-CML')->firstOrFail()->service_identifier->value)->toBe('cml');
 });
 
-test('valid but unmapped CM1 and CM2 codes require reconciliation for the adaptive SiteApp XLSX source', function (): void {
+test('confirmed CM1 and CM2 revisit codes map to the CML service', function (): void {
     Storage::fake('local');
     $office = adaptiveOfficeUser();
     $site = adaptiveSite();
@@ -568,14 +573,19 @@ test('valid but unmapped CM1 and CM2 codes require reconciliation for the adapti
         $response = $this->actingAs($office)->postJson('/portal/source-imports/previews', [
             'workbook' => new UploadedFile($path, 'unconfirmed-codes.xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', null, true),
         ])->assertCreated()
-            ->assertJsonPath('can_commit', false);
+            ->assertJsonPath('can_commit', true);
+        $preview = ManualSourceImportPreview::query()->sole();
+        $this->postJson("/portal/source-imports/previews/{$preview->uuid}/commit", [
+            'confirm' => true,
+            'content_sha256' => $response->json('metadata.sha256'),
+        ])->assertOk()->assertJsonPath('counts.created', 2);
     } finally {
         @unlink($path);
     }
 
-    expect(collect($response->json('rows'))->pluck('diff_category')->all())->toBe(['RECONCILIATION_REQUIRED', 'RECONCILIATION_REQUIRED'])
-        ->and(collect($response->json('rows'))->flatMap(fn (array $row): array => $row['errors'])->pluck('code')->unique()->all())->toBe(['CALL_TYPE_SERVICE_MAPPING_REQUIRED'])
-        ->and(SourceImportRun::query()->count())->toBe(0);
+    expect(collect($response->json('rows'))->pluck('diff_category')->all())->toBe(['NEW', 'NEW'])
+        ->and(ProjectedPlotService::query()->whereIn('source_call_number', ['CALL-1', 'CALL-2'])->where('service_identifier', 'cml')->count())->toBe(2)
+        ->and(SourceImportRun::query()->count())->toBe(1);
 });
 
 test('date-looking numeric product values remain products and large local workbooks stay bounded', function (): void {

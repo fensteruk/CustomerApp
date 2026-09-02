@@ -325,6 +325,11 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
             $score = $generic ? 84 : 97;
             $reasons[] = $generic ? 'Recognised generic header alias.' : 'Recognised specific header alias.';
             $score += $this->profileEvidenceAdjustment($role, $profile, $reasons);
+        } elseif ($this->dictionary->isIgnoredHeader($header)) {
+            $role = WorkbookColumnRole::Ignore;
+            $score = 100;
+            $ignored = true;
+            $reasons[] = $this->dictionary->ignoredHeaderReason($header) ?? 'This field is explicitly excluded from import.';
         } elseif ($this->dictionary->isUnconfirmedHeader($header)) {
             $role = WorkbookColumnRole::Unknown;
             $score = 90;
@@ -404,7 +409,7 @@ class DeterministicSpreadsheetStructureInterpreter implements SpreadsheetStructu
         }
         if ($role === WorkbookColumnRole::CompletionFlag && (float) $profile['boolean_like_percent'] >= 80) {
             $adjustment += 3;
-            $reasons[] = 'Values are predominantly boolean-like; this is structural evidence only.';
+            $reasons[] = 'Values are predominantly boolean-like, consistent with the confirmed source completion flag.';
         }
         if (in_array($role, [WorkbookColumnRole::CompletedDate, WorkbookColumnRole::OperationalTargetDate], true) && (float) $profile['date_percent'] >= 70) {
             $adjustment += 3;

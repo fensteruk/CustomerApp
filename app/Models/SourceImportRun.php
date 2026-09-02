@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SourceImportScope;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -18,6 +19,7 @@ class SourceImportRun extends Model
     protected $fillable = [
         'source_name',
         'source_version',
+        'import_scope',
         'initiated_by_user_id',
         'original_filename',
         'content_sha256',
@@ -42,6 +44,7 @@ class SourceImportRun extends Model
             'started_at' => 'datetime',
             'finished_at' => 'datetime',
             'source_scope' => 'array',
+            'import_scope' => SourceImportScope::class,
         ];
     }
 

@@ -7,6 +7,7 @@ use App\Data\XlsxSourceReadResult;
 use App\Data\XlsxSourceRow;
 use App\Enums\CallOffServiceType;
 use App\Enums\ManualSourceImportCategory;
+use App\Enums\SourceImportScope;
 use App\Models\ProjectedPlotService;
 
 class ManualSourceImportAnalysisService
@@ -18,8 +19,13 @@ class ManualSourceImportAnalysisService
         private readonly ManualSourceImportFingerprintService $fingerprints,
     ) {}
 
-    public function analyse(string $sourceNamespace, XlsxSourceReadResult $workbook): ManualSourceImportAnalysis
-    {
+    /** @param list<string> $completeSiteKeys */
+    public function analyse(
+        string $sourceNamespace,
+        XlsxSourceReadResult $workbook,
+        SourceImportScope $scope = SourceImportScope::PartialFilteredExport,
+        array $completeSiteKeys = [],
+    ): ManualSourceImportAnalysis {
         $sourceNamespace = mb_strtolower(trim($sourceNamespace));
         $callNumberCounts = collect($workbook->rows)->pluck('callNumber')->filter()->countBy();
         $representedSiteKeys = collect($workbook->rows)
@@ -44,19 +50,24 @@ class ManualSourceImportAnalysisService
         }
 
         $incomingCallNumbers = collect($workbook->rows)->pluck('callNumber')->filter()->uniqueStrict();
-        $bindingIds = collect($representedSiteKeys)
+        $missingScopeSiteKeys = $scope === SourceImportScope::SiteCompleteSnapshot ? $completeSiteKeys : [];
+        $bindingIds = collect($missingScopeSiteKeys)
             ->map(fn (string $key) => $this->sites->resolve($sourceNamespace, $key)?->binding?->id)
             ->filter()
             ->values();
 
-        if ($bindingIds->isNotEmpty()) {
+        if ($scope !== SourceImportScope::PartialFilteredExport
+            && ($scope === SourceImportScope::GlobalCompleteSnapshot || $bindingIds->isNotEmpty())) {
             $missingServices = ProjectedPlotService::query()
                 ->with(['projectedPlot.site.customerOrganisation'])
                 ->whereNotNull('source_call_number')
                 ->whereNotIn('source_call_number', $incomingCallNumbers)
-                ->whereHas('projectedPlot', fn ($query) => $query
-                    ->where('external_source', $sourceNamespace)
-                    ->whereIn('source_site_binding_id', $bindingIds))
+                ->whereHas('projectedPlot', function ($query) use ($sourceNamespace, $scope, $bindingIds): void {
+                    $query->where('external_source', $sourceNamespace);
+                    if ($scope === SourceImportScope::SiteCompleteSnapshot) {
+                        $query->whereIn('source_site_binding_id', $bindingIds);
+                    }
+                })
                 ->orderBy('id')
                 ->get();
 
@@ -77,7 +88,7 @@ class ManualSourceImportAnalysisService
                     'diff_category' => ManualSourceImportCategory::MissingFromSource->value,
                     'warnings' => [[
                         'code' => 'MISSING_FROM_SOURCE',
-                        'message' => 'This known Call No. is absent from the uploaded site scope. It will be retained and flagged.',
+                        'message' => 'This known Call No. is absent from the explicitly confirmed complete scope. It will be retained and flagged.',
                         'blocking' => false,
                     ]],
                     'errors' => [],
@@ -98,7 +109,7 @@ class ManualSourceImportAnalysisService
             $records,
             $representedSiteKeys,
             $blockingErrorCount,
-            $this->fingerprints->for($sourceNamespace, $representedSiteKeys),
+            $this->fingerprints->for($sourceNamespace, $representedSiteKeys, $scope, $completeSiteKeys),
         );
     }
 
@@ -169,7 +180,7 @@ class ManualSourceImportAnalysisService
                     $category = ManualSourceImportCategory::ReconciliationRequired;
                     $warnings[] = [
                         'code' => 'COMPLETION_DATE_MISSING',
-                        'message' => 'The completion stage proves completion, but no Completed Date was supplied.',
+                        'message' => 'The source completion signal proves completion, but no Completed Date was supplied.',
                         'blocking' => false,
                     ];
                 } elseif ($existing === null) {
@@ -204,6 +215,7 @@ class ManualSourceImportAnalysisService
             'incoming_state' => [
                 'job_stage' => $row->jobStage,
                 'completion_flag' => $row->completionFlag,
+                'operational_target_date' => $row->operationalTargetDate?->toDateString(),
                 'completed_date' => $row->completedDate?->toDateString(),
                 'completed' => $serviceType === null ? null : ($row->completedDate !== null || $row->completionFlag === true || $this->callTypes->isCompletionStage($serviceType, $row->jobStage)),
             ],
@@ -222,6 +234,7 @@ class ManualSourceImportAnalysisService
         return $existing->source_call_type !== $row->callType
             || $existing->source_job_stage !== $row->jobStage
             || $existing->source_completion_flag !== $row->completionFlag
+            || $existing->source_operational_target_date?->toDateString() !== $row->operationalTargetDate?->toDateString()
             || $existing->source_completed_at?->toDateString() !== $row->completedDate?->toDateString()
             || ! $existing->source_present
             || $incomingProducts->contains(fn (float $quantity, string $code): bool => (float) ($existingProducts[$code] ?? 0) !== $quantity);
@@ -234,6 +247,7 @@ class ManualSourceImportAnalysisService
             'source_present' => $service->source_present,
             'job_stage' => $service->source_job_stage,
             'completion_flag' => $service->source_completion_flag,
+            'operational_target_date' => $service->source_operational_target_date?->toDateString(),
             'completed_date' => $service->source_completed_at?->toDateString(),
             'completed' => $service->isSourceCompleted(),
         ];

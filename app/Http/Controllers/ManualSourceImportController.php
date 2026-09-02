@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\SourceImportScope;
 use App\Exceptions\InvalidSourceWorkbook;
 use App\Exceptions\SourceWorkbookContractUnavailable;
 use App\Http\Requests\CommitManualSourceImportRequest;
@@ -22,7 +23,12 @@ class ManualSourceImportController extends Controller
         Gate::authorize('manage-source-imports');
 
         try {
-            $preview = $this->imports->preview($request->user(), $request->file('workbook'));
+            $preview = $this->imports->preview(
+                $request->user(),
+                $request->file('workbook'),
+                SourceImportScope::tryFrom((string) $request->input('import_scope')) ?? SourceImportScope::PartialFilteredExport,
+                $request->validated('complete_site_identifiers', []),
+            );
         } catch (SourceWorkbookContractUnavailable $exception) {
             return response()->json([
                 'error' => 'WORKBOOK_CONTRACT_REQUIRED',
@@ -33,6 +39,11 @@ class ManualSourceImportController extends Controller
                 'error' => 'INVALID_SOURCE_WORKBOOK',
                 'message' => $exception->getMessage(),
                 'errors' => $exception->errors,
+            ], 422);
+        } catch (\InvalidArgumentException $exception) {
+            return response()->json([
+                'error' => 'INVALID_IMPORT_SCOPE',
+                'message' => $exception->getMessage(),
             ], 422);
         }
 

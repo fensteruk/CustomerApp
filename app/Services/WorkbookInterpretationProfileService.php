@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Data\WorkbookInterpretation;
 use App\Data\WorkbookSheetInterpretation;
+use App\Enums\SourceImportScope;
 use App\Models\User;
 use App\Models\WorkbookInterpretationProfile;
 
@@ -99,7 +100,7 @@ class WorkbookInterpretationProfileService
             'normalised_headers' => $data['headers'],
             'type_profile' => $data['types'],
             'confirmed_mappings' => $mapping,
-            'snapshot_scope' => 'represented_sites',
+            'snapshot_scope' => SourceImportScope::PartialFilteredExport->value,
             'version' => ($existing?->version ?? 0) + 1,
             'confirmed_by_user_id' => $actor->id,
         ]);

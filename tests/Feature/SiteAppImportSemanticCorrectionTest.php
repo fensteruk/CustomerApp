@@ -31,15 +31,15 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 
 uses(RefreshDatabase::class);
 
-test('the authoritative Call Type dictionary never infers typo or revisit service meanings', function (): void {
+test('the authoritative Call Type dictionary maps confirmed revisits and never infers the CC typo', function (): void {
     $dictionary = app(SiteAppImportDataDictionary::class);
     $mapper = app(SourceCallTypeMapper::class);
 
     expect($dictionary->callTypes())->toMatchArray([
         'PC1' => ['description' => 'Plot Install', 'portal_service' => 'windows'],
         'CC1' => ['description' => 'Cavity Closer 1', 'portal_service' => 'cavity_closers'],
-        'CM1' => ['description' => 'Revisit 1', 'portal_service' => null],
-        'CM2' => ['description' => 'Revisit 2', 'portal_service' => null],
+        'CM1' => ['description' => 'Revisit 1', 'portal_service' => 'cml'],
+        'CM2' => ['description' => 'Revisit 2', 'portal_service' => 'cml'],
         'CML' => ['description' => 'CML Call Off', 'portal_service' => 'cml'],
     ])->and($dictionary->isKnownCallType('CC!'))->toBeFalse()
         ->and($dictionary->likelyCallTypeCorrection('CC!'))->toBe('CC1')
@@ -47,11 +47,11 @@ test('the authoritative Call Type dictionary never infers typo or revisit servic
         ->and($mapper->serviceFor('CC1'))->toBe(CallOffServiceType::CavityClosers)
         ->and($mapper->serviceFor('CML'))->toBe(CallOffServiceType::Cml)
         ->and($mapper->serviceFor('CC!'))->toBeNull()
-        ->and($mapper->serviceFor('CM1'))->toBeNull()
-        ->and($mapper->serviceFor('CM2'))->toBeNull();
+        ->and($mapper->serviceFor('CM1'))->toBe(CallOffServiceType::Cml)
+        ->and($mapper->serviceFor('CM2'))->toBe(CallOffServiceType::Cml);
 });
 
-test('manual analysis distinguishes literal CC typo from valid but unmapped revisit codes', function (): void {
+test('manual analysis blocks literal CC typo while confirmed revisit codes map to CML', function (): void {
     $office = semanticOfficeUser();
     $site = semanticBoundSite($office);
     $workbook = new XlsxSourceReadResult('Sheet1', ['Sheet1'], [], [
@@ -66,10 +66,10 @@ test('manual analysis distinguishes literal CC typo from valid but unmapped revi
     expect($site->exists)->toBeTrue()
         ->and($rows['CALL-TYPO']['diff_category'])->toBe('UNKNOWN_CALL_TYPE')
         ->and($rows['CALL-TYPO']['errors'][0]['message'])->toContain('likely typo for CC1')
-        ->and($rows['CALL-CM1']['diff_category'])->toBe('RECONCILIATION_REQUIRED')
-        ->and($rows['CALL-CM1']['errors'][0]['code'])->toBe('CALL_TYPE_SERVICE_MAPPING_REQUIRED')
-        ->and($rows['CALL-CM2']['diff_category'])->toBe('RECONCILIATION_REQUIRED')
-        ->and($analysis->records)->toBeEmpty();
+        ->and($rows['CALL-CM1']['diff_category'])->toBe('NEW')
+        ->and($rows['CALL-CM1']['mapped_service'])->toBe('CML')
+        ->and($rows['CALL-CM2']['diff_category'])->toBe('NEW')
+        ->and($analysis->records)->toHaveCount(2);
 });
 
 test('the product registry produces only customer window and door totals while retaining Office detail', function (): void {
@@ -117,7 +117,7 @@ test('only exact positive BF extends lead time and a later source import can rem
         ->and($lookalike->isBifold())->toBeFalse();
 });
 
-test('unconfirmed complete semantics and unknown product codes cannot be confirmed into an import mapping', function (): void {
+test('confirmed complete semantics are mapped while unknown product codes remain blocked', function (): void {
     $workbook = new SpreadsheetWorkbookData([
         new SpreadsheetSheetData('Sheet1', true, [
             1 => collect(['Call No.', 'Site Name', 'Plot Ref', 'Call Type', 'complete', 'XYZ'])
@@ -131,8 +131,8 @@ test('unconfirmed complete semantics and unknown product codes cannot be confirm
     $interpretation = app(SpreadsheetStructureInterpreter::class)->interpret($workbook);
     $columns = collect($interpretation->selected()->columns)->keyBy('originalHeader');
 
-    expect($columns['complete']->role)->toBe(WorkbookColumnRole::Unknown)
-        ->and(collect($interpretation->selected()->issues)->pluck('code')->all())->toContain('UNCONFIRMED_SOURCE_FIELD')
+    expect($columns['complete']->role)->toBe(WorkbookColumnRole::CompletionFlag)
+        ->and(collect($interpretation->selected()->issues)->pluck('code')->all())->not->toContain('UNCONFIRMED_SOURCE_FIELD')
         ->and($columns['XYZ']->role)->toBe(WorkbookColumnRole::ProductQuantity);
 
     $mapping = [
@@ -141,7 +141,7 @@ test('unconfirmed complete semantics and unknown product codes cannot be confirm
         'columns' => collect($interpretation->selected()->columns)->map(function ($column): array {
             return [
                 'source_index' => $column->sourceIndex,
-                'semantic_role' => $column->originalHeader === 'complete' ? WorkbookColumnRole::CompletionFlag->value : $column->role->value,
+                'semantic_role' => $column->role->value,
                 'subtype' => $column->role === WorkbookColumnRole::ProductQuantity ? $column->subtype : null,
             ];
         })->all(),
@@ -152,7 +152,7 @@ test('unconfirmed complete semantics and unknown product codes cannot be confirm
         $this->fail('The unsafe mapping should have been rejected.');
     } catch (InvalidSourceWorkbook $exception) {
         expect(collect($exception->errors)->pluck('code')->all())
-            ->toContain('UNCONFIRMED_FIELD_SAFETY_OVERRIDE', 'UNCONFIRMED_PRODUCT_CODE');
+            ->toContain('UNCONFIRMED_PRODUCT_CODE');
     }
 });
 
@@ -178,7 +178,7 @@ test('profiles from an earlier semantic version are not exact or likely matches'
         'normalised_headers' => collect($sheet->columns)->pluck('normalisedHeader')->all(),
         'type_profile' => [],
         'confirmed_mappings' => ['sheet' => 'Sheet1', 'header_row' => 1, 'columns' => []],
-        'snapshot_scope' => 'represented_sites',
+        'snapshot_scope' => 'PARTIAL_FILTERED_EXPORT',
         'version' => 1,
         'confirmed_by_user_id' => $office->id,
     ]);
@@ -187,7 +187,7 @@ test('profiles from an earlier semantic version are not exact or likely matches'
 
     expect($match['kind'])->toBe('none')
         ->and($match['profile'])->toBeNull()
-        ->and(app(SiteAppImportDataDictionary::class)->semanticVersion())->toBe(2);
+        ->and(app(SiteAppImportDataDictionary::class)->semanticVersion())->toBe(3);
 });
 
 function semanticOfficeUser(): User

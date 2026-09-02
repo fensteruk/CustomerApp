@@ -19,5 +19,6 @@ readonly class SourceRecord
         public ?CarbonImmutable $sourceUpdatedAt = null,
         public ?int $sourceRowNumber = null,
         public ?bool $completionFlag = null,
+        public ?CarbonImmutable $operationalTargetDate = null,
     ) {}
 }

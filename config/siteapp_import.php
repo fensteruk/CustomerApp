@@ -5,7 +5,7 @@ return [
      * Increment this whenever a confirmed source meaning changes. Saved workbook
      * profiles are reusable only within the same semantic version.
      */
-    'semantic_version' => 2,
+    'semantic_version' => 3,
 
     'call_types' => [
         'PC1' => [
@@ -18,11 +18,11 @@ return [
         ],
         'CM1' => [
             'description' => 'Revisit 1',
-            'portal_service' => null,
+            'portal_service' => 'cml',
         ],
         'CM2' => [
             'description' => 'Revisit 2',
-            'portal_service' => null,
+            'portal_service' => 'cml',
         ],
         'CML' => [
             'description' => 'CML Call Off',
@@ -65,10 +65,10 @@ return [
         'DOORS' => 'Total Doors',
     ],
 
+    'ignored_fields' => [
+        'items ordered status' => 'Items Ordered Status is explicitly excluded from the Portal import.',
+    ],
+
     'unconfirmed_fields' => [
-        'complete' => 'The source meaning of complete is not confirmed.',
-        'items ordered status' => 'The final Portal use of Items Ordered Status is not confirmed.',
-        'plot to be installed' => 'Plot To Be Installed is operational context only; its final meaning is not confirmed.',
-        'site value' => 'Site Value is commercial data and its retention policy is not confirmed.',
     ],
 ];

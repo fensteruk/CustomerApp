@@ -260,6 +260,9 @@ class XlsxSourceReader
         }
 
         $completedDate = $this->dateValue($value('completed_date'), 'Completed Date', $errors, $definition['date_system']);
+        $operationalTargetDate = mb_strtoupper($string('call_type')) === 'PC1'
+            ? $this->dateValue($value('plot_to_be_installed'), 'Plot To Be Installed', $errors, $definition['date_system'])
+            : null;
         $sourceUpdatedAt = $this->dateValue($value('source_updated_at'), 'Source updated timestamp', $errors, $definition['date_system'], false);
         $products = [];
 
@@ -294,6 +297,8 @@ class XlsxSourceReader
             $sourceUpdatedAt,
             $errors,
             $warnings,
+            null,
+            $operationalTargetDate,
         );
     }
 
@@ -307,7 +312,7 @@ class XlsxSourceReader
         $formulaWithoutCache = [];
         foreach ($mapping['columns'] as $column) {
             $role = WorkbookColumnRole::from($column['semantic_role']);
-            if (in_array($role, [WorkbookColumnRole::Ignore, WorkbookColumnRole::Unknown, WorkbookColumnRole::CommercialValue, WorkbookColumnRole::OperationalTargetDate], true)) {
+            if (in_array($role, [WorkbookColumnRole::Ignore, WorkbookColumnRole::Unknown, WorkbookColumnRole::CommercialValue], true)) {
                 continue;
             }
 
@@ -352,6 +357,9 @@ class XlsxSourceReader
 
         $completedDate = $this->dateValue($scalar(WorkbookColumnRole::CompletedDate), 'Completed Date', $errors, $dateSystem);
         $completionFlag = $this->completionFlag($scalar(WorkbookColumnRole::CompletionFlag), $errors);
+        $operationalTargetDate = mb_strtoupper($callType) === 'PC1'
+            ? $this->dateValue($scalar(WorkbookColumnRole::OperationalTargetDate), 'Plot To Be Installed', $errors, $dateSystem)
+            : null;
         $products = [];
         foreach ($values[WorkbookColumnRole::ProductQuantity->value] ?? [] as $productCode => $rawQuantity) {
             $productCode = mb_strtoupper(trim((string) $productCode));
@@ -383,6 +391,7 @@ class XlsxSourceReader
             $errors,
             $warnings,
             $completionFlag,
+            $operationalTargetDate,
         );
     }
 

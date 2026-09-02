@@ -1,10 +1,12 @@
 <?php
 
 use App\Actions\CallOff\UpdateConflictKeyAction;
+use App\Data\SourceImportContext;
 use App\Data\SourceRecord;
 use App\Enums\CallOffRequestStatus;
 use App\Enums\CallOffServiceType;
 use App\Enums\PortalRoleIdentifier;
+use App\Enums\SourceImportScope;
 use App\Enums\SourceProjectionIssueType;
 use App\Models\CallOffBatch;
 use App\Models\CallOffDateNegotiation;
@@ -34,8 +36,8 @@ test('Call Type and completion-stage mappings are explicit, tolerant of whitespa
         ->and($mapper->serviceFor('cc1'))->toBe(CallOffServiceType::CavityClosers)
         ->and($mapper->serviceFor('CML'))->toBe(CallOffServiceType::Cml)
         ->and($mapper->serviceFor('CC!'))->toBeNull()
-        ->and($mapper->serviceFor('cm1'))->toBeNull()
-        ->and($mapper->serviceFor('CM2'))->toBeNull()
+        ->and($mapper->serviceFor('cm1'))->toBe(CallOffServiceType::Cml)
+        ->and($mapper->serviceFor('CM2'))->toBe(CallOffServiceType::Cml)
         ->and($mapper->serviceFor('PC2'))->toBeNull()
         ->and($mapper->isCompletionStage(CallOffServiceType::CavityClosers, 'CC08'))->toBeTrue()
         ->and($mapper->isCompletionStage(CallOffServiceType::Windows, 'CA02'))->toBeTrue()
@@ -92,7 +94,7 @@ test('unknown Call Types and missing source records create reconciliation issues
     sourceSite();
     $importer = app(SourceProjectionImportService::class);
     $importer->import('fixture', [sourceRecord('PC-1', 'PC1', 'P-102')]);
-    $run = $importer->import('fixture', [sourceRecord('UNKNOWN-1', 'NOPE', 'P-103')]);
+    $run = $importer->import('fixture', [sourceRecord('UNKNOWN-1', 'NOPE', 'P-103')], context: new SourceImportContext(scope: SourceImportScope::GlobalCompleteSnapshot));
 
     expect($run->status)->toBe('partial')
         ->and(SourceProjectionIssue::query()->where('issue_type', SourceProjectionIssueType::UnknownCallType)->exists())->toBeTrue()
@@ -147,7 +149,7 @@ test('a restored Call No. resolves its missing-source issue without duplicating 
     $importer = app(SourceProjectionImportService::class);
     $record = sourceRecord('PC-returned', 'PC1', 'P-returned');
     $importer->import('fixture', [$record]);
-    $importer->import('fixture', []);
+    $importer->import('fixture', [], context: new SourceImportContext(scope: SourceImportScope::GlobalCompleteSnapshot));
 
     $issue = SourceProjectionIssue::query()->where('issue_key', 'missing-source-record:fixture:PC-returned')->firstOrFail();
     expect($issue->resolved_at)->toBeNull();

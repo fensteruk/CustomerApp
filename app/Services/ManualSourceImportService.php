@@ -7,6 +7,7 @@ use App\Data\ManualSourceImportAnalysis;
 use App\Data\SourceImportContext;
 use App\Data\WorkbookInterpretation;
 use App\Data\XlsxSourceReadResult;
+use App\Enums\SourceImportScope;
 use App\Exceptions\InvalidSourceWorkbook;
 use App\Exceptions\SourceWorkbookContractUnavailable;
 use App\Models\ManualSourceImportPreview;
@@ -32,11 +33,18 @@ class ManualSourceImportService
         private readonly SpreadsheetStructureInterpreter $interpreter,
         private readonly WorkbookMappingService $mappings,
         private readonly WorkbookInterpretationProfileService $profiles,
+        private readonly SourceSiteResolver $sites,
     ) {}
 
-    public function preview(User $actor, UploadedFile $file): ManualSourceImportPreview
-    {
+    /** @param list<string> $completeSiteIdentifiers */
+    public function preview(
+        User $actor,
+        UploadedFile $file,
+        SourceImportScope $scope = SourceImportScope::PartialFilteredExport,
+        array $completeSiteIdentifiers = [],
+    ): ManualSourceImportPreview {
         $this->ensureOfficeStaff($actor);
+        $completeSiteIdentifiers = $this->validatedCompleteSiteIdentifiers($scope, $completeSiteIdentifiers);
         $disk = (string) config('manual_source_import.storage_disk', 'local');
         $directory = trim((string) config('manual_source_import.storage_directory'), '/');
         $path = $directory.'/'.Str::uuid().'.xlsx';
@@ -49,13 +57,15 @@ class ManualSourceImportService
         try {
             $absolutePath = Storage::disk($disk)->path($path);
             $sha256 = hash_file('sha256', $absolutePath);
-            $adaptive = $this->adaptivePreview($absolutePath);
+            $adaptive = $this->adaptivePreview($absolutePath, $scope, $completeSiteIdentifiers);
             $analysis = $adaptive['analysis'];
             $expiresAt = now()->addMinutes((int) config('manual_source_import.preview_ttl_minutes', 30));
 
             return ManualSourceImportPreview::query()->create([
                 'initiated_by_user_id' => $actor->id,
                 'source_namespace' => ManualSourceImport::SOURCE_NAMESPACE,
+                'import_scope' => $scope,
+                'complete_site_identifiers' => $completeSiteIdentifiers,
                 'original_filename' => $originalFilename,
                 'content_sha256' => $sha256,
                 'storage_disk' => $disk,
@@ -64,13 +74,16 @@ class ManualSourceImportService
                 'workbook_interpretation_profile_id' => $adaptive['profile']?->id,
                 'workbook_interpretation' => $adaptive['interpretation'],
                 'confirmed_mapping' => $adaptive['mapping'],
-                'source_fingerprint' => $analysis?->sourceFingerprint ?? $this->fingerprints->for(ManualSourceImport::SOURCE_NAMESPACE, []),
+                'source_fingerprint' => $analysis?->sourceFingerprint ?? $this->fingerprints->for(ManualSourceImport::SOURCE_NAMESPACE, [], $scope, $completeSiteIdentifiers),
                 'status' => $adaptive['status'],
                 'metadata' => [
                     'original_filename' => $originalFilename,
                     'sha256' => $sha256,
                     'row_count' => $adaptive['row_count'],
                     'namespace' => ManualSourceImport::SOURCE_NAMESPACE,
+                    'import_scope' => $scope->value,
+                    'import_scope_label' => $scope->label(),
+                    'complete_site_identifiers' => $completeSiteIdentifiers,
                     'worksheet' => $adaptive['worksheet'],
                     'blank_row_count' => $adaptive['blank_row_count'],
                     'date_system' => $adaptive['date_system'],
@@ -114,7 +127,7 @@ class ManualSourceImportService
         );
         $mapping = $this->mappings->canonicalise($interpretation, $requestedMapping);
         $workbook = $this->reader->readMapped($absolutePath, $mapping);
-        $analysis = $this->analysis->analyse($preview->source_namespace, $workbook);
+        $analysis = $this->analysis->analyse($preview->source_namespace, $workbook, $preview->import_scope, $preview->complete_site_identifiers ?? []);
 
         return DB::transaction(function () use ($actor, $preview, $interpretation, $mapping, $analysis, $workbook): ManualSourceImportPreview {
             $lockedPreview = ManualSourceImportPreview::query()->lockForUpdate()->findOrFail($preview->id);
@@ -196,12 +209,17 @@ class ManualSourceImportService
                     }
                     $workbook = $this->reader->readMapped($absolutePath, $mapping);
                 }
-                $analysis = $this->analysis->analyse($lockedPreview->source_namespace, $workbook);
+                $analysis = $this->analysis->analyse($lockedPreview->source_namespace, $workbook, $lockedPreview->import_scope, $lockedPreview->complete_site_identifiers ?? []);
                 if ($analysis->blockingErrorCount > 0) {
                     throw new InvalidSourceWorkbook($this->blockingErrors($analysis->rows));
                 }
 
-                $currentFingerprint = $this->fingerprints->for($lockedPreview->source_namespace, $analysis->representedSiteKeys);
+                $currentFingerprint = $this->fingerprints->for(
+                    $lockedPreview->source_namespace,
+                    $analysis->representedSiteKeys,
+                    $lockedPreview->import_scope,
+                    $lockedPreview->complete_site_identifiers ?? [],
+                );
                 if (! hash_equals($lockedPreview->source_fingerprint, $analysis->sourceFingerprint)
                     || ! hash_equals($lockedPreview->source_fingerprint, $currentFingerprint)) {
                     throw new \DomainException('The relevant source projections or site bindings changed after preview. Upload and preview the workbook again.');
@@ -218,6 +236,8 @@ class ManualSourceImportService
                         $lockedPreview->original_filename,
                         $lockedPreview->content_sha256,
                         $analysis->representedSiteKeys,
+                        $lockedPreview->import_scope,
+                        $lockedPreview->complete_site_identifiers ?? [],
                     ),
                 );
 
@@ -237,10 +257,15 @@ class ManualSourceImportService
                 $failedRun = SourceImportRun::query()->create([
                     'source_name' => $preview->source_namespace,
                     'source_version' => $preview->content_sha256,
+                    'import_scope' => $preview->import_scope,
                     'initiated_by_user_id' => $actor->id,
                     'original_filename' => $preview->original_filename,
                     'content_sha256' => $preview->content_sha256,
-                    'source_scope' => ['represented_site_keys' => $representedSiteKeys],
+                    'source_scope' => [
+                        'classification' => $preview->import_scope->value,
+                        'represented_site_keys' => $representedSiteKeys,
+                        'complete_site_keys' => $preview->complete_site_identifiers ?? [],
+                    ],
                     'status' => 'failed',
                     'started_at' => now(),
                     'finished_at' => now(),
@@ -273,6 +298,11 @@ class ManualSourceImportService
             'preview_uuid' => $preview->uuid,
             'status' => $preview->status,
             'metadata' => $preview->metadata,
+            'import_scope' => [
+                'value' => $preview->import_scope->value,
+                'label' => $preview->import_scope->label(),
+                'complete_site_identifiers' => $preview->complete_site_identifiers ?? [],
+            ],
             'summary' => $preview->summary,
             'workbook_interpretation' => $preview->workbook_interpretation,
             'confirmed_mapping' => $preview->confirmed_mapping,
@@ -310,6 +340,10 @@ class ManualSourceImportService
                 'reconciliation' => $run->reconciliation_issue_count,
             ],
             'scope' => $run->source_scope,
+            'import_scope' => [
+                'value' => $run->import_scope->value,
+                'label' => $run->import_scope->label(),
+            ],
             'rows' => $preview?->rows ?? [],
             'reconciliation' => SourceProjectionIssue::query()
                 ->where('source_import_run_id', $run->id)
@@ -353,12 +387,13 @@ class ManualSourceImportService
      *   blocking_error_count: int
      * }
      */
-    private function adaptivePreview(string $absolutePath): array
+    /** @param list<string> $completeSiteIdentifiers */
+    private function adaptivePreview(string $absolutePath, SourceImportScope $scope, array $completeSiteIdentifiers): array
     {
         try {
             $legacyFingerprint = $this->contract->fingerprint();
             $workbook = $this->reader->read($absolutePath);
-            $analysis = $this->analysis->analyse(ManualSourceImport::SOURCE_NAMESPACE, $workbook);
+            $analysis = $this->analysis->analyse(ManualSourceImport::SOURCE_NAMESPACE, $workbook, $scope, $completeSiteIdentifiers);
 
             return [
                 'workbook' => $workbook,
@@ -395,7 +430,7 @@ class ManualSourceImportService
         }
 
         $workbook = $mapping === null ? null : $this->reader->readMapped($absolutePath, $mapping);
-        $analysis = $workbook === null ? null : $this->analysis->analyse(ManualSourceImport::SOURCE_NAMESPACE, $workbook);
+        $analysis = $workbook === null ? null : $this->analysis->analyse(ManualSourceImport::SOURCE_NAMESPACE, $workbook, $scope, $completeSiteIdentifiers);
         $selected = $interpretation->selected();
         $blocking = collect($interpretation->issues)->where('blocking', true)->count()
             + collect($selected?->columns ?? [])->where('confirmationNeeded', true)->count();
@@ -482,6 +517,31 @@ class ManualSourceImportService
         if ((int) $preview->initiated_by_user_id !== (int) $actor->id) {
             abort(404);
         }
+    }
+
+    /** @param list<string> $siteIdentifiers @return list<string> */
+    private function validatedCompleteSiteIdentifiers(SourceImportScope $scope, array $siteIdentifiers): array
+    {
+        $siteIdentifiers = collect($siteIdentifiers)
+            ->map(fn (string $identifier): string => trim($identifier))
+            ->filter()
+            ->uniqueStrict()
+            ->values()
+            ->all();
+
+        if ($scope !== SourceImportScope::SiteCompleteSnapshot && $siteIdentifiers !== []) {
+            throw new \InvalidArgumentException('Complete source sites are accepted only for a site-complete snapshot.');
+        }
+        if ($scope === SourceImportScope::SiteCompleteSnapshot && $siteIdentifiers === []) {
+            throw new \InvalidArgumentException('A site-complete snapshot requires at least one explicit source site.');
+        }
+        foreach ($siteIdentifiers as $identifier) {
+            if ($this->sites->resolve(ManualSourceImport::SOURCE_NAMESPACE, $identifier)?->binding === null) {
+                throw new \InvalidArgumentException("Complete source site '{$identifier}' is not explicitly bound.");
+            }
+        }
+
+        return $siteIdentifiers;
     }
 
     private function ensureOfficeStaff(User $actor): void

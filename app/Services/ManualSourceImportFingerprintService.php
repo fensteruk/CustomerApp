@@ -2,15 +2,35 @@
 
 namespace App\Services;
 
+use App\Enums\SourceImportScope;
 use App\Models\ProjectedPlotService;
 use App\Models\SourceSiteBinding;
 
 class ManualSourceImportFingerprintService
 {
-    /** @param list<string> $sourceSiteKeys */
-    public function for(string $sourceNamespace, array $sourceSiteKeys): string
-    {
-        $keys = collect($sourceSiteKeys)->map(fn (string $key): string => trim($key))->filter()->uniqueStrict()->sort()->values();
+    /**
+     * @param  list<string>  $sourceSiteKeys
+     * @param  list<string>  $completeSiteKeys
+     */
+    public function for(
+        string $sourceNamespace,
+        array $sourceSiteKeys,
+        SourceImportScope $scope = SourceImportScope::PartialFilteredExport,
+        array $completeSiteKeys = [],
+    ): string {
+        $keys = collect($sourceSiteKeys)
+            ->merge($completeSiteKeys)
+            ->map(fn (string $key): string => trim($key))
+            ->filter()
+            ->uniqueStrict()
+            ->sort()
+            ->values();
+        if ($scope === SourceImportScope::GlobalCompleteSnapshot) {
+            $keys = SourceSiteBinding::query()
+                ->where('source_namespace', $sourceNamespace)
+                ->orderBy('source_site_key')
+                ->pluck('source_site_key');
+        }
         $bindings = $keys->map(function (string $key) use ($sourceNamespace): array {
             $binding = SourceSiteBinding::query()
                 ->where('source_namespace', $sourceNamespace)
@@ -34,9 +54,12 @@ class ManualSourceImportFingerprintService
             ->whereIn('source_site_key_hash', $keys->map(fn (string $key): string => SourceSiteBinding::hashFor($key)))
             ->pluck('id');
         $services = ProjectedPlotService::query()
-            ->whereHas('projectedPlot', fn ($query) => $query
-                ->where('external_source', $sourceNamespace)
-                ->whereIn('source_site_binding_id', $bindingIds))
+            ->whereHas('projectedPlot', function ($query) use ($sourceNamespace, $bindingIds, $scope): void {
+                $query->where('external_source', $sourceNamespace);
+                if ($scope !== SourceImportScope::GlobalCompleteSnapshot) {
+                    $query->whereIn('source_site_binding_id', $bindingIds);
+                }
+            })
             ->orderBy('id')
             ->get()
             ->map(fn (ProjectedPlotService $service): array => [
@@ -45,6 +68,7 @@ class ManualSourceImportFingerprintService
                 'call_type' => $service->source_call_type,
                 'stage' => $service->source_job_stage,
                 'completion_flag' => $service->source_completion_flag,
+                'operational_target_date' => $service->source_operational_target_date?->toDateString(),
                 'completed_at' => $service->source_completed_at?->toDateString(),
                 'present' => $service->source_present,
                 'updated_at' => $service->updated_at?->toJSON(),
@@ -52,6 +76,8 @@ class ManualSourceImportFingerprintService
 
         return hash('sha256', json_encode([
             'namespace' => $sourceNamespace,
+            'scope' => $scope->value,
+            'complete_site_keys' => collect($completeSiteKeys)->map(fn (string $key): string => trim($key))->filter()->uniqueStrict()->sort()->values()->all(),
             'bindings' => $bindings,
             'services' => $services,
         ], JSON_THROW_ON_ERROR));

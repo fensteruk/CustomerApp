@@ -13,8 +13,8 @@ business meaning from a similar-looking code.
 |---|---|---|
 | `PC1` | Plot Install | Importable as Windows |
 | `CC1` | Cavity Closer 1 | Importable as Cavity Closers |
-| `CM1` | Revisit 1 | Valid source code, but no confirmed four-service Portal mapping; reconciliation required |
-| `CM2` | Revisit 2 | Valid source code, but no confirmed four-service Portal mapping; reconciliation required |
+| `CM1` | Revisit 1 | Importable as a CML-related revisit on the CML service |
+| `CM2` | Revisit 2 | Importable as a CML-related revisit on the CML service |
 | `CML` | CML Call Off | Importable as CML |
 
 `CC!` is invalid. It was a Shift+1 typo for `CC1`. A literal `CC!` source value remains
@@ -53,31 +53,40 @@ must not appear as meaningful customer product types, and never affect BF lead t
 ## Confirmed Spreadsheet Fields
 
 - `Call No.` is the permanent idempotent external identity.
-- `Site Name` is a source site clue used only through an explicit source-site binding. Its
-  long-term durability as a key remains unresolved.
+- `Site Name` is currently stable and may be used as an exact temporary source-site binding
+  key. It is still only a source clue: it never creates or fuzzy-matches a Portal site.
+- A future permanent RZ/SiteApp Site ID/reference is preferred whenever exported. Once it is
+  available, it becomes the binding key and Site Name remains display evidence only.
 - `Plot Ref` is the customer-safe source plot reference within the bound site.
 - `Call type` contains a code from the dictionary above. Validity and Portal importability
   are separate decisions.
 - The 19 product-code headers in the reference workbook match the confirmed product
   registry above. Blank quantities mean zero; numeric zero is valid; positive numerics are
   retained; negative or non-numeric quantities are invalid.
-- The wider source contract may accept genuine `Completed Date` and approved completion
+- `complete = Yes` means that specific source call-off part is complete. It establishes
+  source completion but never invents a Completed Date. `No` means that source part is not
+  complete and therefore participates in the existing guarded completion-reversal rules.
+- `Items Ordered Status` is ignored.
+- `Plot To Be Installed` is retained only for `PC1` as Fenster's operational arrival-to-install
+  target date. It is never a customer requested, proposed, agreed or completion date.
+- `Site Value` is ignored/excluded and never becomes a product or customer-visible value.
+- The wider source contract may also accept genuine `Completed Date` and approved completion
   stage codes. Neither field exists in the reference workbook.
 
-## Unconfirmed Spreadsheet Fields
+## Export Scope
 
-The following fields are structural evidence only and must not be assigned an unapproved
-Portal meaning:
+Every manual SiteApp workbook contains whatever the exporter filtered. Row count and site
+count do not prove completeness. The explicit scope values are:
 
-1. `complete` — meaning is unresolved. It does not currently set or reverse completion.
-2. `Items Ordered Status` — final Portal use is unresolved.
-3. `Plot To Be Installed` — may be an arrival-date note; it is operational context only and
-   never becomes a requested, proposed, agreed or completion date.
-4. `Site Value` — policy remains unresolved. It is commercial data, excluded from customer
-   output and never treated as a product quantity.
-5. `Site Name` durability — whether it is a stable key or display name remains unresolved.
-6. Export scope — selected-site, multi-site or global completeness remains unproven.
-7. Any source code absent from this dictionary.
+- `PARTIAL_FILTERED_EXPORT` — mandatory default. Absence proves nothing and creates no
+  missing-source conclusion.
+- `SITE_COMPLETE_SNAPSHOT` — explicit Office confirmation that named bound source site(s)
+  are complete. Missing comparison is limited to those sites.
+- `GLOBAL_COMPLETE_SNAPSHOT` — explicit Office confirmation that the source namespace is
+  globally complete. Only this scope permits namespace-wide missing comparison.
+
+No scope deletes source records. Missing records are retained and reconciled. A represented
+site is not assumed complete because the export can be filtered within that site.
 
 ## Safety Rules
 
@@ -92,17 +101,22 @@ Portal meaning:
 - If a later source import sets or omits `BF`, the projected `BF` quantity is synchronised
   accordingly and the lead-time decision is recalculated from current source truth.
 - Site names never create, merge or select a Portal site without an explicit binding.
-- Saved workbook profiles are scoped to semantic version 2. Version 1 profiles are ignored
-  for exact and likely matching so old `CC!` or `CM1`/`CM2` assumptions cannot be reused.
+- Saved workbook profiles are scoped to semantic version 3 and always retain the safe
+  `PARTIAL_FILTERED_EXPORT` default. Earlier profiles are ignored for exact and likely
+  matching so old completion, call-type or snapshot assumptions cannot be reused.
 
 ## Historical/Incorrect Assumptions Removed
 
 - Removed `CC! → Cavity Closers`; `CC!` is invalid.
 - Replaced “CC1 = Cavity Closer Delivery” with confirmed “CC1 = Cavity Closer 1”.
-- Removed `CM1 → Snagging`; `CM1` means Revisit 1 and has no confirmed Portal service.
-- Removed `CM2 → CML`; `CM2` means Revisit 2 and has no confirmed Portal service.
+- Removed `CM1 → Snagging`; `CM1` is Revisit 1 and is now confirmed CML-related.
+- Replaced the earlier unconfirmed/incorrect CM2 assumption with the confirmed rule that
+  both `CM1` and `CM2` are CML-related revisits imported on the CML service.
 - Removed raw `CAS`, `PFD`, `BF` and other individual-code customer presentation.
-- Removed the assumption that the workbook's `complete` field proves completion.
+- Replaced the former unresolved `complete` assumption with the confirmed source-completion
+  rule for the specific source call-off part; no Completed Date is invented.
+- Removed represented-site/global completeness inference; every manual workbook defaults to
+  a filtered/partial export unless Office explicitly confirms a stronger scope.
 - Removed substring-based BF detection; only exact positive `BF` is authoritative.
 
 Historical sprint and QA reports remain unchanged as evidence of what was understood and

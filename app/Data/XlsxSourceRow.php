@@ -25,6 +25,7 @@ readonly class XlsxSourceRow
         public array $errors = [],
         public array $warnings = [],
         public ?bool $completionFlag = null,
+        public ?CarbonImmutable $operationalTargetDate = null,
     ) {}
 
     public function toSourceRecord(): SourceRecord
@@ -40,6 +41,7 @@ readonly class XlsxSourceRow
             $this->sourceUpdatedAt,
             $this->rowNumber,
             $this->completionFlag,
+            $this->operationalTargetDate,
         );
     }
 
@@ -56,6 +58,7 @@ readonly class XlsxSourceRow
             && $this->callType === ''
             && $this->completedDate === null
             && $this->completionFlag === null
+            && $this->operationalTargetDate === null
             && collect($this->products)->every(fn ($quantity): bool => $quantity === null || (is_numeric($quantity) && (float) $quantity === 0.0));
     }
 }

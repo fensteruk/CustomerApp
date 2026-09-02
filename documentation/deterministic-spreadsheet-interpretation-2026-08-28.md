@@ -37,9 +37,9 @@ is not copied into the feature branch or test fixtures, and row values are not d
 
 The workbook has one visible worksheet, `Sheet1`, with used range `A1:AA49`. Row 1 is the
 header, row 20 is physically blank, and there are 47 data rows across 13 distinct source
-site names. This proves a multi-site export, but does not prove that it is a complete global
-snapshot. Missing-source evaluation therefore remains limited to exact represented and bound
-site keys.
+site names. Management has confirmed that all SiteApp exports reflect arbitrary active
+filters. The workbook therefore defaults to `PARTIAL_FILTERED_EXPORT`; its row/site counts
+never imply site or global completeness.
 
 It uses the Excel 1900 date system. `Plot To Be Installed` cells are genuine date-formatted
 numeric cells and were read as `DateTimeImmutable`; `Site Value` is GBP currency-formatted.
@@ -47,10 +47,9 @@ There are no hidden sheets, rows or columns, formulas, merged cells, filters, fr
 macros, embeddings, external links or workbook connections.
 
 There is no Job Stage or Completed Date column. The `complete` field has 20 true-like and 27
-false-like values across mixed casing, but its business meaning is unresolved. It is now
-UNKNOWN structural evidence and all 47 normalised rows carry a null completion flag. It
-cannot complete or reverse a service, never borrows `Plot To Be Installed`, and never
-invents a completion date. All observed product columns are non-negative; the data includes
+false-like values across mixed casing. It is now confirmed as the source completion flag for
+that specific call-off part; true completes without inventing a date and false participates
+in the guarded reversal rules. It never borrows `Plot To Be Installed`. All observed product columns are non-negative; the data includes
 zeroes and one blank quantity.
 
 The exact 27 headers, in order, are:
@@ -85,10 +84,9 @@ The exact 27 headers, in order, are:
 
 The interpreter selects `Sheet1`/row 1 with confidence 99. It classifies all four critical
 fields safely, classifies the operational date and commercial value under their safety
-roles, and recognises all 19 columns from the confirmed product registry. Both `complete`
-and `Items Ordered Status` remain UNKNOWN because no persistence meaning is approved.
-Plot To Be Installed and Site Value keep their restrictive safety classifications but their
-final uses remain unresolved.
+roles, and recognises all 19 columns from the confirmed product registry. `complete` maps to
+COMPLETION_FLAG; `Items Ordered Status` maps to IGNORE. Plot To Be Installed remains an
+operational-only date for PC1 and Site Value remains excluded commercial data.
 
 The reference workbook exposed and now regression-tests a real defect: typed Excel dates
 could throw while non-header rows were scored as header candidates. Profiling now converts
@@ -101,20 +99,20 @@ Confirmed call types and their current Portal import status are:
 |---|---|
 | `PC1` — Plot Install | Windows |
 | `CC1` — Cavity Closer 1 | Cavity Closers |
-| `CM1` — Revisit 1 | No confirmed mapping; reconciliation required |
-| `CM2` — Revisit 2 | No confirmed mapping; reconciliation required |
+| `CM1` — Revisit 1 | CML |
+| `CM2` — Revisit 2 | CML |
 | `CML` — CML Call Off | CML |
 
 `CC!` is invalid. A literal value is an `UNKNOWN_CALL_TYPE`, reported as a likely Shift+1
-typo for CC1, and is never silently corrected. CM1 and CM2 are not unknown; they are
-valid-but-not-importable source codes until a Portal service mapping is confirmed.
+typo for CC1, and is never silently corrected. CM1 and CM2 are confirmed CML-related revisits.
 
 The reference workbook contains 21 PC1, 17 CC1, seven literal invalid CC!, one CM1 and one
 CM2 rows. It contains no CML row. The seven typo rows are unknown and the two revisit rows
-require reconciliation; no code-similarity fallback exists.
+map to CML; no code-similarity fallback exists.
 
 A corrected read-only parser pass confirmed 47 normalised rows, one blank row, 13 distinct
-site keys and null completion flags on every row. It created no source import run or
+site keys, 20 true and 27 false completion flags, 21 PC1 operational target dates and no
+non-PC1 operational target date. It created no source import run or
 projected plot.
 
 ## Structural Inspection
@@ -206,14 +204,14 @@ headers, missing critical roles and ambiguous worksheet selection block automati
 ## Safety Overrides
 
 - Plot To Be Installed and its aliases can only remain OPERATIONAL_TARGET_DATE or be ignored.
-  They are never requested, proposed, agreed or negotiation dates and are not passed to the
-  importer.
+  They are retained only for PC1 as operational arrival-to-install data and are never
+  requested, proposed, agreed, completion or negotiation dates.
 - Site Value and its aliases can only remain COMMERCIAL_VALUE or be ignored. They cannot be
-  products and their samples are withheld from the API.
+  products and their samples are withheld from the API. Site Value is ignored/excluded.
 - Unknown Call Types remain unknown. The mapping screen cannot turn them into a service;
   service mapping remains central and server-side.
-- The unconfirmed `complete` field may only remain UNKNOWN or be ignored. It cannot be mapped
-  to COMPLETION_FLAG.
+- `complete` may map only to COMPLETION_FLAG or be ignored. It cannot become a date, status,
+  product or customer negotiation fact.
 - Only confirmed product registry codes can be mapped as PRODUCT_QUANTITY.
 - Negative product quantities block the row/mapping. Blank becomes zero and numeric zero is
   retained.
@@ -251,7 +249,7 @@ External Site Users receive 403 and cannot inspect, confirm or commit mappings.
 
 `workbook_interpretation_profiles` stores UUID, source namespace, semantic version, selected sheet, structural
 fingerprint, normalised ordered headers, type profile, confirmed closed-enum mappings,
-represented-sites snapshot scope, confirmer, version and timestamps. Filename is not part of
+safe partial/filtered default scope, confirmer, version and timestamps. Filename is not part of
 the identity.
 
 The exact fingerprint includes normalised sheet identifier, header order and deterministic
@@ -260,8 +258,22 @@ workbook and revalidate every safety/value rule. Changed confirmation for the sa
 creates the next version; an identical confirmation reuses its version.
 
 Only profiles with the current SiteApp semantic version participate in exact or likely
-matching. The correction pass advances that version to 2, invalidating profiles that could
-contain the old CC!, CM or completion assumptions.
+matching. The final correction advances that version to 3, invalidating profiles that could
+contain old CC!, CM, completion or snapshot-scope assumptions. A profile never upgrades an
+upload beyond the partial/filtered default; stronger scope is a separate per-upload Office
+confirmation.
+
+## Import Scope Contract
+
+Interpretation reports workbook structure, not completeness. All manual uploads default to
+`PARTIAL_FILTERED_EXPORT` with the Office wording “This spreadsheet is a filtered/partial
+export.” The optional `SITE_COMPLETE_SNAPSHOT` requires explicit named bound sites and the
+optional `GLOBAL_COMPLETE_SNAPSHOT` requires a separate explicit confirmation. Workbook size,
+site count, profile similarity and filename never select a stronger scope.
+
+Partial scope performs no missing-source inference. Site-complete scope compares only its
+explicit sites. Global-complete scope may compare the namespace. All modes retain absent
+projections and create reconciliation where allowed; none delete them.
 
 Near matches use a deterministic weighted comparison: Jaccard header-set similarity, ordered
 header overlap, per-header type compatibility and sheet-name agreement. A likely match is
@@ -271,10 +283,10 @@ interpreted afresh.
 ## Normalisation and Existing Importer
 
 Confirmed mappings are converted into `XlsxSourceRow` and then the existing `SourceRecord`.
-Excel objects never enter the importer. The reference workbook's unconfirmed `complete`
-field is not mapped, so completion remains dependent on approved stage/Completed Date facts.
+Excel objects never enter the importer. The confirmed `complete` field reaches the importer
+only as a boolean completion flag; it never supplies a date.
 
-Source-site binding, Call No. idempotency, missing-source represented-site scope, completion
+Source-site binding, Call No. idempotency, explicit import scope, completion
 precedence, rollback, run audit and reconciliation remain owned by the existing manual-import
 and Sprint 3B services.
 
@@ -294,14 +306,9 @@ overall confidence of 96. The automated gate additionally requires less than 12 
 less than 160 MiB incremental peak allocation to avoid a gross regression; it is a development
 sanity bound, not a production throughput guarantee.
 
-Remaining evidence and decisions:
+Remaining evidence:
 
-1. Confirm a Portal service mapping for CM1/Revisit 1 and CM2/Revisit 2, or retain them as
-   reconciliation-only source rows. CC! is conclusively invalid.
-2. Define `complete`, Items Ordered Status, Plot To Be Installed and Site Value policy.
-3. Confirm whether Site Name is durable and whether the normal export scope is selected-site,
-   multi-site or global.
-4. Run migration/profile uniqueness, versioning and import-transaction checks on a disposable
+1. Run migration/profile uniqueness, versioning and import-transaction checks on a disposable
    MySQL 8.4 database. This host currently has no MySQL client/server, Docker runtime or local
    port 3306 listener. Production is not an acceptable substitute.
 
@@ -328,8 +335,8 @@ contacted or changed.
 ## SiteApp Semantic Correction Verification — 2 September 2026
 
 - Read-only actual-workbook pass: Sheet1, A1:AA49, 47 data rows, one blank row, 13 source
-  sites, confidence 99; 19 confirmed product columns; `complete` and Items Ordered Status
-  remain UNKNOWN; every normalised completion flag is null.
+  sites, confidence 99; 19 confirmed product columns. This historical pass preceded the final
+  scope/completion decisions recorded below.
 - Focused semantic/interpreter/import/lead-time/customer-projection regressions: 93 tests,
   519 assertions, all passed.
 - Full Pest suite: 277 total, 262 passed, 1,455 assertions; 15 MySQL-only concurrency tests
@@ -344,3 +351,18 @@ contacted or changed.
 - Disposable MySQL 8.4 remains unavailable on this host: no MySQL client/server, Docker,
   Podman or port 3306 listener exists. MySQL migration/profile/import verification remains
   required before this branch can be considered release-ready.
+
+## Final Scope/Semantics Pass — 2 September 2026
+
+Interpretation deliberately does not infer export completeness. Every current SiteApp XLSX
+is proposed as `PARTIAL_FILTERED_EXPORT`, including the reference workbook (47 data rows,
+13 represented sites). Office Staff must explicitly confirm any future site-complete or
+global-complete claim; structure, site count and saved-profile similarity cannot strengthen
+scope.
+
+Saved profiles now use semantic version 3 and default to partial scope, invalidating older
+global-snapshot assumptions. Exact/minor profile reuse still revalidates evidence and cannot
+override the explicit scope, confirmed call dictionary, `CC!` rejection, ignored fields or
+product safety rules. Focused coverage passed 59 tests / 340 assertions; the full local suite
+passed 266 tests / 1,484 assertions with 15 MySQL-only skips. MySQL profile uniqueness,
+versioning and scope persistence remain queued in the isolated gate runbook.

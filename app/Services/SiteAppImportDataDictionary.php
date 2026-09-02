@@ -125,6 +125,16 @@ class SiteAppImportDataDictionary
         return array_key_exists($this->normaliseHeader($header), config('siteapp_import.unconfirmed_fields', []));
     }
 
+    public function isIgnoredHeader(string $header): bool
+    {
+        return array_key_exists($this->normaliseHeader($header), config('siteapp_import.ignored_fields', []));
+    }
+
+    public function ignoredHeaderReason(string $header): ?string
+    {
+        return config('siteapp_import.ignored_fields.'.$this->normaliseHeader($header));
+    }
+
     public function unconfirmedHeaderReason(string $header): ?string
     {
         return config('siteapp_import.unconfirmed_fields.'.$this->normaliseHeader($header));

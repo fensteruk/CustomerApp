@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Enums\SourceImportScope;
 use App\Models\Concerns\HasUuid;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -14,6 +15,8 @@ class ManualSourceImportPreview extends Model
     protected $fillable = [
         'initiated_by_user_id',
         'source_namespace',
+        'import_scope',
+        'complete_site_identifiers',
         'original_filename',
         'content_sha256',
         'storage_disk',
@@ -39,6 +42,8 @@ class ManualSourceImportPreview extends Model
     {
         return [
             'metadata' => 'array',
+            'import_scope' => SourceImportScope::class,
+            'complete_site_identifiers' => 'array',
             'workbook_interpretation' => 'array',
             'confirmed_mapping' => 'array',
             'summary' => 'array',
