@@ -1,9 +1,12 @@
 import '@fontsource-variable/inter';
 import Alpine from 'alpinejs';
+import manualSourceImport from './manual-source-import';
 
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('manualSourceImport', (configuration) => manualSourceImport(configuration));
+
     Alpine.data('lifecycleSelection', () => ({
         selected: {},
 

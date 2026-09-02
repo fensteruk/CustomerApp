@@ -10,6 +10,7 @@ use App\Http\Controllers\CallOffRequestDetailsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Development\PreviewRoleController;
 use App\Http\Controllers\ManualSourceImportController;
+use App\Http\Controllers\ManualSourceImportPageController;
 use App\Http\Controllers\NewCallOffController;
 use App\Http\Controllers\PlotDetailsController;
 use App\Http\Controllers\PortalNotificationController;
@@ -74,6 +75,8 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
 
     Route::post('/portal/source-imports/previews', [ManualSourceImportController::class, 'preview'])
         ->name('portal.source-imports.previews.store');
+    Route::get('/portal/source-imports', ManualSourceImportPageController::class)
+        ->name('portal.source-imports.index');
     Route::get('/portal/source-imports/previews/{manualSourceImportPreview:uuid}', [ManualSourceImportController::class, 'show'])
         ->whereUuid('manualSourceImportPreview')
         ->name('portal.source-imports.previews.show');

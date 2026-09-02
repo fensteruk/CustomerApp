@@ -6,6 +6,14 @@
                 <h1 id="page-title" class="page-title">Review Requests</h1>
                 <p class="page-intro">Review the requests that need a Fenster response. Use the status filter to check customer responses, agreed dates and completed records.</p>
             </div>
+            @can('manage-source-imports')
+                <a href="{{ route('portal.source-imports.index') }}" class="secondary-button shrink-0">
+                    <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5" />
+                    </svg>
+                    Import spreadsheet
+                </a>
+            @endcan
         </div>
 
         @if (session('status'))
