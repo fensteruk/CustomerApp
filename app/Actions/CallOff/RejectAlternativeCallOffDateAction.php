@@ -6,10 +6,10 @@ use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffHistoryEventType;
 use App\Enums\CallOffRequestStatus;
 use App\Events\CallOffAlternativeRejected;
-use App\Models\CallOffDateNegotiation;
 use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -19,6 +19,7 @@ class RejectAlternativeCallOffDateAction
         private readonly DetermineCallOffEligibilityAction $eligibility = new DetermineCallOffEligibilityAction,
         private readonly LockCallOffDateNegotiationAggregateAction $locks = new LockCallOffDateNegotiationAggregateAction,
         private readonly RecordCallOffStatusHistoryAction $history = new RecordCallOffStatusHistoryAction,
+        private readonly ResolveCallOffNegotiationAction $cycles = new ResolveCallOffNegotiationAction,
     ) {}
 
     public function handle(User $actor, CallOffRequest $request, CallOffDateProposal $proposal, string $reason): CallOffRequest
@@ -28,23 +29,22 @@ class RejectAlternativeCallOffDateAction
         if ($reason === '') {
             throw ValidationException::withMessages(['customer_response' => 'Explain why the alternative date is not suitable.']);
         }
+        if (mb_strlen($reason) > 2000) {
+            throw ValidationException::withMessages(['customer_response' => 'The response must not exceed 2000 characters.']);
+        }
 
         $rejectedRequest = DB::transaction(function () use ($actor, $request, $proposal, $reason): CallOffRequest {
             [$request] = $this->locks->handle($request);
+            $actor = $actor->fresh() ?? throw new AuthorizationException;
             $this->eligibility->ensureCanRespondToAlternative($actor, $request);
-            $proposalReference = CallOffDateProposal::query()->select(['id', 'call_off_date_negotiation_id'])->whereKey($proposal->id)->firstOrFail();
-            $negotiation = CallOffDateNegotiation::query()->whereKey($proposalReference->call_off_date_negotiation_id)->lockForUpdate()->firstOrFail();
-            $proposal = CallOffDateProposal::query()->whereKey($proposalReference->id)->lockForUpdate()->firstOrFail();
-
-            if ($negotiation->call_off_request_id !== $request->id || $proposal->status !== CallOffDateProposalStatus::AwaitingResponse) {
-                throw ValidationException::withMessages(['proposal' => 'This alternative is no longer available.']);
-            }
+            [$negotiation, $proposal] = $this->cycles->forResponse($request, $proposal);
 
             $before = $request->stateSnapshot();
             $previous = $request->status;
             $proposal->update(['status' => CallOffDateProposalStatus::Rejected, 'responded_by_user_id' => $actor->id, 'responded_at' => now(), 'customer_response' => $reason]);
-            $request->update(['status' => CallOffRequestStatus::AwaitingFenster]);
-            $this->history->handle($request, $actor, CallOffHistoryEventType::AlternativeDateRejected, $previous, CallOffRequestStatus::AwaitingFenster, $before, $request->fresh()->stateSnapshot(), $reason);
+            $nextStatus = $negotiation->isAmendment() ? CallOffRequestStatus::AmendmentOnHold : CallOffRequestStatus::AwaitingFenster;
+            $request->update(['status' => $nextStatus]);
+            $this->history->handle($request, $actor, CallOffHistoryEventType::AlternativeDateRejected, $previous, $nextStatus, $before, $request->fresh()->stateSnapshot() + ['negotiation_uuid' => $negotiation->uuid, 'proposal_uuid' => $proposal->uuid], $reason);
 
             return $request;
         });

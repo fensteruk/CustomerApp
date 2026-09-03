@@ -14,6 +14,7 @@ use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Validation\ValidationException;
 
 class CallOffDateNegotiationController extends Controller
@@ -28,6 +29,7 @@ class CallOffDateNegotiationController extends Controller
                 $request->user(),
                 $callOffRequest,
                 $request->boolean('early_date_acknowledgement'),
+                $request->validated('negotiation_uuid'),
             );
         } catch (AuthorizationException) {
             return $this->notAuthorisedForOfficeReview();
@@ -51,6 +53,8 @@ class CallOffDateNegotiationController extends Controller
                 $request->validated('proposed_date'),
                 $request->validated('customer_response'),
                 $request->validated('internal_reason'),
+                $request->validated('negotiation_uuid'),
+                $request->boolean('early_date_acknowledgement'),
             );
         } catch (AuthorizationException) {
             return $this->notAuthorisedForOfficeReview();
@@ -68,6 +72,7 @@ class CallOffDateNegotiationController extends Controller
         CallOffDateProposal $callOffDateProposal,
         AcceptAlternativeCallOffDateAction $acceptAlternativeDate,
     ): RedirectResponse {
+        $this->ensureActiveRequestSite($request, $callOffRequest);
         try {
             $acceptAlternativeDate->handle($request->user(), $callOffRequest, $callOffDateProposal);
         } catch (AuthorizationException) {
@@ -87,6 +92,7 @@ class CallOffDateNegotiationController extends Controller
         CallOffDateProposal $callOffDateProposal,
         RejectAlternativeCallOffDateAction $rejectAlternativeDate,
     ): RedirectResponse {
+        $this->ensureActiveRequestSite($request, $callOffRequest);
         try {
             $rejectAlternativeDate->handle(
                 $request->user(),
@@ -104,6 +110,12 @@ class CallOffDateNegotiationController extends Controller
 
         return redirect()->route('portal.call-offs.show', $callOffRequest)
             ->with('status', 'The alternative date has been rejected and Fenster has been notified.');
+    }
+
+    private function ensureActiveRequestSite(Request $request, CallOffRequest $callOffRequest): void
+    {
+        abort_unless($request->user()->canAccessSite($callOffRequest->batch->site), 403);
+        abort_unless((int) $request->attributes->get('activeSite')?->id === (int) $callOffRequest->batch->site_id, 404);
     }
 
     private function notAuthorisedForOfficeReview(): RedirectResponse

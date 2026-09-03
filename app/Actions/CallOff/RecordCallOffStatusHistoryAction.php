@@ -34,6 +34,20 @@ class RecordCallOffStatusHistoryAction
         $nextSequence = ((int) $request->histories()->lockForUpdate()->max('sequence')) + 1;
         $performedAt ??= now();
 
+        if (in_array($eventType, [
+            CallOffHistoryEventType::AmendmentRequested,
+            CallOffHistoryEventType::AlternativeDateProposed,
+            CallOffHistoryEventType::AlternativeDateAccepted,
+            CallOffHistoryEventType::AlternativeDateRejected,
+            CallOffHistoryEventType::DateAgreed,
+            CallOffHistoryEventType::EarlierDateExceptionAcknowledged,
+        ], true)) {
+            $afterState = ($afterState ?? []) + [
+                'actor_name' => $actor->name,
+                'actor_role' => $actor->portalRole?->name,
+            ];
+        }
+
         return CallOffStatusHistory::query()->create([
             'call_off_request_id' => $request->id,
             'call_off_batch_id' => $request->call_off_batch_id,

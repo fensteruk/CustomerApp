@@ -66,7 +66,7 @@ class DetermineCallOffEligibilityAction
     public function ensureCanAgreeRequestedDate(User $user, CallOffRequest $request): void
     {
         $this->ensureOfficeStaffCanReview($user, $request);
-        $this->ensureStatus($request, CallOffRequestStatus::AwaitingFenster, 'Only call-offs awaiting Fenster may have their requested date agreed.');
+        $this->ensureNegotiableStatus($request, CallOffRequestStatus::AwaitingFenster);
         $this->ensureNotTrashed($request);
         $this->ensureRequestSourceIsAvailable($request);
     }
@@ -74,7 +74,7 @@ class DetermineCallOffEligibilityAction
     public function ensureCanProposeAlternativeDate(User $user, CallOffRequest $request): void
     {
         $this->ensureOfficeStaffCanReview($user, $request);
-        $this->ensureStatus($request, CallOffRequestStatus::AwaitingFenster, 'Only call-offs awaiting Fenster may receive an alternative date.');
+        $this->ensureNegotiableStatus($request, CallOffRequestStatus::AwaitingFenster);
         $this->ensureNotTrashed($request);
         $this->ensureRequestSourceIsAvailable($request);
     }
@@ -82,9 +82,29 @@ class DetermineCallOffEligibilityAction
     public function ensureCanRespondToAlternative(User $user, CallOffRequest $request): void
     {
         $this->ensureSiteUserCanActOnRequest($user, $request);
-        $this->ensureStatus($request, CallOffRequestStatus::AwaitingSiteUser, 'This alternative is no longer awaiting a customer response.');
+        $this->ensureNegotiableStatus($request, CallOffRequestStatus::AwaitingSiteUser);
         $this->ensureNotTrashed($request);
         $this->ensureRequestSourceIsAvailable($request);
+    }
+
+    public function ensureCanRequestAmendment(User $user, CallOffRequest $request): void
+    {
+        $this->ensureSiteUserCanActOnRequest($user, $request);
+        $this->ensureNotTrashed($request);
+        $this->ensureRequestSourceIsAvailable($request);
+        if (! in_array($request->status, [CallOffRequestStatus::DateAgreed, CallOffRequestStatus::Approved], true)
+            || ($request->status === CallOffRequestStatus::DateAgreed && $request->agreed_date === null)
+            || $request->projectedPlot->is_completed
+            || $request->dateNegotiations()->where('status', 'open')->exists()) {
+            throw ValidationException::withMessages(['request' => 'Only available Date Agreed work without an open date change can be amended.']);
+        }
+    }
+
+    private function ensureNegotiableStatus(CallOffRequest $request, CallOffRequestStatus $initialStatus): void
+    {
+        if (! in_array($request->status, [$initialStatus, CallOffRequestStatus::AmendmentOnHold], true)) {
+            throw ValidationException::withMessages(['status' => 'This date decision is no longer available.']);
+        }
     }
 
     public function ensureCanTrash(User $user, CallOffRequest $request): void

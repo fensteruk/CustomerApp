@@ -4,6 +4,7 @@ use App\Actions\CallOff\AcceptAlternativeCallOffDateAction;
 use App\Actions\CallOff\AgreeRequestedCallOffDateAction;
 use App\Actions\CallOff\ProposeAlternativeCallOffDateAction;
 use App\Actions\CallOff\RejectAlternativeCallOffDateAction;
+use App\Actions\CallOff\RequestCallOffAmendmentAction;
 use App\Data\SourceRecord;
 use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
@@ -15,6 +16,7 @@ use App\Services\SourceProjectionImportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CommittedMysqlFixtureScope;
 
 require __DIR__.'/../../vendor/autoload.php';
 
@@ -28,6 +30,11 @@ $barrier = array_pop($arguments);
 $delayMilliseconds = (int) array_pop($arguments);
 
 try {
+    if (! app()->environment('testing') || DB::connection()->getDriverName() !== 'mysql') {
+        throw new RuntimeException('Concurrency workers require an isolated MySQL testing environment.');
+    }
+    CommittedMysqlFixtureScope::assertSafe();
+    config(['call_off_amendments.reasons' => ['test_reason' => 'Synthetic MySQL test reason']]);
     $deadline = microtime(true) + 20;
     while (! file_exists($barrier)) {
         if (microtime(true) > $deadline) {
@@ -46,6 +53,10 @@ try {
         'propose' => app(ProposeAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), $arguments[2]),
         'accept' => app(AcceptAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), mysqlGateProposal($arguments[2])),
         'reject' => app(RejectAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), mysqlGateProposal($arguments[2]), 'The alternative is not suitable.'),
+        'amend-request' => app(RequestCallOffAmendmentAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1])->batch->site, mysqlGateRequest($arguments[1]), ['requested_date' => $arguments[2], 'reason_code' => 'test_reason'], $arguments[3]),
+        'amend-agree' => app(AgreeRequestedCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), true, $arguments[2]),
+        'amend-propose' => app(ProposeAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), $arguments[2], null, null, $arguments[3], true),
+        'crash-after-agree' => mysqlGateCrashAfterAgreement($arguments),
         'source-complete' => mysqlGateCompleteSourceService($arguments[0]),
         'source-missing' => mysqlGateMarkSourceMissing($arguments[0]),
         default => throw new InvalidArgumentException("Unknown MySQL gate operation: {$operation}"),
@@ -54,6 +65,12 @@ try {
     mysqlGateResult(true, $operation, arguments: $arguments);
 } catch (Throwable $exception) {
     mysqlGateResult(false, $operation, $exception, $arguments);
+}
+
+function mysqlGateCrashAfterAgreement(array $arguments): never
+{
+    app(AgreeRequestedCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]));
+    exit(17); // Deliberate process failure after a real commit, used only by isolation regression.
 }
 
 function mysqlGateUser(string $id): User
@@ -121,7 +138,7 @@ function mysqlGateResult(bool $ok, string $operation, ?Throwable $exception = nu
 function mysqlGateDurableState(string $operation, array $arguments): array
 {
     $requestId = match ($operation) {
-        'agree', 'propose', 'accept', 'reject' => $arguments[1] ?? null,
+        'agree', 'propose', 'accept', 'reject', 'amend-request', 'amend-agree', 'amend-propose' => $arguments[1] ?? null,
         'source-complete', 'source-missing' => ProjectedPlotService::query()
             ->find($arguments[0] ?? null)?->callOffRequests()
             ->orderBy('id')

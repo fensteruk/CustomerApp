@@ -1,5 +1,25 @@
 # Current Sprint
 
+## Sprint 3F implementation update — 3 September 2026
+
+Current work is Date Amendments After Date Agreed, reusing Sprint 3E. It is isolated on
+`feature/sprint-3f-date-amendments` from local main `0873bac79edf578e9f4a9417e3cafae34e8aa925`.
+This supersedes older release-status/numbering statements below for the current task.
+Those entries remain historical evidence, not a claim about today's production state.
+
+Implementation is **blocked for sign-off**, not complete: Product must approve amendment
+reason values and confirm the preserved On Hold aggregate plot status. Reasons are empty
+and customer initiation fails closed until confirmed. Disposable MySQL 8.4, dedicated
+keyboard/mobile QA and reconciliation with the separate security dependency branch remain
+release gates. No main merge, push, deployment or Wald/import modification was performed.
+
+See `documentation/sprint-3f-date-amendments-2026-09-03.md` for the domain, files,
+command evidence, migration rehearsal, eight new MySQL race cases and handoff actions.
+
+Final local gate: 264 tests passed / 23 MySQL-only skipped, 1,378 assertions.
+Fresh SQLite seed, non-empty upgrade, Pint, Composer validation and build passed.
+Composer audit reports eight inherited advisories; security reconciliation remains separate.
+
 ## Release-management status — 25 August 2026
 
 Production is serving `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` after

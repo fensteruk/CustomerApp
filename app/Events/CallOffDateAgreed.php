@@ -6,5 +6,5 @@ use Illuminate\Contracts\Events\ShouldDispatchAfterCommit;
 
 class CallOffDateAgreed implements ShouldDispatchAfterCommit
 {
-    public function __construct(public readonly int $callOffRequestId) {}
+    public function __construct(public readonly int $callOffRequestId, public readonly ?string $negotiationUuid = null) {}
 }

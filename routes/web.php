@@ -4,6 +4,7 @@ use App\Http\Controllers\ActiveSiteController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\CallOffAmendmentController;
 use App\Http\Controllers\CallOffDateNegotiationController;
 use App\Http\Controllers\CallOffLifecycleController;
 use App\Http\Controllers\CallOffRequestDetailsController;
@@ -70,6 +71,9 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
         ->name('portal.site-dashboard');
 
     Route::middleware('active.site')->group(function (): void {
+        Route::get('/portal/call-offs/{callOffRequest:uuid}/date-change', [CallOffAmendmentController::class, 'create'])->name('portal.call-offs.amendments.create');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/date-change/review', [CallOffAmendmentController::class, 'review'])->name('portal.call-offs.amendments.review');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/date-change', [CallOffAmendmentController::class, 'store'])->name('portal.call-offs.amendments.store');
         Route::get('/portal/plots/{projectedPlot:uuid}', PlotDetailsController::class)
             ->name('portal.plots.show');
         Route::get('/portal/call-offs/new', [NewCallOffController::class, 'create'])
