@@ -707,3 +707,39 @@ classification. The users foreign key has always been nullable, while a historic
 application profile check incorrectly required it for every role. Making the requirement
 role-specific implements the already-confirmed global Office model without inventing a
 Fenster customer record.
+
+---
+
+## DEC-039
+
+Date: 3 September 2026
+
+Decision: management confirmed the final Sprint 3F amendment reason and On Hold policy.
+
+Approved stable codes and customer labels:
+
+| Code | Label |
+| --- | --- |
+| SITE_NOT_READY | Site Not Ready |
+| PROGRAMME_CHANGE | Programme Change |
+| ACCESS_ISSUE | Access Issue |
+| CUSTOMER_REQUESTED_CHANGE | Customer Requested Change |
+| MATERIALS_AVAILABILITY | Materials / Availability |
+| WEATHER | Weather |
+| OTHER | Other |
+
+- OTHER requires Additional information; all other explanations are optional. Normalize
+  edge whitespace, reject blank Other text, and retain the existing 2,000-character limit.
+- Store code, label snapshot and separate customer_response. Customer/Office history shows
+  the friendly label, separate explanation, requester and exact time, never raw codes.
+- An active amendment displays On Hold — Date Change Requested for that service, with
+  the old agreement preserved as history rather than a current confirmed date.
+- The overall plot uses existing Call-Offs In Progress. Partially Completed and Fully
+  Completed retain precedence. No Amendment In Progress overall enum is introduced.
+- Agreement restores normal Date Agreed presentation with the new date. Source completion
+  closes the process without completion notifications. Legacy Approved history is not rewritten.
+- Service/request/cycle/proposal/history locking, authorization and audit boundaries remain
+  unchanged. These are Portal communication rules, not SiteApp operational workflow.
+
+This resolves both former Sprint 3F product blockers. Dedicated QA, Composer security
+reconciliation and final release-candidate verification remain separate gates.

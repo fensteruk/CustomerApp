@@ -3,6 +3,9 @@
 **Status:** Management-clarified specification
 **Last Updated:** 20 August 2026
 
+Sprint 3F clarification: final amendment-reason and On Hold presentation decisions were
+confirmed on 3 September 2026 (DEC-039) and incorporated into section 17 below.
+
 The management requirements confirmed on 20 August 2026, recorded in
 `context-work-prompt.md`, supersede earlier assumptions in this brief wherever explicitly
 contradictory. Section 17 is the consolidated Version 1 clarification. It defines product
@@ -520,7 +523,8 @@ following customer-facing states:
 
 - **Nothing / Not Called Off**;
 - **Called Off — Awaiting Date**;
-- **Date Agreed — [agreed date]**; or
+- **Date Agreed — [agreed date]**;
+- **On Hold — Date Change Requested**, during an active amendment; or
 - **Completed — [actual Completed Date]**.
 
 Use text, labels or icons as well as colour. The physical/display order Cavity Closers →
@@ -536,6 +540,11 @@ Overall plot status is calculated as follows:
 | Dates Agreed | At least one service is Date Agreed or Completed and no currently called-off service remains Awaiting Date. Services not yet called off do not prevent this state. |
 | Partially Completed | At least one service is Completed but not all four; this label takes precedence over unresolved call-offs. |
 | Fully Completed | All four services are Completed. |
+
+An On Hold service contributes to the existing Call-Offs In Progress calculation, not
+a new Amendment In Progress overall status. Partial/full completion retains precedence;
+unaffected services keep their own states. A resolved amendment returns to Date Agreed
+with the new date and the normal overall calculation.
 
 Fully Completed plots are highlighted, retained indefinitely, hidden by default and made
 available through Show Completed/filter functionality. They are never automatically
@@ -611,7 +620,12 @@ recovery requirements continue for eligible withdrawal, Trash and restoration ac
 Expiry removes an item from customer-facing Trash while preserving audit-critical history.
 
 After Date Agreed, a Site User may submit an amendment with a new requested date, a
-predefined amendment reason and optional explanation. There is no fixed amendment cutoff.
+predefined amendment reason and additional information where required. There is no fixed amendment cutoff.
+The confirmed reasons are Site Not Ready, Programme Change, Access Issue, Customer
+Requested Change, Materials / Availability, Weather and Other. Other requires Additional
+information; all other explanations are optional. Explanations are trimmed, must not be
+whitespace-only for Other, and may contain at most 2,000 characters. Stable reason codes,
+friendly label snapshots and separate explanations remain in the audit trail (DEC-039).
 An amendment within three working days of the current agreed date is marked **Urgent / Late
 Amendment** as a warning, not a prohibition.
 
@@ -716,10 +730,9 @@ agree priorities with management.
 The following remain TBC and must not be invented:
 
 1. The exact customer-facing expansion of CML.
-2. The predefined amendment-reason list.
-3. Ownership and operational contract for updates to the Excel/source data.
-4. The detailed source integration mechanism, credentials and reconciliation process.
-5. Long-term retention periods beyond the seven-day customer-facing Trash window.
-6. Any migration treatment for historic direct rejected-call-off records created under
+2. Ownership and operational contract for updates to the Excel/source data.
+3. The detailed source integration mechanism, credentials and reconciliation process.
+4. Long-term retention periods beyond the seven-day customer-facing Trash window.
+5. Any migration treatment for historic direct rejected-call-off records created under
    earlier assumptions; rejecting an alternative is already defined and is not a rejected
    call-off.

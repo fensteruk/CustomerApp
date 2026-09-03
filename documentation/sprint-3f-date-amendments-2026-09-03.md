@@ -1,14 +1,15 @@
 # Sprint 3F — Date Amendments After Date Agreed
 
 Date: 3 September 2026.
-Status: **BLOCKED — product confirmation and release gates outstanding. Not QA-approved or complete.**
+Status: **Product decisions integrated — ready for dedicated QA. Not release-approved.**
 
 ## Branch and scope
 
 Implementation worktree: `C:/Users/JoshO/Documents/CustomerApp/.cursor/worktrees/sprint-3f-date-amendments`.
 Branch: `feature/sprint-3f-date-amendments`.
-Base/HEAD: `0873bac79edf578e9f4a9417e3cafae34e8aa925` (local main).
-Changes are uncommitted for review; HEAD is the base, not a feature commit.
+Original base: `0873bac79edf578e9f4a9417e3cafae34e8aa925` (local main).
+Preserved baseline: `4773c37`. Office decision race correction: `38b058f`.
+Final product-decision integration follows as a separate commit containing this update.
 
 This base contains Sprint 3E and the Office-organisation correction. Older top-level
 25 August documents saying Sprint 3E is absent from main are historical, superseded
@@ -75,10 +76,11 @@ The shared read model exposes no current confirmed date while On Hold, after sou
 completion, or after completion reversal of the closed request. Service labels and
 filters distinguish On Hold from Date Agreed. No calendar has been built.
 
-Before Sprint 3F, AmendmentOnHold contributed to overall Call-Offs In Progress via
-AwaitingDate. That aggregate result is preserved, with partial/full source completion
-still taking precedence. Product was asked to confirm it explicitly; no new aggregation
-policy has been invented.
+Management confirmed the existing aggregate treatment on 3 September 2026 (DEC-039).
+The service label is **On Hold — Date Change Requested**, with no current confirmed date.
+On Hold contributes to **Call-Offs In Progress** (`PlotOverallStatus::CallOffsInProgress`),
+unless partial/full source completion takes precedence. No new overall status is added;
+the search found no provisional `Amendment In Progress` overall enum to remove.
 
 ## Authorization and review
 
@@ -88,8 +90,11 @@ initiate, but active Office Staff have the existing global review authority with
 needing a customer organisation. Any currently assigned Site User can respond;
 the actual requester and responder are independently attributed.
 
-The form requires a new requested date, configured reason and optional customer_response
-(maximum 2,000 characters). Review data is held server-side, with a hashed single-use
+The form requires a new requested date and approved reason code. Additional information
+(`customer_response`, maximum 2,000 characters) is required for OTHER and optional for
+all six other reasons. Unicode-aware edge trimming applies at the shared domain boundary,
+including direct action calls; blank optional text becomes null and blank Other text fails.
+Review data is held server-side, with a hashed single-use
 confirmation token, actor/site, 15-minute expiry and state/history revision.
 The final endpoint ignores mutated date/reason fields and consumes the token.
 The decisive action reloads the actor and service/request state, reauthorizes,
@@ -151,23 +156,86 @@ requester and time, with Accept New Date / Propose Alternative Date.
 Awaiting Site User retains the current alternative's accept/reject controls only.
 Shared status rules are outside Blade. Labels, native date/select controls, touch-sized
 buttons and responsive layout classes follow existing conventions.
-HTTP-rendered UI paths pass automated checks; manual browser keyboard/mobile QA has
-not been performed in this task.
+HTTP-rendered UI paths pass automated checks. The form uses native accessible controls,
+an always-visible no-JavaScript explanation rule and a conditional Alpine required state.
+Reason and Additional information remain separate in review and customer/Office history.
+After recovering the preview connection, browser checks passed at 1280×900 and 390×844.
+The customer form, Other required/normal optional toggle, keyboard focus, review/confirm,
+On Hold history, overall Call-Offs In Progress, Office review and acceptance to the new
+agreed date were exercised with synthetic accounts. No horizontal overflow or console
+errors/warnings were observed. This limited preview is not the dedicated QA gate.
 
-## Product decisions still needed
+## Final management decisions — 3 September 2026
 
-1. Approve the exact reason code/label list. `config/call_off_amendments.php` deliberately
-   contains an empty list: customer initiation fails closed until approved. Synthetic
-   test_reason exists only in automated tests and disposable gate fixtures.
-   If Other is approved, clarify whether its explanation is mandatory.
-2. Confirm the preserved overall plot-status aggregation for On Hold.
+`config/call_off_amendments.php` now ships the approved ordered list:
+
+| Stable code | Customer label |
+| --- | --- |
+| SITE_NOT_READY | Site Not Ready |
+| PROGRAMME_CHANGE | Programme Change |
+| ACCESS_ISSUE | Access Issue |
+| CUSTOMER_REQUESTED_CHANGE | Customer Requested Change |
+| MATERIALS_AVAILABILITY | Materials / Availability |
+| WEATHER | Weather |
+| OTHER | Other |
+
+Other requires Additional information; all other reasons make it optional. Unknown,
+label-only, lowercase and array reason values are rejected. Store the stable code plus
+the existing label snapshot and separate explanation; history never displays raw codes.
+Requester, role and exact time remain recorded. Final POST data cannot override the
+server-held review payload. Authorization still precedes reason validation.
+
+Service: **On Hold — Date Change Requested**. Overall plot: existing **Call-Offs In
+Progress**, with **Partially Completed** / **Fully Completed** precedence unchanged.
+Agreement restores Date Agreed with the new date and normal aggregate recalculation.
+Source completion closes the amendment, removes current On Hold presentation and emits
+no notification. Legacy Approved follows the same UI without fabricated old history.
+
+**No product decisions remain for the current Sprint 3F scope.**
 
 The failure/cancellation/old-date reinstatement workflow remains deferred and undefined.
 No fail/cancel/reinstate endpoint was invented; the prior date remains available for a
 future explicit Office decision. This does not prevent testing the specified negotiation loop.
 The approved holiday provider/dataset remains a documented infrastructure decision.
 
-## Verification
+## Product-decision integration verification
+
+| Check | Result |
+| --- | --- |
+| Ordinary Sprint 3F | 91 passed; 1,055 assertions (53 existing + 38 new cases) |
+| Focused SQLite workflow/status/security/source/notification suite | 186 passed, 38 MySQL-only skipped; 1,583 assertions |
+| Full `php artisan test --compact` | 313 passed, 38 MySQL-only skipped; 2,268 assertions; zero failures/errors |
+| Isolated SQLite `php artisan migrate:fresh --seed` | Passed; 12 migrations, then synthetic preview fixture |
+| Targeted real MySQL 8.4.11 Office race | 2 datasets, 10 iterations; 292 assertions; all passed |
+| `php vendor/bin/pint --test` / `git diff --check` | Passed |
+| `composer validate` | Passed |
+| `composer audit --format=json` | Eight inherited advisories: five high, two medium, one low; no dependency changes |
+| `npm run build` | Passed |
+| Desktop/mobile browser preview | Passed at 1280×900 and 390×844; no console errors/warnings |
+
+The new cases cover every real configured reason through HTTP review/final persistence,
+optional/required/blank/Unicode/oversized explanations, exact length boundary, escaped
+history, stable reason/label/actor snapshots, final-payload tampering, authorization order,
+all five status matrix scenarios, source-completion notification silence and legacy Approved.
+The first focused run exposed a new test's CML/Cml enum-name typo; it was corrected without
+changing application behaviour or weakening an assertion. The final runs above pass.
+
+No locking, transaction, source-import, notification, schema, status enum or aggregate
+algorithm changed. The earlier full MySQL gate (313 tests, 2,743 assertions) remains
+evidence for `38b058f`; this task reran only the targeted ten-iteration Office race on a
+fresh disposable MySQL database, not the unnecessarily long full/repeated MySQL gates.
+All ten runs had one winner and one validation loser: five wins per action, zero SQL errors.
+
+Preview setup initially used an incorrect router working directory and the browser webview
+failed to attach. Both were resolved before the successful checks: the server ran from
+the public directory and the recovered browser tab exercised the real authenticated UI.
+The user's desktop app subsequently crashed after those checks; saved test evidence and
+the working-copy scope were rechecked before completing the report and commit.
+
+Dedicated Sprint 3F QA, separate Composer security reconciliation and final combined
+release-candidate verification remain. There is no deployment, push or main change.
+
+## Initial implementation verification (historical)
 
 Final local evidence on 3 September 2026:
 
@@ -200,10 +268,12 @@ Fresh migration replaced only the new worktree's disposable SQLite tables; no or
 checkout or production records were deleted. Its contents are synthetic/recreatable.
 No test result from SQLite is evidence of real MySQL locking behaviour.
 
-## MySQL release gate and manual actions
+## Initial MySQL release-gate notes (historical; superseded)
 
-No mysql, mysqld or docker executable, or matching local MySQL/MariaDB/Docker service,
-was available. **Disposable MySQL 8.4 has not run for Sprint 3F.**
+At initial implementation no mysql, mysqld or docker executable, or matching service,
+was available. The later complete MySQL evidence and race correction are recorded in
+`sprint-3f-office-decision-race-remediation-2026-09-03.md`; the initial unexecuted-gate
+notes below are retained only for chronology, not as current blockers.
 
 Eight amendment-specific process-race cases extend the existing MySQL suite:
 simultaneous submissions, submission versus completion in both orders, alternative
@@ -224,7 +294,28 @@ upgrade rehearsal on a separate empty target, schema/index checks and the full
 rerun audit/regressions, obtain product decisions and perform dedicated QA.
 No release approval, automatic deployment or completion claim is made here.
 
-## Files changed
+## Product-decision integration files changed
+
+- `config/call_off_amendments.php`
+- `app/Services/CallOffAmendmentRules.php`
+- `app/Http/Controllers/CallOffAmendmentController.php`
+- `resources/views/portal/call-offs/amendments/create.blade.php`
+- `resources/views/portal/call-offs/amendments/review.blade.php`
+- `resources/views/portal/call-offs/amendments/history.blade.php`
+- `tests/Feature/Sprint3fDateAmendmentsTest.php`
+- `brief.md`
+- `DECISIONS.md`
+- `ROADMAP.md`
+- `current_sprint.md`
+- `HANDOVER.md`
+- `documentation/sprint-3f-date-amendments-2026-09-03.md`
+
+Disposable evidence is under `.cursor/sprint3f-product-decisions-20260903`, outside Git.
+Both task servers were stopped after verification. The two MySQL databases/accounts,
+temporary credentials, runtime/archive and synthetic SQLite preview data were removed;
+non-secret logs and JUnit/race evidence remain. No user or production data was removed.
+
+## Initial implementation files changed (historical)
 
 44 project files; all paths are relative to the isolated feature worktree:
 

@@ -50,7 +50,7 @@ beforeEach(function (): void {
         expect(DB::table($table)->count())->toBe(0, "Ordinary Sprint 3F boundary is contaminated: {$table}");
     }
     $this->travelTo(CarbonImmutable::parse('2026-09-03 10:00:00'));
-    // Synthetic test-only policy. No business reason list is enabled in production.
+    // Isolate the original workflow cases; confirmed production policy is tested below.
     config(['call_off_amendments.reasons' => ['test_reason' => 'Test reason']]);
 });
 
@@ -527,3 +527,210 @@ it('refuses invalid Date Agreed or unavailable source data before creating an am
     expect(fn () => requestTestAmendment($customer, $site, $request))->toThrow(ValidationException::class)
         ->and($request->dateNegotiations()->where('purpose', 'amendment')->count())->toBe(0);
 })->with(['missing_date', 'completed_plot', 'missing_source']);
+
+describe('Sprint 3F confirmed product decisions', function (): void {
+    beforeEach(function (): void {
+        config(['call_off_amendments' => require config_path('call_off_amendments.php')]);
+    });
+
+    $approvedReasons = [
+        ['SITE_NOT_READY', 'Site Not Ready'],
+        ['PROGRAMME_CHANGE', 'Programme Change'],
+        ['ACCESS_ISSUE', 'Access Issue'],
+        ['CUSTOMER_REQUESTED_CHANGE', 'Customer Requested Change'],
+        ['MATERIALS_AVAILABILITY', 'Materials / Availability'],
+        ['WEATHER', 'Weather'],
+        ['OTHER', 'Other'],
+    ];
+
+    it('ships exactly the approved ordered code and label list', function () use ($approvedReasons): void {
+        expect(app(CallOffAmendmentRules::class)->reasons())->toBe(array_column($approvedReasons, 1, 0));
+    });
+
+    it('stores every approved code through review and confirmation with friendly audited history', function (string $code, string $label): void {
+        [$customer, $office, $request, $site] = amendmentFixture();
+        $this->actingAs($customer)->withSession(['active_site_id' => $site->id]);
+        $input = ['requested_date' => '2026-10-22', 'reason_code' => $code];
+        if ($code === 'OTHER') {
+            $input['customer_response'] = "  Specific site circumstances. \n";
+        }
+        $review = $this->post(route('portal.call-offs.amendments.review', $request), $input)
+            ->assertOk()->assertSee($label)->assertDontSee($code);
+        $this->post(route('portal.call-offs.amendments.store', $request), [
+            'confirmation_token' => $review->viewData('token'),
+            'reason_code' => 'FORGED_FINAL_CODE', 'customer_response' => 'FORGED_FINAL_TEXT',
+        ])->assertSessionHasNoErrors()->assertRedirect(route('portal.call-offs.show', $request));
+        $cycle = $request->dateNegotiations()->where('purpose', 'amendment')->sole();
+        $history = $request->histories()->where('event_type', 'amendment_requested')->sole();
+        $explanation = $code === 'OTHER' ? 'Specific site circumstances.' : null;
+        expect($cycle->reason_code)->toBe($code)->and($cycle->reason_label)->toBe($label)
+            ->and($cycle->customer_response)->toBe($explanation)
+            ->and($cycle->requested_by_user_id)->toBe($customer->id)
+            ->and($cycle->opened_at->toDateTimeString())->toBe('2026-09-03 10:00:00')
+            ->and($history->after_state['reason_code'])->toBe($code)
+            ->and($history->after_state['reason_label'])->toBe($label)
+            ->and($history->customer_response)->toBe($explanation)
+            ->and($history->performed_by_user_id)->toBe($customer->id);
+        $this->get(route('portal.call-offs.show', $request))->assertOk()->assertSee($label)
+            ->assertSee($customer->name)->assertSee('3 Sep 2026, 10:00:00')
+            ->assertDontSee($code)->assertDontSee('FORGED_FINAL_TEXT');
+        $officeView = $this->actingAs($office)->get(route('portal.review-requests.show', $request))
+            ->assertOk()->assertSee($label)->assertDontSee($code)
+            ->assertSee('Previous agreed date')->assertSee('Requested new date');
+        if ($explanation !== null) {
+            $officeView->assertSee('Additional information')->assertSee($explanation);
+        }
+    })->with($approvedReasons);
+
+    it('normalizes optional additional information without changing its content', function (string $code): void {
+        [$customer, , $request, $site] = amendmentFixture();
+        $cycle = app(RequestCallOffAmendmentAction::class)->handle($customer, $site, $request, [
+            'requested_date' => '2026-10-22', 'reason_code' => $code,
+            'customer_response' => "\u{00a0} Details <script>alert('unsafe')</script> \n second line. \u{00a0}",
+        ], app(CallOffAmendmentRules::class)->revision($request));
+        $expected = "Details <script>alert('unsafe')</script> \n second line.";
+        expect($cycle->customer_response)->toBe($expected)
+            ->and($request->histories()->where('event_type', 'amendment_requested')->sole()->customer_response)->toBe($expected);
+        $this->actingAs($customer)->withSession(['active_site_id' => $site->id])
+            ->get(route('portal.call-offs.show', $request))->assertOk()->assertSee($expected)
+            ->assertDontSee("<script>alert('unsafe')</script>", false);
+    })->with(array_column(array_slice($approvedReasons, 0, 6), 0));
+
+    it('rejects invalid reasons and explanations at both HTTP review and the action boundary', function (array $input, string $field): void {
+        [$customer, , $request, $site] = amendmentFixture();
+        $input += ['requested_date' => '2026-10-22'];
+        $historyCount = $request->histories()->count();
+        $notificationCount = PortalNotification::count();
+        $this->actingAs($customer)->withSession(['active_site_id' => $site->id])
+            ->post(route('portal.call-offs.amendments.review', $request), $input)->assertSessionHasErrors($field);
+        expect(fn () => app(RequestCallOffAmendmentAction::class)->handle($customer, $site, $request, $input, app(CallOffAmendmentRules::class)->revision($request)))
+            ->toThrow(ValidationException::class);
+        expect($request->fresh()->status)->toBe(CallOffRequestStatus::DateAgreed)
+            ->and($request->histories()->count())->toBe($historyCount)
+            ->and(PortalNotification::count())->toBe($notificationCount)
+            ->and($request->dateNegotiations()->where('purpose', 'amendment')->count())->toBe(0);
+    })->with([
+        'missing Other explanation' => [['reason_code' => 'OTHER'], 'customer_response'],
+        'empty Other explanation' => [['reason_code' => 'OTHER', 'customer_response' => ''], 'customer_response'],
+        'whitespace Other explanation' => [['reason_code' => 'OTHER', 'customer_response' => " \t\r\n "], 'customer_response'],
+        'Unicode whitespace Other explanation' => [['reason_code' => 'OTHER', 'customer_response' => "\u{00a0}\u{2003}"], 'customer_response'],
+        'Other too long' => [['reason_code' => 'OTHER', 'customer_response' => str_repeat('x', 2001)], 'customer_response'],
+        'optional explanation too long' => [['reason_code' => 'WEATHER', 'customer_response' => str_repeat('x', 2001)], 'customer_response'],
+        'non-string explanation' => [['reason_code' => 'OTHER', 'customer_response' => ['text']], 'customer_response'],
+        'unknown code' => [['reason_code' => 'UNAPPROVED'], 'reason_code'],
+        'label instead of code' => [['reason_code' => 'Site Not Ready'], 'reason_code'],
+        'lowercase code' => [['reason_code' => 'site_not_ready'], 'reason_code'],
+        'array code' => [['reason_code' => ['SITE_NOT_READY']], 'reason_code'],
+        'missing code' => [[], 'reason_code'],
+    ]);
+
+    it('accepts the exact explanation length boundary and normalizes blank optional text', function (): void {
+        $rules = app(CallOffAmendmentRules::class);
+        $valid = $rules->validate(['requested_date' => '2026-10-22', 'reason_code' => 'OTHER', 'customer_response' => str_repeat('x', 2000)]);
+        expect(strlen($valid['customer_response']))->toBe(2000)
+            ->and($rules->validate(['requested_date' => '2026-10-22', 'reason_code' => 'WEATHER', 'customer_response' => " \n\u{00a0}"])['customer_response'])->toBeNull();
+    });
+
+    it('keeps reason validation behind direct POST authorization', function (string $actorState, string $reason): void {
+        [$customer, , $request, $site] = amendmentFixture();
+        if ($actorState === 'wrong_site') {
+            $site = Site::factory()->create(['customer_organisation_id' => $site->customer_organisation_id]);
+            $customer->assignedSites()->attach($site);
+        } else {
+            $customer->update(['is_active' => false]);
+        }
+        $this->actingAs($customer)->withSession(['active_site_id' => $site->id]);
+        $response = $this->post(route('portal.call-offs.amendments.review', $request), [
+            'requested_date' => '2026-10-22', 'reason_code' => $reason,
+        ]);
+        $actorState === 'wrong_site' ? $response->assertNotFound() : $response->assertRedirect(route('login'));
+        $response->assertSessionDoesntHaveErrors('reason_code');
+        expect($request->dateNegotiations()->where('purpose', 'amendment')->count())->toBe(0);
+    })->with(['wrong_site', 'inactive'])->with(['SITE_NOT_READY', 'UNKNOWN']);
+
+    it('presents the approved form labels with a no-JavaScript explanation rule', function (): void {
+        [$customer, , $request, $site] = amendmentFixture();
+        $this->actingAs($customer)->withSession(['active_site_id' => $site->id])
+            ->get(route('portal.call-offs.amendments.create', $request))->assertOk()
+            ->assertSee('Reason for date change')->assertSee('Additional information')
+            ->assertSee('Required when Other is selected; otherwise optional.')
+            ->assertSee('aria-describedby="customer-response-help"', false);
+    });
+
+    it('preserves the confirmed plot status matrix through an amendment lifecycle', function (string $scenario): void {
+        [$customer, $office, $request, $site, , $service] = amendmentFixture();
+        $plot = $service->projectedPlot;
+        $query = app(PlotOverviewQueryService::class);
+        $present = fn () => $query->present($plot->fresh(['services', 'callOffRequests.batch']));
+        expect($present()->overallStatus)->toBe(PlotOverallStatus::DatesAgreed);
+        if ($scenario === 'completed_peer') {
+            $plot->services()->create(['service_identifier' => CallOffServiceType::CavityClosers, 'source_completed_at' => now()]);
+        }
+        if ($scenario === 'unaffected_peers') {
+            foreach ([CallOffServiceType::Cml, CallOffServiceType::Snagging] as $peerType) {
+                $peer = $plot->services()->create(['service_identifier' => $peerType, 'source_present' => true]);
+                CallOffRequest::factory()->create([
+                    'call_off_batch_id' => $request->call_off_batch_id, 'projected_plot_id' => $plot->id,
+                    'projected_plot_service_id' => $peer->id, 'service_identifier' => $peerType,
+                    'requested_date' => '2026-10-08', 'agreed_date' => $peerType === CallOffServiceType::Cml ? '2026-10-08' : null,
+                    'status' => $peerType === CallOffServiceType::Cml ? CallOffRequestStatus::DateAgreed : CallOffRequestStatus::AwaitingFenster,
+                ]);
+            }
+        }
+        $cycle = app(RequestCallOffAmendmentAction::class)->handle($customer, $site, $request, [
+            'requested_date' => '2026-10-22', 'reason_code' => 'SITE_NOT_READY',
+        ], app(CallOffAmendmentRules::class)->revision($request));
+        expect($present()->services['windows']->state)->toBe(PlotServicePresentationState::OnHold)
+            ->and($present()->services['windows']->state->label())->toBe('On Hold — Date Change Requested')
+            ->and($present()->services['windows']->date)->toBeNull()
+            ->and($present()->overallStatus)->toBe($scenario === 'completed_peer' ? PlotOverallStatus::PartiallyCompleted : PlotOverallStatus::CallOffsInProgress);
+        if ($scenario === 'completed_peer') {
+            expect($present()->services['cavity_closers']->state)->toBe(PlotServicePresentationState::Completed);
+        }
+        if ($scenario === 'unaffected_peers') {
+            expect($present()->services['cml']->state)->toBe(PlotServicePresentationState::DateAgreed)
+                ->and($present()->services['cml']->date->toDateString())->toBe('2026-10-08')
+                ->and($present()->services['snagging']->state)->toBe(PlotServicePresentationState::AwaitingDate)
+                ->and($present()->services['cavity_closers']->state)->toBe(PlotServicePresentationState::NotCalledOff);
+        }
+        if ($scenario === 'resolved') {
+            app(AgreeRequestedCallOffDateAction::class)->handle($office, $request, false, $cycle->uuid);
+            expect($present()->services['windows']->state)->toBe(PlotServicePresentationState::DateAgreed)
+                ->and($present()->services['windows']->date->toDateString())->toBe('2026-10-22')
+                ->and($present()->overallStatus)->toBe(PlotOverallStatus::DatesAgreed);
+        }
+        if ($scenario === 'source_completion') {
+            $notifications = PortalNotification::count();
+            $history = $request->histories()->get()->toArray();
+            app(SourceProjectionImportService::class)->import('amendment-test', [new SourceRecord($service->source_call_number, $site->external_identifier, $plot->plot_reference, 'PC1', null, CarbonImmutable::today())]);
+            expect($present()->services['windows']->state)->toBe(PlotServicePresentationState::Completed)
+                ->and($present()->overallStatus)->toBe(PlotOverallStatus::PartiallyCompleted)
+                ->and($cycle->fresh()->status)->toBe(CallOffNegotiationStatus::Completed)
+                ->and($cycle->fresh()->active_negotiation_key)->toBeNull()
+                ->and(PortalNotification::count())->toBe($notifications)
+                ->and($request->histories()->whereIn('id', array_column($history, 'id'))->get()->toArray())->toBe($history)
+                ->and(app(CallOffDateViewService::class)->forRequest($request->fresh(), $customer)['isOnHold'])->toBeFalse();
+        }
+        expect(array_column(PlotOverallStatus::cases(), 'value'))->toBe(['nothing_called_off', 'call_offs_in_progress', 'dates_agreed', 'partially_completed', 'fully_completed']);
+    })->with(['single_on_hold', 'completed_peer', 'resolved', 'source_completion', 'unaffected_peers']);
+
+    it('applies confirmed reasons and On Hold presentation to legacy Approved without inventing history', function (): void {
+        [$customer, , $request, $site] = amendmentFixture();
+        $request->status = CallOffRequestStatus::Completed;
+        app(UpdateConflictKeyAction::class)->handle($request);
+        $legacy = CallOffRequest::factory()->create([
+            'call_off_batch_id' => $request->call_off_batch_id, 'projected_plot_id' => $request->projected_plot_id,
+            'projected_plot_service_id' => $request->projected_plot_service_id, 'service_identifier' => CallOffServiceType::Windows,
+            'requested_date' => '2026-10-08', 'agreed_date' => null, 'status' => CallOffRequestStatus::Approved,
+        ]);
+        $this->actingAs($customer)->withSession(['active_site_id' => $site->id]);
+        $this->get(route('portal.call-offs.show', $legacy))->assertOk()->assertSee('Date Agreed')->assertSee('Request Date Change');
+        $review = $this->post(route('portal.call-offs.amendments.review', $legacy), ['requested_date' => '2026-10-22', 'reason_code' => 'PROGRAMME_CHANGE'])->assertOk();
+        $this->post(route('portal.call-offs.amendments.store', $legacy), ['confirmation_token' => $review->viewData('token')])->assertSessionHasNoErrors();
+        $this->get(route('portal.call-offs.show', $legacy))->assertOk()->assertSee('On Hold — Date Change Requested')->assertSee('Programme Change')->assertSee('8 Oct 2026');
+        expect($legacy->dateNegotiations()->count())->toBe(1)
+            ->and($legacy->histories()->count())->toBe(1)
+            ->and($legacy->histories()->sole()->previous_status)->toBe(CallOffRequestStatus::Approved)
+            ->and($legacy->dateNegotiations()->sole()->prior_agreed_date->toDateString())->toBe('2026-10-08');
+    });
+});

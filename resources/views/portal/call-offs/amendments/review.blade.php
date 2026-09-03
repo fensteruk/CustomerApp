@@ -5,7 +5,7 @@
             <div><dt class="font-bold">Current agreed date — will be On Hold</dt><dd>{{ $agreedDate?->format('j M Y') }}</dd></div>
             <div><dt class="font-bold">New requested date</dt><dd>{{ $data['requested_date'] }}</dd></div>
             <div><dt class="font-bold">Reason</dt><dd>{{ $reasonLabel }}</dd></div>
-            @if ($data['customer_response'])<div><dt class="font-bold">Explanation</dt><dd>{{ $data['customer_response'] }}</dd></div>@endif
+            @if ($data['customer_response'] !== null)<div><dt class="font-bold">Additional information</dt><dd>{{ $data['customer_response'] }}</dd></div>@endif
         </dl>
         @if ($isUrgent)<p class="mt-5 rounded-lg border border-amber-300 bg-amber-50 p-4" role="status">Urgent / Late Amendment — the current agreed date is within three working days or has passed. You may still submit.</p>@endif
         <form class="mt-6" method="POST" action="{{ route('portal.call-offs.amendments.store', $callOffRequest) }}">

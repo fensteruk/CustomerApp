@@ -7,11 +7,14 @@ use App\Models\CallOffRequest;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\ValidationException;
 
 class CallOffAmendmentRules
 {
+    public const EXPLANATION_REQUIRED_REASON = 'OTHER';
+
     public function __construct(
         private readonly CallOffLeadTimeService $leadTimes,
         private readonly HolidayProvider $holidays,
@@ -32,6 +35,11 @@ class CallOffAmendmentRules
         ], JSON_THROW_ON_ERROR));
     }
 
+    public function requiresExplanation(mixed $reasonCode): bool
+    {
+        return $reasonCode === self::EXPLANATION_REQUIRED_REASON;
+    }
+
     /** @return array{requested_date: string, reason_code: string, customer_response: ?string} */
     public function validate(array $input): array
     {
@@ -39,10 +47,21 @@ class CallOffAmendmentRules
             throw ValidationException::withMessages(['reason_code' => 'Date change reasons are awaiting confirmation. Please contact Fenster.']);
         }
 
+        // Also normalize direct action callers, which do not pass HTTP middleware.
+        if (isset($input['customer_response']) && is_string($input['customer_response'])) {
+            $input['customer_response'] = Str::trim($input['customer_response']);
+            if ($input['customer_response'] === '') {
+                $input['customer_response'] = null;
+            }
+        }
+
         return Validator::make($input, [
             'requested_date' => ['required', 'date_format:Y-m-d', 'after:today'],
             'reason_code' => ['required', 'string', 'max:80', Rule::in(array_keys($this->reasons()))],
-            'customer_response' => ['nullable', 'string', 'max:2000'],
+            'customer_response' => [Rule::requiredIf($this->requiresExplanation($input['reason_code'] ?? null)), 'nullable', 'string', 'max:2000'],
+        ], [
+            'customer_response.required' => 'Add additional information when you select Other.',
+            'customer_response.max' => 'Additional information must not exceed 2,000 characters.',
         ])->validate() + ['customer_response' => null];
     }
 

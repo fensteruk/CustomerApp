@@ -1,6 +1,28 @@
 # Current Sprint
 
-## Sprint 3F implementation update — 3 September 2026
+## Sprint 3F final product decisions — 3 September 2026
+
+Product integration is complete on `feature/sprint-3f-date-amendments`, following
+baseline `4773c37` and race correction `38b058f`. DEC-039 confirms all seven stable
+reason codes, required Other explanation (maximum 2,000 characters) and optional text
+for other reasons. Customer/Office history keeps reason and Additional information separate.
+On Hold — Date Change Requested feeds existing Call-Offs In Progress; completed-service
+precedence is unchanged. No new overall status or transaction/locking change was needed.
+
+Verification: 91 ordinary Sprint 3F cases / 1,055 assertions; full SQLite 313 passed,
+38 MySQL-only skipped / 2,268 assertions; targeted MySQL Office race 10/10 iterations,
+292 assertions. Fresh isolated SQLite seed, Pint, Composer validation and build passed.
+Composer audit still reports eight inherited advisories; dependencies were not changed.
+After preview recovery, browser checks passed at desktop/mobile widths (1280px/390px),
+including keyboard focus, conditional Other validation, On Hold, Office review and resolution.
+No browser console errors/warnings were observed; dedicated QA is still required.
+
+No current Sprint 3F product decisions remain. Next: dedicated Sprint 3F QA, separate
+Composer security reconciliation and final combined release-candidate verification.
+No main change, push, deployment or Wald/import modification. See
+`documentation/sprint-3f-date-amendments-2026-09-03.md` for details and file list.
+
+## Initial Sprint 3F implementation update — 3 September 2026 (historical)
 
 Current work is Date Amendments After Date Agreed, reusing Sprint 3E. It is isolated on
 `feature/sprint-3f-date-amendments` from local main `0873bac79edf578e9f4a9417e3cafae34e8aa925`.

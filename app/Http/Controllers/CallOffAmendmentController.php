@@ -28,6 +28,7 @@ class CallOffAmendmentController extends Controller
             'agreedDate' => $agreedDate,
             'isUrgent' => $this->rules->isUrgent($agreedDate),
             'reasons' => $this->rules->reasons(),
+            'explanationRequiredReason' => CallOffAmendmentRules::EXPLANATION_REQUIRED_REASON,
         ]);
     }
 

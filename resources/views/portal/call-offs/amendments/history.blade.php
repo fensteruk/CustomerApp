@@ -7,7 +7,7 @@
             <div><dt class="font-bold">Previous agreed date</dt><dd>{{ $amendment->prior_agreed_date?->format('j M Y') }}</dd></div>
             <div><dt class="font-bold">Requested new date</dt><dd>{{ $amendment->requested_date?->format('j M Y') }}</dd></div>
             <div><dt class="font-bold">Reason</dt><dd>{{ $amendment->reason_label }}</dd></div>
-            @if ($amendment->customer_response)<div><dt class="font-bold">Explanation</dt><dd>{{ $amendment->customer_response }}</dd></div>@endif
+            @if (filled($amendment->customer_response))<div><dt class="font-bold">Additional information</dt><dd>{{ $amendment->customer_response }}</dd></div>@endif
         </dl>
         @if ($amendment->is_urgent)<p class="mt-3 font-bold">Urgent / Late Amendment</p>@endif
         @if ($amendment->status->isOpen())
