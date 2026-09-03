@@ -391,6 +391,57 @@ test('Sprint3F completion and proposing or rejecting an amendment serialize in b
     }
 })->with(['propose', 'reject'])->with([true, false]);
 
+test('Sprint3F synchronized Office decision race preserves every invariant across five repeats per ordering', function (string $winner): void {
+    foreach (range(1, 5) as $iteration) {
+        $scope = new CommittedMysqlFixtureScope;
+        try {
+            [$customer, $office, $secondOffice, $request] = mysqlGateRequestFixture();
+            $cycle = mysqlGateAmendmentFixture($customer, $office, $request);
+            $beforeHistories = $request->histories()->orderBy('sequence')->get()->toArray();
+            $beforeNotificationIds = PortalNotification::where('request_uuid', $request->uuid)->pluck('id');
+            $conflictKey = $request->fresh()->active_conflict_key;
+            $results = mysqlGateRunWorkers([
+                ['amend-agree', $office->id, $request->id, $cycle->uuid],
+                ['amend-propose', $secondOffice->id, $request->id, mysqlGateWeekday(6), $cycle->uuid],
+            ], officeWinner: $winner);
+            expect($results->where('ok', true))->toHaveCount(1)
+                ->and($results->where('ok', true)->first()['operation'])->toBe($winner)
+                ->and($results->where('ok', false))->toHaveCount(1)
+                ->and($results->where('ok', false)->first()['exception'])->toBe(ValidationException::class)
+                ->and($results->pluck('sqlstate')->filter())->toBeEmpty();
+            foreach ($results as $result) {
+                expect(collect($result['office_race_trace'])->pluck('phase')->filter()->all())->toContain('both_consistent_snapshots_established');
+            }
+            $agreed = $winner === 'amend-agree';
+            $cycle->refresh();
+            $request->refresh();
+            $proposals = $cycle->proposals()->orderBy('sequence')->get();
+            expect($request->status)->toBe($agreed ? CallOffRequestStatus::DateAgreed : CallOffRequestStatus::AmendmentOnHold)
+                ->and($request->active_conflict_key)->toBe($conflictKey)
+                ->and($request->agreed_date->toDateString())->toBe(($agreed ? $cycle->requested_date : $cycle->prior_agreed_date)->toDateString())
+                ->and($cycle->status)->toBe($agreed ? CallOffNegotiationStatus::DateAgreed : CallOffNegotiationStatus::Open)
+                ->and($cycle->active_negotiation_key)->toBe($agreed ? null : 'amendment:'.$request->id)
+                ->and($cycle->closed_at !== null)->toBe($agreed)
+                ->and($cycle->resulting_agreed_date?->toDateString())->toBe($agreed ? $cycle->requested_date->toDateString() : null)
+                ->and($proposals)->toHaveCount($agreed ? 1 : 2)
+                ->and($proposals->first()->status)->toBe($agreed ? CallOffDateProposalStatus::Accepted : CallOffDateProposalStatus::Superseded)
+                ->and($proposals->where('status', CallOffDateProposalStatus::AwaitingResponse))->toHaveCount($agreed ? 0 : 1);
+            $newHistory = $request->histories()->where('sequence', '>', count($beforeHistories))->get();
+            expect($request->histories()->orderBy('sequence')->limit(count($beforeHistories))->get()->toArray())->toBe($beforeHistories)
+                ->and($newHistory)->toHaveCount(1)
+                ->and($newHistory->first()->event_type)->toBe($agreed ? CallOffHistoryEventType::DateAgreed : CallOffHistoryEventType::AlternativeDateProposed)
+                ->and($newHistory->first()->performed_by_user_id)->toBe($agreed ? $office->id : $secondOffice->id);
+            $newNotifications = PortalNotification::where('request_uuid', $request->uuid)->whereNotIn('id', $beforeNotificationIds)->get();
+            expect($newNotifications)->toHaveCount(1)
+                ->and($newNotifications->first()->notifiable_user_id)->toBe($customer->id)
+                ->and($newNotifications->first()->type)->toBe($agreed ? PortalNotificationType::CallOffDateAgreed : PortalNotificationType::CallOffAlternativeProposed)
+                ->and($newNotifications->first()->event_key)->toBe($agreed ? 'call_off_date_agreed:'.$cycle->uuid : 'call_off_alternative_proposed:'.$proposals->last()->uuid);
+        } finally {
+            $scope->cleanup();
+        }
+    }
+})->with(['amend-propose', 'amend-agree']);
+
 test('Sprint3F amendment acceptance versus completion remains stable over ten process races', function (): void {
     foreach (range(1, 10) as $iteration) {
         $scope = new CommittedMysqlFixtureScope;
@@ -584,7 +635,7 @@ function mysqlGateWeekday(int $weeks): string
 /** @param array<int, array<int, int|string>> $workers
  * @param  array<int, int>  $delaysMilliseconds
  */
-function mysqlGateRunWorkers(array $workers, array $delaysMilliseconds = []): Collection
+function mysqlGateRunWorkers(array $workers, array $delaysMilliseconds = [], ?string $officeWinner = null): Collection
 {
     $barrier = storage_path('app/mysql-gate-'.Str::uuid());
     $processes = collect($workers)->map(fn (array $worker, int $index): Process => new Process([
@@ -593,7 +644,7 @@ function mysqlGateRunWorkers(array $workers, array $delaysMilliseconds = []): Co
         ...$worker,
         $delaysMilliseconds[$index] ?? 0,
         $barrier,
-    ], base_path()));
+    ], base_path(), $officeWinner === null ? null : ['MYSQL_GATE_OFFICE_RACE_WINNER' => $officeWinner]));
 
     try {
         $processes->each(fn (Process $process) => $process->start());
@@ -622,8 +673,10 @@ function mysqlGateRunWorkers(array $workers, array $delaysMilliseconds = []): Co
                 $process->stop(2);
             }
         });
-        if (file_exists($barrier)) {
-            unlink($barrier);
+        foreach (['', '.office-snapshot-amend-agree', '.office-snapshot-amend-propose', '.office-winner-committed'] as $suffix) {
+            if (file_exists($barrier.$suffix)) {
+                unlink($barrier.$suffix);
+            }
         }
     }
 }

@@ -30,7 +30,18 @@ class ResolveCallOffNegotiationAction
             'purpose' => $purpose, 'status' => CallOffNegotiationStatus::Open,
             'active_negotiation_key' => 'initial:'.$request->id, 'opened_at' => now(),
         ]);
-        if ($negotiation->proposals()->where('proposal_type', CallOffDateProposalType::FensterAlternativeDate)->where('status', CallOffDateProposalStatus::AwaitingResponse)->exists()) {
+        // Amendment alternatives leave the request On Hold and this cycle Open.
+        // An earlier MySQL REPEATABLE READ snapshot can therefore miss the winning
+        // proposal even after the service/request/cycle locks have been acquired.
+        // Use a current locking read, not exists(), for this decisive state check.
+        // The aggregate locks serialize writers even when no proposal row exists.
+        $pendingAlternative = $negotiation->proposals()
+            ->where('proposal_type', CallOffDateProposalType::FensterAlternativeDate)
+            ->where('status', CallOffDateProposalStatus::AwaitingResponse)
+            ->orderBy('id')
+            ->lockForUpdate()
+            ->first(['id']);
+        if ($pendingAlternative !== null) {
             throw ValidationException::withMessages(['proposal' => 'A current alternative is awaiting the site user.']);
         }
 

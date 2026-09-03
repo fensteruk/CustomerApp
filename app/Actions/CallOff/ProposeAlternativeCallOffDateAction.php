@@ -47,13 +47,6 @@ class ProposeAlternativeCallOffDateAction
                 }
             }
 
-            if ($negotiation->proposals()
-                ->where('status', CallOffDateProposalStatus::AwaitingResponse)
-                ->where('proposal_type', '!=', CallOffDateProposalType::CustomerRequestedDate)
-                ->exists()) {
-                throw ValidationException::withMessages(['proposal' => 'This call-off already has an alternative awaiting a customer response.']);
-            }
-
             if ($requestedDateProposal->status === CallOffDateProposalStatus::AwaitingResponse) {
                 $requestedDateProposal->update([
                     'status' => CallOffDateProposalStatus::Superseded,

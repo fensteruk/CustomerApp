@@ -15,6 +15,8 @@ use App\Models\User;
 use App\Services\SourceProjectionImportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Tests\Support\CommittedMysqlFixtureScope;
 
@@ -28,6 +30,8 @@ $operation = $argv[1] ?? '';
 $arguments = array_slice($argv, 2);
 $barrier = array_pop($arguments);
 $delayMilliseconds = (int) array_pop($arguments);
+$officeRaceWinner = getenv('MYSQL_GATE_OFFICE_RACE_WINNER') ?: null;
+$officeRaceTrace = [];
 
 try {
     if (! app()->environment('testing') || DB::connection()->getDriverName() !== 'mysql') {
@@ -35,6 +39,9 @@ try {
     }
     CommittedMysqlFixtureScope::assertSafe();
     config(['call_off_amendments.reasons' => ['test_reason' => 'Synthetic MySQL test reason']]);
+    if ($officeRaceWinner !== null) {
+        mysqlGateSynchronizeOfficeSnapshot($officeRaceWinner, $operation, $barrier);
+    }
     $deadline = microtime(true) + 20;
     while (! file_exists($barrier)) {
         if (microtime(true) > $deadline) {
@@ -62,9 +69,57 @@ try {
         default => throw new InvalidArgumentException("Unknown MySQL gate operation: {$operation}"),
     };
 
+    if ($officeRaceWinner === $operation) {
+        touch($barrier.'.office-winner-committed');
+    }
     mysqlGateResult(true, $operation, arguments: $arguments);
 } catch (Throwable $exception) {
     mysqlGateResult(false, $operation, $exception, $arguments);
+}
+
+/**
+ * Force an earlier REPEATABLE READ snapshot in both genuine worker transactions.
+ * The nominated winner commits before the loser's first aggregate locking read.
+ * No application mocks or isolation-level changes are involved.
+ */
+function mysqlGateSynchronizeOfficeSnapshot(string $winner, string $operation, string $barrier): void
+{
+    if (! in_array($winner, ['amend-agree', 'amend-propose'], true)
+        || ! in_array($operation, ['amend-agree', 'amend-propose'], true)) {
+        throw new InvalidArgumentException('Office snapshot synchronization requires two Office decisions.');
+    }
+    $captured = false;
+    DB::listen(function (QueryExecuted $query) use ($winner, $operation, $barrier, &$captured): void {
+        global $officeRaceTrace;
+        $officeRaceTrace[] = ['sql' => $query->sql, 'transaction_level' => DB::transactionLevel()];
+        $normalized = str_replace(['`', '"'], '', strtolower($query->sql));
+        if ($captured || DB::transactionLevel() === 0
+            || ! str_starts_with($normalized, 'select projected_plot_service_id from call_off_requests')
+            || str_contains($normalized, 'for update')) {
+            return;
+        }
+        $captured = true;
+        touch($barrier.'.office-snapshot-'.$operation);
+        $other = $operation === 'amend-agree' ? 'amend-propose' : 'amend-agree';
+        mysqlGateAwaitMarker($barrier.'.office-snapshot-'.$other);
+        $officeRaceTrace[] = ['phase' => 'both_consistent_snapshots_established'];
+        if ($operation !== $winner) {
+            mysqlGateAwaitMarker($barrier.'.office-winner-committed');
+            $officeRaceTrace[] = ['phase' => 'winner_committed_before_loser_aggregate_locks'];
+        }
+    });
+}
+
+function mysqlGateAwaitMarker(string $path): void
+{
+    $deadline = microtime(true) + 20;
+    while (! file_exists($path)) {
+        if (microtime(true) > $deadline) {
+            throw new RuntimeException('The synchronized Office race marker was not released.');
+        }
+        usleep(10_000);
+        clearstatcache(true, $path);
+    }
 }
 
 function mysqlGateCrashAfterAgreement(array $arguments): never
@@ -121,11 +176,16 @@ function mysqlGateMarkSourceMissing(string $serviceId): void
 /** @param array<int, string> $arguments */
 function mysqlGateResult(bool $ok, string $operation, ?Throwable $exception = null, array $arguments = []): never
 {
+    global $officeRaceTrace, $officeRaceWinner;
     echo json_encode([
         'ok' => $ok,
         'operation' => $operation,
         'exception' => $exception === null ? null : $exception::class,
         'message' => $exception === null ? null : $exception->getMessage(),
+        'sqlstate' => $exception instanceof QueryException ? ($exception->errorInfo[0] ?? null) : null,
+        'driver_code' => $exception instanceof QueryException ? ($exception->errorInfo[1] ?? null) : null,
+        'office_race_winner' => $officeRaceWinner,
+        'office_race_trace' => $officeRaceTrace,
         'durable_state' => mysqlGateDurableState($operation, $arguments),
     ], JSON_THROW_ON_ERROR);
 
