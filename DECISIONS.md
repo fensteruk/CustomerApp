@@ -1,7 +1,8 @@
 # Fenster Customer Portal Decisions
 
 Current architecture additions: DEC-039 — standalone CustomerApp Wald adoption; DEC-040 —
-reconciled source dictionary, completion, products, site identity and export scope.
+reconciled source dictionary, completion, products, site identity and export scope; DEC-042 —
+approved immutable CUSTOMER-WALD02 source baseline and bounded adoption rules.
 Earlier sprint headers and decisions below are retained history; DEC-035 and subsequent
 decisions supersede conflicting assumptions.
 
@@ -865,3 +866,35 @@ Reason:
 Layered specifications had left superseded roles, services, lifecycle, batch and source rules
 visible beside current decisions. A single current contract plus an explicit historical
 register reduces implementation ambiguity while preserving the audit trail.
+
+---
+
+## DEC-042
+
+Date:
+4 September 2026
+
+Decision:
+The 162-file SiteApp Wald source manifest dated 4 September 2026, with content digest
+`76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`, is the approved
+immutable source baseline for the bounded CUSTOMER-WALD02 portable-core and synthetic-corpus
+package.
+
+Rules:
+
+- CUSTOMER-WALD02 may adopt only the generic workbook observation, structural profiling and
+  reasoning files identified by its scoped work package, plus safe synthetic fixtures/tests.
+- CustomerApp owns the fork under `App\Wald`. Namespace/path relocation is permitted when
+  recorded and verified as behaviourally identical; it does not create a new compatibility
+  version by itself.
+- SiteApp semantics, operational models, persistence, Import Studio, policies, routes, jobs,
+  UI, source/customer workbooks and production data remain outside the approved copy boundary.
+- The package adds no Portal semantics, staging, commit path, database, queue, external AI,
+  package dependency or deployment. Later phases require separate work packages and approval.
+- The branch implementation and tests are delivery evidence, not release or production proof.
+  Dedicated QA is required before the resulting CustomerApp SHA becomes an accepted input to
+  CUSTOMER-WALD03.
+
+Reason:
+The checksum-frozen manifest resolves CUSTOMER-WALD02's moving-source blocker while preserving
+the controlling principle that Wald may infer structure but cannot define business meaning.

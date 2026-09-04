@@ -1,5 +1,21 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-WALD02 implementation handoff — 4 September 2026
+
+CUSTOMER-WALD02's portable core and safe synthetic corpus are implemented on
+`feature/customer-wald02-portable-core` and ready for dedicated QA. The approved SiteApp
+manifest digest is `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`.
+Commits: work package `243beb8`, core `d1c130a`, corpus/boundaries `5ddaa26`. Full evidence
+and the 57-file source ledger are in
+`documentation/wald/customer-wald02-portable-core-2026-09-04.md`.
+
+The module is isolated under `App\Wald`: no business semantics, persistence, route, UI, queue,
+dependency, migration or production integration was added. The focused suite passes 122 tests
+and 1,040 assertions; the full CustomerApp suite passes 341 tests with 15 existing
+environment-gated skips and 2,228 assertions. Composer audit reports pre-existing advisories
+which remain a separate release concern. CUSTOMER-WALD03 has not begun; first obtain dedicated
+WALD02 acceptance and approve a separate scoped package.
+
 ## Project documentation reset — 4 September 2026
 
 The governing documentation has been consolidated on the non-deploying branch
@@ -23,9 +39,8 @@ but its deployed state needs Forge verification. The authenticated non-destructi
 also outstanding.
 
 Sprint 3F is separate at `feature/sprint-3f-date-amendments` (`60aa9e2`) and still needs
-dedicated QA/release approval. CUSTOMER-WALD02 has not begun and must not begin without the
-approved immutable SiteApp Wald baseline/manifest and a scoped work package. The manual import
-line ending at `1e8c22b` remains non-main evidence only.
+dedicated QA/release approval. CUSTOMER-WALD02 has since been implemented as recorded in the
+new handoff above. The manual import line ending at `1e8c22b` remains non-main evidence only.
 
 This reset changes documentation only. It makes no application, migration, dependency,
 SiteApp, production or deployment change.
@@ -64,9 +79,10 @@ Key handoff:
   and retention remain gated delivery/governance decisions.
 - Production Wald requires CustomerApp's own durable worker/private storage and MySQL
   validation; current configuration or upstream test reports are not deployment proof.
-- Next scoped package is CUSTOMER-WALD02, followed by 03–06, but only after the exact
-  approved SiteApp Wald baseline is immutable. No code copying, app tests,
-  benchmark, migration, commit, push, production access or deployment occurred here.
+- This WALD01 handoff's next-package gate was later satisfied by the approved checksum
+  manifest. CUSTOMER-WALD02 is now implemented as recorded at the top of this file; 03–06
+  remain separately gated. No code copying, app tests, benchmark, migration, commit, push,
+  production access or deployment occurred during WALD01 itself.
 
 The user's confirmed Sprint 3E release at `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`
 (Forge `76326195`) supersedes the older blocked-release account below. This audit did not

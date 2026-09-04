@@ -1,7 +1,7 @@
 # CUSTOMER-WALD02 — Portable Wald Core + Synthetic Corpus
 
 Date: 4 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: Approved for bounded implementation on a non-deploying feature branch.
+Status: Implemented on a non-deploying feature branch; dedicated QA pending.
 
 ## 1. Objective and authority
 

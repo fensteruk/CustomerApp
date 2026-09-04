@@ -2,7 +2,8 @@
 
 **Purpose:** Start a dedicated CustomerApp standalone-Wald task with the correct boundaries.
 
-**Status:** Bootstrap only; it does not authorise CUSTOMER-WALD02 implementation.
+**Status:** Historical bootstrap. Its CUSTOMER-WALD02 entry gates were subsequently satisfied
+by the approved checksum manifest and scoped WALD02 package; see the current handoff/report.
 
 ## Read First
 

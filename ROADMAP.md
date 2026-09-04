@@ -10,26 +10,28 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CustomerApp documentation reset complete; standalone-Wald implementation remains gated.**
-The current authority is the rebuilt `brief.md`, DEC-039–041,
+**CUSTOMER-WALD02 portable core and corpus implemented; dedicated QA is next.**
+The current authority is the rebuilt `brief.md`, DEC-039–042,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
 current work.
 
-The next implementation package to prepare is CUSTOMER-WALD02, after acceptance of the
-documented boundaries, an immutable upstream copy baseline and a scoped work package. Start
-the dedicated chat with `documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md`.
-All later packages remain planned and require their own scoped implementation/release
-instructions.
+The approved checksum manifest unblocked CUSTOMER-WALD02. The generic reader, profiler and
+reasoning core plus safe synthetic corpus now exist on the non-deploying
+`feature/customer-wald02-portable-core` branch (`d1c130a`, `5ddaa26`) and await dedicated QA.
+No Portal semantics, persistence, workflow integration or deployment was added. All later
+packages remain planned and require their own scoped implementation/release instructions.
 
 The 4 September reconciliation confirms PC1/CC1/CM1/CM2/CML, rejects literal `CC!` as a
 silent alias, makes `complete = Yes` authoritative for its source call-off part, confirms
 Windows/Doors roll-ups and exact BF handling, ignores Items Ordered Status/Site Value,
 qualifies Plot To Be Installed, sets future source Site ID as durable identity and makes
 every export partial/filtered by default. No semantic business question from that set
-remains. Source revision/ownership, permissions, retention, commit atomicity and the exact
-approved SiteApp Wald copy baseline remain gates for the packages that need them.
+remains. Source revision/ownership, permissions, retention and commit atomicity remain gates
+for the later packages that need them. The SiteApp copy baseline for WALD02 is now fixed by
+the approved manifest digest
+`76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`.
 
 A committed non-main CustomerApp line ending at `feature/manual-source-import-ui`
 (`1e8c22b`) is now recognised as architecture evidence. CUSTOMER-WALD02–05 must compare
@@ -38,7 +40,7 @@ pipeline and corpus material; it must not be merged wholesale or treated as prod
 
 | Order | Package | Exit |
 | --- | --- | --- |
-| 1 | CUSTOMER-WALD02 — Portable core + corpus | Compatible reader/profiler/reasoning and tests run independently; no domain writes. |
+| 1 | CUSTOMER-WALD02 — Portable core + corpus | Implemented on a non-deploying feature branch; dedicated QA pending; no domain writes. |
 | 2 | CUSTOMER-WALD03 — Portal semantics/dictionaries | Portal call-record schema and confirmed definitions; unknown meanings remain gated. |
 | 3 | CUSTOMER-WALD04 — Clarification/profiles | Portal-owned scoped knowledge/history, explicit activation and safe additive persistence. |
 | 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |

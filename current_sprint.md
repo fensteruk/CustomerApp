@@ -8,11 +8,14 @@ records the reset and
 `documentation/customerapp-documentation-contradiction-register-2026-09-04.md` preserves
 the stale/historical/open items without layering them into the brief.
 
-The next standalone-Wald chat must start with
-`documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md`. CUSTOMER-WALD02 remains
-gated: do not copy code or begin implementation until the immutable approved SiteApp Wald
-baseline/manifest and a scoped CUSTOMER-WALD02 work package are supplied. Import permissions,
-source ownership/revision, retention and commit atomicity also remain open gates.
+CUSTOMER-WALD02's standalone portable core and synthetic corpus are implemented on
+`feature/customer-wald02-portable-core` and ready for dedicated QA. The controlling SiteApp
+manifest digest is `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`;
+the implementation commits are `d1c130a` and `5ddaa26`. This is isolated feature-branch work:
+no import integration, dependency, migration, `main`, production or deployment change.
+CUSTOMER-WALD03 has not begun and requires dedicated WALD02 acceptance plus its own approved
+work package. Import permissions, source ownership/revision, retention and commit atomicity
+remain open later-package gates.
 
 Sprint 3F remains separate feature-branch work at
 `feature/sprint-3f-date-amendments` (`60aa9e2`), ready for dedicated QA but not on `main`,
