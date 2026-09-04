@@ -1,5 +1,10 @@
 # Fenster Customer Portal Decisions
 
+Current architecture additions: DEC-039 — standalone CustomerApp Wald adoption; DEC-040 —
+reconciled source dictionary, completion, products, site identity and export scope.
+Earlier sprint headers and decisions below are retained history; DEC-035 and subsequent
+decisions supersede conflicting assumptions.
+
 Sprint 1 - Call Off Workflow
 
 Next implementation milestone:
@@ -707,3 +712,156 @@ classification. The users foreign key has always been nullable, while a historic
 application profile check incorrectly required it for every role. Making the requirement
 role-specific implements the already-confirmed global Office model without inventing a
 Fenster customer record.
+
+---
+
+## DEC-039
+
+Date:
+3 September 2026
+
+Decision:
+CustomerApp will own a standalone Wald Import Engine, initially a controlled fork of the
+compatible SiteApp WALD01–07 generic engine and tests. CustomerApp rollout must not depend
+on SiteApp runtime availability or a SiteApp-hosted import/projection API.
+
+Rules:
+
+- Each application owns its deployment, source storage, queue, database, profiles,
+  clarification/answer memory, dictionaries, review, commit and audit history.
+- No cross-application database/filesystem/queue dependency or automatic knowledge/code
+  synchronisation. Generic backports require separate approval and testing.
+- Preserve deterministic rules, evidence, uncertainty/clarification, conservative
+  confidence and source lineage. No external AI, LLM, embeddings or interpretation API.
+- Generic engine parity is the aim; do not transplant SiteApp operational models, policies,
+  workflow/Trade references, Import Studio staging/commit or Filament administration.
+- Portal business definitions and data ownership stay downstream of inference. Preserve
+  requested/agreed dates, negotiations and history; apply confirmed source-completion
+  precedence only through the existing Portal domain boundary.
+- Require private source registration, neutral staging, authorised review/preview and
+  explicit controlled commit. Analysis or profile recognition is not business approval.
+- Freeze an approved reproducible upstream source baseline before copying: the inspected
+  SiteApp Wald work is uncommitted and is not contained in its HEAD alone.
+- No source code is copied by this decision/documentation task. Implementation is divided
+  into CUSTOMER-WALD02–06 under the architecture contract.
+
+Historical unresolved position at 3 September 2026:
+
+This decision originally left call-type/completion details, product roll-ups,
+`complete = Yes`, BF and export coverage unresolved or dependent on earlier assumptions.
+DEC-040 now supersedes that semantic/coverage position. Source ownership/revision,
+import/knowledge permissions, retention and reviewed commit atomicity remain gates. The
+proposed Office-only import model and whole-reviewed-set atomic pilot commit are not
+formally confirmed by DEC-039 or DEC-040.
+
+References:
+`brief.md` section 18;
+`documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`;
+`documentation/wald-divergence-register.md`.
+
+Reason:
+CustomerApp must be usable before SiteApp is ready for wider use. A controlled generic
+fork preserves proven design/testing investment without making the Portal an operational
+system or creating a runtime release dependency.
+
+---
+
+## DEC-040
+
+Date:
+4 September 2026
+
+Decision:
+Management-confirmed source semantics and export rules supersede the conflicting assumptions
+recorded in DEC-039 and earlier source documentation.
+
+Rules:
+
+- Valid source call types are PC1 = Plot Install, CC1 = Cavity Closer 1, CM1 = Revisit 1,
+  CM2 = Revisit 2 and CML = CML Call Off. PC1 maps to Windows, CC1 maps to Cavity Closers,
+  and CM1/CM2/CML map to CML. CM1 and CM2 are CML revisits, not new customer services.
+- Literal `CC!` is an invalid/likely typo value. Preserve its evidence, optionally suggest
+  CC1, require confirmation and never silently normalise it. No Snagging source call code
+  is invented.
+- `complete = Yes` means the particular source call-off part is done. Parse sensible Yes/No
+  variants case-insensitively and never invent a completion date. Older speculative Job
+  Stage/Completed Date/CC08/CA02/CA03/SN05/CML4 rules are not required or authoritative
+  unless separately confirmed later.
+- Total Windows = VS + TT + BAY + ALI + AOV + FI. Total Doors = PSU + PSG + CDF + CDU +
+  CDG + PSP + BF. The descriptions and classification in `brief.md` §17.6 are controlled
+  business definitions.
+- CAS, FLU, PFD, GLS, WP and MISC are excluded/redundant from the final customer product
+  model. Raw evidence may be retained privately for audit fidelity.
+- BF means Bifold and belongs to Doors. Exact positive BF remains individually identifiable
+  internally and changes the normal earliest request from four to five weeks; an aggregate
+  or similar text does not prove BF.
+- Items Ordered Status is ignored. Site Value is ignored/excluded. Plot To Be Installed is
+  the operational source date Fenster arrives to install PC1 and is never a customer
+  Requested Date, Date Agreed or alternative proposal date.
+- A future permanent source Site ID/reference is the durable site identity. Exact Site Name
+  may be used for transitional explicit mapping only and never as the permanent identity or
+  as authority to create/fuzzy-match a Portal site.
+- Every SiteApp workbook defaults to `PARTIAL_FILTERED_EXPORT` because it contains whatever
+  the exporter filtered. Absence never proves deletion, including within a represented
+  site. `SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` require explicit
+  confirmation; shape, filename, row count and represented sites cannot upgrade scope.
+- Wald infers structure; the controlled business dictionary supplies meaning. Similarity
+  may produce a suggestion or question but never a silent business mapping.
+- The committed non-main feature line ending at `feature/manual-source-import-ui`
+  (`1e8c22b`) is recognised architecture evidence. Generic interpretation mechanics are
+  reuse candidates; Portal access/projection/scope safeguards remain downstream; overlapping
+  direct interpretation/profile flow is a supersession candidate; fixtures and workbook
+  observations are test/corpus material. It is not automatically approved for `main`.
+
+Remaining decisions:
+
+No business question remains from this reconciled semantic set. Existing governance and
+delivery gates still require the approved SiteApp Wald source baseline, source owner and
+revision contract, Portal import/knowledge permissions, retention and reviewed commit
+atomicity before the affected production flow is enabled.
+
+Reason:
+These rules were confirmed directly by management after CUSTOMER-WALD01. Recording them as
+controlled business truth prevents structure inference, historical assumptions or a
+non-main implementation from silently defining Portal semantics.
+
+---
+
+## DEC-041
+
+Date:
+4 September 2026
+
+Decision:
+The CustomerApp governing documentation is reset to one concise current product contract
+and one concise agent-governance contract. Historical decisions, sprint reports and release
+records remain intact as evidence but are not permitted to override newer explicit decisions
+or verified current state.
+
+Rules:
+
+- `brief.md` is the current product/scope contract and must be maintained by replacement or
+  deliberate revision, not by appending a second truth beneath stale content.
+- `AGENTS.md` governs safe work, source hierarchy, production protection, verification and
+  reporting without duplicating the full product specification.
+- Later numbered decisions supersede contradictory earlier decisions. The ledger remains
+  append-only so the change history stays auditable.
+- Reports must distinguish explicitly evidenced production, current `main`, feature-branch
+  work and planned work. A branch, roadmap entry or push is not proof of a successful
+  production deployment.
+- As at this reset, Sprint 3E commit
+  `9111d76ff05d702d68afd884ee8e42bc8e50c8e3` / Forge deployment `76326195` is the last
+  explicitly evidenced successful production release. `origin/main` is
+  `0873bac79edf578e9f4a9417e3cafae34e8aa925`; its deployment state requires Forge
+  verification and must not be inferred.
+- The current source semantics live in
+  `documentation/siteapp-import-data-dictionary.md`; the dated contradiction register
+  records stale, historical, open-decision and verification items without erasing evidence.
+- A fresh standalone-Wald chat must use
+  `documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md` and may not begin
+  CUSTOMER-WALD02 without the immutable approved upstream baseline and a scoped work package.
+
+Reason:
+Layered specifications had left superseded roles, services, lifecycle, batch and source rules
+visible beside current decisions. A single current contract plus an explicit historical
+register reduces implementation ambiguity while preserving the audit trail.

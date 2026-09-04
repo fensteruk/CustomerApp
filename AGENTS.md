@@ -1,248 +1,263 @@
 # Fenster Customer Portal — Agent Instructions
 
-## Mandatory Context
+## 1. Read Before Every Task
 
-Before work, read in this order:
+Read these files in order before acting:
 
 1. `AGENTS.md`
 2. `brief.md`
-3. `ROADMAP.md`
-4. `context-work-prompt.md`
-5. Any task-specific schema, design, integration or prototype documentation
+3. `DECISIONS.md`
+4. `current_sprint.md`
+5. `ROADMAP.md`
+6. `HANDOVER.md`, when present
+7. the task-specific contract, schema, integration or work-package documents
 
-All work must align with the Customer Portal brief, current roadmap milestone, customer data boundaries and separation from SiteApp.
+For spreadsheet/source work, also read:
 
-If documentation conflicts with the repository or a newer user instruction, identify the conflict before destructive or wide-ranging changes.
+- `documentation/source-integration-contract.md`
+- `documentation/siteapp-import-data-dictionary.md`
 
-## Workspace Rules
+For standalone Wald work, also read:
 
-- Work only inside the Customer Portal project directory: `C:\Users\JoshO\Documents\CustomerApp`.
-- Do not modify SiteApp unless explicitly requested as a separate task.
+- `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`
+- `documentation/wald-divergence-register.md`
+- the approved work package for the current Wald phase
+
+If a newer user instruction, the repository and the documents disagree, stop before any
+destructive, production or wide-ranging change. Record the conflict and use the newest
+explicitly approved decision. Historical documents are evidence, not current instructions.
+
+## 2. Sources of Truth
+
+Resolve conflicts in this order:
+
+1. the latest explicit approved user/management decision;
+2. the newest applicable authoritative entry in `DECISIONS.md`;
+3. the current `brief.md` product and scope contract;
+4. successfully QA/release-approved behaviour and verified deployment evidence;
+5. current code, tests and migration evidence;
+6. older briefs, roadmaps, handovers and reports.
+
+`DECISIONS.md` is append-only: newer numbered decisions supersede contradictory older entries,
+but the historical record is not rewritten. `current_sprint.md` identifies the active delivery
+milestone, while `ROADMAP.md` records delivery order rather than proof of implementation or
+deployment. Task-specific contracts define only their bounded domain.
+
+Always distinguish these states in reports and documentation:
+
+- **Deployed:** explicitly evidenced as successfully released to production.
+- **On `main`:** merged to the production branch, but not proof that deployment succeeded.
+- **Feature branch only:** committed outside `main`; not deployed or release-approved.
+- **Planned:** approved intent with no implementation claim.
+
+Do not promote a branch report, release candidate or roadmap checkbox into production truth.
+
+## 3. Product Boundary
+
+CustomerApp is a separate customer-facing communication and request application. SiteApp
+remains Fenster's internal operational system.
+
+CustomerApp may display authorised source information, show outstanding plots, collect
+date requests and amendments, receive decisions and show customer-facing progress. It
+must never become an operational management system.
+
+Do not introduce or recreate SiteApp:
+
+- workflow stages, trade sequencing, dependencies or sign-offs;
+- readiness/build verification, labour or manufacturing planning;
+- roles, policies, administration or Filament resources;
+- internal notes, queries, templates, issues or operational statuses;
+- database models, tables, services or direct database access.
+
+The approved controlled fork of generic SiteApp Wald engine code is the sole narrow reuse
+exception. It does not authorise copying SiteApp operational domain code.
+
+## 4. Workspace and Git Safety
+
+- Work only inside `C:\Users\JoshO\Documents\CustomerApp` unless the user explicitly
+  authorises a separate SiteApp task.
+- Inspect `git status`, current branch and relevant diffs before and after work.
 - Preserve user changes and avoid unrelated refactors.
-- Prefer small, safe and reviewable changes.
-- Do not copy SiteApp models, migrations, services, policies or UI merely because they exist.
-- Treat all customer and project data as confidential.
+- Use a named, non-deploying feature/documentation branch for work unless the user gives a
+  different instruction.
+- Never merge or push to `main`, create a production tag or deploy without explicit approval.
+- A push to `main` can trigger Laravel Forge Quick Deploy. Treat it as a production action.
+- Never force-push, reset, clean, discard changes or rewrite shared history without explicit
+  approval.
+- Stage and commit only task-related files. Never commit `.env`, secrets, customer data,
+  source workbooks, generated output or local database files.
+- Do not upgrade packages or alter lockfiles unless that is the approved task.
 
-## Critical Product Boundary
+Production is `https://fenstercustomer.on-forge.com`. Do not use production accounts,
+queues, storage, database or customer records for experiments. Production smoke tests must
+use an approved safe account and remain non-destructive unless separately authorised.
 
-The Customer Portal is a separate customer-facing communication and request application.
+- Never run seeders, destructive DDL, `migrate:fresh`, database resets or ad-hoc repair
+  statements against production.
+- Do not test real customer workflows without an explicitly approved account, record scope
+  and cleanup/recovery plan.
+- Require an approved backup/recovery point before a production database deployment.
+- Never bypass authentication or expose credentials, environment values or provider output.
 
-SiteApp remains Fenster's operational system.
+## 5. Local Environment
 
-The portal may display authorised information, show outstanding plots, collect requests and amendments, receive decisions and show customer-facing progress.
+Development uses Windows and Laravel Herd. Before application work, verify these commands
+are available:
 
-It must never become an operational management system.
+```text
+php -v
+composer --version
+node -v
+npm -v
+git --version
+```
 
-## Prohibited SiteApp Duplication
+Use versions locked by `composer.lock` and `package-lock.json`. The documented foundation is
+Laravel 13, PHP 8.4 locally, Blade, Livewire 4, Tailwind 3, Alpine, Vite 8, Pest 4 and
+Filament 5 installed without an assumed panel. SQLite is used locally; production is
+MySQL-compatible. Do not assume a package or panel is required merely because it is installed.
 
-Do not introduce or recreate:
+If a required command is missing, resolve the environment before changing application code.
 
-- workflow stages, trade sequencing or dependencies;
-- trade sign-offs or Black Hat approvals;
-- readiness or build verification;
-- SiteApp roles or permission rules. The Customer Portal may define its own Site Manager,
-  Assistant Site Manager, Finishing Foreman and Fenster Office Staff roles, but they must
-  remain portal-specific and must not reuse SiteApp policy, workflow or administration code;
-- SiteApp workflow policies;
-- SiteApp Filament resources or administration;
-- SiteApp queries, templates, workflow issues or internal notes;
-- trade assignments, labour planning or manufacturing planning;
-- SiteApp database tables, domain models, services or internal statuses.
+## 6. Architecture and Implementation Rules
 
-Portal-specific approval screens are allowed only for portal requests.
+- Keep controllers thin: authorise, validate, dispatch and return a response.
+- Put business transitions in focused Actions, services or domain classes.
+- Authorise immediately before persistence; hidden controls are never security.
+- Enforce organisation and site boundaries on every protected query and action.
+- Do not trust client-mutated organisation, site, plot, request or source identifiers.
+- Use transactions for multi-record actions and locking where concurrency can change an
+  outcome.
+- Preserve the canonical aggregate lock order where applicable: service → request →
+  negotiation/amendment → proposal → history.
+- Preserve bounded retry for transient MySQL concurrency failures and do not weaken race
+  assertions merely to make tests pass.
+- Preserve immutable history, attribution, timestamps and before/after values.
+- Separate customer-visible messages from private Fenster reasons.
+- Use structured validation, deliberate foreign keys/delete behaviour and appropriate indexes.
+- Remain compatible with SQLite for ordinary development and MySQL 8.4 for production
+  semantics. Concurrency and lock-sensitive work needs disposable MySQL evidence.
+- Never edit a migration that may have run outside a disposable local database; add a new
+  forward migration.
+- Use Blade and Tailwind first, Livewire for useful server interaction and Alpine for light
+  client behaviour. Do not add a large frontend framework without approval.
+- Use mobile-first layouts, accessible names/states, large touch targets and more than colour
+  alone to communicate status.
+- Avoid N+1 queries and paginate potentially large result sets.
 
-## Local Environment
+## 7. Authentication and Authorisation
 
-Before beginning work, verify:
+The four CustomerApp roles are Site Manager, Assistant Site Manager, Finishing Foreman and
+Fenster Office Staff. They are portal roles, never SiteApp roles.
 
-- php -v
-- composer --version
-- node -v
-- npm -v
-- git --version
+- The three site roles have identical Version 1 permissions but remain distinct labels.
+- External site users require an active account, customer organisation and assigned-site
+  scope.
+- Active Fenster Office Staff are globally scoped in the current approved model and may
+  have no customer organisation. Global access comes from the valid Office Staff role,
+  never merely from a null organisation.
+- Public registration is disabled unless expressly approved.
+- Development role preview is local/test only. It must not exist in production, create
+  durable access or bypass normal authentication/authorisation.
+- QR codes may identify a site in future but must never authenticate or authorise a user.
 
-The project assumes:
+Use framework password hashing, password reset, CSRF, secure session and rate-limit
+conventions. Never store plaintext credentials.
 
-- Laravel Herd
-- PHP 8.4.x
-- Composer 2.x
-- Node.js 26.x
-- npm 11.x
+## 8. Request and Workflow Rules
 
-If any command is unavailable, stop and resolve the local environment before making application changes.
+Do not restate or infer workflow from historical code. Use `brief.md` for the current
+customer lifecycle. In particular:
 
-## Communication Rules
+- services are Cavity Closers, Windows, Snagging and CML;
+- eligibility is per plot and service;
+- prevent more than one active request for the same plot and service;
+- each request owns its status, requested/agreed dates, decisions and history;
+- customer-owned date negotiation uses Requested Date, alternative proposals and Date Agreed;
+- source completion has precedence and cannot be manufactured from Portal dates;
+- amendments preserve the old agreed date and history; they never silently overwrite it;
+- batch operations must not overwrite individually diverged request decisions;
+- portal status must not mirror SiteApp workflow status.
 
-- Report completion, files changed, tests, failures, migrations, blockers and manual actions.
-- Do not claim a command, test, build, migration or integration succeeded unless it ran successfully.
-- State when work depends on unresolved business rules, credentials or an integration contract.
-- Do not invent SiteApp endpoints, fields or status mappings.
+Do not invent lead times, holidays, transition rules, CML wording or source mappings. Follow
+the current brief and decision ledger, and record unresolved questions.
 
-Preferred final format:
+## 9. Source Import and Wald Safety
 
-- Completed
-- Files changed
-- Tests
-- Notes
+- CustomerApp's initial source route is private workbook upload and controlled review.
+- CustomerApp must function without SiteApp API, database, filesystem, queue or runtime access.
+- There is no Portal write-back to spreadsheets or SiteApp.
+- Wald is deterministic, explainable and rules-based. Do not add external AI, LLMs,
+  embeddings or third-party spreadsheet interpretation.
+- Structural inference does not define business meaning. Only the approved data dictionary
+  and human-confirmed mappings do.
+- Use private source → analysis/clarification → neutral staging → authorised Portal review →
+  explicit controlled commit. Inference must not write directly into final Portal models.
+- Default every export to partial/filtered scope. Absence never proves deletion without an
+  explicitly authorised complete snapshot.
+- Preserve raw evidence privately and never expose filenames, worksheets, source rows,
+  private metadata or internal errors to customers.
+- Use stable external identifiers separately from local keys and make imports idempotent.
+- Unknown required meanings, unresolved site identity or ambiguous call types block the
+  dependent commit.
+- Do not begin a Wald phase without its approved baseline manifest and scoped work package.
 
-## Local Development and Stack
+## 10. Notifications and Queues
 
-Development is on Windows with Laravel Herd.
+- Dispatch workflow notifications from committed domain events, preferably after commit.
+- Authorise notification lists and destinations; safe links do not replace route checks.
+- Reading or dismissing a notification must not alter domain history.
+- Completion currently sends no notification.
+- Do not claim email/Resend or a persistent production queue worker exists without evidence.
+- Queue-dependent work must document retry, idempotency and failure behaviour and be tested
+  with the intended production queue model before release.
 
-Use the versions locked in `composer.json`, `package.json` and lockfiles. After project creation, update this section with the exact versions.
+## 11. Required Verification
 
-Installed foundation:
+Run checks proportionate to the change and report the exact commands and results. Ordinary
+application changes normally require:
 
-- PHP 8.4.23
-- Composer 2.10.1
-- Laravel 13.20.0
-- Blade
-- Filament 5.6.8 (installed only; no panel assumed)
-- Laravel Breeze 2.4.2 (installed only; no authentication scaffolding generated)
-- Tailwind CSS 3.4.19
-- Alpine.js 3.15.12
-- Livewire 4.3.3
-- SQLite locally
-- MySQL-compatible production database
-- Pest 4.7.5 with Pest Laravel Plugin 4.1.0
-- Laravel Pint 1.29.3
-- Vite 8.1.4
+```text
+php artisan test
+vendor\bin\pint --test
+composer validate --strict
+npm run build
+composer audit
+git diff --check
+```
 
-Do not upgrade packages, alter lockfiles, add a large frontend framework, add unnecessary runtime dependencies or assume Filament is required unless explicitly requested.
+Also run focused tests first. Security, tenant boundaries, workflows, source imports,
+notifications and integration failures require both successful and unauthorised/failure-path
+tests. Locking, upsert or database-specific work requires disposable MySQL 8.4 verification.
 
-## Version 1 Priorities
+Documentation-only work does not require the full application suite unless it changes an
+executable artefact. It does require link/path checks, contradiction review, diff review and
+whitespace validation.
 
-- secure foundation and authentication;
-- customer organisation isolation;
-- portal-specific roles and permissions;
-- authorised developments and outstanding plots;
-- date requests for Cavity Closers, Windows and CML;
-- portal approval;
-- amendments and revision history;
-- notifications and customer-facing statuses;
-- responsive dashboard;
-- safe SiteApp integration boundary;
-- automated security and lifecycle tests.
+Never weaken tests to make a result pass. Never claim a check, migration, build or deployment
+succeeded unless it actually ran successfully.
 
-Avoid speculative microservices, AI scheduling, manufacturing calculations, labour planning, generic CRM features, native apps and unrelated SiteApp functionality.
+## 12. Documentation Discipline
 
-## Request Rules
+- Keep `brief.md` concise and current; do not append a second truth below stale text.
+- Append durable decisions to `DECISIONS.md` and identify what they supersede.
+- Keep current status at the top of `current_sprint.md`, `ROADMAP.md` and `HANDOVER.md`.
+- Leave historical reports intact, but label them historical or superseded where ambiguity
+  would otherwise affect current work.
+- Use absolute dates and exact branch/SHA/deployment identifiers when known.
+- Do not describe feature-branch work as released.
+- Record unresolved business rules explicitly rather than inventing answers.
 
-- Cavity Closers, Windows and CML are independent services.
-- Customers may only request dates for authorised outstanding plots.
-- Completed plots must reject new requests.
-- Prevent more than one active request for the same plot and service.
-- Changes create amendments or revisions, not duplicate active requests.
-- A call-off is not approved until authorised Fenster Office Staff publish a decision.
-- Do not invent lead times or scheduling rules.
-- Bulk requests must remain traceable per plot and service.
+## 13. Completion Report
 
-## Approval and Amendment Rules
+Every task report must include:
 
-Fenster Office Staff may approve or reject submitted call-offs within their authorised scope.
+- **Completed** — outcome and scope;
+- **Files changed** — exact task files;
+- **Tests/checks** — commands and results;
+- **Migrations/deployment** — what did or did not occur;
+- **Notes** — blockers, unresolved decisions, unrelated changes preserved and manual actions.
 
-- Keep transitions in actions, services or domain classes, not views.
-- Authorise immediately before persistence.
-- Record user, timestamp and previous values.
-- Separate customer-visible notes from private internal reasons.
-- Do not calculate operational availability in the portal.
-- Amendments preserve prior state and return to review.
-- Never silently overwrite dates.
-- Block amendments after completion unless an explicit reopen process exists.
-
-## Customer-Facing Status Rules
-
-Initial call-off decision statuses are Submitted, Approved and Rejected. Any later
-customer-facing progress statuses require an explicit mapping decision and must not mirror
-SiteApp workflow statuses.
-
-These are portal statuses, not SiteApp workflow statuses.
-
-Centralise labels, icons, colours, ordering and transitions. Do not assume every transition is valid. Do not rely on colour or icons alone.
-
-## Permissions and Authentication
-
-Initial portal roles:
-
-- Site Manager
-- Assistant Site Manager
-- Finishing Foreman
-- Fenster Office Staff
-
-Site Manager, Assistant Site Manager and Finishing Foreman may submit call-offs only for
-their assigned sites. Fenster Office Staff may approve or reject call-offs within the
-scope that is explicitly authorised for them. These are four distinct Customer Portal
-roles; they are not SiteApp roles or permission rules.
-
-Development-only role preview may simulate these portal roles and their dashboard routing.
-It must never be available in production or bypass authentication or authorisation.
-
-Use policies, gates, middleware, scopes or explicit checks. Hidden buttons are not security.
-
-Enforce customer organisation boundaries on every protected query and action. Customers must never access another customer's data.
-
-Disable public registration unless approved. Use framework password hashing, reset, session, CSRF and rate-limit conventions. Never store plaintext credentials. MFA and SSO remain future features.
-
-## Integration Rules
-
-- SiteApp is authoritative for operational data.
-- Do not invent APIs or directly query SiteApp's database without explicit approval.
-- Prefer documented APIs, events or synchronisation adapters.
-- Store external identifiers separately from local primary keys.
-- Make updates idempotent where practical.
-- Record failures safely and never show failed submissions as accepted.
-- Use least-privilege credentials and never commit secrets.
-- Do not expose SiteApp errors or internal paths to customers.
-
-## Laravel, Frontend and Database Rules
-
-- Follow repository conventions and keep controllers thin.
-- Use structured validation and server-side authorisation.
-- Keep transitions, approvals, revisions, integration and notifications out of Blade views.
-- Use transactions for multi-record operations.
-- Use Blade and Tailwind first, Livewire for useful server-driven interaction and Alpine.js for lightweight behaviour.
-- Do not trust client-mutated identifiers.
-- Paginate large datasets and avoid N+1 queries.
-- Use mobile-first layouts, large touch targets and accessible states.
-- Use migrations, foreign keys, deliberate delete behaviour and suitable indexes.
-- Aim for Third Normal Form.
-- Separate current state from immutable revision history where needed.
-- Remain compatible with SQLite locally and MySQL in production.
-- Never store plaintext secrets or tokens.
-
-## Security, Audit and Testing
-
-- Enforce tenant boundaries server-side and protect against insecure direct object references.
-- Safely render user and integration content.
-- Do not expose traces, credentials, environment values or provider responses.
-- Preserve attribution, timestamps and before/after values for requests, decisions, amendments, acknowledgements and customer-facing status changes.
-- Do not expose SiteApp internal audit records.
-- Use Pest and test authentication, customer isolation, permissions, completed-plot restrictions, duplicate prevention, approvals, amendments, history, statuses, notifications and integration failures.
-- Test unauthorised paths as well as successful ones.
-- Run relevant tests, Pint and the frontend build when applicable.
-- Never weaken tests merely to make work pass.
-
-## Documentation and Git Safety
-
-- Keep `brief.md` as the scope source of truth.
-- Keep `ROADMAP.md` aligned with actual progress.
-- Record unresolved rules instead of inventing answers.
-- Inspect `git status` before and after work.
-- Preserve unrelated changes.
-- Never reset, clean or force-checkout without permission.
-- Never commit `.env`, credentials, customer data or secrets.
-
-## Final Principle
-
-Prefer simple, secure, auditable, maintainable and understandable changes.
-
-The portal should clearly answer:
-
-- Which plots remain outstanding?
-- What date did the customer request?
-- Has Fenster approved or rejected it?
-- What changed and when?
-- What customer-facing stage is it at?
-- What should the customer do next?
-
-Never allow the Customer Portal to drift into SiteApp's internal operational domain.
+Prefer simple, secure, auditable, maintainable and understandable changes. CustomerApp must
+answer what is outstanding, what date was requested or agreed, what changed and what the
+customer should do next—without drifting into SiteApp's operational domain.

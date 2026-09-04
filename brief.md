@@ -1,725 +1,434 @@
-# Fenster Customer Portal
-## Project Brief — Version 1
-**Status:** Management-clarified specification
-**Last Updated:** 20 August 2026
+# Fenster Customer Portal — Product Brief
 
-The management requirements confirmed on 20 August 2026, recorded in
-`context-work-prompt.md`, supersede earlier assumptions in this brief wherever explicitly
-contradictory. Section 17 is the consolidated Version 1 clarification. It defines product
-requirements rather than the current implementation state.
+**Version:** Current product contract
 
----
+**Last updated:** 4 September 2026
 
-# 1. Executive Summary
+**Scope:** CustomerApp Version 1 and approved delivery direction
 
-The Fenster Customer Portal is a separate customer-facing application that integrates with SiteApp.
+This document replaces the previously layered brief. It states the current approved product
+truth without treating feature-branch work as released. Historical decisions and delivery
+evidence remain in `DECISIONS.md`, sprint reports and release records.
 
-It allows authorised customers to:
+## 1. Executive Summary
 
-- view outstanding plots;
-- request dates for Cavity Closers, Windows, Snagging and CML;
-- request amendments;
-- agree requested dates and respond to proposed alternatives;
-- monitor customer-visible progress.
+The Fenster Customer Portal is a separate customer-facing application for authorised
+customers and Fenster Office Staff. It shows authorised developments and plots, accepts
+service date requests and amendments, supports date agreement, and presents customer-safe
+progress and history.
 
-SiteApp remains Fenster’s internal operational system. The Customer Portal is a communication and request portal only.
+SiteApp remains Fenster's internal operational system. CustomerApp must not reproduce its
+operational workflow, trade management, planning, verification or administration.
 
-It must not reproduce SiteApp workflow, verification, trade management, operational planning or administration.
+Initial source data will be supplied through CustomerApp's own private, controlled spreadsheet
+import and review path. A separately approved read-only SiteApp integration may follow.
+CustomerApp must operate without SiteApp's API, database, filesystem, queues or runtime.
 
----
+## 2. Product Objectives
 
-# 2. Product Principles
+CustomerApp should let an authorised user answer:
 
-- **Separate product:** its own domain model, authentication, permissions, interface and releases.
-- **SiteApp authoritative:** operational data originates in SiteApp.
-- **Customer isolation:** users only see their own organisation and authorised developments.
-- **Simplicity:** mobile friendly, accessible, clear and suitable for non-technical users.
-- **Traceability:** customer-facing requests, amendments and decisions retain history.
+- Which plots and services remain outstanding?
+- Which date has the customer requested?
+- Has Fenster accepted that date or proposed an alternative?
+- What date is currently agreed?
+- What changed, who changed it and when?
+- What customer action is required next?
 
----
+It should reduce telephone and verbal call-off coordination, give site teams clear
+plot/service information, structure customer requests, provide auditable date agreement and
+make Fenster Office review clear and consistent.
 
-# 3. Users
+The experience must be secure, mobile-first, accessible, auditable and clear to non-technical
+users.
 
-The Customer Portal has four distinct initial roles. These are portal-specific roles and
-must not reuse SiteApp permissions, policies or workflow responsibilities.
+## 3. Product and System Boundary
 
-## Site Manager
-- Select an assigned site.
-- Access the site dashboard for the selected assigned site.
-- Submit call-offs for that site.
-- See all call-offs for the active assigned site in Version 1.
+CustomerApp owns:
 
-## Assistant Site Manager
-- Select an assigned site.
-- Access the site dashboard for the selected assigned site.
-- Submit call-offs for that site.
-- See all call-offs for the active assigned site in Version 1.
+- Portal authentication, accounts, organisations, roles and site access;
+- customer-facing plot and service projections;
+- customer date requests, negotiation, agreed dates and amendments;
+- Portal history, notifications and presentation statuses;
+- its private source upload, analysis, clarification, review and controlled commit process.
 
-## Finishing Foreman
-- Select an assigned site.
-- Access the site dashboard for the selected assigned site.
-- Submit call-offs for that site.
-- See all call-offs for the active assigned site in Version 1.
+Source spreadsheets and, later, SiteApp own:
 
-## Fenster Office Staff
-- Access the Review Requests dashboard.
-- Review and approve or reject call-offs for assigned sites only.
-- Publish a customer-visible decision and retain any private reason separately.
+- stable source identifiers;
+- source product quantities;
+- operational completion evidence;
+- internal operational data that is not copied into the customer model.
 
-The three site roles are separate roles even where their presently confirmed capabilities
-are the same. Their future permission differences must be explicit, rather than inferred
-from SiteApp or job title.
-
-For Version 1, Site Manager, Assistant Site Manager and Finishing Foreman have identical
-Customer Portal permissions. They remain separate roles so future differences can be
-introduced deliberately.
-
-### Permission Matrix
-
-| Capability | Site Manager | Assistant Site Manager | Finishing Foreman | Fenster Office Staff |
-|---|---:|---:|---:|---:|
-| Sign in and use the portal | Yes | Yes | Yes | Yes |
-| Select an assigned site | Yes | Yes | Yes | Not required for the initial review dashboard |
-| Access selected site dashboard | Yes, assigned sites only | Yes, assigned sites only | Yes, assigned sites only | No |
-| Submit a call-off | Yes, assigned sites only | Yes, assigned sites only | Yes, assigned sites only | No |
-| View call-offs | Yes, all call-offs for active assigned site | Yes, all call-offs for active assigned site | Yes, all call-offs for active assigned site | Yes, assigned sites only |
-| Withdraw a pending call-off | Yes, active assigned site only | Yes, active assigned site only | Yes, active assigned site only | No |
-| Trash a rejected or withdrawn call-off | Yes, active assigned site only | Yes, active assigned site only | Yes, active assigned site only | No |
-| Restore eligible Trash item | Yes, active assigned site only | Yes, active assigned site only | Yes, active assigned site only | No |
-| Approve or reject a call-off | No | No | No | Yes, assigned sites only |
-| Use development role preview | Development only; never a production entitlement | Development only; never a production entitlement | Development only; never a production entitlement | Development only; never a production entitlement |
-
----
-
-# 4. Authentication
-
-Version 1 requires secure login, username or email, password authentication, password reset, secure sessions, active-account enforcement, rate limiting and server-side authorisation.
-
-Public registration is disabled unless explicitly approved.
-
-MFA and SSO are future features.
-
-Site users must select an assigned site from a menu before accessing site-scoped data or
-submitting a call-off. A future QR code may identify a site and assist with selecting that
-context, but it must never replace authentication or authorisation.
-
----
-
-# 5. Dashboard and Outstanding Plots
-
-After login, site users should see the site dashboard for their selected assigned site.
-Fenster Office Staff should see the Review Requests dashboard.
-
-In development only, a role-preview screen may select one of the four portal roles to
-exercise dashboard routing. Selecting a site role leads to the site dashboard with the
-assigned-site selector; selecting Fenster Office Staff leads to Review Requests. The
-preview is not an authentication or authorisation mechanism and must not be enabled in
-production.
-
-### Dashboard Routing Matrix
-
-| Authenticated portal role | Required context | Destination |
-|---|---|---|
-| Site Manager | Select an assigned site | Site dashboard for the active assigned site |
-| Assistant Site Manager | Select an assigned site | Site dashboard for the active assigned site |
-| Finishing Foreman | Select an assigned site | Site dashboard for the active assigned site |
-| Fenster Office Staff | Assigned-site review scope | Review Requests dashboard |
-| Development role preview | Development environment only; preview never grants access | Destination for the selected preview role, subject to normal authentication and authorisation |
-
-Only projected plots not reported complete by SiteApp may be selected for new requests.
-Historical requests for completed projected plots may remain read-only.
-
-For the next company-test release, the site dashboard must keep the active assigned-site
-scope mandatory and provide paginated call-offs, plot search, service and status filters.
-A date filter may be included only if it remains simple and clear. Development and phase
-filters remain deferred until those projected data dimensions are available. All filtering
-and pagination must remain server-authorised; this is a browsing aid, not reporting.
-
----
-
-# 6. Call-Off Requests
-
-Each outstanding plot may have an independent call-off request for:
-
-- Cavity Closers;
-- Windows;
-- CML.
-
-A plot may have only one active request per service. Later changes must use amendments or revisions rather than duplicate active requests.
-
-A batch records the site, service type, requested date, submitting user and timestamp.
-Each request records the projected plot, current status and audit history. Customer-visible
-responses and private internal reasons must use explicit fields and must not be stored as
-generic notes.
-
-### Call-Off Batch Model
-
-One call-off batch represents one user submission action.
-
-- One batch has exactly one site, one service type, one requested date and one submitting
-  user.
-- One batch may contain one or many individual call-off requests.
-- Mixed service types and mixed requested dates are not permitted in a Version 1 batch.
-- Each request applies to one projected plot for the batch service type.
-- The batch groups submission, bulk withdrawal, quick Undo and Trash restoration.
-- Each individual request owns its own status, approval, rejection, decision and history.
-- Each request derives its site, service type, requested date and submitting user from the
-  batch.
-- Fenster Office Staff may decide individual requests independently after submission.
-- Once requests in a batch have received different decisions, later batch-level operations
-  must not overwrite those individual decisions.
-- Batch-level operations must be authorised for every affected request.
-- Bulk Undo and bulk restoration remain atomic: every eligible affected item changes, or
-  none are changed.
-
-A call-off is not approved until Fenster Office Staff publish a decision.
-
-### Confirmed Call-Off Lifecycle
+The supported direction is read-only:
 
 ```text
-Submitted → Approved
-          → Rejected
-          → Withdrawn
+Source spreadsheet / future SiteApp feed → CustomerApp
 ```
 
-- A site role submits a call-off only for the active assigned site.
-- Fenster Office Staff approve or reject the submitted call-off; no site role may perform
-  either decision.
-- Site Manager, Assistant Site Manager and Finishing Foreman users may see all call-offs
-  for their active assigned site in Version 1.
-- Fenster Office Staff may review, approve and reject submitted call-offs only for sites
-  assigned to them in the Customer Portal.
-- Every decision records the decision-maker, timestamp, prior values, customer-visible
-  response and any private internal reason separately.
-- Approval or rejection records a portal decision only. It must not calculate, create or
-  expose SiteApp operational workflow, scheduling, labour, manufacturing or verification data.
-- Pending submitted call-offs may be withdrawn by authorised site users for the active
-  assigned site before an office decision is made.
-- A withdrawn call-off no longer blocks a new active request for the same plot and service,
-  but the withdrawn history must remain auditable.
-- Approved call-offs cannot be deleted, trashed or cancelled by site users in Version 1.
-- Approved call-offs remain active duplicate blockers until a future authorised lifecycle
-  event marks them completed, superseded or otherwise formally closed.
-- Rejected call-offs remain in history and may be moved to customer-facing Trash.
-- A site user may submit a new request for the same plot and service after rejection, but
-  the original rejected decision must remain unchanged and traceable.
-- The exact rejected-request resubmission user journey is proposed in DEC-034 and must be
-  formally confirmed before implementation. It must not be replaced with an unlinked new
-  call-off flow.
+CustomerApp does not write agreed dates or workflow state back to a spreadsheet or SiteApp.
 
-### Trash and Undo Rules
+## 4. Users, Roles and Access
 
-- Eligible user-triggered withdrawal, Trash and restoration actions must offer a
-  five-second quick Undo.
-- Quick Undo must restore the complete previous customer-facing state and must not bypass
-  authorisation.
-- Customer-facing Trash keeps eligible withdrawn or rejected call-offs recoverable for
-  seven days.
-- Trash is a customer-facing list state, not permanent deletion.
-- Restoring from Trash within seven days returns the complete request to the appropriate
-  customer-facing history or list state.
-- Bulk Undo and bulk Trash restoration are atomic: either every eligible affected item is
-  restored or none are changed.
-- If any item in a bulk operation fails authorisation, eligibility or expiry checks, the
-  operation fails without partially changing the selected set.
-- Expired Trash records are hidden from customer-facing Trash after seven days and
-  retained as audit-critical history. They are not permanently deleted by the Version 1
-  Trash expiry process.
+CustomerApp has four distinct Portal roles:
 
----
+| Role | Version 1 access |
+|---|---|
+| Site Manager | Select an assigned site; view all Portal call-offs for it; submit and respond within the site-user workflow. |
+| Assistant Site Manager | Same Version 1 capability as Site Manager, retained as a distinct role. |
+| Finishing Foreman | Same Version 1 capability as Site Manager, retained as a distinct role. |
+| Fenster Office Staff | Globally review and act on Portal requests. This role may have no customer organisation. |
 
-# 7. Approval and Amendments
+The three external roles require an active account, a customer organisation and an assigned
+site. They may see all Portal call-offs for the active assigned site, not only requests they
+personally submitted.
 
-Fenster Office Staff may approve or reject a call-off. No other Customer Portal role may
-approve, reject or publish that decision.
+Fenster Office Staff global access is granted by the valid, active Office Staff role—not by a
+null organisation. Office Staff are not assigned to individual customer sites in the current
+approved model.
 
-Customer-visible explanations must be stored as `customer_response` and kept separate from
-private `internal_reason`.
+Public registration is disabled. Password reset and secure framework authentication apply.
+Customer/account/site-assignment administration by authorised Fenster staff is a target
+capability; the current repository does not yet contain a completed Office account-management
+interface.
 
-The portal records and communicates decisions; it must not calculate labour, manufacturing, delivery or resource availability.
+Site users currently select an assigned site from a menu. QR-assisted site selection is a
+future option; a QR code can identify a site but can never authenticate or authorise a user.
 
-If amendments are approved for call-offs, they must record the new requested date,
-explicit customer-visible response or customer-provided reason where applicable, private
-internal reason where applicable, user, timestamp and previous customer-visible values.
-Their full eligibility and lifecycle remain unconfirmed beyond the Version 1 withdrawal,
-rejected-request resubmission, Trash and Undo rules. Amendments must never overwrite
-history.
+A role-preview screen may exist only in local/test development. It must not be enabled in
+production, grant real permissions or bypass authentication and server-side authorisation.
 
-Completed services cannot be amended unless an authorised reopen process is explicitly designed.
+## 5. Customer Services
 
----
-
-# 8. Customer-Facing Statuses
-
-The confirmed call-off decision statuses are:
-
-- Submitted
-- Approved
-- Rejected
-
-Withdrawn is a Version 1 request lifecycle state for a submitted call-off removed before
-an office decision. It is not a Fenster approval or rejection decision.
-
-Trash is a customer-facing list state for eligible withdrawn or rejected requests. It is
-not permanent deletion and must preserve audit-critical history.
-
-Any later progress labels must remain customer-facing portal statuses, not SiteApp workflow
-statuses. Their mapping, labels, icons, colours and transitions require an explicit decision
-before implementation. Do not use a call-off approval to imply operational production,
-delivery, installation or verification progress.
-
----
-
-# 9. Notifications
-
-Users should receive in-app notifications when a call-off is submitted, approved or rejected.
-Notifications for amendments and later customer-facing status changes require their own
-confirmed lifecycle rules.
-
-Email may be added where configured. SMS and push are future options.
-
-Notification delivery failure must not corrupt request state.
-
----
-
-# 10. Data Ownership
-
-## SiteApp owns
-- developments, phases and plots;
-- plot completion;
-- operational production, delivery and installation information;
-- internal planning and decisions.
-
-## Customer Portal owns
-- portal users, sessions and portal roles;
-- portal role-to-site assignments and active-site context;
-- customer call-off batches, requests and revisions;
-- amendments and customer-visible responses;
-- portal notifications and settings.
-
-Any copied operational data is a projection or cache, not the source of truth. Customer
-Portal plot projections are modelled as `projected_plots` to avoid confusing them with
-SiteApp operational plots.
-
----
-
-# 11. Integration Philosophy
-
-Integration points will be defined after the foundation is established.
-
-Use well-defined APIs, events or synchronisation services. Do not directly duplicate SiteApp tables, models, policies or services.
-
-If SiteApp is unavailable, previously synchronised data may be read-only, stale data must be identified, failed submissions must not appear accepted, and internal errors must not be exposed.
-
----
-
-# 12. Explicitly Out of Scope
-
-Do not introduce:
-
-- SiteApp workflow stages, trade sequencing, sign-offs, Black Hat approvals, dependencies, readiness or build verification;
-- SiteApp roles or workflow policies;
-- SiteApp Filament resources or company, site, plot, trade and workflow administration;
-- SiteApp queries, templates, issues or internal notes;
-- internal audit history, trade assignments, labour planning, manufacturing planning or capacity;
-- SiteApp database, services, permissions or workflow models.
-
-Portal-specific approval screens are allowed only for portal requests.
-
----
-
-# 13. Version 1 Scope
-
-Include secure authentication, customer isolation, dashboard, outstanding plots, service requests, amendments, portal approval, notifications, statuses, history, responsive design and automated tests.
-
-Exclude SiteApp workflow, scheduling logic, labour/resource planning, trade management, build verification, SiteApp queries, general SiteApp administration, MFA, SSO, native apps, advanced analytics and uploads unless separately approved.
-
----
-
-# 14. Technical Foundation
-
-Expected foundation: PHP 8.3+, Laravel 13, Blade, Tailwind CSS, Alpine.js, Livewire where useful, SQLite locally, MySQL-compatible production, Pest and Laravel Pint.
-
-Exact versions must be taken from the new repository lockfiles.
-
-Do not assume Filament is required.
-
----
-
-# 14A. Next Implementation Milestone
-
-## Sprint 1A - Secure Access and Domain Foundation
-
-Sprint 1A prepares the secure domain foundation before call-off workflow schema and
-approval workflow implementation.
-
-Scope:
-
-- authentication;
-- disabled public registration unless explicitly approved;
-- active-account enforcement;
-- customer organisations;
-- four portal roles;
-- sites;
-- user-to-site assignments;
-- assigned-site authorisation for site users and Fenster Office Staff;
-- active-site selection for site roles;
-- production-safe dashboard routing;
-- development-only role preview guarded from production;
-- database planning for call-off batches and individual call-off requests.
-
-Out of scope:
-
-- production call-off submission;
-- Office Staff approval and rejection actions;
-- Trash, Undo and restoration implementation;
-- SiteApp integration;
-- SiteApp roles, policies, workflows, tables or internal statuses.
-
-Exit:
-
-- authenticated users are active and assigned to a customer organisation;
-- portal roles are distinct and portal-specific;
-- site access is enforced server-side;
-- development preview cannot be enabled in production or bypass authentication;
-- the next schema task can implement call-off batches and requests against these access
-  boundaries.
-
----
-
-# 15. Acceptance Criteria
-
-Version 1 is complete when:
-
-1. Users log in securely and public registration remains disabled.
-2. Site Manager, Assistant Site Manager, Finishing Foreman and Fenster Office Staff are
-   enforced as four distinct portal roles.
-3. Site roles can select only their assigned sites and cannot access another site's data or
-   submit a call-off for it.
-4. Site roles route to the site dashboard and see all call-offs for the active assigned
-   site in Version 1.
-5. Fenster Office Staff route to Review Requests and can review only assigned sites.
-6. Only Fenster Office Staff can approve or reject a submitted call-off for their assigned
-   sites.
-7. Completed projected plots cannot receive new requests.
-8. Separate call-offs work for Cavity Closers, Windows and CML, and duplicate active
-   call-offs are prevented.
-9. A call-off batch represents one submission action with exactly one site, one service
-   type, one requested date and one submitting user, and may contain one or many
-   individual projected plot requests.
-10. Each individual request owns its own status, approval, rejection, decision and history.
-11. Office Staff can decide individual requests independently after submission.
-12. Batch-level operations never overwrite individual decisions once requests in the batch
-   have diverged.
-13. Submitted, approved, rejected and withdrawn request states retain user attribution,
-   timestamp, previous values, customer-visible history and separate customer response
-   and internal reason fields where applicable.
-14. Approved call-offs cannot be deleted, trashed or cancelled by site users in Version 1
-   and remain active duplicate blockers until a future authorised closing lifecycle event.
-15. Rejected call-offs remain in history, may be trashed from customer-facing lists and
-   support traceable resubmission once the proposed DEC-034 journey is formally confirmed.
-16. Five-second quick Undo works for eligible withdrawal, Trash and restoration actions.
-17. Customer-facing Trash supports seven-day recovery for eligible withdrawn or rejected
-   call-offs, then hides expired Trash records while preserving audit-critical history.
-18. Bulk Undo and bulk Trash restoration are atomic and cannot partially restore selected
-   items.
-19. Approved and rejected decisions retain user attribution, timestamp,
-   previous values, customer-visible response and private reason separation.
-20. Development role preview is unavailable in production and never bypasses authentication
-   or authorisation.
-21. QR codes, when introduced, identify a site but never replace authentication or
-    authorisation.
-22. Notifications for submitted, approved and rejected call-offs work.
-23. No SiteApp internal data or workflow has been exposed or duplicated.
-24. Critical tests pass on supported devices and databases.
-
----
-
-# 16. Outstanding Decisions
-
-1. Confirm the customer-facing meaning of CML.
-2. Confirm bulk call-off creation limits and validation feedback.
-3. Define amendment eligibility and lifecycle beyond Version 1 withdrawal,
-   rejected-request resubmission, Trash and Undo.
-4. Define required email notifications.
-5. Define synchronisation freshness.
-6. Map approved call-offs and any operational information to customer-facing statuses.
-7. Define long-term retention periods outside the seven-day customer-facing Trash window.
-8. Confirm the initial SiteApp integration method.
-9. Confirm the proposed rejected-call-off resubmission journey in DEC-034 before its UI is
-   implemented.
-
----
-
-# Success Criterion
-
-> **The portal must make it immediately clear what remains outstanding, what was requested
-> or agreed, what has completed, and what the customer or Fenster should do next.**
-
----
-
-# 17. Management Requirements Consolidation — 20 August 2026
-
-This section is the authoritative clarification of Version 1 scope. It supersedes the
-following earlier assumptions in this brief: three services rather than four; Office Staff
-being restricted to assigned sites; one service and one requested date per submission
-batch; final customer-facing **Approved/Rejected** terminology; and any direct Portal
-write-back to SiteApp/Excel. Where this section conflicts with an earlier section, use
-this section.
-
-## 17.1 Product Boundary and Roles
-
-The Customer Portal is a customer-facing communication and call-off system. It displays
-authorised site and plot information, accepts customer call-offs, manages date agreement
-and customer-requested amendments, displays customer-safe progress and completion,
-maintains history, provides notifications, and offers agreed-work calendars and schedules.
-
-SiteApp/Excel remain the operational source for plot, product and completion data. The
-Portal must never become Fenster's manufacturing, planning, workflow, verification or
-internal administration system.
-
-Site Manager, Assistant Site Manager and Finishing Foreman remain distinct titles for
-display, identity, reporting and history, but have identical Version 1 permissions as a
-single Site User group. A Site User may be assigned to one or multiple sites in their
-customer organisation, sees all plots and customer-safe records on active assigned sites,
-and may manage authorised call-offs for those sites. There are no plot-level assignments.
-
-Fenster Office Staff are the Version 1 internal staff group. Authorised staff share the
-same internal permission level and can see all customers, sites, plots and customer
-call-offs; manage customer and Site User accounts; and assign or remove Site Users from
-sites. The former assigned-site restriction for Office Staff is superseded. Customers do
-not self-register or administer users. Deactivated users retain their historic name and
-role in audit history.
-
-## 17.2 Authentication and Site Context
-
-The live Portal uses username/email and password authentication, secure sessions,
-password reset, active-account enforcement, rate limiting and server-side authorisation.
-Public registration is disabled. MFA and SSO are future work.
-
-Site Users manually select an assigned site before accessing site-scoped data or acting.
-Future QR codes identify a site only: an authorised logged-in user continues to that
-site's dashboard, an unauthenticated user signs in first, and an unauthorised user is
-denied safely. QR codes never confer permissions and manual selection remains available.
-
-Development-only role preview may exercise routing but must never be enabled in production
-or bypass normal authentication and authorisation.
-
-## 17.3 Plot-Centric Dashboard and Statuses
-
-The Site Dashboard is a plot-centric overview. Each row represents one plot and contains
-Plot Reference, Overall Status, actions and service columns in this exact order:
+The four customer-facing services, in display order, are:
 
 1. Cavity Closers
 2. Windows
 3. Snagging
 4. CML
 
-Snagging is a full, independently callable service. Every service cell uses one of the
-following customer-facing states:
+They are independent services, not stages or dependencies. A customer may request any eligible
+service without completing an earlier one.
 
-- **Nothing / Not Called Off**;
-- **Called Off — Awaiting Date**;
-- **Date Agreed — [agreed date]**; or
-- **Completed — [actual Completed Date]**.
+The exact customer-facing expansion of **CML** remains unconfirmed. Use `CML` until management
+approves the wording. Do not invent a source code for Snagging.
 
-Use text, labels or icons as well as colour. The physical/display order Cavity Closers →
-Windows → Snagging → CML is not a dependency: customers may call off any eligible service
-independently.
+## 6. Dashboard and Plot Projection
 
-Overall plot status is calculated as follows:
+Site users land on the dashboard for their active assigned site. Fenster Office Staff land on
+Review Requests.
 
-| Status | Definition |
+The site dashboard is plot-centred and should support authorised pagination, search, service
+and status filters. Completed plots remain available but are hidden by default. Filters are
+browsing aids and never expand server-side access.
+
+Each plot presents four service states using accessible text in addition to colour or icons:
+
+- **Nothing Called Off**
+- **Called Off — Awaiting Date**
+- **Date Agreed** (with the agreed date)
+- **On Hold — Date Change Requested** (Sprint 3F amendment state)
+- **Completed** (with a date only when the source actually provides one)
+
+Overall plot presentation is derived from service state:
+
+| Overall status | Meaning |
 |---|---|
 | Nothing Called Off | No service has been called off. |
-| Call-Offs In Progress | One or more active call-offs remain unresolved or awaiting a date, unless that service is already Completed. |
-| Dates Agreed | At least one service is Date Agreed or Completed and no currently called-off service remains Awaiting Date. Services not yet called off do not prevent this state. |
-| Partially Completed | At least one service is Completed but not all four; this label takes precedence over unresolved call-offs. |
+| Call-Offs In Progress | One or more called-off services remain unresolved, including an amendment on hold. |
+| Dates Agreed | At least one service is Date Agreed or Completed and no called-off service remains unresolved. |
+| Partially Completed | At least one, but not all four, services are Completed; this takes presentation precedence. |
 | Fully Completed | All four services are Completed. |
 
-Fully Completed plots are highlighted, retained indefinitely, hidden by default and made
-available through Show Completed/filter functionality. They are never automatically
-archived or deleted.
+There is no separate overall `Amendment In Progress` label in Version 1.
 
-Each plot row has a Call Off action, and users can select multiple plots for Call Off
-Selected. A separate New Call Off page remains available. Both routes use the same
-eligibility rules. Plot Details prominently shows overall status, non-zero product
-quantities and the four services; each service opens its customer-safe history, dates,
-attachments and relevant actions.
+Plot Details shows overall status, the four services, customer-safe service history and only
+non-zero customer product totals. Operational fields and raw source evidence remain private.
 
-## 17.4 Product Eligibility, Submission Batches and Dates
+## 7. Eligibility, Batches and Dates
 
-Eligibility comes from source product/plot data and Portal rules. Customers cannot edit
-operational data. Existing, completed, ineligible and unresolved plot/service
-combinations stay visible but disabled with an explanation; they are never silently
-removed.
+Eligibility is evaluated per plot and service from authorised source projection plus Portal
+rules. Completed, already-active, ineligible or unresolved combinations remain visible but
+disabled with a clear reason; they are not silently hidden.
 
-Product information is projected from Excel/SiteApp. Show exact Fenster product codes,
-including CAS, PFD and BF, only where quantity is greater than zero. Do not show products
-in the main overview; show them in Plot Details and relevant call-off selection/review.
+- A plot/service can have no more than one active call-off.
+- One batch represents one user submission action for one active site.
+- A batch may contain one or many plot/service requests.
+- Each selected service may have its own requested date.
+- Each individual request owns its plot, service, requested date, state, decisions and history.
+- Later batch actions must not overwrite individual values or decisions after requests diverge.
+- Supported bulk undo/restoration is atomic: all eligible records change or none do.
 
-A call-off batch represents one Site User submission action for one active site. It may
-contain one or many plot/service combinations. Each individual request owns its plot,
-service, requested date, status and full history.
+The confirmed normal minimum lead time is three weeks for standard products and four weeks
+when the exact plot has a positive BF/Bifold quantity. The customer-facing normal date adds a
+one-week buffer, making the earliest normal request four weeks or five weeks respectively.
 
-- A user may select one or many plots and one or many services.
-- Each selected service may have a different requested date.
-- By default each selected service applies to every selected plot, but users may untick
-  individual plot/service combinations.
-- Mixed services and mixed requested dates are valid within one batch.
-- No more than one active call-off may exist for the same plot and service.
-- Batch-level presentation or bulk actions must never overwrite individual dates,
-  decisions or history once records diverge.
-- Where supported, bulk Undo and restoration remain atomic: all eligible records change
-  or none do.
+Normal dates are weekdays, no more than six months ahead. UK bank-holiday exclusion is the
+approved target, but the provider/dataset and operational owner remain unresolved; the last
+explicitly evidenced deployed behaviour is weekday-only. Do not claim holiday exclusion is
+live until it is implemented and verified.
 
-Normal minimum lead time is three weeks for standard products and four weeks where
-BF/bifold affects that plot/service. The customer-facing normal request window adds a
-one-week buffer, so the earliest normal date is four weeks for a standard item and five
-weeks for a BF/bifold-affected item. Calculate this independently per plot/service.
+`Request Earlier Date` is the explicit exception route. It requires a reason, is prominently
+flagged to Fenster and retained in history. Office acceptance inside lead time requires an
+explicit acknowledgement of the exception.
 
-Normal requested dates are Monday–Friday only, exclude UK bank holidays and may be no
-more than six months ahead. The date picker prevents dates earlier than the individually
-calculated normal date.
+## 8. Date-Agreement Workflow
 
-**Request Earlier Date** is the explicit exception route. It requires a reason/message,
-is prominently flagged to Fenster and recorded in history. Fenster may Accept Date or
-Propose Alternative Date. Accepting an inside-lead-time date requires additional
-acknowledgement of the exception.
-
-## 17.5 Date Agreement, Withdrawal and Amendments
-
-After a Site User submits a requested date, Fenster Office Staff may **Accept Date** or
-**Propose Alternative Date**. Accepting immediately makes the service **Date Agreed**;
-the customer does not need to confirm it.
-
-For a proposed alternative, the original submitter is the primary action recipient, but
-any currently authorised Site User on the site may Accept Alternative or Reject Alternative
-with a mandatory reason. History records the actual responder. Acceptance makes the date
-Date Agreed. Rejection leaves the call-off alive and permits another alternative until a
-date is agreed or the call-off is withdrawn.
-
-Use **Date Agreed**, not **Approved**, as the final customer-facing state. Rejecting a
-proposed alternative is not a rejected call-off and must not become a separate
-resubmission workflow. No new direct final call-off rejection flow is defined by this
-clarification.
-
-Site Users may withdraw a call-off at any point before Date Agreed, including while an
-alternative awaits response. Once Date Agreed, withdrawal is unavailable and changes use
-the amendment route. Existing five-second quick Undo and seven-day customer-facing Trash
-recovery requirements continue for eligible withdrawal, Trash and restoration actions.
-Expiry removes an item from customer-facing Trash while preserving audit-critical history.
-
-After Date Agreed, a Site User may submit an amendment with a new requested date, a
-predefined amendment reason and optional explanation. There is no fixed amendment cutoff.
-An amendment within three working days of the current agreed date is marked **Urgent / Late
-Amendment** as a warning, not a prohibition.
-
-An amendment places the existing Date Agreed date **On Hold** rather than erasing it.
-Fenster may accept the amended date or propose an alternative using the original
-negotiation process. A newly agreed date becomes Date Agreed while prior dates remain in
-history. If agreement fails, Fenster staff decide whether an On Hold date can be
-reinstated; it is never restored automatically. Fenster-originated changes to an agreed
-date are handled outside the Portal.
-
-## 17.6 Completion and Source Integration
-
-Completion is sourced from Excel/SiteApp only; Fenster staff cannot manually mark a
-service Completed in the Portal. Use Job Stage plus Completed Date where available:
-
-| Service | Job Stage |
-|---|---|
-| Cavity Closers | `CC08` |
-| Windows / Plot Calloff Installation | `CA02` or `CA03` |
-| Snagging | `SN05` |
-| CML | `CML4` |
-
-Display **Completed — [Completed Date]**. A Completed Date without the expected stage
-code still makes a service Completed; never use requested, agreed or planned dates as an
-actual completion date.
-
-If a source update reports a service Completed while negotiation or amendment is open,
-completion takes priority: close that Portal process, preserve its history and show the
-actual completed date. If source data later reverses completion, follow the source,
-retain previous history and show the reversal with date/time. Completion itself does not
-send an in-app notification or email.
-
-Integration is read-only from the Portal's perspective:
+The current approved customer workflow is:
 
 ```text
-Excel / SiteApp → Customer Portal
+Site User submits requested date
+  → Awaiting Fenster
+  → Office accepts requested date → Date Agreed
+  → Office proposes alternative → Awaiting Site User
+       → authorised Site User accepts → Date Agreed
+       → authorised Site User rejects with reason → Awaiting Fenster
 ```
 
-The Portal does not write agreed dates to Excel/SiteApp. It owns requested dates,
-negotiation, Date Agreed, amendments and Portal communication/history. Excel/SiteApp own
-product quantities, operational completion and source identifiers.
+Alternative negotiation may repeat on the same request. Any currently authorised site user
+for the active site may respond; the original submitter remains the primary notification
+recipient. The actual actor and timestamp are recorded.
 
-`Call No.` is a permanent unique source identifier. Known call types are `PC1` (Windows /
-Plot Calloff Installation Date), `CC!` (Cavity Closers Delivery Date), `CM1` (Snagging
-Arrival Date) and `CM2` (CML Arrival Date). These codes are not customer-facing names.
-`Plot To Be Installed` is a placeholder, never a Date Agreed or planned Portal date, and
-`Site Value` is internal/commercial.
+Use **Date Agreed**, not **Approved**, as the final customer-facing state. Rejecting an
+alternative is not rejection of the call-off and does not create a new request.
 
-Source data refreshes approximately every one to two hours. On a failed or delayed sync,
-show the last successful information and **Last updated: [date/time]**. If a known Call
-No. disappears, preserve last known data and Portal history, flag the issue internally and
-do not silently delete or hide it.
+Site users may withdraw before Date Agreed, including while awaiting an alternative response.
+After Date Agreed, withdrawal, customer trash and customer cancellation are unavailable; a
+date change uses the amendment route.
 
-Use CML on the overview. Its full customer-facing expansion is TBC and must be available
-when the service is opened. Customers cannot download the actual CML certificate in the
-Portal.
+Eligible withdrawal/trash actions offer a five-second quick Undo. Eligible customer-facing
+Trash restoration lasts seven days. Expiry removes the item from the customer-facing Trash
+view but preserves audit-critical history. Bulk undo and restoration are atomic.
 
-## 17.7 History, Attachments, Notifications and Calendar
+Historical Submitted/Approved/Rejected records may remain for compatibility and audit, but
+that earlier direct approval lifecycle is not the current target workflow.
 
-Each plot/service timeline contains original requests, alternatives, customer responses,
-customer-visible reasons/messages, Date Agreed and On Hold states, amendments, previous
-agreed dates, withdrawals, completion/reversal events and related attachments. Every
-event records exact date/time, actual person's name and role. Fenster staff may see
-permitted private internal reasons; Site Users must never see private Fenster information.
+## 9. Amendments
 
-Communication remains structured around defined actions. Do not add general chat or a
-conversation thread. Site Users may attach photos/documents to customer actions that
-include a reason/message, including New Call Off, Reject Alternative Date, Request Earlier
-Date and Amendment Request. Fenster staff can view but do not upload through this
-workflow. Attachments belong to their history event, not a general file library.
+Sprint 3F defines changes after Date Agreed. It is implemented on
+`feature/sprint-3f-date-amendments` at `60aa9e2` and is ready for dedicated QA; it is not on
+`main`, release-approved or deployed.
 
-In-app notifications cover meaningful workflow changes: call-off submitted, requested date
-accepted/Date Agreed, alternative proposed/accepted/rejected, amendment requested,
-amendment accepted, amendment alternative proposed and other meaningful action-required
-changes. They identify plot, service, action and next step and link to the record.
-Dismissing or reading a notification never removes history. The original submitter gets
-the primary alternative-date action notification/email; all assigned Site Users see status
-in the Portal; Fenster staff receive relevant customer-action in-app notifications. Email
-is reserved for important/action-required events and must not duplicate every in-app
-notification. Use reminders without noise for Completed services. Completion is excluded
-from notification/email.
+A site user requests a new date against the existing agreed request. The existing agreed date
+is preserved and the service becomes **On Hold — Date Change Requested**. There is no fixed
+cutoff; a request within three working days of the current agreed date is flagged
+**Urgent / Late Amendment** as a warning, not a prohibition.
 
-The agreed-work calendar shows Portal **Date Agreed** records with plot, service and
-agreed date. It supports appropriate site, plot, service and date filters. Calendar
-entries use service-specific colours for Cavity Closers, Windows, Snagging and CML but
-retain accessible text/icons and hover/focus explanations. On mobile, first tap opens a
-summary and View Details opens the record. Calendar/PDF schedules use Portal Date Agreed
-data only and identify site, plot, service, agreed date and relevant status.
+Confirmed amendment reasons are:
 
-## 17.8 Company Testing and Remaining TBC Items
+- Site Not Ready
+- Programme Change
+- Access Issue
+- Customer Requested Change
+- Materials / Availability
+- Weather
+- Other
 
-The first company test uses a fictional customer/site with dummy plots, so staff can
-submit, accept, reject alternatives, amend and withdraw without affecting operations. It
-includes BF products, differing lead times, completed plots and alternative-date
-negotiation. Use at least one Fenster staff member and two or three representatives of the
-external Site User roles.
+`Other` requires an explanation; an explanation is optional for the named reasons. Office may
+accept the new date or use the existing alternative-date negotiation. A newly agreed date
+becomes current while every prior agreed date remains in history.
 
-After testing, collect feedback before changing the application. Classify it as a bug,
-important usability improvement, genuine new requirement or personal preference, then
-agree priorities with management.
+Source completion wins over an open amendment, closes the cycle and sends no completion
+notification. A later source reversal does not automatically reopen the amendment.
 
-The following remain TBC and must not be invented:
+Failure/cancellation handling and any explicit reinstatement of an old agreed date remain
+unconfirmed and must not be invented. Fenster-originated changes to an agreed date remain
+outside the Portal unless separately approved.
 
-1. The exact customer-facing expansion of CML.
-2. The predefined amendment-reason list.
-3. Ownership and operational contract for updates to the Excel/source data.
-4. The detailed source integration mechanism, credentials and reconciliation process.
-5. Long-term retention periods beyond the seven-day customer-facing Trash window.
-6. Any migration treatment for historic direct rejected-call-off records created under
-   earlier assumptions; rejecting an alternative is already defined and is not a rejected
-   call-off.
+## 10. Source Call Types and Completion
+
+The authoritative detailed mapping is
+`documentation/siteapp-import-data-dictionary.md`. Confirmed call types are:
+
+| Source value | Meaning | Customer service |
+|---|---|---|
+| `PC1` | Plot Install | Windows |
+| `CC1` | Cavity Closer 1 | Cavity Closers |
+| `CM1` | Revisit 1 | CML |
+| `CM2` | Revisit 2 | CML |
+| `CML` | CML Call Off | CML |
+
+CM1 and CM2 are CML revisits, not new services. Literal `CC!` is invalid/likely typo evidence:
+preserve it, optionally suggest `CC1`, require human confirmation and never silently correct it.
+
+`complete = Yes` means that specific source call-off part is complete. Sensible yes/no casing
+may be parsed case-insensitively. Do not invent a completion date when the source has none, and
+do not infer completion from Portal requested, alternative, agreed or operational dates.
+
+Source completion has precedence over open negotiation/amendment. Preserve the full Portal
+history. A later source reversal updates the current projection and records the reversal; it
+does not erase history or automatically reopen the closed process. Completion sends no in-app
+or email notification.
+
+Older speculative `Job Stage`, `Completed Date`, `CC08`, `CA02`, `CA03`, `SN05` and `CML4`
+rules are not authoritative without a later explicit decision.
+
+## 11. Product Projection
+
+Customer product information is deliberately rolled up:
+
+```text
+Total Windows = VS + TT + BAY + ALI + AOV + FI
+Total Doors   = PSU + PSG + CDF + CDU + CDG + PSP + BF
+```
+
+| Code | Meaning | Roll-up |
+|---|---|---|
+| VS | Vertical Slider | Windows |
+| TT | Tilt and Turn | Windows |
+| BAY | Bay Window | Windows |
+| ALI | Aluminium Windows | Windows |
+| AOV | Automatic Opening Vent Window | Windows |
+| FI | Fire Window | Windows |
+| PSU | PVC Door Utility | Doors |
+| PSG | PVC Door Garage | Doors |
+| CDF | Composite Door Front | Doors |
+| CDU | Composite Door Utility | Doors |
+| CDG | Composite Door Garage | Doors |
+| PSP | PVC Sliding Patio | Doors |
+| BF | Bifold | Doors |
+
+Exact positive `BF` must also remain separately identifiable internally because it changes
+the confirmed lead-time rule. `CAS`, `FLU`, `PFD`, `GLS`, `WP` and `MISC` are excluded from the
+final customer product model; their raw values may be retained privately for evidence.
+
+`Items Ordered Status` and `Site Value` are ignored. `Plot To Be Installed` is operational
+arrival-to-install evidence for PC1 and never a customer Requested Date, alternative proposal,
+Date Agreed or completion date.
+
+## 12. Site Identity, Export Scope and Refresh
+
+A permanent source Site ID/reference is the required durable identity. Exact Site Name may be
+used only for explicit transitional mapping; it must not fuzzy-match or create a Portal site.
+
+Every workbook defaults to `PARTIAL_FILTERED_EXPORT`, because the source may have been filtered
+before export. Absence never proves deletion or zero quantity. `SITE_COMPLETE_SNAPSHOT` or
+`GLOBAL_COMPLETE_SNAPSHOT` may be used only with explicit coverage confirmation.
+
+Source owner, source revision identity, stale/out-of-order handling and multiple-row `Call No.`
+semantics remain implementation gates. A failed or delayed refresh must preserve the last
+successful customer-safe projection and show its last-updated time; it must not silently hide
+known records.
+
+## 13. Standalone Wald Import Direction
+
+CustomerApp will adopt a controlled fork of compatible generic SiteApp WALD01–07 engine code
+and tests. This is an architecture decision, not a claim that Wald is implemented in
+CustomerApp.
+
+The path is:
+
+```text
+private upload
+  → deterministic analysis
+  → explicit clarification and reanalysis
+  → neutral staging
+  → authorised Portal review against current state
+  → explicit controlled commit
+```
+
+Wald infers structure; the approved CustomerApp dictionary defines business meaning. It must
+remain deterministic and explainable, with no external AI/LLM, embeddings or third-party
+spreadsheet interpretation.
+
+The non-main line ending at `feature/manual-source-import-ui` (`1e8c22b`) is evidence, not
+production truth or the final architecture. Generic interpreter mechanics may be compared for
+reuse; Portal projection, tenant access, scope and reconciliation rules remain downstream;
+overlapping manual interpretation/profile/UI work is a supersession candidate, not approved
+for wholesale merge or deletion.
+
+Do not begin CUSTOMER-WALD02 until the immutable approved source baseline/manifest and scoped
+work package are available. Import/review/commit permissions, retention, source revision and
+commit-recovery rules also remain explicit gates.
+
+## 14. Notifications, History and Customer Content
+
+Every material action records the actual actor, role, exact time, previous/current values and
+customer-safe context. Private Fenster reasons are stored and authorised separately. Source
+raw evidence and SiteApp internal audit data are never exposed.
+
+In-app notifications cover meaningful submitted, accepted, proposed, responded-to and amended
+events. They identify the plot, service, event and next action and use links that are
+re-authorised on access. Read/dismissed state never removes domain history. Completion sends no
+notification.
+
+Email/Resend, reminder cadence and push notifications are planned, not currently evidenced as
+implemented. The last explicitly evidenced production queue driver is `sync`; a persistent
+worker is a separate production-readiness item.
+
+Attachments are planned only for defined customer actions that include a reason/message. They
+belong to the related history event, not a general file library. Upload limits, malware
+controls and retention require an approved implementation contract before release.
+
+## 15. Current Delivery State
+
+Status is deliberately separated from product intent:
+
+| State | Evidence as at 4 September 2026 |
+|---|---|
+| Last explicitly evidenced production release | Sprint 3E at `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`; Forge deployment `76326195`; all 11 migrations intact and nothing pending. |
+| Production follow-up | Authenticated, non-destructive production smoke test remains outstanding. Production queue was `sync`; two npm advisories were recorded at that release. |
+| Current `origin/main` | `0873bac79edf578e9f4a9417e3cafae34e8aa925`, four commits beyond the evidenced Sprint 3E SHA. It contains the Office Staff organisation model correction and Office Date Agreed filter, but repository records inspected for this reset do not prove a successful deployment of that SHA. Verify Forge before describing it as deployed. |
+| Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
+| Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
+| Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
+| Standalone Wald | Approved architecture and adoption contract only; CUSTOMER-WALD02 has not begun. |
+
+Implemented foundation already evidenced in the repository includes authentication, customer
+organisations, four Portal roles, site assignments and active site context, server-side
+policies/gates, secure routing, development-only role preview, call-off domain/history,
+customer and Office dashboards, date negotiation, Trash/Undo and database-backed in-app
+notifications. Exact release state must still follow the table above.
+
+## 16. Planned and Future Work
+
+Approved direction, not a delivery claim:
+
+- dedicated QA and release decision for Sprint 3F;
+- standalone Wald phases CUSTOMER-WALD02–06, pilot and hardening;
+- safe source scheduling/synchronisation after manual import is proven;
+- completed Office account/organisation/site-assignment administration;
+- approved UK bank-holiday provider and operational ownership;
+- persistent production queue and worker supervision;
+- selective email, reminders and later push mapping;
+- attachments under a security/retention contract;
+- agreed-work calendar and customer-safe PDF schedules;
+- responsive/accessibility/performance hardening and production smoke coverage;
+- future QR-assisted site selection;
+- future customer-safe CML document/certificate behaviour only if explicitly approved.
+- management reporting built only from approved customer-safe Portal data.
+
+## 17. Non-Goals
+
+Version 1 does not include:
+
+- SiteApp workflow stages, trade sequencing, sign-offs or internal statuses;
+- readiness/build verification or operational availability calculation;
+- trade assignments, labour planning or manufacturing planning;
+- SiteApp administration, Filament resources, direct database queries or write-back;
+- generic CRM, free-form chat or a general file library;
+- native mobile applications, AI scheduling or speculative microservices;
+- external AI/LLM spreadsheet interpretation;
+- public self-registration, MFA or SSO;
+- automatic correction of unknown source meaning;
+- deletion inferred from absence in a filtered workbook.
+
+## 18. Open Decisions and Verification Gates
+
+Do not invent answers for:
+
+1. Exact customer-facing expansion of CML and any future certificate/document access.
+2. UK bank-holiday provider/dataset, update ownership and failure behaviour.
+3. Source owner/operator, immutable revision identity, stale ordering and multi-row `Call No.`
+   semantics.
+4. Wald import, review, commit, dictionary and learned-knowledge approval permissions.
+5. Raw workbook, neutral staging, clarification, learned-answer and audit retention periods.
+6. Import commit atomicity, rollback/recovery and partial-failure presentation.
+7. Any customer-safe projection of source fields beyond the approved product/status allowlist.
+8. Amendment failure/cancellation and explicit old-date reinstatement rules.
+9. Scheduled source-sync mechanism, credentials, cadence and operational alert ownership.
+10. Email provider/event mapping, reminder cadence and production queue-worker rollout.
+11. The actual currently deployed SHA beyond the last evidenced deployment; verify Forge rather
+    than infer it from `origin/main`.
+
+The confirmed spreadsheet semantic set in Sections 10–12 has no remaining business-meaning
+question. Implementation gates around permissions, identity, retention and recovery remain.

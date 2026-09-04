@@ -1,6 +1,79 @@
 # Fenster Customer Portal Handover
 
-## Release-management status — 25 August 2026
+## Project documentation reset — 4 September 2026
+
+The governing documentation has been consolidated on the non-deploying branch
+`docs/customerapp-project-reset-2026-09-04`.
+
+Use these current entry points:
+
+- product and current delivery truth: `brief.md`;
+- safe agent/work rules: `AGENTS.md`;
+- durable reset decision: DEC-041 in `DECISIONS.md`;
+- source meanings: `documentation/siteapp-import-data-dictionary.md`;
+- preserved conflicts/open items:
+  `documentation/customerapp-documentation-contradiction-register-2026-09-04.md`;
+- fresh Wald chat:
+  `documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md`.
+
+Do not resume from an older brief section or historical sprint header. Sprint 3E at
+`9111d76ff05d702d68afd884ee8e42bc8e50c8e3` / Forge `76326195` is the last explicitly
+evidenced production release. `origin/main` is `0873bac79edf578e9f4a9417e3cafae34e8aa925`,
+but its deployed state needs Forge verification. The authenticated non-destructive smoke is
+also outstanding.
+
+Sprint 3F is separate at `feature/sprint-3f-date-amendments` (`60aa9e2`) and still needs
+dedicated QA/release approval. CUSTOMER-WALD02 has not begun and must not begin without the
+approved immutable SiteApp Wald baseline/manifest and a scoped work package. The manual import
+line ending at `1e8c22b` remains non-main evidence only.
+
+This reset changes documentation only. It makes no application, migration, dependency,
+SiteApp, production or deployment change.
+
+## CUSTOMER-WALD01A reconciliation handoff — 4 September 2026
+
+Completed documentation-only CUSTOMER-WALD01A. Implementation contract:
+`documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
+Version/divergence/backport register: `documentation/wald-divergence-register.md`.
+Authority: DEC-039–041, `brief.md` §§10–13 and
+`documentation/siteapp-import-data-dictionary.md`.
+
+Key handoff:
+
+- Controlled fork of generic SiteApp Wald; no SiteApp runtime dependency or source edits.
+  Reference code/tests are present but uncommitted; agree a reproducible copy manifest first.
+- The audit checkout contains the transport-independent projection importer. A committed
+  non-main feature chain ending at `feature/manual-source-import-ui` (`1e8c22b`) also
+  contains deterministic XLSX interpretation, source-site bindings, scope-aware dry-run,
+  semantic profiles and an Office import UI. It is A/B/C/D-classified in CUSTOMER-WALD01
+  §4 and is evidence, not automatically the final architecture or production work.
+- Keep Portal domain protections/tests and add Wald neutral staging/review plus an
+  authorised commit boundary; do not transplant SiteApp staging/commit/admin or merge the
+  non-main feature line wholesale.
+- Site-wide/partial uploads cannot use current source-wide missing-record reconciliation
+  unchanged. Product omission/aggregation, revision ordering and commit unit need explicit
+  contracts before live use.
+- Valid call types are PC1/CC1/CM1/CM2/CML. CM1/CM2 are CML revisits; literal `CC!` is
+  unknown/likely typo evidence and is never silently normalised. No Snagging source code is
+  invented.
+- `complete = Yes` authoritatively completes its source call-off part without inventing a
+  date. Windows/Doors roll-ups, exact positive BF five-week handling, excluded products,
+  ignored fields, PC1 operational date, transitional Site Name and filtered-export default
+  are confirmed. No semantic business question remains from this set.
+- Portal import/knowledge entitlements, source owner/revision contract, commit atomicity
+  and retention remain gated delivery/governance decisions.
+- Production Wald requires CustomerApp's own durable worker/private storage and MySQL
+  validation; current configuration or upstream test reports are not deployment proof.
+- Next scoped package is CUSTOMER-WALD02, followed by 03–06, but only after the exact
+  approved SiteApp Wald baseline is immutable. No code copying, app tests,
+  benchmark, migration, commit, push, production access or deployment occurred here.
+
+The user's confirmed Sprint 3E release at `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`
+(Forge `76326195`) supersedes the older blocked-release account below. This audit did not
+reverify production or start Sprint 3F. Preserve the repaired historical migrations and
+the unrelated local report/workbook/output changes.
+
+## Historical release-management status — 25 August 2026
 
 Production serves `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` through the
 successful controlled migration-recovery deployment. The exact evidence is retained in

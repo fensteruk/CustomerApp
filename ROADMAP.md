@@ -1,14 +1,67 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 25 August 2026*
+*Last Updated: 4 September 2026*
 
 # Project Overview
 
-The Customer Portal is a standalone customer-facing request and communication application. It integrates with SiteApp without duplicating SiteApp's internal operational workflow.
+The Customer Portal is a standalone customer-facing request and communication application.
+Initial spreadsheet ingestion will use its own Wald instance without requiring SiteApp.
+Any later read-only SiteApp integration must not duplicate its operational workflow.
 
-# Current Version
+# Current Planning Milestone
 
-**Current Milestone:** `Sprint 3E release candidate (MySQL gate blocked)`
+**CustomerApp documentation reset complete; standalone-Wald implementation remains gated.**
+The current authority is the rebuilt `brief.md`, DEC-039–041,
+`documentation/siteapp-import-data-dictionary.md` and
+`documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
+The contradiction register preserves stale/historical statements without treating them as
+current work.
+
+The next implementation package to prepare is CUSTOMER-WALD02, after acceptance of the
+documented boundaries, an immutable upstream copy baseline and a scoped work package. Start
+the dedicated chat with `documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md`.
+All later packages remain planned and require their own scoped implementation/release
+instructions.
+
+The 4 September reconciliation confirms PC1/CC1/CM1/CM2/CML, rejects literal `CC!` as a
+silent alias, makes `complete = Yes` authoritative for its source call-off part, confirms
+Windows/Doors roll-ups and exact BF handling, ignores Items Ordered Status/Site Value,
+qualifies Plot To Be Installed, sets future source Site ID as durable identity and makes
+every export partial/filtered by default. No semantic business question from that set
+remains. Source revision/ownership, permissions, retention, commit atomicity and the exact
+approved SiteApp Wald copy baseline remain gates for the packages that need them.
+
+A committed non-main CustomerApp line ending at `feature/manual-source-import-ui`
+(`1e8c22b`) is now recognised as architecture evidence. CUSTOMER-WALD02–05 must compare
+and classify its reusable generic mechanics, Portal-specific controls, superseded direct
+pipeline and corpus material; it must not be merged wholesale or treated as production.
+
+| Order | Package | Exit |
+| --- | --- | --- |
+| 1 | CUSTOMER-WALD02 — Portable core + corpus | Compatible reader/profiler/reasoning and tests run independently; no domain writes. |
+| 2 | CUSTOMER-WALD03 — Portal semantics/dictionaries | Portal call-record schema and confirmed definitions; unknown meanings remain gated. |
+| 3 | CUSTOMER-WALD04 — Clarification/profiles | Portal-owned scoped knowledge/history, explicit activation and safe additive persistence. |
+| 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |
+| 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
+
+First usable milestone is the integrated 05 exit, not just a working profiler. It must
+work with no SiteApp API/database/filesystem/queue access. Import permissions, source
+revision/ownership, reviewed commit unit and retention are explicit gates in the work
+package; the filtered-export scope and quantity/completion meanings are now confirmed.
+Keep the existing projection importer. A non-main workbook pipeline is a parity/supersession
+candidate, but nothing is approved for retirement. Track generic backport candidates in
+`documentation/wald-divergence-register.md`.
+
+Release-history clarification: Sprint 3E is explicitly evidenced as successfully released at
+`9111d76ff05d702d68afd884ee8e42bc8e50c8e3`, Forge deployment `76326195`. Current
+`origin/main` is `0873bac79edf578e9f4a9417e3cafae34e8aa925`, but this reset found no
+repository deployment-success record for that later SHA. Verify Forge before claiming it is
+deployed. The 25 August blocked-release account below is historical. Sprint 3F remains
+feature-branch only at `60aa9e2` and is outside this documentation/Wald milestone.
+
+# Historical Release Snapshot — 25 August 2026
+
+**Milestone at that time:** `Sprint 3E release candidate (MySQL gate blocked)`
 
 Release-management update: production serves `main`
 `f801c91113bd13656c6cbffdd3d82c12d4a95846`, deployed successfully after the documented
@@ -301,7 +354,10 @@ Each release should include:
 - no SiteApp internal functionality introduced;
 - manual deployment actions recorded.
 
-# Project Health
+# Historical Project Health Snapshot
+
+The following older table is retained for traceability, not current release or Wald
+implementation evidence. Use the current planning milestone above for this workstream.
 
 | Item | Status |
 |---|---|

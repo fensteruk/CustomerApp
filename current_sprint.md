@@ -1,6 +1,33 @@
 # Current Sprint
 
-## Release-management status — 25 August 2026
+## Current planning work — 4 September 2026
+
+**Project documentation reset complete on a non-deploying documentation branch.** The
+current product contract is now `brief.md`; safe-work governance is `AGENTS.md`; DEC-041
+records the reset and
+`documentation/customerapp-documentation-contradiction-register-2026-09-04.md` preserves
+the stale/historical/open items without layering them into the brief.
+
+The next standalone-Wald chat must start with
+`documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md`. CUSTOMER-WALD02 remains
+gated: do not copy code or begin implementation until the immutable approved SiteApp Wald
+baseline/manifest and a scoped CUSTOMER-WALD02 work package are supplied. Import permissions,
+source ownership/revision, retention and commit atomicity also remain open gates.
+
+Sprint 3F remains separate feature-branch work at
+`feature/sprint-3f-date-amendments` (`60aa9e2`), ready for dedicated QA but not on `main`,
+release-approved or deployed. This documentation task does not own or advance Sprint 3F.
+
+Production state is deliberately qualified. Sprint 3E at
+`9111d76ff05d702d68afd884ee8e42bc8e50c8e3` / Forge deployment `76326195` is the last
+explicitly evidenced successful release. Current `origin/main` is
+`0873bac79edf578e9f4a9417e3cafae34e8aa925`; verify Forge before claiming that later SHA is
+deployed. The authenticated non-destructive production smoke remains outstanding.
+
+No production code, migration, dependency, workbook, parser, queue, SiteApp repository or
+production environment is changed by this reset.
+
+## Historical release-management status — 25 August 2026
 
 Production is serving `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` after
 the controlled MySQL migration-recovery deployment recorded in
