@@ -3,6 +3,10 @@
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Status: **SCOPED ONLY — DEC-047. GOVERNANCE AND IMPLEMENTATION APPROVAL REQUIRED.**
 
+[Decision-resolution report](../wald/customer-wald05-governance-resolution-2026-09-08.md):
+I03 source revision/order and I04 Call No. grain require Nick/source-owner evidence. Other
+recommendations remain unapproved; this link records analysis, not implementation authority.
+
 This work package proposes the bounded integration that turns private workbook evidence into
 reviewed neutral records and, only after a separate explicit Office action, commits approved
 source facts into CustomerApp projections. It does not authorise implementation, migration,
@@ -73,7 +77,7 @@ reuse or a prior receipt into a tenancy grant or final-commit permission.
 ## 4. Included scope
 
 - private XLSX/CSV intake into CustomerApp-owned non-public storage;
-- operation IDs, idempotent dispatch, durable queued analysis, leases and browser resumption;
+- operation IDs, durable queue-agnostic analysis state, optional queued execution and resumption;
 - accepted Wald profiling, semantic adapter and WALD04 clarification/profile composition;
 - explicit source namespace/family, source-site binding, revision and coverage selection;
 - immutable analysis/staging/review/commit revisions and lineage;
@@ -192,13 +196,15 @@ Clarification or mapping changes produce a new analysis/staging generation; they
 prior results. A reviewed generation cannot commit if artifact, scope, binding, revision,
 dictionary, knowledge receipt, staging hash or relevant Portal current state changed.
 
-## 11. Queue, lease and recovery proposal
+## 11. Execution, queue and recovery proposal
 
-- register artifact/operation transactionally before after-commit dispatch;
-- use one CustomerApp queue only; never SiteApp queue/workers;
+- register artifact/operation transactionally before execution or after-commit dispatch;
+- permit bounded local/test analysis through the configured synchronous driver; persistent
+  queue rollout is not a prerequisite for implementation;
+- if analysis is queued, use one CustomerApp queue only; never SiteApp queue/workers;
 - stable operation and delivery IDs with unique idempotency constraints;
 - finite attempts, lease expiry, fencing token and expected-generation checks;
-- recovery finds registered-but-undispatched and abandoned claimed work;
+- recovery finds registered-but-unexecuted and, when queued, abandoned claimed work;
 - stale worker completion cannot overwrite a successor or terminal operation;
 - no analysis, network or workbook parsing inside database write locks;
 - retry only recognised transient failures; validation/authorisation/refusal is not retried;
@@ -207,7 +213,9 @@ dictionary, knowledge receipt, staging hash or relevant Portal current state cha
 
 Starting limits from WALD01 (300-second analysis, 600-second lease, three attempts and bounded
 backoff) are benchmarks, not approved production settings. WALD05 implementation evidence must
-measure and justify the actual values. Persistent worker/scheduler/supervision is not claimed.
+measure and justify the actual values. Final commit is a synchronous explicit transaction and
+never depends on queue delivery. Persistent worker/scheduler/supervision gates any queued
+production/pilot mode, not local implementation.
 
 ## 12. Proposed permissions
 
@@ -408,11 +416,11 @@ limits. Failed attempts and inherited advisories are reported separately from fi
 | I02 | Source-site binding authority/lifecycle | Active Office; immutable versions, activate/revoke/reason; exact source key to existing org/site; used binding never moved. | No binding or site inference. |
 | I03 | Source owner, revision and stale ordering | Name a Fenster source owner; require issuer-defined stable revision/order plus byte hash; exact replay idempotent, collision/older/unknown order blocks. | No commit. |
 | I04 | Duplicate/multi-row `Call No.` grain | Require unique Call No.; all duplicates block until source owner documents stable subidentity/aggregation. | No collapse/last-row-wins. |
-| I05 | Complete-snapshot absence effects | Partial default means no absence effect. Site/global scope explicit; propose mark-missing reconciliation only, never delete/zero outside defined grain. | Preserve all absent facts. |
+| I05 | Complete-snapshot absence effects | WALD05 V1 commit supports partial scope only. Site/global scope stays non-committable until source revision, dataset/grain and absence rules are approved; never delete/zero from unproved absence. | Preserve all absent facts. |
 | I06 | Neutral staging/review authority | Immutable complete staging revision and current-state diff; all blockers resolved; separate explicit review. | `ready_for_staging=false`; no projection write. |
 | I07 | Commit unit and recovery | Whole reviewed bounded set atomic; exact idempotency/current-state recheck; corrective successor after uncertainty. | No commit endpoint. |
 | I08 | Final staging/commit audit retention | Propose six years as an operational policy for approval, not a legal assertion; holds/backup expiry/data owner explicit. | Retain; no purge scheduler. |
-| I09 | Queue/storage operational owner and limits | CustomerApp-owned private storage and queue; named operator; measured lease/timeout/retry/worker/scheduler/alert settings. | Local/test only, no production worker. |
+| I09 | Queue/storage operational owner and limits | CustomerApp-owned private storage and durable operation state. Local implementation may use the configured synchronous driver; commit is never queued. Persistent worker/supervision is required only before queued pilot/release. | Local/test only, no production worker. |
 | I10 | Current importer/non-main disposition | Reimplement neutral/commit boundary; reuse safe tests/invariants; no wholesale merge; keep old path disabled from Wald until parity. | No direct call/cherry-pick/retirement. |
 | I11 | Pilot and cutover | Default off; WALD06 supervised family/site pilot after WALD05 QA; retirement separately approved. | No live source routing. |
 
