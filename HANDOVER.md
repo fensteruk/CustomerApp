@@ -1,6 +1,29 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD05 actual workbook audit complete; reader compatibility failure — 8 September 2026
+## CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
+
+Continue on `feature/customer-wald05-import-review-integration`. DEC-052 authorises the bounded
+reader correction and ongoing WALD05 implementation; no further blanket permission is needed.
+Reader correction SHA `e9e1c3a2a3ff79cfe5f097bea143f51195becd55`: wald-0.2.2 / XLSX 3, CSV 2;
+old knowledge pins stale, dictionary fingerprint unchanged. The exact original workbook now
+profiles successfully and remains untracked/unchanged. DEC-050/051 select 45 rows, exclude two.
+
+The default-off binding foundation adds exact Office-controlled identity/version lifecycle,
+immutable history, authenticated command replay, current-epoch validation and bounded audits.
+One additive migration creates three tables with six immutability guards. Pure ExportOrder and
+exact-artifact selection helpers are tested but not yet wired into an import run.
+Next: private upload/durable runs, accepted analysis/knowledge orchestration, immutable staging,
+preview, source observations and whole-run atomic projection commit. No UI/cutover/production yet.
+No new business ambiguity or permission blocker. WALD05 remains PARTIAL, not ready for dedicated QA.
+
+Focused: 53 passes / four skips. Combined: 930 passes / 15 skips / 4,375 assertions.
+Full: 1,149 passes / 30 skips / 5,563 assertions. MySQL: 52 non-race passes / one SQLite-only skip,
+four passing scenarios / 40 groups / 80 workers; additive upgrade and safe rollback checks pass.
+Disposable MySQL 8.4.11 at 127.0.0.1:33486 was cleanly stopped. Eight inherited advisories remain;
+Pint, Composer validation and build pass. No main, push, SiteApp or deployment.
+[Current report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+
+## Historical CUSTOMER-WALD05 actual-workbook audit before reader correction — 8 September 2026
 
 Continue on `feature/customer-wald05-import-review-integration`, audited checkpoint `b221784...`.
 The DEC-050 workbook hash still matches. DEC-051 additionally excludes Sheet1 row 32 / Call No.

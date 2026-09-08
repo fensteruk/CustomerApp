@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD05 actual workbook audit; reader compatibility failure)
+**Last updated:** 8 September 2026 (WALD05 reader correction and binding foundation)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -375,12 +375,13 @@ partial-only commit, complete staging, atomic commit, six-year minimal committed
 queue-agnostic analysis. DEC-049 subsequently authorises implementation from governance-inclusive
 commit `877bd3ff666873a0703c3b7671015ec4cfd2ee52`. The DEC-050/051 actual workbook audit selects
 45 records and excludes CM2 plus the exact Nick TEST record. It found no concrete business-data
-ambiguity; earlier hypothetical W5-P01/P02 cases do not block this sample. The frozen reader
-instead rejects an extension-namespace workbookPr (W5-T01); a narrowly reviewed, versioned core
-compatibility correction is needed before this workbook can traverse accepted Wald analysis.
-No global dictionary change, import fallback or runtime integration has been made.
-G09's unnamed owner blocks unattended
-production disposal only; no deletion scheduling is enabled.
+ambiguity; earlier hypothetical W5-P01/P02 cases do not block this sample. DEC-052 authorises
+W5-T01's narrow reader correction, implemented as `wald-0.2.2` / XLSX adapter 3 at `e9e1c3a...`.
+The unchanged workbook now profiles successfully. WALD05's default-off Office binding/version/audit
+foundation is implemented with additive SQLite/MySQL verification. Private runs, staging, preview,
+projection/whole-import commit and UI remain unimplemented; WALD05 is partial, not QA-ready.
+No global dictionary change or import fallback. G09's unnamed owner blocks unattended production
+disposal only; no deletion scheduling is enabled.
 
 ## 14. Notifications, History and Customer Content
 
@@ -413,7 +414,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Corrected WALD04 snapshot `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` remains the executable baseline. DEC-049 authorises implementation; DEC-050/051 actual selection has no concrete business-data ambiguity. W5-T01 accepted-reader metadata failure needs a versioned compatibility correction. No runtime, main change or deployment. |
+| Standalone Wald (8 September update) | Accepted WALD04 `0e83eb289...` is historical input. DEC-052 reader correction `e9e1c3a...` and default-off WALD05 binding foundation are feature-branch-only. Full regression: 1,149 passes / 30 skips. End-to-end import remains unimplemented; no main, push or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -426,7 +427,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- implementation of CUSTOMER-WALD05 after the W5-T01 reader compatibility correction,
+- completion of CUSTOMER-WALD05 private runs, staging, review and controlled commit,
   then independently gated CUSTOMER-WALD06 pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;
@@ -474,6 +475,6 @@ Do not invent answers for:
 
 The confirmed per-visit semantic set in Sections 10–12 remains approved. WALD05 implementation
 authority is recorded by DEC-049. DEC-050/051 are exact-workbook exceptions, not global dictionary
-changes. The actual selected data has no W5-P01/P02 conflict; W5-T01 is a technical reader failure,
-not an unanswered business rule. Dedicated QA and independently approved pilot/release gates
-follow implementation.
+changes. The actual selected data has no W5-P01/P02 conflict; W5-T01 is corrected under DEC-052.
+No new blanket approval is required to finish WALD05. Dedicated QA and independently approved
+pilot/release gates follow implementation.

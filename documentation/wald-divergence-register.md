@@ -1,14 +1,16 @@
 # Wald Distribution Divergence Register
 
 Last updated: 8 September 2026. Owner: Product and Architecture.
-Latest entry: the DEC-050/051 actual workbook audit selects 45 records and intentionally excludes
-CM2 plus the exact Nick TEST record. No concrete business-data ambiguity was found. W5-T01 is a
-reproduced accepted-reader failure: an extension-namespace workbookPr is mistaken for the core
-element and fails the physical-parent check. No reader correction or runtime integration yet.
-DEC-049 implementation authority and I01–I10 remain approved; hypothetical W5-P01/P02 cases do
-not block this selected sample. The specific core compatibility correction needs review.
+Latest entry: DEC-052's W5-T01 correction is implemented separately at
+`e9e1c3a2a3ff79cfe5f097bea143f51195becd55`: reader `wald-0.2.2`, XLSX adapter 3, CSV 2.
+Exact extension namespace/lineage handling preserves core metadata and XML safety guards;
+old knowledge pins become stale. The unchanged workbook now profiles successfully. DEC-050/051
+select 45 records, excluding CM2 and the exact Nick TEST record, without business-data ambiguity.
+The default-off Office binding/version/audit foundation is SQLite/MySQL tested; full import is
+still unimplemented. DEC-049/052 and I01–I10 authorise continued implementation, with no new
+blanket approval gate. No SiteApp backport, dedicated-QA acceptance or production change.
 See [implementation entry report](wald/customer-wald05-import-review-integration-2026-09-08.md).
-The earlier implementation-instruction gate below is satisfied; no runtime change is claimed.
+The earlier implementation-instruction gate below is satisfied; historical status is superseded.
 
 Status: corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
 on `qa/customer-wald03-2026-09-08` accepted as immutable WALD04 input, including executable
@@ -19,11 +21,11 @@ WALD04 corrected output `0e83eb2896e7c5144bc38c1be9713f3d205d93b8`, including ex
 `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, is accepted as immutable WALD05 input.
 [Acceptance/scope evidence](wald/customer-wald04-acceptance-wald05-scope-2026-09-08.md).
 DEC-048 approves WALD05 I01–I10 governance, including temporary manual source ordering and
-one-visit Call No. grain. A separate implementation instruction remains required. G09 owner
-nomination still gates unattended disposal. No WALD05 runtime, main, push or deployment. The
-original scope-stage rows below are superseded by WD-38–42 and WD-43.
+one-visit Call No. grain. DEC-049 subsequently supplies implementation authority and DEC-052
+approves the reader correction. G09 owner nomination still gates unattended disposal. No main,
+push or deployment. Original scope-stage rows below are superseded by WD-38–46 as applicable.
 
-Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045/DEC-046/DEC-047/DEC-048 and
+Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045/DEC-046/DEC-047/DEC-048/DEC-049/DEC-050/DEC-051/DEC-052 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
 This register compares the inspected SiteApp implementation with the proposed CustomerApp
 distribution. A planned difference is not an implemented feature or an upstream change.
@@ -58,7 +60,7 @@ Observed code versions (not just initial WALD02 labels):
 
 | Component | SiteApp inspected value | CustomerApp rule |
 | --- | --- | --- |
-| Workbook profiler | `wald-0.2.0` | CustomerApp accepted reader is `wald-0.2.1` after WD-21–23 QA safety corrections. |
+| Workbook profiler | `wald-0.2.0` | Accepted input reader `wald-0.2.1` includes WD-21–23 QA safety corrections; DEC-052 correction is now `wald-0.2.2` / XLSX 3 (WD-44), not yet dedicated-QA accepted. |
 | Structural rules | `wald.structure.v1.1` | Includes WALD06 Notes-first fix; do not revert to v1. |
 | Reasoning / ruleset | `wald-0.3.0` / `wald.generic-rules.v1` | Preserve coherent later context/provenance hooks. |
 | Confidence policy | `wald.confidence.v1` | Same caps, thresholds, ties and human-confirmed safeguards unless separately reviewed/versioned. |
@@ -212,8 +214,9 @@ No approved production or dedicated-QA acceptance claim is made by this implemen
 
 | ID | Category | Finding / disposition | Evidence |
 |---|---|---|---|
-| WD-44 | Candidate for both Wald distributions; NOT IMPLEMENTED | W5-T01: extension-namespace workbookPr is rejected by accepted local-name/parent-path handling. Needs a narrowly reviewed, versioned compatibility correction retaining unsafe-XML/physical-lineage safeguards. | Actual artifact reproduces invalid_xml before sheets; local independent audit is not a runtime fallback. No SiteApp access or backport. |
-| WD-45 | CustomerApp-specific reviewed selection; NOT RUNTIME | DEC-050 corrects CC! and excludes CM2 only for the exact approved bytes; DEC-051 also excludes exact row 32 / Call No. 5181. | Private inventory: 45 included, two explicitly excluded; dictionary and executable trees unchanged. No global alias or inferred test-site filter. |
+| WD-44 | Candidate for both Wald distributions; IMPLEMENTED IN CUSTOMERAPP ONLY | DEC-052 corrects W5-T01 with exact namespace/ancestor matching for Excel extension workbookPr. Core date-system authority, physical lineage and XML safety remain guarded. Reader wald-0.2.2 / XLSX 3; previous knowledge pins stale. | Origin e9e1c3a2a3ff79cfe5f097bea143f51195becd55; XlsxWorkbookSource, WorkbookProfiler and identity gates; WorkbookExtensionCompatibilityTest has 11 passing synthetic cases. Original artifact now profiles. No SiteApp access/backport. |
+| WD-45 | CustomerApp-specific reviewed selection; PURE HELPER IMPLEMENTED, NOT CONNECTED TO IMPORT | ReviewedWorkbookSelection implements DEC-050 CC! correction/CM2 exclusion only for exact approved bytes and DEC-051 exact row 32 / Call No. 5181 / Nick TEST exclusion. | ContractsTest covers changed checksum/tuple refusal and raw evidence preservation. 45 included, two excluded; dictionary unchanged. No global alias or inferred test-site filter. |
+| WD-46 | CustomerApp-specific binding foundation; PARTIAL WALD05 | Office-controlled exact source identity, immutable binding versions/command audit, current epoch pins, authenticated replay and default-off policy. One additive migration creates three tables and six immutability guards. | SourceImport/Integration, SourceBindingTest and MysqlFoundationConcurrencyTest; SQLite and disposable MySQL checks pass, including 40 race groups / 80 workers and upgrade guards. No upload/staging/preview/whole-import commit/UI or source-use history yet. |
 
 ## Backport process
 

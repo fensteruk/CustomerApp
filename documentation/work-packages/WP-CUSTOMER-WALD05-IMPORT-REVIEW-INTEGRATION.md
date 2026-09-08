@@ -1,18 +1,22 @@
 # CUSTOMER-WALD05 — Import, Review and Controlled Commit Integration
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: **IMPLEMENTATION AUTHORISED — ACTUAL WORKBOOK AUDITED; W5-T01 READER COMPATIBILITY FAILURE.**
+Status: **PARTIAL IMPLEMENTATION — W5-T01 CORRECTED; BINDING FOUNDATION TESTED; END-TO-END IMPORT OUTSTANDING.**
 
 The latest management instruction authorises implementation from governance-inclusive commit
 `877bd3ff666873a0703c3b7671015ec4cfd2ee52` on
 `feature/customer-wald05-import-review-integration`. Baseline ancestry and the documentation-only
 delta passed verification. The actual DEC-050/051 workbook audit found no duplicate Call No.,
 competing included site/plot, invalid completion or invalid product quantity. Historical W5-P01/P02
-synthetic cases do not block this selection. The frozen XLSX reader instead refuses the actual
-workbook's extension-namespace workbookPr (W5-T01); a narrow versioned compatibility correction
-requires review before this workbook can traverse the accepted analysis path.
+synthetic cases do not block this selection. DEC-052 explicitly approves the narrow W5-T01
+reader correction and resumed implementation. Correction commit
+`e9e1c3a2a3ff79cfe5f097bea143f51195becd55` introduces reader `wald-0.2.2` / XLSX adapter 3;
+CSV stays 2 and the dictionary is unchanged. The original workbook now profiles successfully.
 See the [implementation entry report](../wald/customer-wald05-import-review-integration-2026-09-08.md).
-I01–I10 remain approved. No runtime implementation has started.
+I01–I10 remain approved. The default-off Office binding/version/audit foundation and pure
+ordering/selection contracts are implemented and tested on SQLite and disposable MySQL 8.4.
+Upload, staging, preview, whole-import projection commit and UI remain unimplemented. No QA,
+main or deployment acceptance is claimed; no further blanket approval is needed to continue.
 
 DEC-050 subsequently records the user's
 [workbook-specific clarification](../wald/customer-wald05-workbook-clarification-2026-09-08.md):
@@ -33,7 +37,7 @@ I01–I10 are approved; neither report is implementation authority.
 This work package defines the bounded integration that turns private workbook evidence into
 reviewed neutral records and, only after a separate explicit Office action, commits approved
 source facts into CustomerApp projections. DEC-049 supplies implementation authority; no repeated
-blanket approval is needed. The actual reader failure above is distinct from business ambiguity.
+blanket approval is needed. The reader failure is resolved without inventing business meaning.
 Production access, release and deployment remain excluded.
 
 ## 1. Immutable entry baseline
@@ -55,6 +59,11 @@ Production access, release and deployment remain excluded.
 Accepted [WALD04 QA](../wald/customer-wald04-qa-2026-09-08.md) corrected W4Q-01–04 and
 passed the security, lifecycle, compatibility, immutability, query-shape and MySQL concurrency
 gates. Those results are input evidence, not tests rerun by this documentation scope.
+
+The table records immutable historical inputs, not the current reader version. DEC-052's
+separately committed correction above is the approved bounded exception; old reader/adapter
+knowledge pins become stale. Its safety tests and current foundation results are recorded in the
+[continuation report](../wald/customer-wald05-import-review-integration-2026-09-08.md).
 
 The latest implementation instruction selects governance-inclusive `877bd3ff...` as the working
 base after verifying its executable trees match the accepted WALD04 output above. This supersedes
@@ -482,8 +491,8 @@ Before implementation:
 4. issue a separate explicit WALD05 implementation instruction and branch name (satisfied by
    DEC-049; governance-inclusive starting point verified);
 5. audit actual reviewed source records and resolve concrete blockers only. DEC-050/051's selected
-   sample has no concrete business-data ambiguity. W5-T01 is an actual accepted-reader metadata
-   rejection; its versioned compatibility correction must preserve the frozen safety guarantees.
+   sample has no concrete business-data ambiguity. W5-T01's metadata rejection is corrected under
+   DEC-052 with a new reader/adapter identity and regression coverage preserving safety guards.
 
 Before declaring ready for dedicated QA:
 

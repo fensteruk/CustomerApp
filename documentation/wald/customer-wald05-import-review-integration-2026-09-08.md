@@ -1,5 +1,149 @@
 # CUSTOMER-WALD05 Implementation Continuation Report
 
+Date: 8 September 2026. Current result: **PARTIAL — W5-T01 corrected; WALD05 binding foundation
+implemented and tested. No remaining workbook business-data blocker. End-to-end import is not
+implemented and dedicated WALD05 QA must not begin yet.**
+
+## Current branch, authority and reader identity
+
+Branch: `feature/customer-wald05-import-review-integration`.
+Prior audit checkpoint: `7be7aa1ecf450b55f160f64ce013e961a28ef1b6`.
+Reader correction commit: `e9e1c3a2a3ff79cfe5f097bea143f51195becd55`.
+Accepted historical WALD04 input: `0e83eb2896e7c5144bc38c1be9713f3d205d93b8`.
+DEC-052 records the explicit user approval for the bounded core correction followed by resumed
+WALD05 implementation. No further blanket permission is needed; no new business question is raised.
+
+Reader is now `wald-0.2.2`, XLSX adapter 3, CSV adapter 2. CoreIdentity reader label,
+KnowledgeIdentity adapter pins and the AnalysisSnapshot reader gate agree. Prior reader pins
+become STALE without rewriting history. The adopted-input commit stays historical provenance;
+the correction SHA above identifies the fork change. No dictionary version, fingerprint or
+business meaning changed. [Correction detail](customer-wald05-reader-correction-2026-09-08.md).
+
+## Workbook integrity, selection and concrete ambiguities
+
+The original workbook remains unchanged and untracked, with SHA-256
+`ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`.
+The corrected accepted reader now opens it without warnings and full generic profiling returns
+`complete=true`. This is not a staging, review or commit receipt.
+
+The completed audit below remains the evidence: 47 nonempty rows, 45 included, one CM2 exclusion
+under DEC-050 and exact Nick TEST row 32 / Call No. 5181 excluded under DEC-051. Included services:
+20 Windows, 24 Cavity Closers, one CML. Completion: 19 Yes / 26 No. Seven positive BF rows.
+No duplicates, conflicting included site/plot, invalid completion or invalid product quantity.
+Row 20 is blank, not an invalid source record. Twelve exact source site names need explicit Office
+bindings before a real import; no real Portal mapping was inferred or created.
+
+Concrete business ambiguity: **NONE**. W5-T01 is resolved, not a new permission gate. The historical
+W5-P01/P02 synthetic cases do not block the actual selected sample. Future unresolved data must
+still fail closed, not acquire invented meaning from these examples.
+
+## Completed runtime slice
+
+| Capability | Current implementation / limit |
+|---|---|
+| Source-site bindings | Office-only exact namespace + SOURCE_SITE_ID or EXACT_SITE_NAME. Separate immutable draft, explicit activation, reasoned supersession/revocation and immutable command history. No fuzzy matching, site creation or owner/site reassignment. Binding identity is independent of workbook family and structural profiles. |
+| Authority | Current stored active non-preview Office role, selected valid owner/site, separate binding abilities and authorization inside each transaction. Null-organisation Office works; external roles, preview, inactive and stale-role callers refuse. |
+| Default-off boundary | `CUSTOMER_WALD_IMPORT_ENABLED` defaults false. No HTTP routes/UI or production enablement added. |
+| Versions and use pins | Immutable target/version/hash; active pointer and epoch on the identity root. Every draft/activation/revocation advances the epoch. `assertCurrent` requires a transaction and fresh exact pin equality; it alone grants no projection authority. Revoked versions cannot be resurrected through another workbook family. |
+| Command replay and atomicity | Exact authenticated command replay returns the existing historical receipt; changed payload refuses. Binding/version and required command audit are one transaction; injected audit failure rolls back all and is not retried. MySQL native JSON ordering is normalized consistently. Historical replay is not a claim that a binding remains active: every new use must resolve/revalidate it. |
+| History and retention | Append-only version/command records, authenticated actor ID/name snapshot, reason/before/after and bounded cursor reads. Command audit has a six-year retain-until floor; no purge, scheduler, deletion endpoint or production disposal is enabled. Final committed-import audit and dependency/hold integration remain future work. |
+| Manual ordering | Pure validated ExportOrder value object implements declared date then MORNING/AFTERNOON and STAFF_DECLARED provenance. There is no durable stream ordering or committed-slot enforcement yet. |
+| Reviewed selection | Pure exact-checksum helper implements DEC-050 CC! correction/CM2 exclusion and DEC-051 exact-row exclusion. Raw values and approval IDs survive. Changed checksum/row identity does not inherit exclusions; no global alias or test-site detector. It is not yet wired to an import run. |
+
+## Persistence / migrations
+
+One new forward migration, `2026_09_08_000011_create_wald_import_foundation.php`, adds:
+`wald_source_bindings`, `wald_binding_versions`, `wald_import_commands`.
+Six database triggers protect immutable root identity, version history and audit against direct
+bulk updates/deletes. Composite version/active-pointer and site/organisation foreign keys retain
+containment; exact source identities use a SHA-256 key to avoid case-insensitive name matching.
+The 13 accepted migrations are unchanged. No local application/production database was migrated;
+tests used in-memory SQLite and explicitly disposable loopback MySQL only.
+
+## Not yet implemented — no end-to-end readiness claim
+
+- Private upload, durable import runs, leases/recovery and upload confirmation capture.
+- Full Wald/dictionary/WALD04 knowledge orchestration and immutable neutral staging.
+- Immutable non-mutating preview, 24-hour validity and all dependency/stale checks.
+- Source visit/observation persistence, duplicate gate across a full run and permanent use history.
+- Durable manual stream ordering, same-slot correction successor and committed-run receipts.
+- Deliberate projection adapter, partial-only commit and omission preservation in that adapter.
+- Source completion/reversal transitions, Portal date/negotiation/amendment/history regressions.
+- One-transaction whole-run projection/audit commit and all required commit races.
+- Office UI, safe synthetic end-to-end parity, recovery/performance and dedicated QA.
+
+No legacy importer was reconnected or retired. No real workbook was imported. No customer
+product, completion, operational date, Requested Date, Date Agreed or Portal history was written.
+Binding-command transaction tests are not whole-import atomicity/concurrency evidence.
+
+## Verification and exact results
+
+| Command / gate | Result |
+|---|---|
+| W5-T01 synthetic test before fix | Two positive cases reproduced invalid_xml; seven initial negative cases passed |
+| Expanded reader suite | 11 passed; core date-system authority, exact extension lineage, spoofed/misplaced nodes and DTD refusal |
+| `php artisan test tests/Feature/Wald05 tests/Unit/Wald05 --compact` | 57 total: 53 passed, 4 MySQL skips, 135 assertions |
+| `php artisan test tests/Unit/Wald tests/Feature/Wald tests/Unit/Wald03 tests/Unit/Wald04 tests/Feature/Wald04 tests/Unit/Wald05 tests/Feature/Wald05 --compact` | 945 total: 930 passed, 15 skips, 4,375 assertions |
+| `php artisan test --compact` | 1,179 total: 1,149 passed, 30 environment skips, 5,563 assertions |
+| MySQL: `php vendor/pestphp/pest/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Wald05/SourceBindingTest.php tests/Unit/Wald05 --compact` | 53 total: 52 passed, one SQLite-only DDL test skipped, 133 assertions; final exit 0 |
+| MySQL: `php vendor/pestphp/pest/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Wald05/MysqlFoundationConcurrencyTest.php --compact` | Four scenarios passed, 80 assertions: ten iterations each, 40 race groups / 80 workers |
+| `php scripts/verify-wald05-foundation-upgrade.php` | PASS: 13 baseline + one additive migration; 12 existing Portal/knowledge tables compared unchanged; three new tables/six guards; empty rollback/reapply passes; populated rollback refused before DDL |
+| SQLite migration coverage | Empty rollback/reapply and populated refusal pass in focused tests |
+| `php storage/app/wald05-audit-20260908/read-wald.php` | Original workbook reader and full generic profile pass; no warnings; exact checksum unchanged |
+| `vendor\bin\pint --test` | PASS; scoped formatting applied first |
+| `composer validate --strict` | Valid |
+| `composer audit --format=json` | Eight inherited advisories (Filament 3, CommonMark 4, Livewire 1); cache-write warning did not prevent retrieval. No remediation merge or lockfile change |
+| `npm run build` | PASS, Vite 8.1.4; authorised local execution after previously established sandbox child-process restriction |
+| `git diff --check` | PASS; final scoped path/staging checks recorded in handoff |
+
+MySQL was Oracle 8.4.11 on `127.0.0.1:33486`, task-only directory
+`storage/app/wald05-mysql-20260908/data`, schemas `customerapp_wald05_foundation` and
+`customerapp_wald05_upgrade`. No .env edit. Verified port/datadir before clean shutdown;
+server log confirms shutdown complete. Diagnostic data stays ignored, not committed.
+
+The four foundation races are activate/activate, exact-command replay, draft/draft and
+activate/revoke. They do not cover preview double commit, AM/PM, older/newer, source visit races,
+profile revoke versus commit, projection epoch or same-slot corrections: those remain outstanding.
+
+Failed attempts were resolved, not hidden: receipt map order first differed on SQLite and then
+MySQL; both now return canonical order. The initial MySQL audit-failure fixture used trigger DDL,
+which implicitly committed the test transaction. It was replaced with pre-insert failure injection,
+retaining full rollback and exactly-one-attempt assertions. A rerun reported passes with exit 1;
+direct Pest confirmation and the final expanded run exited 0. One diagnostic CLI flag was unsupported
+and was removed. Existing tests/assertions were not weakened and no production setting was altered.
+
+## Files changed / remaining gates
+
+Reader correction files are listed in the separate correction report. Foundation files:
+
+- `app/SourceImport/Integration/ImportConflict.php`, `ImportPolicy.php`, `ImportStore.php`,
+  `SourceBindingService.php`, `ExportOrder.php`, `ReviewedWorkbookSelection.php`;
+- `config/wald_import.php`;
+- `database/migrations/2026_09_08_000011_create_wald_import_foundation.php`;
+- `tests/Feature/Wald05/SourceBindingTest.php`, `MysqlFoundationConcurrencyTest.php`;
+- `tests/Unit/Wald05/ContractsTest.php`, `tests/Support/Wald05ConcurrencyWorker.php`;
+- `scripts/verify-wald05-foundation-upgrade.php`;
+- current governing documentation, work package, divergence register and this report.
+
+Unrelated Sprint 3E whitespace, untracked source workbook and output/ remain preserved. No source
+workbook, private audit/profile, generated output or local database was staged. No push, main,
+SiteApp, production, deployment, dependency remediation or WALD06 action occurred.
+
+Next work is private upload/durable runs and reviewed analysis/staging, followed by preview and
+the guarded projection transaction. This is remaining implementation, not a new approval blocker.
+WALD05 is not ready for dedicated QA. WALD06 still requires complete/accepted WALD05 and its own
+pilot/cutover plus storage/worker/backup/security/release approvals. G09 ownership gates unattended
+disposal only; no deletion scheduler exists.
+
+CUSTOMER-WALD05 partially complete — further implementation required
+
+---
+
+## Historical actual-workbook audit checkpoint (before DEC-052 reader correction)
+
+The evidence below is retained. Its W5-T01 pause and no-runtime statements are superseded by
+the current reader correction and binding-foundation implementation above.
+
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Current result: **PARTIAL — actual workbook audit completed; accepted reader compatibility failure reproduced. Not ready for WALD05 QA.**
 

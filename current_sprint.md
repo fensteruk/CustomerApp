@@ -1,6 +1,19 @@
 # Current Sprint
 
-## CUSTOMER-WALD05 actual workbook audit complete; reader compatibility failure — 8 September 2026
+## CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
+
+DEC-052 authorises W5-T01 correction and continued implementation. Reader correction
+`e9e1c3a2a3ff79cfe5f097bea143f51195becd55` uses wald-0.2.2 / XLSX adapter 3; old knowledge pins
+become stale. The unchanged workbook now profiles successfully; DEC-050/051 still select 45 rows.
+Default-off Office binding drafts/activation/supersession/revocation, immutable versions/audit,
+epoch checks and pure order/selection contracts are implemented. One additive migration; no
+upload/staging/preview/projection commit/UI yet. No new approval blocker; WALD05 is PARTIAL.
+Focused: 53 passes / 4 MySQL skips. Combined Wald: 930 passes / 15 skips. Full: 1,149 passes /
+30 skips. Disposable MySQL 8.4: 52 non-race passes / one SQLite-only skip plus four race scenarios,
+40 groups / 80 workers; upgrade/rollback guards pass. Server stopped. No main/push/deployment.
+[Current report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+
+## Historical CUSTOMER-WALD05 actual-workbook audit before reader correction — 8 September 2026
 
 DEC-050/051 select 45 actual records and exclude CM2 plus the explicitly identified Nick TEST row.
 No duplicate Call No., invalid completion/product value or competing included site/plot was found.
