@@ -13,6 +13,7 @@ use App\SourceImport\Knowledge\Models\ProfileUse;
 use App\SourceImport\Knowledge\Models\ProfileVersion;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 
 final class KnowledgeQueries
 {
@@ -68,13 +69,12 @@ final class KnowledgeQueries
         $evidence = KnowledgeEvidence::query()->where('context_id', $context->id)->where('uuid', $evidenceUuid)->firstOrFail();
         $profiles = $this->store->scoped(KnowledgeProfile::class, $scope)->whereIn('id',
             ProfileVersion::query()->select('profile_id')->whereIn('answer_id',
-                ClarificationAnswer::query()->select('id')->whereIn('clarification_id', Clarification::query()->select('id')->where('context_id', $context->id))))->get();
-        $active = $profiles->contains(fn ($profile) => $profile->state !== ProfileState::Revoked);
+                ClarificationAnswer::query()->select('id')->whereIn('clarification_id', Clarification::query()->select('id')->where('context_id', $context->id))));
+        $active = (clone $profiles)->where('state', '!=', ProfileState::Revoked->value)->exists();
         $due = $evidence->retain_until;
-        foreach ($profiles as $profile) {
-            if ($profile->retain_until && ($due === null || $profile->retain_until->greaterThan($due))) {
-                $due = $profile->retain_until;
-            }
+        $latest = (clone $profiles)->max('retain_until');
+        if ($latest !== null && ($due === null || CarbonImmutable::parse($latest, 'UTC')->greaterThan($due))) {
+            $due = CarbonImmutable::parse($latest, 'UTC');
         }
         // A context hold protects all linked provenance, not merely the one payload.
         $hold = KnowledgeEvidence::query()->where('context_id', $context->id)->where('on_hold', true)->exists();
@@ -100,20 +100,23 @@ final class KnowledgeQueries
             return false;
         }
         $matches = 0;
+        $provenance = new ProfileProvenance;
+        $versions = $provenance->activeVersions($candidates);
+        $currentVersionIds = $provenance->currentVersionIds($versions);
         $snapshot = $this->store->snapshot($context);
         foreach ($candidates as $candidate) {
             if (now('UTC')->greaterThanOrEqualTo($candidate->review_due_at)) {
                 continue;
             }
-            $candidateVersion = ProfileVersion::query()->where('profile_id', $candidate->id)->where('version', $candidate->active_version)->firstOrFail();
+            $candidateVersion = $versions->get($candidate->id) ?? throw new ModelNotFoundException;
             if (($candidateVersion->definition['selection']['role'] ?? null) === $version->definition['selection']['role']
-                && (new ProfileProvenance)->current($candidateVersion)
+                && in_array($candidateVersion->id, $currentVersionIds, true)
                 && (new ProfileMatcher)->evaluate($candidateVersion->definition, $snapshot)['compatibility'] === 'EXACT_MATCH') {
                 $matches++;
             }
         }
 
-        return $matches === 1 && ! $answered && (new ProfileProvenance)->current($version)
+        return $matches === 1 && ! $answered && in_array($version->id, $currentVersionIds, true)
             && $receipt->applied && $profile->state === ProfileState::Active && $profile->lock_version === $receipt->epoch
             && $profile->active_version === $receipt->version && now('UTC')->lessThan($profile->review_due_at)
             && $context->state === 'OPEN' && now('UTC')->lessThan($context->expires_at)

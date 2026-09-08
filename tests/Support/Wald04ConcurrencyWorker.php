@@ -5,6 +5,7 @@ use App\SourceImport\Knowledge\Actions\ActivateProfile;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
 use App\SourceImport\Knowledge\Actions\RevokeProfile;
 use App\SourceImport\Knowledge\Actions\SaveProfileDraft;
+use App\SourceImport\Knowledge\Actions\SetRetentionHold;
 use App\SourceImport\Knowledge\Actions\UseProfile;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Contracts\Console\Kernel;
@@ -34,6 +35,7 @@ try {
     $action = match ($input['operation']) {
         'answer' => new AnswerClarification, 'activate' => new ActivateProfile,
         'revoke' => new RevokeProfile, 'reuse' => new UseProfile, 'draft' => new SaveProfileDraft,
+        'hold' => new SetRetentionHold,
         default => throw new RuntimeException('unknown_test_operation'),
     };
     $result = $action->handle($actor, $scope, ...$input['arguments']);

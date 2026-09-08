@@ -54,7 +54,7 @@ final class Wald04Fixtures
     {
         $org = CustomerOrganisation::factory()->create();
         $site = Site::factory()->create(['customer_organisation_id' => $org->id]);
-        $office = User::factory()->create(['customer_organisation_id' => null,
+        $office = User::factory()->create(['customer_organisation_id' => null, 'email' => self::command().'@example.test',
             'portal_role_id' => PortalRole::query()->where('identifier', 'fenster_office_staff')->value('id'),
             'is_active' => true, 'is_preview_user' => false]);
 

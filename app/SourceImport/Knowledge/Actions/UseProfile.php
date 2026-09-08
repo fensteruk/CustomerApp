@@ -11,7 +11,6 @@ use App\SourceImport\Knowledge\KnowledgeStore;
 use App\SourceImport\Knowledge\Models\Clarification;
 use App\SourceImport\Knowledge\Models\KnowledgeProfile;
 use App\SourceImport\Knowledge\Models\ProfileUse;
-use App\SourceImport\Knowledge\Models\ProfileVersion;
 use App\SourceImport\Knowledge\ProfileMatcher;
 use App\SourceImport\Knowledge\ProfileProvenance;
 use App\SourceImport\Knowledge\ProfileState;
@@ -39,9 +38,12 @@ final class UseProfile
                 $context = $this->store->context($scope, $contextUuid);
                 $snapshot = $this->store->snapshot($context);
                 $result = ['compatibility' => 'STALE_VERSION', 'applied' => false, 'reason' => 'PROFILE_UNAVAILABLE'];
-                $version = ProfileVersion::query()->where('profile_id', $profile->id)->where('version', $profile->active_version)->first();
+                $provenance = new ProfileProvenance;
+                $versions = $provenance->activeVersions($profiles);
+                $currentVersionIds = $provenance->currentVersionIds($versions);
+                $version = $versions->get($profile->id);
                 if ($version && $profile->state === ProfileState::Active && now('UTC')->lessThan($profile->review_due_at)
-                    && (new ProfileProvenance)->current($version)) {
+                    && in_array($version->id, $currentVersionIds, true)) {
                     if (Canonical::hash($version->definition) !== $version->definition_hash) {
                         throw new KnowledgeConflict('profile_integrity_error');
                     }
@@ -55,9 +57,9 @@ final class UseProfile
                         if ($other->state !== ProfileState::Active || now('UTC')->greaterThanOrEqualTo($other->review_due_at)) {
                             continue;
                         }
-                        $otherVersion = ProfileVersion::query()->where('profile_id', $other->id)->where('version', $other->active_version)->firstOrFail();
+                        $otherVersion = $versions->get($other->id) ?? throw new ModelNotFoundException;
                         if (($otherVersion->definition['selection']['role'] ?? null) === $version->definition['selection']['role']
-                            && (new ProfileProvenance)->current($otherVersion)
+                            && in_array($otherVersion->id, $currentVersionIds, true)
                             && (new ProfileMatcher)->evaluate($otherVersion->definition, $snapshot)['compatibility'] === 'EXACT_MATCH') {
                             $competing++;
                         }

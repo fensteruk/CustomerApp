@@ -4,6 +4,7 @@ use App\SourceImport\Knowledge\Actions\RegisterContext;
 use App\SourceImport\Knowledge\Actions\SaveProfileDraft;
 use App\SourceImport\Knowledge\KnowledgeConflict;
 use App\SourceImport\Knowledge\KnowledgeQueries;
+use App\SourceImport\Knowledge\Models\KnowledgeEvidence;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Process\Process;
 use Tests\Support\Wald04Fixtures as F;
@@ -70,8 +71,8 @@ function wald04Race($actor, $scope, array $operations): array
     }
 }
 
-it('serializes competing answers without last-write-wins across ten MySQL races', function () {
-    foreach (range(1, 10) as $iteration) {
+it('serializes competing answers without last-write-wins across twenty MySQL races', function () {
+    foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
         $second->email = F::command().'@example.test';
@@ -86,7 +87,7 @@ it('serializes competing answers without last-write-wins across ten MySQL races'
 });
 
 it('serializes activation revoke and draft-use races with truthful receipts', function ($race) {
-    foreach (range(1, 10) as $iteration) {
+    foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
         $second->email = F::command().'@example.test';
@@ -119,8 +120,8 @@ it('serializes activation revoke and draft-use races with truthful receipts', fu
     }
 })->with(['activate-activate', 'activate-revoke', 'revoke-reuse', 'draft-reuse']);
 
-it('activates only one of two competing immutable versions across ten MySQL races', function () {
-    foreach (range(1, 10) as $iteration) {
+it('activates only one of two competing immutable versions across twenty MySQL races', function () {
+    foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
         $second->email = F::command().'@example.test';
@@ -136,5 +137,25 @@ it('activates only one of two competing immutable versions across ten MySQL race
         expect(collect($results)->where('ok', true)->count())->toBe(1)
             ->and(collect($results)->where('ok', false)->first()['exception'])->toBe(KnowledgeConflict::class)
             ->and($profile->fresh()->active_version)->toBeIn([1, 2]);
+    }
+});
+
+it('preserves a retention hold racing with reuse across twenty MySQL races', function () {
+    foreach (range(1, 20) as $iteration) {
+        [$office, $scope] = F::owner();
+        $second = $office->replicate();
+        $second->email = F::command().'@example.test';
+        $second->save();
+        [$origin, , , , $profile] = F::active($office, $scope);
+        $evidence = KnowledgeEvidence::query()->where('context_id', $origin->id)->firstOrFail();
+        $context = (new RegisterContext)->handle($office, $scope, F::snapshot(), F::command());
+        $results = wald04Race([$office, $second], $scope, [
+            ['hold', [$origin->uuid, $evidence->uuid, 0, true, 'QA preserve concurrent evidence', F::command()]],
+            ['reuse', [$context->uuid, $profile->uuid, $profile->lock_version, F::command()]],
+        ]);
+        expect($results[0]['ok'])->toBeTrue()->and($results[1]['ok'])->toBeTrue()
+            ->and($evidence->fresh()->on_hold)->toBeTrue()
+            ->and((new KnowledgeQueries)->receiptEligible($second, $scope, $results[1]['uuid']))->toBeTrue()
+            ->and((new KnowledgeQueries)->disposalEligibility($office, $scope, $origin->uuid, $evidence->uuid)['age_eligible'])->toBeFalse();
     }
 });
