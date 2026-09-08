@@ -1,6 +1,22 @@
 # Current Sprint
 
-## CUSTOMER-WALD04 accepted / CUSTOMER-WALD05 scoped — 8 September 2026
+## CUSTOMER-WALD05 governance approved — 8 September 2026
+
+DEC-048 approves I01–I10 against immutable WALD04 input
+`0e83eb2896e7c5144bc38c1be9713f3d205d93b8`. The temporary V1 source order is authenticated
+Office-declared Export Date plus `MORNING`/`AFTERNOON`; one Call No. identifies one visit;
+only partial/filtered exports may commit; one reviewed bounded run is atomic; and minimal
+committed audit/provenance is retained six years. The existing and non-main import paths remain
+reference/reuse evidence and are not approved runtime architecture.
+
+Governance is complete, but this documentation task is not an implementation instruction. No
+runtime, migration, route, UI, queue, storage, SiteApp, dependency, main, push, production or
+deployment action occurred. G09's unnamed owner still blocks unattended production deletion;
+persistent worker rollout, WALD06 pilot/cutover and security/release reconciliation remain later
+gates. [Final approval](documentation/wald/customer-wald05-final-governance-approval-2026-09-08.md)
+and [governing work package](documentation/work-packages/WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md).
+
+## Historical CUSTOMER-WALD04 acceptance / WALD05 scoping — 8 September 2026
 
 Management accepts corrected WALD04 output
 `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on

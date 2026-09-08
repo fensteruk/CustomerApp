@@ -1,11 +1,12 @@
 # CUSTOMER-WALD05 — Import, Review and Controlled Commit Integration
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: **SCOPED ONLY — DEC-047. GOVERNANCE AND IMPLEMENTATION APPROVAL REQUIRED.**
+Status: **GOVERNANCE APPROVED — DEC-048. EXPLICIT IMPLEMENTATION INSTRUCTION REQUIRED.**
 
-[Decision-resolution report](../wald/customer-wald05-governance-resolution-2026-09-08.md):
-I03 source revision/order and I04 Call No. grain require Nick/source-owner evidence. Other
-recommendations remain unapproved; this link records analysis, not implementation authority.
+[Final governance approval](../wald/customer-wald05-final-governance-approval-2026-09-08.md)
+supersedes the approval state in the earlier
+[decision-resolution report](../wald/customer-wald05-governance-resolution-2026-09-08.md).
+I01–I10 are approved; neither report is implementation authority.
 
 This work package proposes the bounded integration that turns private workbook evidence into
 reviewed neutral records and, only after a separate explicit Office action, commits approved
@@ -16,7 +17,7 @@ route/UI/queue/storage changes, import execution, production access, release or 
 
 | Identity | Frozen value |
 |---|---|
-| Accepted WALD04 output / proposed WALD05 input | `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` |
+| Accepted WALD04 output / WALD05 input | `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` |
 | QA branch | `qa/customer-wald04-2026-09-08` |
 | Corrected executable/test revision | `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5` |
 | Original WALD04 candidate — not accepted output | `2c7d0154e51a35b165c7e93f7dd256e2cf0f030f` |
@@ -217,10 +218,10 @@ measure and justify the actual values. Final commit is a synchronous explicit tr
 never depends on queue delivery. Persistent worker/scheduler/supervision gates any queued
 production/pilot mode, not local implementation.
 
-## 12. Proposed permissions
+## 12. Approved permissions
 
-Recommend active, non-preview Fenster Office Staff only for intake, analysis, clarification,
-binding proposal, review, commit, recovery inspection and private diagnostics in V1. Each action
+Active, non-preview Fenster Office Staff alone may perform intake, analysis, one-time
+clarification, binding, review, commit, audit and retry in V1. Each action
 must be a distinct server-side capability and audit operation. Null-organisation Office may act
 only after selecting a valid explicit organisation/site/source scope.
 
@@ -228,10 +229,11 @@ The three Site User roles receive no import/evidence access. A UUID, upload owne
 receipt or selected site never grants authority. Current stored authority and scope must be
 rechecked immediately before every mutation and again inside final commit locks.
 
-Whether the same Office actor may upload, resolve, review and commit is **I01**, not inherited
-from WALD04's same-actor profile activation decision. No four-eyes rule is invented by scoping.
+The same authorised Office actor may perform every step. Separate authorisation and audit remain
+mandatory, but V1 has no four-eyes requirement. The authenticated uploader account ID and name
+are captured automatically and are never supplied as free text.
 
-## 13. Proposed source-site binding lifecycle
+## 13. Approved source-site binding lifecycle
 
 - exact namespace + source-site stable key, never fuzzy name or workbook filename;
 - binds to one existing Portal site and its organisation; never creates/moves that site;
@@ -244,18 +246,31 @@ from WALD04's same-actor profile activation decision. No four-eyes rule is inven
 - exact Site Name may be a transitional candidate only until the source supplies a permanent ID.
 
 The binding is independent of a Wald profile. Learning workbook layout cannot select a customer,
-organisation or site. Final binding authority and actor separation require I02 approval.
+organisation or site. There may be only one active binding per exact source-site identity.
+The preferred identity is the permanent RedZebra/SiteApp Site ID; exact Site Name is a labelled
+transitional fallback. Activation is explicit, and supersession or revocation requires a reason
+while preserving every version and the exact version used by each import.
 
-## 14. Revision, ordering and idempotency proposal
+## 14. Approved V1 source ordering and idempotency
 
-Content SHA-256 proves byte identity, not source authenticity or chronological authority.
-Require an explicit source revision contract per namespace/family: issuer/owner, revision key,
-ordering rule and collision handling. Received/upload time is not a source revision.
+RedZebra does not yet supply a native immutable revision. V1 therefore records an Office-declared
+`Export Date` and `Export Slot`, where the slot is exactly `MORNING` or `AFTERNOON`. A later date
+orders after an earlier date; on the same date, `AFTERNOON` orders after `MORNING`. Upload and
+filesystem timestamps never establish freshness.
 
-Recommend rejecting an already committed revision with different bytes, treating exact repeat
-as idempotent, and blocking older/unordered revisions until reviewed. A later upload with the
-same data but different container bytes is not silently equivalent unless canonical source-set
-identity and provenance are explicitly defined. These are I03 decisions.
+The authenticated uploader must explicitly confirm the exact versioned statement: “I confirm
+this is the latest RedZebra export available for this slot.” This is staff-declared provenance,
+not a claim that RedZebra issued a revision. The confirmation, account ID and account name are
+audited automatically.
+
+Within a source namespace/workbook family there is at most one normal successfully committed
+import for each Export Date/Export Slot. The same slot plus the same canonical workbook/content
+identity is an idempotent replay and returns the existing result. The same slot plus different
+content cannot create another normal import: it is a conflict requiring an explicit correction/
+replacement successor that supersedes the effective result while preserving its predecessor and
+ordering audit. An older declared slot cannot overwrite a newer successful commit.
+This temporary contract is replaceable when RedZebra supplies a real revision/API; historical
+receipts are not rewritten.
 
 ## 15. Export scope and absence
 
@@ -267,21 +282,21 @@ sites, prior profile or user history cannot upgrade it. In partial scope:
 - unrepresented plots/services remain unchanged;
 - a narrower new staging set does not retract a previous commit.
 
-`SITE_COMPLETE_SNAPSHOT` requires explicit bound sites, dataset/grain definition, revision and
-Office confirmation. `GLOBAL_COMPLETE_SNAPSHOT` additionally requires approved global authority.
-Neither mode deletes rows; its exact missing/reconciliation effects remain I05. Stronger scope
-must be shown prominently in review and pinned into staging/commit lineage.
+`SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` are non-committable in V1. Workbook
+contents, familiar shape and Office assertion cannot elevate a partial export. Future stronger
+scope requires a separately approved authoritative coverage, grain and absence contract.
 
-## 16. Duplicate and multi-row Call No.
+## 16. Approved Call No. grain and duplicate handling
 
-The dictionary says `Call No.` is the permanent unique source record identity, but actual
-duplicate/multi-row export semantics remain unresolved. Safe default: every duplicate Call No.
-blocks the affected reviewed set, even if rows look identical. Do not use first/last row,
-merge product quantities or infer one logical call automatically.
+One `Call No.` identifies exactly one individual visit/call-off. A revisit receives a new Call
+No.; CM1 and CM2 visits each therefore have their own Call Nos. Any duplicate Call No. within one
+workbook blocks the reviewed run, including canonically identical duplicate rows. Never choose
+first/last, merge quantities or silently collapse duplicates.
 
-I04 must decide whether any documented source row grain permits multiple rows, how their stable
-subidentity/order is supplied, how conflicts are represented and which owner approves it. Until
-then there is no lossless normalisation or commit for duplicate identifiers.
+The same Call No. in a later ordered export identifies the same visit. An unchanged canonical
+observation causes no semantic change. Changed canonical content is an update/correction only
+when permitted by the approved Export Date/Export Slot ordering and successor rules. Site, plot
+and service identity conflicts remain blockers rather than silent reassignment.
 
 ## 17. Review and diff contract
 
@@ -300,18 +315,18 @@ Raw workbook cells/filenames remain authorised private evidence and need not app
 result lists. Review approval records the exact staging/diff hash and expires on any dependency
 change. Review is not profile activation and cannot mutate dictionary truth.
 
-## 18. Controlled commit proposal
+## 18. Approved controlled commit contract
 
-Recommend one atomic commit for the entire explicitly reviewed bounded set. Under deterministic
+Use one atomic commit for the entire explicitly reviewed bounded set. Under deterministic
 locks, revalidate actor, scope, binding version, source revision/order, export coverage,
 dictionary/component pins, knowledge receipts, staging/review hashes and relevant projection/
 call-off current state. Then apply projection changes, source-completion domain transitions,
 issues/events and final audit in one transaction.
 
-No failed record may be silently skipped after the user approved an all-or-none preview. If
-management chooses partial per-record application, I07 must specify visible grouping, blockers,
-retry/recovery, product aggregation and how users distinguish committed from refused rows.
-The current per-record importer is not evidence that partial commit is approved.
+No failed record may be silently skipped after the user approved an all-or-none preview. If a
+technical limit requires smaller work, create separate explicit review units before approval.
+Never split invisibly after review or apply per row. The current per-record importer is not
+evidence that partial commit is approved.
 
 Use canonical lock order for affected projection/service/request/negotiation/proposal/history
 aggregates, sort stable IDs, and bound recognised MySQL retries around the whole idempotent commit.
@@ -337,7 +352,7 @@ The integration must use focused domain actions at the commit boundary rather th
 mass-assigning protected Portal state. Existing outdated mapper/stage behaviour is a regression
 target, not an allowed compatibility mode.
 
-## 20. Storage, privacy and retention proposal
+## 20. Storage, privacy and approved retention
 
 Private source artifacts use generated storage keys outside public storage, validated content
 signatures and accepted Wald resource limits. Reject macro-enabled, encrypted, executable,
@@ -347,8 +362,11 @@ formulas, links or source text.
 Approved WALD04 metadata periods remain: source workbook terminal +30 days, bulky observations
 +7 days, preview validity 24 hours and preview payload +7 days; holds/dependencies extend them.
 WALD05 must define terminal state, minimum retained evidence and failed/abandoned operation
-clocks. Final staging/commit audit retention, raw-evidence relationship, backup expiry and the
-named data owner remain I08/G09 decisions. No cleanup scheduler or delete action is approved.
+clocks. Minimal committed import audit metadata and provenance are retained for six years as a
+company V1 operational policy, not a legal claim. Uploaded workbooks and bulky analysis evidence
+retain their separate approved periods and do not inherit six years automatically. Holds and
+dependencies extend eligibility. The unnamed G09 disposal owner still blocks unattended
+production deletion; no cleanup scheduler or delete action is approved.
 
 Customer-safe history must not expose filenames, sheets, rows, source values or technical errors.
 Office diagnostics remain scope-authorised, paginated and bounded. Logs contain safe identifiers
@@ -408,34 +426,33 @@ SQLite is not concurrency proof. MySQL must be version 8.4 on loopback with unmi
 disposable database names and worker guards. Test-process memory changes must not alter production
 limits. Failed attempts and inherited advisories are reported separately from final passes.
 
-## 24. Proposed decision table — explicit approval required
+## 24. Approved I01–I10 decision table
 
-| ID | Decision | Recommended V1 | Safe state until approved |
+| ID | Decision | Approved V1 rule | Status |
 |---|---|---|---|
-| I01 | Who may upload, clarify, review and commit; same actor? | Active non-preview Office only; distinct capabilities; same actor permitted for supervised V1 with explicit review/commit. | No routes or grants. |
-| I02 | Source-site binding authority/lifecycle | Active Office; immutable versions, activate/revoke/reason; exact source key to existing org/site; used binding never moved. | No binding or site inference. |
-| I03 | Source owner, revision and stale ordering | Name a Fenster source owner; require issuer-defined stable revision/order plus byte hash; exact replay idempotent, collision/older/unknown order blocks. | No commit. |
-| I04 | Duplicate/multi-row `Call No.` grain | Require unique Call No.; all duplicates block until source owner documents stable subidentity/aggregation. | No collapse/last-row-wins. |
-| I05 | Complete-snapshot absence effects | WALD05 V1 commit supports partial scope only. Site/global scope stays non-committable until source revision, dataset/grain and absence rules are approved; never delete/zero from unproved absence. | Preserve all absent facts. |
-| I06 | Neutral staging/review authority | Immutable complete staging revision and current-state diff; all blockers resolved; separate explicit review. | `ready_for_staging=false`; no projection write. |
-| I07 | Commit unit and recovery | Whole reviewed bounded set atomic; exact idempotency/current-state recheck; corrective successor after uncertainty. | No commit endpoint. |
-| I08 | Final staging/commit audit retention | Propose six years as an operational policy for approval, not a legal assertion; holds/backup expiry/data owner explicit. | Retain; no purge scheduler. |
-| I09 | Queue/storage operational owner and limits | CustomerApp-owned private storage and durable operation state. Local implementation may use the configured synchronous driver; commit is never queued. Persistent worker/supervision is required only before queued pilot/release. | Local/test only, no production worker. |
-| I10 | Current importer/non-main disposition | Reimplement neutral/commit boundary; reuse safe tests/invariants; no wholesale merge; keep old path disabled from Wald until parity. | No direct call/cherry-pick/retirement. |
-| I11 | Pilot and cutover | Default off; WALD06 supervised family/site pilot after WALD05 QA; retirement separately approved. | No live source routing. |
+| I01 | Who may upload, clarify, review and commit; same actor? | Active non-preview Office only; distinct capabilities/audit; same actor permitted; external Site Users have no import ability. | APPROVED |
+| I02 | Source-site binding authority/lifecycle | Office-controlled `DRAFT → ACTIVE → SUPERSEDED/REVOKED`; one active exact identity; explicit activation; reasoned successor/revocation; immutable version history; permanent Site ID preferred, exact Site Name transitional. | APPROVED |
+| I03 | Source revision and stale ordering | Staff-declared Export Date + `MORNING`/`AFTERNOON`, authenticated uploader and exact confirmation; ordered by date then slot; one successful commit per slot; replay/collision/stale rules above. | APPROVED TEMPORARY V1 |
+| I04 | Duplicate/multi-row `Call No.` grain | One Call No. per individual visit/call-off; revisits get new Call Nos.; in-workbook duplicates always block; later ordered observations update the same visit only under I03. | APPROVED |
+| I05 | Complete-snapshot absence effects | Only `PARTIAL_FILTERED_EXPORT` is committable in V1. Absence has no effect; site/global modes are non-committable. | APPROVED |
+| I06 | Neutral staging/review authority | Complete immutable staging/current-state diff; every required identity/meaning resolved; no blocking ambiguity, duplicate, invalid mapping, ordering conflict or stale dependency; no partial-row commit. | APPROVED |
+| I07 | Commit unit and recovery | One reviewed bounded run is one atomic transaction; explicit smaller units before approval if needed; rollback all on failure; exact receipts and audited correction successors. | APPROVED |
+| I08 | Final import audit retention | Minimal committed audit metadata/provenance retained six years as company V1 policy, not legal advice; workbook retention remains separate; no unattended purge without G09 owner. | APPROVED |
+| I09 | Queue/storage operational model | Queue-agnostic durable analysis state; synchronous transactional commit; generated private CustomerApp storage key/path; persistent worker is a later pilot/release gate. | APPROVED |
+| I10 | Current importer/non-main disposition | Reimplement the neutral staging/commit boundary; reuse safe invariants/test intent only; reject obsolete mappings, source-wide absence, omitted zero and per-record commit; no wholesale merge or retirement. | APPROVED |
+| I11 | Pilot and cutover | Default off; WALD06 supervised family/site pilot after WALD05 QA; retirement separately approved. | DEFER_TO_WALD06 |
 
-I01–I10 plus a separate explicit implementation instruction are WALD05 entry gates. I11 remains
-a WALD06/pilot decision but its default-off boundary must be implemented and tested in WALD05.
-Management may approve or amend recommendations by ID. A recommendation is not authority.
+DEC-048 approves I01–I10. A separate explicit WALD05 implementation instruction remains the
+entry gate. I11 remains a WALD06/pilot decision, but its default-off boundary must be implemented
+and tested in WALD05.
 
 ## 25. WALD05 implementation and exit gates
 
 Before implementation:
 
 1. accept immutable WALD04 output (satisfied by DEC-047);
-2. approve/amend I01–I10 and name the source/revision and queue/storage operational owners;
-   the G09 data-owner nomination may remain deferred while automatic disposal stays disabled;
-3. approve the exact neutral schema, binding lifecycle and commit/recovery contract;
+2. approve I01–I10 (satisfied by DEC-048, including the temporary manual source-order contract);
+3. keep unattended production deletion disabled until the G09 disposal owner is named;
 4. issue a separate explicit WALD05 implementation instruction and branch name.
 
 Before declaring ready for dedicated QA:

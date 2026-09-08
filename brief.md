@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (corrected WALD04 accepted; WALD05 scoped only)
+**Last updated:** 8 September 2026 (WALD05 I01–I10 governance approved)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -291,6 +291,12 @@ Exact positive `BF` must also remain separately identifiable internally because 
 the confirmed lead-time rule. `CAS`, `FLU`, `PFD`, `GLS`, `WP` and `MISC` are excluded from the
 final customer product model; their raw values may be retained privately for evidence.
 
+Product presence is explicit. An absent column is unrepresented and preserves existing data.
+A present blank/null retains the raw blank and follows the supplied-record semantic contract.
+An explicit zero is exact zero for that supplied record/column; a valid positive value is the
+exact approved fixed-point quantity. Invalid or unknown values block and are never coerced to
+zero. A filtered export cannot zero or delete values outside supplied records.
+
 `Items Ordered Status` and `Site Value` are ignored. `Plot To Be Installed` is operational
 arrival-to-install evidence for PC1 and never a customer Requested Date, alternative proposal,
 Date Agreed or completion date.
@@ -301,13 +307,19 @@ A permanent source Site ID/reference is the required durable identity. Exact Sit
 used only for explicit transitional mapping; it must not fuzzy-match or create a Portal site.
 
 Every workbook defaults to `PARTIAL_FILTERED_EXPORT`, because the source may have been filtered
-before export. Absence never proves deletion or zero quantity. `SITE_COMPLETE_SNAPSHOT` or
-`GLOBAL_COMPLETE_SNAPSHOT` may be used only with explicit coverage confirmation.
+before export. It is the only committable WALD05 V1 scope. Absence never proves deletion or zero
+quantity. `SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` are non-committable in V1.
 
-Source owner, source revision identity, stale/out-of-order handling and multiple-row `Call No.`
-semantics remain implementation gates. A failed or delayed refresh must preserve the last
-successful customer-safe projection and show its last-updated time; it must not silently hide
-known records.
+One `Call No.` identifies one individual visit/call-off; every revisit, including CM1/CM2, has a
+new Call No. Any within-workbook duplicate blocks, even if identical. The same Call No. in a later
+permitted export is the same visit and may change only under the approved source-order contract.
+
+Until RedZebra supplies a native revision/API, active Office Staff declare Export Date plus
+`MORNING`/`AFTERNOON`, confirm the latest export for that slot and are identified automatically by
+their authenticated account. Date then slot defines order; upload time does not. Exact same-slot
+canonical replay is idempotent, different content conflicts and an older slot cannot overwrite a
+newer commit. A failed or delayed refresh preserves the last successful customer-safe projection
+and its last-updated time; it never silently hides known records.
 
 ## 13. Standalone Wald Import Direction
 
@@ -357,11 +369,11 @@ and 24-month retained history are approved. Dedicated QA passed after correction
 `qa/customer-wald04-2026-09-08`; management accepted documentation-inclusive SHA
 `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` as the immutable WALD05 input, including
 executable/test correction `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`.
-DEC-047 authorises WALD05 scoping only; no WALD05 implementation or deployment. G09's named
-owner blocks unattended
-production disposal only; no deletion scheduling is enabled.
-Import/review/commit permissions, retention, source revision and commit-recovery rules remain
-explicit later gates.
+DEC-048 approves WALD05 governance decisions I01–I10, including Office-only same-actor import,
+immutable exact source-site bindings, temporary manual export ordering, one Call No. per visit,
+partial-only commit, complete staging, atomic commit, six-year minimal committed audit and
+queue-agnostic analysis. It does not authorise implementation or deployment. G09's unnamed owner
+blocks unattended production disposal only; no deletion scheduling is enabled.
 
 ## 14. Notifications, History and Customer Content
 
@@ -394,7 +406,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Corrected WALD04 snapshot `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` is accepted as immutable WALD05 input. WALD05 is scoped only; I01–I10 and explicit implementation approval remain required. No main change or deployment. |
+| Standalone Wald (8 September update) | Corrected WALD04 snapshot `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` is accepted as immutable WALD05 input. I01–I10 governance is approved by DEC-048; a separate explicit implementation instruction remains required. No main change or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -407,7 +419,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- approval and implementation of the scoped CUSTOMER-WALD05 integration contract,
+- separately instructed implementation of the governance-approved CUSTOMER-WALD05 integration contract,
   then independently gated CUSTOMER-WALD06 pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;
@@ -442,17 +454,17 @@ Do not invent answers for:
 
 1. Exact customer-facing expansion of CML and any future certificate/document access.
 2. UK bank-holiday provider/dataset, update ownership and failure behaviour.
-3. Source owner/operator, immutable revision identity, stale ordering and multi-row `Call No.`
-   semantics.
-4. WALD05 import/review/commit and controlled dictionary-change permissions; WALD04 Office knowledge rights are approved.
-5. Final-import audit/staging retention and G09 named disposal owner; WALD04 processing/knowledge periods and hold mechanism are approved.
-6. Import commit atomicity, rollback/recovery and partial-failure presentation.
-7. Any customer-safe projection of source fields beyond the approved product/status allowlist.
-8. Amendment failure/cancellation and explicit old-date reinstatement rules.
-9. Scheduled source-sync mechanism, credentials, cadence and operational alert ownership.
-10. Email provider/event mapping, reminder cadence and production queue-worker rollout.
-11. The actual currently deployed SHA beyond the last evidenced deployment; verify Forge rather
+3. A future RedZebra-native revision/API to replace the approved temporary Office-declared
+   Export Date/Slot ordering without rewriting history.
+4. G09 named unattended-disposal owner; WALD04 processing/knowledge periods, WALD05 six-year
+   minimal committed-audit policy and hold mechanism are approved.
+5. Any customer-safe projection of source fields beyond the approved product/status allowlist.
+6. Amendment failure/cancellation and explicit old-date reinstatement rules.
+7. Scheduled source-sync mechanism, credentials, cadence and operational alert ownership.
+8. Email provider/event mapping, reminder cadence and production queue-worker rollout.
+9. The actual currently deployed SHA beyond the last evidenced deployment; verify Forge rather
     than infer it from `origin/main`.
 
 The confirmed spreadsheet semantic set in Sections 10–12 has no remaining business-meaning
-question. Implementation gates around permissions, identity, retention and recovery remain.
+question. WALD05 governance is complete; implementation still requires a separate explicit
+instruction, followed by dedicated QA and independently approved pilot/release gates.

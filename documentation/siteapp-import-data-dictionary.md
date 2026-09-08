@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 4 September 2026
+**Last updated:** 8 September 2026 (WALD05 source-owner confirmation)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -89,14 +89,21 @@ to five weeks.
 product model. Raw values may be retained privately for evidence but must not be exposed as
 customer product types or added to either roll-up.
 
-Absence, blank or zero has meaning only inside the workbook's confirmed coverage. A filtered
-export cannot zero or delete values outside that coverage.
+Product presence is explicit:
+
+- absent column: unrepresented; preserve existing data;
+- present blank/null: preserve the raw blank and apply the supplied-record semantic contract;
+- explicit zero: exact zero for that supplied record/column;
+- valid positive value: exact approved fixed-point quantity;
+- invalid or unknown value: block; never coerce to zero.
+
+A filtered export cannot zero or delete values outside supplied records.
 
 ## 5. Other Confirmed Fields
 
 | Field | Treatment |
 |---|---|
-| `Call No.` | Permanent unique source reference expected for a source call-off record. Duplicate/multi-row semantics still require an implementation decision; never silently collapse conflicting rows. |
+| `Call No.` | Permanent source reference for exactly one individual visit/call-off. A revisit receives a new Call No.; each CM1/CM2 visit therefore has its own Call No. Every within-workbook duplicate blocks, even if canonically identical; never merge or select first/last. |
 | `Site Name` | Transitional exact-match input only. It must map to an existing Portal site explicitly and must not fuzzy-match or create one. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |
 | `Plot To Be Installed` | Operational arrival-to-install date for PC1. Never map to Requested Date, alternative date, Date Agreed or completion date. |
@@ -110,18 +117,40 @@ No other source field receives customer meaning without an explicit dictionary d
 Every workbook defaults to `PARTIAL_FILTERED_EXPORT`. Users may filter the source before export,
 so absence never proves deletion, completion or zero quantity—even for a represented site.
 
-Stronger scopes require explicit confirmation:
+Stronger scopes are reserved for a future separately approved contract:
 
 | Scope | Required evidence | Permitted absence meaning |
 |---|---|---|
 | `PARTIAL_FILTERED_EXPORT` | Default; no stronger assertion | None. Preserve last known data outside authoritative rows. |
-| `SITE_COMPLETE_SNAPSHOT` | Explicit site identity and confirmation that the export contains the complete defined dataset for that site | Only the separately approved reconciliation rule for that stated coverage. |
-| `GLOBAL_COMPLETE_SNAPSHOT` | Explicit confirmation of complete global coverage and source revision | Only the separately approved reconciliation rule for that stated coverage. |
+| `SITE_COMPLETE_SNAPSHOT` | Not committable in WALD05 V1 | None in V1. |
+| `GLOBAL_COMPLETE_SNAPSHOT` | Not committable in WALD05 V1 | None in V1. |
 
 Filename, workbook size, row count, represented sites or familiar layout must not imply a
 stronger scope.
 
-## 7. Import and Clarification Safety
+## 7. Temporary V1 export ordering
+
+RedZebra does not currently provide an immutable native export revision. WALD05 V1 uses an
+Office-declared `Export Date` plus `Export Slot`, exactly `MORNING` or `AFTERNOON`. A later date is
+newer; on the same date, `AFTERNOON` is newer than `MORNING`. Upload, receipt, file modification
+and other Portal timestamps do not establish source freshness.
+
+The uploader's authenticated CustomerApp account ID and name are captured automatically, never
+entered as free text. Before review, the uploader confirms exactly: “I confirm this is the latest
+RedZebra export available for this slot.” This is an attributed staff assertion, not a claim of a
+RedZebra-native revision.
+
+Within a source namespace/workbook family, only one import may commit successfully for each date
+and slot. The same canonical workbook/content identity for that slot is an idempotent replay. A
+different identity in the same slot is a conflict requiring an explicit correction/replacement
+successor. An older slot cannot overwrite a newer committed slot.
+
+The same Call No. in a later permitted export denotes the same visit. Unchanged canonical content
+has no semantic effect; changed content is an update/correction only under these ordering and
+successor rules. A future RedZebra revision/API may replace this temporary mechanism without
+rewriting retained history.
+
+## 8. Import and Clarification Safety
 
 - Preserve original workbook metadata, sheet/cell provenance and raw values privately.
 - Unknown required meanings block dependent staging/commit.
@@ -130,22 +159,20 @@ stronger scope.
 - Site identity, source revision and authorised coverage must be explicit before live commit.
 - Imports must be idempotent and must not silently overwrite customer-owned Requested Date,
   alternative, Date Agreed, amendment or history.
+- Missing a required site, plot, Call No. or service meaning; Wald ambiguity; invalid mapping;
+  duplicate Call No.; source-order conflict; or stale dependency blocks the whole reviewed unit.
+  Ignored fields may remain. Partial-row commit is not permitted.
 - Source completion follows the approved domain transition; placeholder/source operational
   dates never become customer-owned dates.
 - No direct source or SiteApp write-back is permitted.
 - Do not expose raw workbook content, filenames, worksheets, rejected rows, customer data or
   internal diagnostics to unauthorised users.
 
-## 8. Unresolved Contract Items
+## 9. Remaining delivery and later-phase items
 
-The confirmed values above are not open semantic questions. The following are implementation
-and governance gates:
-
-- source owner/operator and delivery mechanism;
-- immutable source revision identity and stale/out-of-order handling;
-- duplicate/multi-row `Call No.` treatment;
-- import, review, commit and dictionary/knowledge-approval permissions;
-- raw evidence, clarification, staging and audit retention;
-- commit atomicity and recovery from partial failure;
-- approved behaviour for complete-snapshot absence;
-- any additional customer-safe source fields.
+The confirmed values above are not open semantic questions. DEC-048 approves the WALD05 V1
+permissions, binding, ordering, Call No. grain, partial-only scope, readiness, atomicity,
+six-year minimal committed-audit retention, queue/storage model and importer disposition.
+A separate explicit WALD05 implementation instruction is still required. Production queue/
+worker operations, unattended disposal ownership, WALD06 pilot/cutover and any additional
+customer-safe source field remain later independent gates.

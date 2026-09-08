@@ -49,8 +49,8 @@ Non-negotiable principles:
 | **CONFIRMED BUSINESS RULE** | Valid call dictionary; literal CC! handling; part-level `complete=Yes`; Windows/Doors roll-ups and product meanings; excluded products; exact BF lead-time preservation; ignored fields; PC1 operational-date meaning; filtered-export default. |
 | **ARCHITECTURAL DECISION** | Standalone CustomerApp Wald distribution; structure inference separated from controlled business meaning; private neutral staging/review/commit boundary; future source Site ID/reference as durable site identity; Site Name transitional only. |
 | **TEMPORARY IMPLEMENTATION** | The non-main manual XLSX/interpreter/profile/UI feature line and any exact-Site-Name binding used before durable source Site IDs are supplied. Neither is the final production architecture by existence alone. |
-| **UNRESOLVED GOVERNANCE DECISION (outside this semantic set)** | Source owner/revision authority; final import/knowledge abilities; retention; reviewed commit atomicity/recovery. |
-| **UNRESOLVED TECHNICAL DELIVERY ITEM** | SiteApp/WALD02 source baseline is resolved. Additive integration schema, source revision-order enforcement, worker/storage/pilot evidence and delivery of permanent source Site ID remain. |
+| **APPROVED WALD05 GOVERNANCE (DEC-048)** | Office-only import abilities, immutable binding lifecycle, temporary manual Export Date/Slot order, one Call No. per visit, partial-only scope, complete staging, atomic commit/recovery, six-year minimal audit, queue-agnostic analysis and importer disposition. |
+| **UNRESOLVED TECHNICAL DELIVERY ITEM** | A separate WALD05 implementation instruction; additive integration schema/runtime evidence; worker/storage/pilot evidence; unattended-disposal owner; and delivery of permanent source Site ID/native revision remain. |
 
 ## 2. Evidence baseline and limits
 
@@ -425,8 +425,10 @@ processes, not under public storage or SiteApp. Use generated keys, authorised d
 content hash/security/retention checks and bounded local copies for remote disks. Clean
 only owned temporary artifacts; abrupt process death needs safe orphan handling. Back up
 database plus original evidence/pinned artifacts and rehearse a coherent restore.
-Source binary/artifact/answer/commit retention periods remain an explicit production gate;
-do not copy SiteApp's 90-day setting or the call-off seven-day Trash rule.
+Approved CustomerApp retention periods and DEC-048's six-year minimal committed-audit policy
+must be implemented and verified independently of SiteApp. G09 owner/backup/restore/disposal
+controls remain production gates; do not copy SiteApp's 90-day setting or the call-off seven-day
+Trash rule.
 
 Retain reader protections: signature/container validation; archive path/entry/decompression
 limits; bounded sparse cells/rows/columns/strings/regions; no DTD/entity/network resolution;
@@ -554,10 +556,10 @@ affected feature/pilot. None is a reason to rebuild the generic core.
 | CW-D01 — resolved | `complete = Yes` completes that specific source call-off part; sensible variants are case-insensitive and no date is invented. Older stage/date codes are not required without later confirmation. | Version the rule and test `No`, unknown and reversal paths; preserve raw evidence. |
 | CW-D02 — resolved semantics | The Windows/Doors formulae and included/excluded codes in §6 are authoritative customer roll-ups. | Implement typed validation and deterministic duplicate/conflict handling without inventing absent values. |
 | CW-D03 — resolved | Exact positive `BF` means Bifold, remains internally identifiable and changes the normal earliest request from four to five weeks. | Exact-code tests only; no substring inference. |
-| CW-D04 | Source owner/operator, stable source-family/revision identity, stale-revision handling and multirow Call No. semantics. Export scope is now resolved: safe default partial/filtered; stronger scope explicit only. | No automatic absence/zeroing, identity synthesis or live source commit on an unclear revision contract. |
-| CW-D05 | Portal import/evidence/review/commit abilities; who can activate reusable knowledge and approve business dictionaries. | No new production access granted; Office-only model is proposed. |
-| CW-D06 | Raw sources, analysis artifacts, answers, review/commit audit retention and holds. | No destructive purge policy invented; production enablement gated. |
-| CW-D07 | Reviewed commit unit and recovery: proposed whole-reviewed-set atomic commit for the bounded pilot versus explicitly approved per-record partial application. Existing importer is per-record. | No claim of whole-import atomicity and no exposed commit until settled/tested. |
+| CW-D04 — resolved for WALD05 V1 | Staff-declared Export Date/Slot supplies temporary ordering; one Call No. identifies one visit; every duplicate in a workbook blocks. Partial/filtered is the only committable scope. | Implement exactly under DEC-048; native RedZebra revision and stronger scope remain future contracts. |
+| CW-D05 — resolved for WALD05 V1 | Active non-preview Office-only import powers, separately authorised/audited, same actor allowed; external Site Users receive none. | No access exists until separately instructed implementation passes security QA. |
+| CW-D06 — resolved for committed audit | Minimal committed import audit/provenance retained six years; workbook/evidence periods remain separate; holds extend. | Unattended production disposal remains disabled until G09 owner nomination. |
+| CW-D07 — resolved for WALD05 V1 | One reviewed bounded run is one atomic transaction; explicit smaller review units only before approval; durable receipt/retry/corrective successor recovery. | Existing per-record importer is not the new contract and cannot be wired directly. |
 | CW-D08 | Which nonessential source fields, if any, are customer-safe to publish (Notes, refs, operational dates). | Private evidence only; current customer allowlist unchanged. |
 
 Existing unrelated decisions (CML expansion, amendment reasons, holiday provider and wider
@@ -576,7 +578,7 @@ approval. Keep the existing Sprint 3 programme visible rather than renumbering i
 | CUSTOMER-WALD02 — Portable core + corpus | Freeze approved baseline; port reader/profiler/reasoning/diagnostic contracts with compatible tests and deterministic synthetic fixtures. No UI/domain writes or SiteApp persistence. | Accepted corrected baseline `4aa5ffb`, reader `wald-0.2.1`; no UI/domain writes or deployment. |
 | CUSTOMER-WALD03 — Portal semantics/dictionaries | Portal schema/role registry, approved dictionaries, full-column call-record validation and domain-adapter contract; customer-specific fixtures and unresolved-code handling. | 02 contracts stable. Exit: the reconciled call/completion/product/BF/field/scope map is correct; unknowns block dependent use; no SiteApp reference imports. |
 | CUSTOMER-WALD04 — Clarification/profiles | Accepted corrected snapshot `0e83eb2`; scoped Office knowledge, immutable evidence/profile lifecycle and MySQL concurrency verified. No commit path or automatic disposal. | Complete as immutable WALD05 input under DEC-047; not released/deployed. |
-| CUSTOMER-WALD05 — Import/review integration | Private upload, durable queued orchestration/recovery, browser resumption, neutral staging, review/diff/preview and guarded Portal commit. Retained fallback and disposable parity harness. | Scope only in `WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md`; I01–I10 and explicit implementation approval required. |
+| CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue-agnostic orchestration/recovery, browser resumption, neutral staging, review/diff/preview and guarded Portal commit. Retained fallback and disposable parity harness. | I01–I10 governance approved by DEC-048; separate explicit implementation instruction required. |
 | CUSTOMER-WALD06 — Pilot/hardening | Held-out ugly workbooks, supervised source-family pilot, scale/security/concurrency/accessibility/device tests, queue/storage/retention/backup/rollback rehearsal and evidence-led corrections. | 05 plus all applicable CW-D gates and separate pilot approval. Exit: zero unexplained parity differences, safe abstention and signed operational readiness; any retirement separately approved. |
 
 First working milestone is the **integrated CUSTOMER-WALD05 exit**, not reader-only

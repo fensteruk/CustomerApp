@@ -2,8 +2,9 @@
 
 Current architecture additions: DEC-039 — standalone CustomerApp Wald adoption; DEC-040 —
 reconciled source dictionary, completion, products, site identity and export scope; DEC-042 —
-approved immutable CUSTOMER-WALD02 source baseline and bounded adoption rules; DEC-043 —
-accepted corrected WALD02 output and bounded WALD03 architecture scope.
+approved immutable CUSTOMER-WALD02 source baseline and bounded adoption rules; DEC-043–047 —
+accepted corrected phase baselines and bounded phase authority; DEC-048 — final WALD05 I01–I10
+governance approval, pending a separate implementation instruction.
 Earlier sprint headers and decisions below are retained history; DEC-035 and subsequent
 decisions supersede conflicting assumptions.
 
@@ -1108,3 +1109,75 @@ Dedicated QA established the WALD04 knowledge layer after correcting a MySQL imm
 bypass and query-growth defect. Freezing the documentation-inclusive corrected output gives
 WALD05 a stable input while requiring the much broader import, source identity, commit and
 operational decisions to be made explicitly before application code is changed.
+
+---
+
+## DEC-048
+
+Date:
+8 September 2026
+
+Decision:
+Management explicitly approves CUSTOMER-WALD05 governance decisions I01–I10. This supersedes
+DEC-047's unapproved-governance state and the unresolved I03/I04 conclusions in the historical
+WALD05 decision-resolution report. It does not supersede the accepted WALD04 baseline, frozen
+generic/dictionary/knowledge boundaries or release restrictions, and it is not an implementation
+instruction.
+
+Rules:
+
+- I01: active non-preview Fenster Office Staff alone may upload, interpret, answer one-time
+  clarification, bind, review, commit, audit and retry. Each is separately authorised/audited;
+  the same authorised actor may perform all. External Site Users receive no import ability.
+- I02: Office-controlled source-site bindings use `DRAFT → ACTIVE → SUPERSEDED/REVOKED`, one
+  active binding per exact identity, explicit activation, reasoned replacement/revocation and
+  immutable version/use history. Prefer permanent RedZebra/SiteApp Site ID; exact Site Name is
+  transitional only; never fuzzy-match.
+- I03: temporary V1 source order is declared Export Date plus `MORNING`/`AFTERNOON`; later date
+  wins and afternoon follows morning on the same date. Capture authenticated uploader account
+  ID/name automatically and require: “I confirm this is the latest RedZebra export available for
+  this slot.” This is staff-declared provenance, not a RedZebra revision. One successful commit
+  per namespace/family/date/slot; exact canonical replay is idempotent; differing content in the
+  same slot requires an audited correction/replacement successor; older slots cannot overwrite
+  newer commits; upload time has no freshness authority.
+- I04: one Call No. identifies one individual visit/call-off. Each revisit, including CM1/CM2,
+  receives a new Call No. Any within-workbook duplicate blocks even if identical. A later ordered
+  occurrence is the same visit: unchanged canonical content has no effect; changed content is an
+  ordered update/correction.
+- I05: only `PARTIAL_FILTERED_EXPORT` is committable in V1. Absence means no change. Site/global
+  complete modes are non-committable and cannot be inferred from contents.
+- I06: unresolved required site/plot/Call No./service, Wald ambiguity, invalid mapping, duplicate,
+  ordering conflict or stale dependency blocks review/commit. Ignored fields may remain. No
+  partial-row commit.
+- I07: one reviewed bounded run commits atomically; any failure rolls the whole transaction back.
+  Smaller units, if required, are explicit before approval; no hidden chunking/per-row commit.
+- I08: retain minimal committed import audit metadata/provenance for six years as a company V1
+  operational policy, not a legal claim. Uploaded workbook retention remains separate.
+- I09: analysis/work state is durable and queue-agnostic; final commit is synchronous and
+  transactional; source files use generated private CustomerApp storage keys/paths. Persistent
+  production workers remain a pilot/release gate.
+- I10: reimplement neutral staging/review/controlled commit under the accepted semantics; preserve
+  safe Portal relationships/history additively and reuse safe test/invariant intent only. Reject
+  obsolete mappings, source-wide absence, omitted-column zero and per-record commit. Do not merge
+  the non-main importer wholesale or retire old paths without later parity/cutover approval.
+- Product presence is explicit: absent column is unrepresented/preserves existing; present blank
+  keeps raw evidence and follows the supplied-record semantic contract; explicit zero and valid
+  positive fixed-point values are exact; invalid/unknown values block. Absence never implies zero.
+- Source completion requires resolved Call No./site/plot/service and valid current review/commit;
+  it invents no date and preserves every customer-owned date, proposal, amendment, response,
+  actor and history record. Operational dates never become Portal dates.
+- Preview validity is 24 hours and is invalidated by any relevant artifact/content, declared
+  order, component/dictionary/executable, knowledge/profile, binding, scope, projection or
+  authority change. Fail stale; do not regenerate during commit.
+- Failed atomic work leaves no partial projection effect. Resolve uncertain outcomes by durable
+  receipt; exact successful replay returns the existing result; corrections use audited ordered
+  successors rather than routine SQL repair.
+- I11 pilot/cutover remains deferred to WALD06. The unnamed G09 unattended-disposal owner blocks
+  only automatic production deletion. Persistent worker rollout, security/release reconciliation,
+  old-path retirement and deployment remain independently gated.
+
+Reason:
+Management has supplied the temporary RedZebra export-ordering rule and confirmed the Call No.
+grain, allowing the remaining WALD05 governance package to be approved coherently. The resulting
+contract permits a separately instructed implementation while keeping source meaning, tenancy,
+Portal workflow and production operations outside Wald inference.

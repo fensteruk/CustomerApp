@@ -1,6 +1,6 @@
 # Customer Portal — Source Integration Contract
 
-_Sprint 3B — 20 August 2026_
+_Sprint 3B — 20 August 2026; WALD05 governance updated 8 September 2026_
 
 ## CUSTOMER-WALD01A reconciliation addendum — 4 September 2026
 
@@ -20,11 +20,12 @@ staging → Portal review/current preview → explicitly authorised domain commi
 pass browser input straight to `SourceProjectionImportService` or use Wald confidence as
 approval. No SiteApp API, database, queue or filesystem dependency is introduced.
 
-Before live integration, address the documented gaps: the current importer reconciles
+Before live integration, replace the documented unsafe behaviours: the current importer reconciles
 absence source-wide, products omitted from its snapshot become zero, duplicate product
 keys are merged by later value, and transactions are per record rather than whole import.
-Snapshot customer/site/region coverage, authoritative completeness, revision ordering,
-quantity grain and reviewed commit atomicity must be settled and tested. A partial upload
+WALD05 V1 uses only partial/filtered scope, staff-declared Export Date/Slot ordering,
+one Call No. per visit and one atomic reviewed commit. These contracts must be implemented and
+tested. A partial upload
 must not mark unrelated sites missing or zero unknown quantities. Preserve stable Call No.
 associations and the customer-date/source-completion precedence below.
 
@@ -37,9 +38,16 @@ come from the controlled dictionary, not Wald confidence or code similarity.
 
 All SiteApp exports contain whatever the user filtered and therefore default to
 `PARTIAL_FILTERED_EXPORT`. Absence proves no deletion, including within a represented site.
-`SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` require explicit confirmation.
+`SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` are non-committable in WALD05 V1.
 The durable site identity target is the future source Site ID/reference; exact Site Name is
 transitional binding evidence only.
+
+RedZebra does not yet supply a native immutable export revision. WALD05 V1 therefore orders
+imports by Office-declared `Export Date` plus `Export Slot` (`MORNING` or `AFTERNOON`), with a
+later date newer and `AFTERNOON` newer than `MORNING` on the same date. The authenticated uploader
+account ID/name are captured automatically and the user must confirm exactly: “I confirm this is
+the latest RedZebra export available for this slot.” This is staff-declared provenance, not a
+RedZebra-native revision. Upload/receipt/filesystem timestamps never establish source freshness.
 
 A committed non-main feature line ending at `feature/manual-source-import-ui` (`1e8c22b`)
 contains deterministic XLSX interpretation, source-site bindings, explicit scopes,
@@ -64,7 +72,7 @@ Each transport adapter must convert its input into one `SourceRecord` containing
 
 | Field | Contract |
 |---|---|
-| Call No. | Required permanent, unique source identity; never reused. |
+| Call No. | Required permanent source identity for exactly one individual visit/call-off. Every revisit, including each CM1/CM2 visit, receives a new Call No. |
 | Site identity | Required source-specific identity. Use the future permanent source Site ID/reference when available; exact Site Name is a transitional explicit binding key only. |
 | Plot reference | Required customer-safe source plot reference. |
 | Call Type | Required operational code: PC1, CC1, CM1, CM2 or CML. Literal CC! remains unknown/likely typo evidence pending human confirmation. |
@@ -100,30 +108,37 @@ contract.
 - Unknown Call Types, invalid site identity, duplicate Call No. in a snapshot and changed
   Call No. site/plot associations are rejected as issues. They do not create or move a
   Portal projection.
+- Every duplicate Call No. within one workbook blocks the reviewed run, even when the rows are
+  canonically identical. Never merge, select first/last or infer a subidentity.
 
-## Import isolation and idempotency
+## WALD05 atomicity and idempotency
 
-The transport-independent `SourceProjectionImportService` processes one Call No. in a
-database transaction. A malformed row is isolated and recorded; valid rows continue.
-Product quantities are synchronised once per affected plot after its valid records are
-processed. Repeating an identical payload updates freshness but does not duplicate plots,
-services, products, events or issue identities. The first observed Call No. for an existing
-blank plot/service row counts as a created source projection; subsequent run counts change
-only for source facts, not for Portal observation timestamps.
+The inspected transport-independent `SourceProjectionImportService` processes one Call No. in a
+database transaction and then runs separate product/missing passes. That historical behaviour is
+not the WALD05 commit contract. WALD05 commits one explicitly reviewed bounded run in one atomic
+transaction; any failure rolls the whole unit back. If limits require smaller work, the units are
+created and reviewed explicitly before approval, never hidden-chunked or applied per row.
 
-Products may be zeroed or treated as absent only inside the explicitly reviewed authoritative
-coverage and grain. A filtered/partial workbook cannot zero unrepresented source facts.
-Conflicting duplicate evidence must be reconciled rather than resolved by last-row-wins.
+Within a source namespace/workbook family, at most one import may commit successfully per Export
+Date/Export Slot. The same slot and same canonical workbook/content identity is idempotent and
+returns the existing receipt. The same slot with different content is a conflict requiring an
+explicit audited correction/replacement successor. An older declared slot cannot overwrite a
+newer committed one. The same Call No. in a later allowed export is the same visit: unchanged
+canonical content has no semantic effect; changed content is an ordered update/correction.
+
+Only a supplied, present product column may carry an exact blank/zero/positive meaning under the
+approved supplied-record contract. An absent column is unrepresented and preserves existing
+data. A filtered/partial workbook cannot zero unrepresented source facts. Conflicting duplicate
+evidence blocks rather than being resolved by last-row-wins.
 
 ## Missing, completion and reversal policy
 
 Every workbook defaults to `PARTIAL_FILTERED_EXPORT`; known Call Nos. absent from it remain
-untouched because absence proves nothing. A separately confirmed `SITE_COMPLETE_SNAPSHOT`
-may compare only the named bound site(s), and a separately confirmed
-`GLOBAL_COMPLETE_SNAPSHOT` may compare the whole namespace. No mode deletes records:
-eligible missing facts remain visible from their last known projection and are reconciled.
-When a Call No. returns, its existing projection is reused and any applicable missing-source
-issue is resolved rather than duplicated.
+untouched because absence proves nothing. `SITE_COMPLETE_SNAPSHOT` and
+`GLOBAL_COMPLETE_SNAPSHOT` cannot commit in V1, regardless of workbook shape, contents or an
+Office assertion. Any future stronger-scope absence effect requires a separate approved
+coverage/grain/revision contract. No mode deletes records. When a Call No. returns, its existing
+projection identity is reused rather than duplicated.
 
 When `complete = Yes` newly establishes completion for a source call-off part, the
 corresponding active Portal request becomes Completed, open negotiation closes as
@@ -138,9 +153,10 @@ it creates an unsafe-reversal reconciliation issue and preserves that newer requ
 
 No XLSX/CSV parser, source path, credential or scheduler is configured on the audited
 checkout. A committed non-main manual XLSX feature line exists, but it is not approved for
-production adoption. The standalone Wald adapter will validate into this contract and
-invoke the reviewed Portal import boundary. Source ownership, credentials, revision
-identity and production cadence remain delivery items.
+production adoption. The standalone Wald adapter will validate into this contract and invoke the
+reviewed Portal import boundary. The temporary manual ordering contract above governs WALD05 V1
+until RedZebra supplies a real revision/API. Credentials, production cadence and operational
+rollout remain delivery items.
 
 Unexpected importer failures mark their import run as failed and write only safe diagnostic
 metadata (source name, import-run UUID and exception class) to the application log. Raw
