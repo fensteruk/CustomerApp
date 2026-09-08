@@ -11,6 +11,13 @@ source visits into one Portal service state and plot/product quantity needs an e
 See the [implementation entry report](../wald/customer-wald05-import-review-integration-2026-09-08.md).
 I01–I10 remain approved. No runtime implementation has started.
 
+DEC-050 subsequently records the user's
+[workbook-specific clarification](../wald/customer-wald05-workbook-clarification-2026-09-08.md):
+all CC! Call Type values in the identified workbook are explicitly confirmed as CC1, and CM2
+records in that workbook are excluded. PC1 and CM1 are full call-off examples. The historical
+CM1-versus-CM2 projection example therefore does not apply to that selected workbook scope.
+Preserve raw evidence and the artifact-bound approval; do not change the global dictionary.
+
 [Final governance approval](../wald/customer-wald05-final-governance-approval-2026-09-08.md)
 supersedes the approval state in the earlier
 [decision-resolution report](../wald/customer-wald05-governance-resolution-2026-09-08.md).

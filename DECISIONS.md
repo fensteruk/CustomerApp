@@ -1229,3 +1229,38 @@ The explicit implementation instruction removes the final permission gate and se
 containing the approved documentation. Entry review must still distinguish settled visit
 identity from the missing business rule for projecting multiple visits, so the implementation
 does not invent completion, quantity or BF lead-time truth.
+
+---
+
+## DEC-050
+
+Date:
+8 September 2026
+
+Decision:
+The user explicitly confirms workbook-specific interpretation for the inspected local artifact
+`Copy of siteapp1.xlsx`, SHA-256
+`ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`:
+PC1 and CM1 in Call Type are full call-off examples; every literal `CC!` in Call Type is a
+confirmed typo for CC1; CM2 records in this workbook are to be ignored.
+
+Rules:
+
+- Apply this explicit human confirmation to all Call Type occurrences of `CC!` in this exact
+  workbook. Retain raw `CC!` privately alongside canonical CC1 and this approval's provenance.
+  It is not an inferred correction and needs no repeated business confirmation for each cell.
+- Exclude CM2 records from this workbook's proposed customer projection. Record intentional
+  exclusion in private review evidence; do not translate CM2 into CM1 or treat excluded records
+  as deletion, reversal or zero-quantity instructions.
+- PC1 maps to Windows, CC1 to Cavity Closers and CM1 to CML under the existing dictionary.
+- Do not rewrite the original workbook or change the frozen dictionary/fingerprint. CC! does
+  not become a global learned alias, and CM2 remains a valid dictionary call type outside this
+  workbook-specific exclusion. Changed source bytes require a new matching approval context.
+- This narrows the supplied example: the earlier W5-P01 CM1-versus-CM2 case does not apply to
+  this selected workbook projection. It does not establish an ordering between distinct Call
+  Nos., a cross-visit quantity rule, or a universal PC1/CC1/CM1-only source filter.
+
+Reason:
+The user's inspection supplies the required human authority for the typo correction and a
+bounded exclusion. Keeping that authority attached to the artifact preserves original evidence
+and prevents the clarification from silently redefining other imports.
