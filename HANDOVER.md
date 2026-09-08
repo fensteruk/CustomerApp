@@ -1,5 +1,16 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-WALD05 implementation authorised; projection clarification required — 8 September 2026
+
+DEC-049 records explicit implementation authority on
+`feature/customer-wald05-import-review-integration`, created from verified governance commit
+`877bd3ff666873a0703c3b7671015ec4cfd2ee52`. Accepted WALD04 executable trees are unchanged.
+W5-P01/P02 require the business rule converting multiple distinct source visits into one Portal
+service completion/request association and one plot/product quantity. I01–I10 are still approved;
+no additional blanket implementation permission is needed after those rules are confirmed.
+[Entry review and concrete cases](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+Runtime/schema work has not started. No migration, SiteApp, production or deployment action.
+
 ## CUSTOMER-WALD05 governance approved — 8 September 2026
 
 DEC-048 approves I01–I10 against immutable WALD04 input

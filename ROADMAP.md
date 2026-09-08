@@ -9,8 +9,9 @@ revision `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, reader `wald-0.2.1`, dictio
 `customerapp.source-dictionary.v1` and fingerprint
 `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` are frozen.
 DEC-048 approves WALD05 I01–I10 governance in
-`WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md`. A separate explicit implementation
-instruction remains required. No WALD05 runtime, push, main change or deployment. G09
+`WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md`. DEC-049 authorises implementation from
+governance-inclusive `877bd3ff...`; W5-P01/P02 cross-visit projection rules require clarification.
+No WALD05 runtime, push, main change or deployment. G09
 named-owner nomination still gates unattended disposal. Eight inherited advisories remain.
 Evidence: `documentation/wald/customer-wald05-final-governance-approval-2026-09-08.md`.
 
@@ -22,8 +23,8 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD04 accepted; CUSTOMER-WALD05 governance approved, implementation instruction required.**
-The current authority is the rebuilt `brief.md`, DEC-039–048,
+**CUSTOMER-WALD04 accepted; WALD05 implementation authorised, projection clarification required.**
+The current authority is the rebuilt `brief.md`, DEC-039–049,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
@@ -41,7 +42,7 @@ Windows/Doors roll-ups and exact BF handling, ignores Items Ordered Status/Site 
 qualifies Plot To Be Installed, sets future source Site ID as durable identity and makes
 every export partial/filtered by default. No semantic business question from that set
 remains. DEC-048 has since fixed WALD05 V1 source ordering/Call No. grain, permissions,
-retention and atomicity; a separate implementation instruction remains. The SiteApp copy
+retention and atomicity; DEC-049 authorises implementation subject to W5-P01/P02. The SiteApp copy
 baseline for WALD02 is now fixed by
 the approved manifest digest
 `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`.
@@ -56,7 +57,7 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
 | 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
 | 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Accepted corrected snapshot `0e83eb2`; 198 MySQL tests covered, including 140 race groups; no automated disposal or deployment. |
-| 4 | CUSTOMER-WALD05 — Import/review integration | I01–I10 governance approved; private upload, queue-agnostic durable analysis, neutral staging/review and atomic controlled commit. Separate implementation instruction required. |
+| 4 | CUSTOMER-WALD05 — Import/review integration | I01–I10 approved and implementation authorised by DEC-049; W5-P01/P02 cross-visit completion/request and quantity projection rules must be clarified. Runtime not started. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
 
 First usable milestone is the integrated 05 exit, not just a working profiler. It must

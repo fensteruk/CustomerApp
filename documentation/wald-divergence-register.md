@@ -1,6 +1,12 @@
 # Wald Distribution Divergence Register
 
 Last updated: 8 September 2026. Owner: Product and Architecture.
+Latest entry: DEC-049 authorises WALD05 implementation from verified governance commit
+`877bd3ff666873a0703c3b7671015ec4cfd2ee52`. W5-P01/P02 projection aggregation across distinct
+visits requires clarification before the affected runtime/schema work. I01–I10 remain approved.
+See [implementation entry report](wald/customer-wald05-import-review-integration-2026-09-08.md).
+The earlier implementation-instruction gate below is satisfied; no runtime change is claimed.
+
 Status: corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
 on `qa/customer-wald03-2026-09-08` accepted as immutable WALD04 input, including executable
 corrections `f4fda0f`. Original implementation candidate `574f196` is not the accepted output.

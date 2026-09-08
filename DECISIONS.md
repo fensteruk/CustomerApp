@@ -1181,3 +1181,51 @@ Management has supplied the temporary RedZebra export-ordering rule and confirme
 grain, allowing the remaining WALD05 governance package to be approved coherently. The resulting
 contract permits a separately instructed implementation while keeping source meaning, tenancy,
 Portal workflow and production operations outside Wald inference.
+
+---
+
+## DEC-049
+
+Date:
+8 September 2026
+
+Decision:
+Management explicitly authorises CUSTOMER-WALD05 source binding, reviewed import and atomic
+commit implementation on `feature/customer-wald05-import-review-integration`. The working base
+is governance-inclusive `877bd3ff666873a0703c3b7671015ec4cfd2ee52`, after verifying ancestry
+from accepted WALD04 `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` and an exclusively
+documentation delta. These entry checks passed. This supersedes DEC-048's pending implementation
+instruction and the earlier direct-from-WALD04 branch requirement, while preserving I01–I10,
+the accepted executable/dictionary boundaries and all production restrictions.
+
+Rules:
+
+- Implement the approved source-site binding, private intake, authenticated uploader,
+  STAFF_DECLARED Export Date/Slot ordering, distinct visit identities, neutral staging,
+  immutable review, current-state verification, atomic commit, receipts and audit contracts.
+- Preserve accepted Wald/semantic/knowledge corrections and use additive forward migrations.
+  No old importer or non-main profile/UI implementation is approved for wholesale merge.
+- Require focused/full regression, synthetic failure/role/staleness tests, disposable MySQL 8.4
+  schema and real concurrency evidence before declaring ready for dedicated QA.
+- No main, production, deployment, WALD06, SiteApp, GitHub Actions, push or Composer-remediation
+  merge is authorised.
+
+Implementation discovery, not a newly approved business rule:
+
+Entry review found that the current Portal schema has one service state per plot/service and
+one quantity per plot/product, whereas approved I04 allows several distinct visits for the same
+plot/service. The frozen dictionary rolls up one supplied record and does not define the
+cross-visit projection. W5-P01 (completion/request association across visits) and W5-P02 (product
+quantity aggregation across visits) require business clarification. Concrete cases and source
+evidence are recorded in
+`documentation/wald/customer-wald05-import-review-integration-2026-09-08.md`.
+
+I01–I10 remain approved. No sum/latest/any/all visit policy is inferred from code or export order.
+Affected projection schema/commit implementation pauses until the missing rule is supplied.
+The implementation permission above remains valid and need not be requested again.
+
+Reason:
+The explicit implementation instruction removes the final permission gate and selects a base
+containing the approved documentation. Entry review must still distinguish settled visit
+identity from the missing business rule for projecting multiple visits, so the implementation
+does not invent completion, quantity or BF lead-time truth.

@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD05 I01–I10 governance approved)
+**Last updated:** 8 September 2026 (WALD05 implementation authorised; projection clarification required)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -372,8 +372,11 @@ executable/test correction `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`.
 DEC-048 approves WALD05 governance decisions I01–I10, including Office-only same-actor import,
 immutable exact source-site bindings, temporary manual export ordering, one Call No. per visit,
 partial-only commit, complete staging, atomic commit, six-year minimal committed audit and
-queue-agnostic analysis. It does not authorise implementation or deployment. G09's unnamed owner
-blocks unattended production disposal only; no deletion scheduling is enabled.
+queue-agnostic analysis. DEC-049 subsequently authorises implementation from governance-inclusive
+commit `877bd3ff666873a0703c3b7671015ec4cfd2ee52`. Entry review exposed W5-P01/P02: the rule
+projecting several distinct visits into one Portal service state and plot/product quantity needs
+clarification before the affected schema/commit work. G09's unnamed owner blocks unattended
+production disposal only; no deletion scheduling is enabled.
 
 ## 14. Notifications, History and Customer Content
 
@@ -406,7 +409,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Corrected WALD04 snapshot `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` is accepted as immutable WALD05 input. I01–I10 governance is approved by DEC-048; a separate explicit implementation instruction remains required. No main change or deployment. |
+| Standalone Wald (8 September update) | Corrected WALD04 snapshot `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` remains the executable baseline. DEC-049 authorises implementation from governance-inclusive `877bd3ff...`; W5-P01/P02 cross-visit projection rules need clarification. No runtime, main change or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -419,7 +422,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- separately instructed implementation of the governance-approved CUSTOMER-WALD05 integration contract,
+- implementation of CUSTOMER-WALD05 after clarifying W5-P01/P02 cross-visit projection rules,
   then independently gated CUSTOMER-WALD06 pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;
@@ -465,6 +468,7 @@ Do not invent answers for:
 9. The actual currently deployed SHA beyond the last evidenced deployment; verify Forge rather
     than infer it from `origin/main`.
 
-The confirmed spreadsheet semantic set in Sections 10–12 has no remaining business-meaning
-question. WALD05 governance is complete; implementation still requires a separate explicit
-instruction, followed by dedicated QA and independently approved pilot/release gates.
+The confirmed per-visit semantic set in Sections 10–12 remains approved. WALD05 implementation
+authority is recorded by DEC-049, but W5-P01/P02 require the cross-visit completion/request and
+quantity projection rule. Dedicated QA and independently approved pilot/release gates follow
+implementation.

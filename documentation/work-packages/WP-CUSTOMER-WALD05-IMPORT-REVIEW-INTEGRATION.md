@@ -1,17 +1,25 @@
 # CUSTOMER-WALD05 — Import, Review and Controlled Commit Integration
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: **GOVERNANCE APPROVED — DEC-048. EXPLICIT IMPLEMENTATION INSTRUCTION REQUIRED.**
+Status: **IMPLEMENTATION AUTHORISED — DEC-049; PROJECTION-CONTRACT CLARIFICATION REQUIRED.**
+
+The latest management instruction authorises implementation from governance-inclusive commit
+`877bd3ff666873a0703c3b7671015ec4cfd2ee52` on
+`feature/customer-wald05-import-review-integration`. Baseline ancestry and the documentation-only
+delta passed verification. Entry review exposed W5-P01/P02: aggregation of multiple distinct
+source visits into one Portal service state and plot/product quantity needs an explicit rule.
+See the [implementation entry report](../wald/customer-wald05-import-review-integration-2026-09-08.md).
+I01–I10 remain approved. No runtime implementation has started.
 
 [Final governance approval](../wald/customer-wald05-final-governance-approval-2026-09-08.md)
 supersedes the approval state in the earlier
 [decision-resolution report](../wald/customer-wald05-governance-resolution-2026-09-08.md).
 I01–I10 are approved; neither report is implementation authority.
 
-This work package proposes the bounded integration that turns private workbook evidence into
+This work package defines the bounded integration that turns private workbook evidence into
 reviewed neutral records and, only after a separate explicit Office action, commits approved
-source facts into CustomerApp projections. It does not authorise implementation, migration,
-route/UI/queue/storage changes, import execution, production access, release or deployment.
+source facts into CustomerApp projections. DEC-049 supplies implementation authority, subject to
+the projection clarification above. Production access, release and deployment remain excluded.
 
 ## 1. Immutable entry baseline
 
@@ -33,8 +41,9 @@ Accepted [WALD04 QA](../wald/customer-wald04-qa-2026-09-08.md) corrected W4Q-01�
 passed the security, lifecycle, compatibility, immutability, query-shape and MySQL concurrency
 gates. Those results are input evidence, not tests rerun by this documentation scope.
 
-Any WALD05 implementation branch must start exactly from the accepted output above unless a
-newer explicitly accepted correction supersedes it. No moving QA/feature working tree, copied
+The latest implementation instruction selects governance-inclusive `877bd3ff...` as the working
+base after verifying its executable trees match the accepted WALD04 output above. This supersedes
+the earlier requirement to branch directly from `0e83eb289...`. No moving QA/feature working tree, copied
 SiteApp source or undocumented non-main CustomerApp merge may become the baseline.
 
 ## 2. Core principle and outcome
@@ -145,7 +154,8 @@ No merge, cherry-pick, wholesale copy, legacy-profile data migration or deletion
 
 ## 8. Proposed persistence separation
 
-Names are provisional and no DDL is authorised. Prefer additive tables and forward migrations.
+Names are provisional. DEC-049 authorises additive implementation after the affected projection
+contract is clarified. Prefer additive tables and forward migrations.
 
 | Entity | Proposed responsibility |
 |---|---|
@@ -442,9 +452,9 @@ limits. Failed attempts and inherited advisories are reported separately from fi
 | I10 | Current importer/non-main disposition | Reimplement the neutral staging/commit boundary; reuse safe invariants/test intent only; reject obsolete mappings, source-wide absence, omitted zero and per-record commit; no wholesale merge or retirement. | APPROVED |
 | I11 | Pilot and cutover | Default off; WALD06 supervised family/site pilot after WALD05 QA; retirement separately approved. | DEFER_TO_WALD06 |
 
-DEC-048 approves I01–I10. A separate explicit WALD05 implementation instruction remains the
-entry gate. I11 remains a WALD06/pilot decision, but its default-off boundary must be implemented
-and tested in WALD05.
+DEC-048 approves I01–I10; DEC-049 supplies explicit implementation authority. W5-P01/P02 now gate
+the affected projection schema/commit implementation. I11 remains a WALD06/pilot decision, but
+its default-off boundary must be implemented and tested in WALD05.
 
 ## 25. WALD05 implementation and exit gates
 
@@ -453,7 +463,10 @@ Before implementation:
 1. accept immutable WALD04 output (satisfied by DEC-047);
 2. approve I01–I10 (satisfied by DEC-048, including the temporary manual source-order contract);
 3. keep unattended production deletion disabled until the G09 disposal owner is named;
-4. issue a separate explicit WALD05 implementation instruction and branch name.
+4. issue a separate explicit WALD05 implementation instruction and branch name (satisfied by
+   DEC-049; governance-inclusive starting point verified);
+5. resolve W5-P01/P02 before implementing the affected projection schema/commit rules. These
+   concern aggregation across distinct visits, not the already approved one-visit Call No. grain.
 
 Before declaring ready for dedicated QA:
 

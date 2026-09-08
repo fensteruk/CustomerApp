@@ -1,5 +1,18 @@
 # Current Sprint
 
+## CUSTOMER-WALD05 implementation authorised; projection clarification required — 8 September 2026
+
+DEC-049 records explicit implementation authority on
+`feature/customer-wald05-import-review-integration`, created from governance commit
+`877bd3ff666873a0703c3b7671015ec4cfd2ee52`. Accepted WALD04 ancestry and unchanged executable
+trees are verified. Entry review found that multiple distinct visits lack an approved rule for
+their single Portal service completion/request association and plot/product quantity projection
+(W5-P01/P02). I01–I10 remain approved; runtime/schema work is paused at that boundary.
+[Implementation entry report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+No runtime, migration, production, SiteApp or deployment change. Earlier readiness statements are
+superseded only as to the newly identified projection gap and the now-satisfied implementation
+instruction requirement.
+
 ## CUSTOMER-WALD05 governance approved — 8 September 2026
 
 DEC-048 approves I01–I10 against immutable WALD04 input
