@@ -1,5 +1,15 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-WALD02 dedicated QA handoff — 8 September 2026
+
+Local QA passed after five reader corrections on `qa/customer-wald02-2026-09-08`, starting
+from `9980354d28bfe1ca7986e10a529ab073d95d0b91`. Use the corrected QA commit, not the original
+candidate, for management acceptance/freeze. Reader `wald-0.2.1`; 208 focused tests / 1,262
+assertions; full suite 427 passed, 15 existing environment skips / 2,450 assertions.
+Details: `documentation/wald/customer-wald02-qa-2026-09-08.md`. Eight inherited Composer
+advisories remain separate from this gate. No push, main merge, WALD03 or deployment occurred.
+Earlier QA-pending handoff text below describes the original implementation candidate.
+
 ## CUSTOMER-WALD02 implementation handoff — 4 September 2026
 
 CUSTOMER-WALD02's portable core and safe synthetic corpus are implemented on

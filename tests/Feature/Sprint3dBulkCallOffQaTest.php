@@ -302,6 +302,7 @@ test('matrix construction remains bounded for ten plots and four services', func
 });
 
 test('the temporary per-request notifications use each multi-service request context', function (): void {
+    $this->travelTo(CarbonImmutable::parse('2026-08-21 12:00:00'));
     [$user, $site] = sprint3dQaUser();
     $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create();
     $plot = sprint3dQaPlot($site, 'Plot 12');

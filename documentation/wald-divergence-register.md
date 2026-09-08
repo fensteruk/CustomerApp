@@ -1,8 +1,9 @@
 # Wald Distribution Divergence Register
 
 Date: 4 September 2026. Owner: Product and Architecture.
-Status: CUSTOMER-WALD02 portable core and synthetic corpus implemented on the non-deploying
-feature branch; ready for dedicated QA, not integrated or deployed.
+Status: CUSTOMER-WALD02 dedicated local QA passed after reader corrections on
+`qa/customer-wald02-2026-09-08`; management acceptance of the corrected baseline remains.
+Not integrated, on `main` or deployed. See [the QA report](wald/customer-wald02-qa-2026-09-08.md).
 
 Authority: DEC-039/DEC-040 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
@@ -80,6 +81,24 @@ Categories are deliberately explicit: **Generic improvement candidate for both**
 | WD-18 | CustomerApp-specific | Durable site identity will use the future source Site ID/reference; exact Site Name is transitional binding evidence only. | Delivery dependency for 05/pilot; never infer tenant/site or freeze Site Name as permanent identity. |
 | WD-19 | Temporary fork difference | Portable files live under CustomerApp-owned `App\Wald` rather than SiteApp's root Wald namespaces. | Namespace/path relocation only. All 52 runtime and five adopted test/support files are `IDENTICAL` after inverse relocation; no component version change. |
 | WD-20 | CustomerApp-specific | Safe synthetic boundary coverage adds the canonical `House No.` versus `Sales Plot` ambiguity and literal unknown-value preservation. | Three CustomerApp-owned tests at `5ddaa26`; no core change. Both identifier candidates require clarification, replay is identical and no `CC!` correction or Portal date meaning is invented. |
+
+## Dedicated QA additions — 8 September 2026
+
+The original `9980354` candidate remains 57/57 identical after inverse namespace/EOL
+normalisation. The corrected QA branch has 54 identical and three intentionally diverged
+adopted files. All 162 original source hashes still match. The following entries supersede
+WD-19's no-version-change claim for the corrected candidate only; SiteApp is unchanged.
+
+| ID | Category | Difference / treatment | Status and verification owner |
+|---|---|---|---|
+| WD-21 | Generic improvement candidate for both | `app/Wald/Services/XlsxWorkbookSource.php`: WQ-01/02/03/05 reject invalid node ancestry, duplicate relationship IDs, wrong XML roots and empty XML with safe errors. | Implemented and regression-tested by QA; XLSX adapter version 2. Separate SiteApp backport approval required. |
+| WD-22 | Generic improvement candidate for both | `app/Wald/Services/CsvWorkbookSource.php`: WQ-04 preflights native CSV allocation before delimiter sniffing/record parsing. Uses existing memory budget and conservatively includes quoted separators. | Implemented; CSV adapter version 2; 2 MB hostile row safely rejected in 64 MiB subprocess. Separate backport approval required. |
+| WD-23 | Temporary fork difference | `app/Wald/Services/WorkbookProfiler.php` reader version is `wald-0.2.1` to identify changed refusal behaviour. Structure, reasoning, rules and confidence remain unchanged. | Implemented; 208 focused tests / 1,262 assertions; 427 full-suite passes, 15 environment skips / 2,450 assertions. |
+
+QA added `CustomerWaldDedicatedQaTest.php` and `scripts/verify-wald02-qa.php` (synthetic
+corpus/integrity/standalone replay/benchmark only), and anchored one pre-existing Sprint 3D
+notification fixture's clock. These are not adopted upstream runtime files. No generic fix
+has been propagated to SiteApp and no Portal business-semantic change was made.
 
 ## Backport process
 

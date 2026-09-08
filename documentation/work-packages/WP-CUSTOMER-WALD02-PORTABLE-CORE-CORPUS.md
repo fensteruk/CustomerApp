@@ -1,7 +1,9 @@
 # CUSTOMER-WALD02 — Portable Wald Core + Synthetic Corpus
 
 Date: 4 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: Implemented on a non-deploying feature branch; dedicated QA pending.
+Status: Dedicated local QA passed after reader corrections on 8 September 2026;
+management acceptance of the corrected baseline remains. See
+`documentation/wald/customer-wald02-qa-2026-09-08.md`. No integration or deployment.
 
 ## 1. Objective and authority
 
@@ -109,6 +111,10 @@ Observed baseline versions remain:
 - reasoning `wald-0.3.0`;
 - rules `wald.generic-rules.v1`;
 - confidence `wald.confidence.v1`.
+
+The QA-corrected candidate versions the reader as `wald-0.2.1` and both reader adapters as
+`2`; the other identities above remain unchanged. This is an intentional safe-reader
+divergence documented by WD-21–23, not a business-semantic extension.
 
 ## 7. Synthetic corpus and canonical ambiguity
 

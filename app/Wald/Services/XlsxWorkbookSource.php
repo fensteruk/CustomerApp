@@ -35,7 +35,7 @@ final class XlsxWorkbookSource implements WorkbookSource
         try {
             $this->guardArchive();
             $relationships = [];
-            foreach ($this->nodes('xl/_rels/workbook.xml.rels', ['Relationship']) as $node) {
+            foreach ($this->nodes('xl/_rels/workbook.xml.rels', ['Relationship'], root: 'Relationships') as $node) {
                 if ((string) $node['TargetMode'] === 'External') {
                     continue;
                 }
@@ -45,7 +45,7 @@ final class XlsxWorkbookSource implements WorkbookSource
                     'path' => str_starts_with($target, '/') ? substr($target, 1) : 'xl/'.$target,
                 ];
             }
-            foreach ($this->nodes('xl/workbook.xml', ['workbookPr', 'sheet']) as $node) {
+            foreach ($this->nodes('xl/workbook.xml', ['workbookPr', 'sheet'], root: 'workbook') as $node) {
                 if ($node->getName() === 'workbookPr') {
                     $this->dateSystem = in_array((string) $node['date1904'], ['1', 'true'], true) ? '1904' : '1900';
 
@@ -74,7 +74,7 @@ final class XlsxWorkbookSource implements WorkbookSource
             foreach ($relationships as $relationship) {
                 if ($relationship['type'] === 'sharedStrings') {
                     $bytes = 0;
-                    foreach ($this->nodes($relationship['path'], ['si']) as $node) {
+                    foreach ($this->nodes($relationship['path'], ['si'], root: 'sst') as $node) {
                         $value = $this->text($node);
                         $bytes += strlen($value);
                         $budget->guard('strings', count($this->strings) + 1);
@@ -94,7 +94,7 @@ final class XlsxWorkbookSource implements WorkbookSource
 
     public function metadata(): array
     {
-        return ['adapter' => 'wald_sparse_ooxml', 'adapter_version' => '1', 'format' => 'xlsx', 'date_system' => $this->dateSystem,
+        return ['adapter' => 'wald_sparse_ooxml', 'adapter_version' => '2', 'format' => 'xlsx', 'date_system' => $this->dateSystem,
             'capabilities' => ['physical_cells' => true, 'formulas' => true, 'cached_values' => true, 'merges' => true, 'visibility' => true, 'basic_styles' => true, 'comments' => false, 'display_rendering' => false],
             'warnings' => array_values(array_unique($this->warnings)),
         ];
@@ -231,7 +231,7 @@ final class XlsxWorkbookSource implements WorkbookSource
                 $this->warnings[] = 'external_data_not_fetched';
             }
         }
-        foreach ($this->nodes('[Content_Types].xml', ['Override', 'Default']) as $node) {
+        foreach ($this->nodes('[Content_Types].xml', ['Override', 'Default'], root: 'Types') as $node) {
             if (preg_match('/macroenabled|macrosheet|vba|activex/i', (string) $node['ContentType'])) {
                 throw new AnalysisProblem('unsafe_archive');
             }
@@ -240,7 +240,13 @@ final class XlsxWorkbookSource implements WorkbookSource
             if (str_ends_with($name, '.rels')) {
                 // Locate original case without guessing external targets or opening them.
                 $index = $this->zip->locateName($name, ZipArchive::FL_NOCASE);
-                foreach ($this->nodes($this->zip->getNameIndex($index), ['Relationship']) as $node) {
+                $relationshipIds = [];
+                foreach ($this->nodes($this->zip->getNameIndex($index), ['Relationship'], root: 'Relationships') as $node) {
+                    $id = (string) $node['Id'];
+                    if ($id === '' || isset($relationshipIds[$id])) {
+                        throw new AnalysisProblem('invalid_workbook');
+                    }
+                    $relationshipIds[$id] = true;
                     if ((string) $node['TargetMode'] === 'External') {
                         $this->warnings[] = 'external_data_not_fetched';
                     }
@@ -264,6 +270,9 @@ final class XlsxWorkbookSource implements WorkbookSource
         if ($xml === false) {
             throw new AnalysisProblem('missing_workbook_part');
         }
+        if ($xml === '') {
+            throw new AnalysisProblem('invalid_xml');
+        }
         $this->budget->guard('entry_bytes', strlen($xml));
         if (str_contains($xml, "\0") || preg_match('/<!\s*(DOCTYPE|ENTITY)/i', $xml)) {
             throw new AnalysisProblem('unsafe_xml');
@@ -271,6 +280,7 @@ final class XlsxWorkbookSource implements WorkbookSource
         $previous = libxml_use_internal_errors(true);
         libxml_clear_errors();
         $reader = new XMLReader;
+        $ancestors = [];
         try {
             if (! $reader->XML($xml, null, LIBXML_NONET | LIBXML_COMPACT)) {
                 throw new AnalysisProblem('invalid_xml');
@@ -282,8 +292,30 @@ final class XlsxWorkbookSource implements WorkbookSource
                 if ($reader->nodeType === XMLReader::ELEMENT && $reader->depth === 0 && $root !== null && $reader->localName !== $root) {
                     throw new AnalysisProblem('invalid_xml');
                 }
+                if ($reader->nodeType === XMLReader::ELEMENT) {
+                    $ancestors = array_slice($ancestors, 0, $reader->depth);
+                    $ancestors[] = $reader->localName;
+                }
                 if ($reader->nodeType !== XMLReader::ELEMENT || ! in_array($reader->localName, $wanted, true)) {
                     continue;
+                }
+                // Local tag names alone cannot establish physical workbook lineage.
+                $expectedPath = match ($root) {
+                    'worksheet' => match ($reader->localName) {
+                        'dimension' => ['worksheet', 'dimension'],
+                        'row' => ['worksheet', 'sheetData', 'row'],
+                        'c' => ['worksheet', 'sheetData', 'row', 'c'],
+                        'mergeCell' => ['worksheet', 'mergeCells', 'mergeCell'],
+                        'col' => ['worksheet', 'cols', 'col'],
+                    },
+                    'Relationships' => ['Relationships', 'Relationship'],
+                    'Types' => ['Types', $reader->localName],
+                    'workbook' => $reader->localName === 'sheet' ? ['workbook', 'sheets', 'sheet'] : ['workbook', 'workbookPr'],
+                    'sst' => ['sst', 'si'],
+                    default => null,
+                };
+                if ($expectedPath !== null && $ancestors !== $expectedPath) {
+                    throw new AnalysisProblem('invalid_xml');
                 }
                 if (in_array($reader->localName, $attributesOnly, true)) {
                     $node = new SimpleXMLElement('<'.$reader->localName.'/>');
@@ -324,7 +356,7 @@ final class XlsxWorkbookSource implements WorkbookSource
     {
         $formats = [0 => 'General', 9 => '0%', 10 => '0.00%', 14 => 'mm-dd-yy', 15 => 'd-mmm-yy', 16 => 'd-mmm', 17 => 'mmm-yy', 22 => 'm/d/yy h:mm'];
         $fonts = [];
-        foreach ($this->nodes($part, ['numFmt', 'fonts', 'cellXfs']) as $node) {
+        foreach ($this->nodes($part, ['numFmt', 'fonts', 'cellXfs'], root: 'styleSheet') as $node) {
             if ($node->getName() === 'numFmt') {
                 $formats[(int) $node['numFmtId']] = (string) $node['formatCode'];
                 $this->budget->guard('styles', count($formats));

@@ -51,7 +51,7 @@ final class CsvWorkbookSource implements WorkbookSource
 
     public function metadata(): array
     {
-        return ['adapter' => 'wald_native_csv', 'adapter_version' => '1', 'format' => 'csv', 'delimiter' => $this->delimiter, 'encoding' => 'UTF-8',
+        return ['adapter' => 'wald_native_csv', 'adapter_version' => '2', 'format' => 'csv', 'delimiter' => $this->delimiter, 'encoding' => 'UTF-8',
             'capabilities' => ['physical_cells' => true, 'physical_line_spans' => true, 'formulas' => false, 'cached_values' => false, 'merges' => false, 'visibility' => false, 'basic_styles' => false, 'comments' => false], 'warnings' => $this->warnings];
     }
 
@@ -82,6 +82,10 @@ final class CsvWorkbookSource implements WorkbookSource
 
     private function records(string $delimiter, bool $validate = true): iterable
     {
+        // fgetcsv materialises a whole record before row/column guards can run.
+        // Reserve conservatively for copies and native array slots up front, even
+        // during delimiter probing. Counting quoted delimiters overestimates safely.
+        $this->budget->reserve(strlen($this->contents) * 3 + (substr_count($this->contents, $delimiter) + 1) * 96);
         $stream = fopen('php://memory', 'w+b');
         if ($stream === false) {
             throw new AnalysisProblem('unreadable_workbook');

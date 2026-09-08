@@ -1,6 +1,12 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 4 September 2026*
+*Last Updated: 8 September 2026*
+
+Current WALD02 update: dedicated local QA passed after five reader corrections on
+`qa/customer-wald02-2026-09-08`. Management acceptance/freeze of the corrected baseline remains;
+the original `9980354` must not be frozen unchanged. See
+`documentation/wald/customer-wald02-qa-2026-09-08.md`. WALD03 is still planned and separately
+gated. The QA-pending wording in the 4 September planning snapshot below is historical.
 
 # Project Overview
 

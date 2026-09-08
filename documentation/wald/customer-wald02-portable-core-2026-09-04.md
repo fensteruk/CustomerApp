@@ -2,6 +2,13 @@
 
 Date: 4 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 
+Historical implementation evidence for candidate `9980354`. Dedicated QA on 8 September
+found and corrected five reader defects; the corrected reader is `wald-0.2.1`, with three
+intentional runtime divergences. The resource-safety paragraph below overclaims compression-ratio
+tests: the implementation uses absolute expanded-byte limits, not a ratio policy. Use
+[the dedicated QA report](customer-wald02-qa-2026-09-08.md) for current acceptance evidence.
+The original 57-file source ledger and original test results below remain unchanged.
+
 ## Overall Result
 
 CUSTOMER-WALD02 is implemented on a non-deploying CustomerApp feature branch and is ready

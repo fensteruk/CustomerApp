@@ -1,5 +1,14 @@
 # Current Sprint
 
+## CUSTOMER-WALD02 dedicated QA — 8 September 2026
+
+Local QA passed after five reader corrections on `qa/customer-wald02-2026-09-08`, from exact
+candidate `9980354d28bfe1ca7986e10a529ab073d95d0b91`. The corrected reader is `wald-0.2.1`;
+208 focused tests pass and the full suite has 427 passes / 15 environment skips. Management
+acceptance/freeze of the corrected baseline remains; do not freeze the original SHA unchanged.
+See `documentation/wald/customer-wald02-qa-2026-09-08.md`. No WALD03, integration or deployment
+started. The earlier QA-pending entries below are historical implementation status.
+
 ## Current planning work — 4 September 2026
 
 **Project documentation reset complete on a non-deploying documentation branch.** The
