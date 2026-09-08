@@ -228,4 +228,3 @@ is genuinely unresolved and is not silently settled by repository existence or t
 
 Recommendation: management should approve/amend the decision table first, then issue an explicit
 WALD04 implementation instruction. No implementation now.
-
