@@ -2,15 +2,14 @@
 
 *Last Updated: 8 September 2026*
 
-Current Wald update: corrected CUSTOMER-WALD02 commit
-`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` is the accepted immutable WALD03 input; original
-candidate `9980354` is superseded. Reader `wald-0.2.1`. WALD03 is scoped as a CustomerApp
-business dictionary/semantic adapter, explicitly approved and implemented on
-`feature/customer-wald03-business-dictionary`. Dedicated QA passed after W3Q-01–03 corrections
-at executable commit `f4fda0f069bd5106a125b42615ca212294a9dfad` on local branch
-`qa/customer-wald03-2026-09-08`; the following documentation commit records the gate.
-Recommend freezing the corrected QA snapshot. No import integration, push or deployment.
-Evidence: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
+Current Wald update: management accepted corrected WALD03 snapshot
+`a80ce7d14206cf3f3a9343448d406f01ae927b88` on `qa/customer-wald03-2026-09-08`.
+It is the immutable WALD04 input, not original candidate `574f196`. Reader `wald-0.2.1`,
+dictionary `customerapp.source-dictionary.v1` and fingerprint
+`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` remain fixed.
+WALD04 is scoped only: ownership/permissions/retention decisions and explicit implementation
+approval are pending. No import integration, push or deployment.
+Evidence: `documentation/wald/customer-wald03-acceptance-wald04-scope-2026-09-08.md`.
 
 # Project Overview
 
@@ -20,8 +19,8 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD02 accepted; CUSTOMER-WALD03 dedicated QA passed, management freeze recommended.**
-The current authority is the rebuilt `brief.md`, DEC-039–044,
+**CUSTOMER-WALD03 accepted; CUSTOMER-WALD04 scoped, governance approval required.**
+The current authority is the rebuilt `brief.md`, DEC-039–045,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
@@ -51,8 +50,8 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | Order | Package | Exit |
 | --- | --- | --- |
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
-| 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Dedicated QA passed: corrected executable `f4fda0f`; 470 focused passes. Freeze corrected QA snapshot; management acceptance pending. |
-| 3 | CUSTOMER-WALD04 — Clarification/profiles | Portal-owned scoped knowledge/history, explicit activation and safe additive persistence. |
+| 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
+| 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Scope only in `WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`; G01–G09 proposals need approval; no runtime. |
 | 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
 

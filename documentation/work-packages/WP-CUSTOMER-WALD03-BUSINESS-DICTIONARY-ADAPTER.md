@@ -7,8 +7,11 @@ reviewed scope commit `76ed196cd19f2d207f2a5d50006041f1b3d8b814` as metadata onl
 Implemented on `feature/customer-wald03-business-dictionary`; exact QA input `574f196`.
 Dedicated QA passed after three contract-defined corrections at executable SHA
 `f4fda0f069bd5106a125b42615ca212294a9dfad` on `qa/customer-wald03-2026-09-08`.
-The following documentation commit records the gate. Management freeze is recommended;
-WALD04 remains separately gated. QA evidence: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
+Management accepted full corrected snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
+as the immutable WALD04 input. Original `574f196` is not the accepted output. Dictionary v1
+fingerprint remains `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
+WALD04 is scoped only in `WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`; governance and explicit
+implementation approval remain required. QA evidence: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
 Historical implementation evidence:
 `documentation/wald/customer-wald03-business-dictionary-2026-09-08.md`.
 

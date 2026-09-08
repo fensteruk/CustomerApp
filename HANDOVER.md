@@ -1,22 +1,31 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD03 dedicated QA handoff — 8 September 2026
+## CUSTOMER-WALD03 acceptance / WALD04 scope handoff — 8 September 2026
 
-PASS after three bounded corrections. Local branch `qa/customer-wald03-2026-09-08` starts at
-exact candidate `574f19694595f300620713b0dbd4a7d27036d7d1`. Corrected executable commit:
-`f4fda0f069bd5106a125b42615ca212294a9dfad`; the following documentation-only commit contains
-the final audit and current status. Freeze the delivered corrected QA snapshot, not `574f196`.
+Accepted immutable WALD04 input: `a80ce7d14206cf3f3a9343448d406f01ae927b88`,
+QA branch `qa/customer-wald03-2026-09-08`, containing corrected executable `f4fda0f`.
+Do not use original implementation candidate `574f19694595f300620713b0dbd4a7d27036d7d1`.
+Dictionary `customerapp.source-dictionary.v1`; fingerprint
+`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
+WALD02 remains `4aa5ffb5a00527662ddfe66673edbfb18af9f0db`, reader `wald-0.2.1`.
+Preserve W3Q-01 exact arithmetic, W3Q-02 confidence-version validation and W3Q-03 invariants.
 
-470 focused passes / 2,550 assertions; 678 combined Wald passes / 3,812 assertions;
-897 full application passes, 15 existing environment skips / 5,000 assertions. Pint,
-Composer strict validation and build pass. Eight inherited advisories remain an independent
-release gate. Dictionary v1/fingerprint and accepted WALD02 core are unchanged.
-Evidence: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
+Accepted QA: 470 focused passes / 2,550 assertions; 678 combined Wald / 3,812;
+897 full application passes, 15 existing skips / 5,000 assertions.
+Historical QA report: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
 
-Nothing pushed, merged to `main`, migrated or deployed. No production/customer workbook used.
-Unrelated Sprint 3E report edit, `Copy of siteapp1.xlsx` and `output/` remain untouched and
-uncommitted. No WALD04 implementation; management acceptance and a separately approved
-ownership/tenancy/permission/retention/profile work package are still needed.
+New scope: `documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`.
+WALD04 must not be implemented until its required G01–G09 decisions and explicit implementation
+approval are recorded. Recommended V1: Office-only knowledge abilities, organisation/site/family
+containment, structural profiles with explicit activation, occurrence-only semantic correction,
+immutable versions/audit and fresh compatibility checks. These are proposals, not role grants.
+Source-site binding runtime and upload/import UI/commit remain WALD05.
+
+Acceptance and exact checks/files:
+`documentation/wald/customer-wald03-acceptance-wald04-scope-2026-09-08.md`.
+Eight inherited advisories and separate remediation `5e7df08` remain untouched.
+No runtime/migration/main/production/deployment changes. Unrelated Sprint 3E report,
+`Copy of siteapp1.xlsx` and `output/` preserved. Historical handoffs below are not current gates.
 
 ## Historical CUSTOMER-WALD03 implementation handoff — 8 September 2026
 

@@ -1,14 +1,15 @@
 # Wald Distribution Divergence Register
 
 Last updated: 8 September 2026. Owner: Product and Architecture.
-Status: corrected CUSTOMER-WALD02 SHA
-`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted as the immutable WALD03 input. WALD03
-is explicitly approved and has passed dedicated QA after corrections at executable SHA
-`f4fda0f069bd5106a125b42615ca212294a9dfad` on `qa/customer-wald03-2026-09-08`.
-The following documentation commit records the gate; management freeze is recommended.
-Not integrated, on `main`, pushed or deployed. WALD04 has not started.
+Status: corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
+on `qa/customer-wald03-2026-09-08` accepted as immutable WALD04 input, including executable
+corrections `f4fda0f`. Original implementation candidate `574f196` is not the accepted output.
+Dictionary v1 fingerprint remains
+`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
+WALD04 is scoped only; governance and explicit implementation approval pending.
+Not integrated, on `main`, pushed or deployed. No WALD04 runtime has started.
 
-Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044 and
+Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
 This register compares the inspected SiteApp implementation with the proposed CustomerApp
 distribution. A planned difference is not an implemented feature or an upstream change.
@@ -146,6 +147,38 @@ exactly `30d1fc65e575242004eb335ad46a4d8ec920127a`, identical to accepted WALD02
 Corrected executable `f4fda0f`: 470 focused passes / 2,550 assertions; 678 combined Wald
 passes / 3,812; 897 full application passes / 15 existing environment skips / 5,000.
 These corrections are local CustomerApp adapter changes, not an upstream backport.
+
+## WALD04 scoped differences — 8 September 2026
+
+These are design proposals, not implemented features or approved role grants. The governing
+[WALD04 work package](work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md) includes G01–G09
+approval questions and the actual non-main file comparison. Accepted WALD03 QA results remain
+470 focused / 2,550 assertions; 678 combined / 3,812; 897 full passes, 15 skips / 5,000.
+
+| ID | Category | Proposed difference / treatment | State |
+|---|---|---|---|
+| WD-33 | CustomerApp-specific | Organisation-owned knowledge narrowed to site + source namespace + family; no learned SYSTEM/global scope. Nullable Office organisation does not imply global knowledge ownership. | Proposed; G01/G03 permission/scope approval required. |
+| WD-34 | CustomerApp-specific | Separate one-time clarification, immutable structural profile versions and explicit activation/revocation. Semantic corrections occurrence-only; dictionary never overridden. | Proposed; G02/G06/G08 approval required. Source-site binding remains separate/deferred WALD05. |
+| WD-35 | Temporary fork difference | Old numeric semantic_version, namespace-only matching, first/score winner and save-on-confirmation are not the WALD04 target. Use dictionary pair, component versions, supported corrected builds, current evidence and scoped compatibility. | REIMPLEMENT compatible intent; unsafe/overlapping behavior SUPERSEDED. No code or data imported. |
+| WD-36 | CustomerApp-specific | Minimal knowledge context/questions/answers/profiles/versions/events/use receipts and separately retained evidence; no full upload/session/preview/commit persistence yet. | Proposed additive schema only; governance, transaction and MySQL gates before implementation. |
+| WD-37 | CustomerApp-specific | Explicit temporary artifact versus long-lived knowledge/audit retention, protected active provenance, expiry/hold/revocation receipts and immutable correction history. | Retention periods and hold ownership proposed only; G04/G05/G09 unresolved. No cleanup executed. |
+
+### WALD04 non-main comparison disposition
+
+Read-only inspection of `04b560f` → `a013ed1` → `1e8c22b` confirms:
+
+- **REUSE:** synthetic exact/reordered/changed-profile, stale semantic version, stale binding,
+  partial-scope and idempotency scenario intent.
+- **REIMPLEMENT:** `WorkbookInterpretationProfileService` matching/version intent with tenant/site
+  containment, activation, immutable audit and current core/dictionary compatibility; separate
+  future source binding invariants. Mixed migrations 000009–000012 are not adopted.
+- **SUPERSEDED:** numeric `semantic_version = 3` as compatibility identity; namespace-only
+  profile search, automatic reusable save during confirmation and score/first-match selection.
+- **REFERENCE_ONLY:** source binding runtime, preview/commit service, Office UI and associated
+  projection schema; WALD05 owns explicit parity/adapt/supersede decisions.
+
+Existing historical records/code are neither deleted nor silently migrated. No SiteApp source
+access/copy, generic-core modification or dependency change in this scope task.
 
 ## Backport process
 
