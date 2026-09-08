@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD04 implementation ready for dedicated QA; feature branch only)
+**Last updated:** 8 September 2026 (corrected WALD04 dedicated QA passed; feature branch only, acceptance pending)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -353,8 +353,10 @@ Dictionary `customerapp.source-dictionary.v1`, fingerprint
 DEC-046 approves WALD04 knowledge/profile implementation under
 `documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`. Office-only knowledge,
 organisation/site/namespace/family containment, separate answer/draft/activation, 12-month review
-and 24-month retained history are approved. Additive local implementation passed verification;
-dedicated QA, acceptance and release remain separate. G09's named owner blocks unattended
+and 24-month retained history are approved. Dedicated QA passed after corrections on
+`qa/customer-wald04-2026-09-08`, executable/test SHA `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`;
+see `documentation/wald/customer-wald04-qa-2026-09-08.md`. Management acceptance and release
+remain separate; no WALD05 implementation or deployment. G09's named owner blocks unattended
 production disposal only; no deletion scheduling is enabled.
 Import/review/commit permissions, retention, source revision and commit-recovery rules remain
 explicit later gates.
@@ -390,7 +392,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88` accepted as immutable WALD04 input. WALD04 implementation approved by DEC-046; local feature-branch verification, not accepted or deployed. Local branch work, no import integration or deployment. |
+| Standalone Wald (8 September update) | Corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88` remains accepted WALD04 input. Corrected WALD04 dedicated QA passed on its QA branch; management acceptance and release pending. No WALD05 implementation, main change or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -403,7 +405,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- dedicated QA/acceptance of the verified CUSTOMER-WALD04 candidate,
+- management acceptance of the QA-corrected CUSTOMER-WALD04 output,
   then independently gated CUSTOMER-WALD05–06, pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;

@@ -1,6 +1,28 @@
 # Current Sprint
 
-## CUSTOMER-WALD04 implementation — 8 September 2026
+## CUSTOMER-WALD04 dedicated QA passed — 8 September 2026
+
+Dedicated QA corrected candidate `2c7d0154e51a35b165c7e93f7dd256e2cf0f030f` on
+`qa/customer-wald04-2026-09-08`. Executable/test correction commit:
+`9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`. The final documentation-inclusive QA SHA is
+reported in the task handoff and is recommended for freeze; management acceptance and release
+remain separate. **Feature branch only — not on main, not deployed.**
+
+Fixed MySQL protected-field collation bypass (forward migration), bounded profile/provenance
+and retention queries, collision-free race fixtures and test-only full-suite memory allowance.
+Final checks: focused SQLite 187 passes / 11 MySQL skips / 406 assertions; combined Wald
+865 passes / 11 skips / 4,218 assertions; full application 1,084 passes / 26 skips / 5,406 assertions.
+MySQL 8.4.11: 198 tests / 862 assertions across the final non-race gate and seven race scenarios;
+20 iterations each, 140 groups / 280 workers. Clean/additive migration, empty rollback/reapply
+and populated refusal passed. Disposable server stopped.
+
+[Dedicated QA report](documentation/wald/customer-wald04-qa-2026-09-08.md) records commands,
+failed attempts, W4Q-01–04, exact file changes and remaining separate gates. Frozen WALD02/03
+trees and dictionary fingerprint are unchanged. Eight inherited Composer advisories remain.
+No push, main change, production action, dependency remediation merge or WALD05 implementation.
+G09 named-owner nomination still gates unattended disposal only; no disposal scheduler exists.
+
+## Historical CUSTOMER-WALD04 implementation — 8 September 2026
 
 DEC-046 explicitly approves the bounded knowledge/profile backend on
 `feature/customer-wald04-knowledge-profiles`, created from exactly accepted WALD03
