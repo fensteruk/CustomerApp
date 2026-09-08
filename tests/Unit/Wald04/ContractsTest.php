@@ -28,6 +28,19 @@ it('fails closed when any compatibility pin changes', function ($key) {
     expect($identity->compatible($pins))->toBe($key === 'fingerprint' ? Compatibility::Incompatible : Compatibility::Stale);
 })->with(['dictionary', 'fingerprint', 'core', 'reader_adapters', 'schema', 'signature', 'matcher', 'selector', 'semantic_executable', 'accepted_baseline', 'policy']);
 
+it('W5-T01 marks pre-correction reader knowledge stale without changing dictionary meaning', function () {
+    $identity = new KnowledgeIdentity;
+    $current = $identity->current();
+    $old = $current;
+    $old['core']['reader'] = 'wald-0.2.1';
+    $old['reader_adapters']['xlsx'] = 2;
+    expect($current['core']['reader'])->toBe('wald-0.2.2')
+        ->and($current['reader_adapters'])->toBe(['xlsx' => 3, 'csv' => 2])
+        ->and($identity->compatible($old))->toBe(Compatibility::Stale)
+        ->and($identity->compatible($current))->toBe(Compatibility::Exact)
+        ->and($current['fingerprint'])->toBe(KnowledgeIdentity::FINGERPRINT);
+});
+
 it('canonicalizes associative order but preserves lists punctuation and multiplicity', function () {
     expect(Canonical::hash(['b' => 2, 'a' => ['y' => 2, 'x' => 1]]))->toBe(Canonical::hash(['a' => ['x' => 1, 'y' => 2], 'b' => 2]))
         ->and(Canonical::hash(['a', 'b']))->not->toBe(Canonical::hash(['b', 'a']))

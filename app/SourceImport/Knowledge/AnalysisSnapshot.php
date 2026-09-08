@@ -20,7 +20,7 @@ final readonly class AnalysisSnapshot
     {
         $p = $profile->toArray();
         if (($p['schema'] ?? null) !== 'wald.workbook-profile.v1' || ($p['complete'] ?? null) !== true
-            || ($p['engine_version'] ?? null) !== 'wald-0.2.1' || ($p['structural_rules_version'] ?? null) !== 'wald.structure.v1.1'
+            || ($p['engine_version'] ?? null) !== 'wald-0.2.2' || ($p['structural_rules_version'] ?? null) !== 'wald.structure.v1.1'
             || ! preg_match('/^[a-f0-9]{64}$/D', $p['source_checksum'] ?? '')) {
             throw new InvalidArgumentException('invalid_trusted_analysis');
         }

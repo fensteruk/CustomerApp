@@ -1302,3 +1302,33 @@ data gate. No generic-core correction or runtime implementation is claimed by th
 Reason:
 The user has explicitly narrowed the reviewed source selection. Keeping the exact artifact and
 row identity in its provenance prevents an audit exclusion becoming a global business rule.
+
+---
+
+## DEC-052
+
+Date:
+8 September 2026
+
+Decision:
+The user explicitly approves the narrowly scoped W5-T01 XLSX reader compatibility correction,
+synthetic regression coverage and a new recorded reader identity, followed by resumption of
+the already authorised WALD05 implementation.
+
+Rules:
+
+- This is a bounded exception to the accepted generic-reader freeze, not permission for a
+  new parser, weakened XML safety or broad core redesign. Preserve physical source lineage,
+  resource limits, unsafe-XML refusal and no formula execution.
+- Distinguish the inert Excel extension workbookPr from core workbook properties by namespace
+  and exact parent lineage. The extension must not establish a date system or source data.
+- Version the correction and stale incompatible knowledge/profile pins; do not silently rewrite
+  historical receipts. Keep the accepted WALD04/input SHAs as historical provenance.
+- DEC-050/051 remain exact-artifact interpretations. No dictionary meaning/fingerprint change,
+  global CC! alias, global CM2 exclusion or inferred test-site filter is authorised.
+- Resume WALD05 after the correction checks. No further blanket implementation approval is
+  required. No main, push, SiteApp, production, deployment, WALD06 or dependency remediation.
+
+Reason:
+The actual workbook exposed a reproducible metadata compatibility defect. Explicit permission
+allows a narrow versioned repair while retaining the accepted safety boundaries and history.

@@ -6,7 +6,7 @@ final class CoreIdentity
 {
     public const SHA = '4aa5ffb5a00527662ddfe66673edbfb18af9f0db';
 
-    public const READER = 'wald-0.2.1';
+    public const READER = 'wald-0.2.2';
 
     public static function snapshot(): array
     {

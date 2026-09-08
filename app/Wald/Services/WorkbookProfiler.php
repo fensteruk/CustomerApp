@@ -7,7 +7,7 @@ use App\Wald\Contracts\WorkbookSource;
 
 final class WorkbookProfiler
 {
-    public const ENGINE_VERSION = 'wald-0.2.1';
+    public const ENGINE_VERSION = 'wald-0.2.2';
 
     public const STRUCTURE_VERSION = 'wald.structure.v1.1';
 

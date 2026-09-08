@@ -22,7 +22,7 @@ final class KnowledgeIdentity
         }
 
         return ['dictionary' => CustomerAppDictionary::VERSION, 'fingerprint' => self::FINGERPRINT,
-            'core' => CoreIdentity::snapshot(), 'reader_adapters' => ['xlsx' => 2, 'csv' => 2],
+            'core' => CoreIdentity::snapshot(), 'reader_adapters' => ['xlsx' => 3, 'csv' => 2],
             'schema' => 'customerapp.wald-knowledge.v1', 'signature' => 'customerapp.wald-profile-signature.v1',
             'matcher' => 'customerapp.wald-profile-compatibility.v1', 'selector' => 'customerapp.wald-selector.v1',
             'semantic_executable' => 'f4fda0f069bd5106a125b42615ca212294a9dfad',

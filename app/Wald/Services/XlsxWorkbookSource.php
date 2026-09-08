@@ -12,6 +12,8 @@ use ZipArchive;
 
 final class XlsxWorkbookSource implements WorkbookSource
 {
+    public const ADAPTER_VERSION = '3';
+
     private ZipArchive $zip;
 
     private array $sheetDefinitions = [];
@@ -94,7 +96,7 @@ final class XlsxWorkbookSource implements WorkbookSource
 
     public function metadata(): array
     {
-        return ['adapter' => 'wald_sparse_ooxml', 'adapter_version' => '2', 'format' => 'xlsx', 'date_system' => $this->dateSystem,
+        return ['adapter' => 'wald_sparse_ooxml', 'adapter_version' => self::ADAPTER_VERSION, 'format' => 'xlsx', 'date_system' => $this->dateSystem,
             'capabilities' => ['physical_cells' => true, 'formulas' => true, 'cached_values' => true, 'merges' => true, 'visibility' => true, 'basic_styles' => true, 'comments' => false, 'display_rendering' => false],
             'warnings' => array_values(array_unique($this->warnings)),
         ];
@@ -281,6 +283,7 @@ final class XlsxWorkbookSource implements WorkbookSource
         libxml_clear_errors();
         $reader = new XMLReader;
         $ancestors = [];
+        $ancestorNamespaces = [];
         try {
             if (! $reader->XML($xml, null, LIBXML_NONET | LIBXML_COMPACT)) {
                 throw new AnalysisProblem('invalid_xml');
@@ -295,9 +298,25 @@ final class XlsxWorkbookSource implements WorkbookSource
                 if ($reader->nodeType === XMLReader::ELEMENT) {
                     $ancestors = array_slice($ancestors, 0, $reader->depth);
                     $ancestors[] = $reader->localName;
+                    $ancestorNamespaces = array_slice($ancestorNamespaces, 0, $reader->depth);
+                    $ancestorNamespaces[] = $reader->namespaceURI;
                 }
                 if ($reader->nodeType !== XMLReader::ELEMENT || ! in_array($reader->localName, $wanted, true)) {
                     continue;
+                }
+                if ($root === 'workbook' && $reader->localName === 'workbookPr') {
+                    $mainNamespace = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+                    $extensionNamespace = 'http://schemas.microsoft.com/office/spreadsheetml/2010/11/main';
+                    if ($reader->namespaceURI === $extensionNamespace
+                        && $ancestors === ['workbook', 'extLst', 'ext', 'workbookPr']
+                        && $ancestorNamespaces === [$mainNamespace, $mainNamespace, $mainNamespace, $extensionNamespace]) {
+                        // Inert Excel extension, not the core date-system authority. Continue
+                        // streaming its children so misplaced source nodes still fail closed.
+                        continue;
+                    }
+                    if (! in_array($reader->namespaceURI, ['', $mainNamespace], true)) {
+                        throw new AnalysisProblem('invalid_xml');
+                    }
                 }
                 // Local tag names alone cannot establish physical workbook lineage.
                 $expectedPath = match ($root) {
