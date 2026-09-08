@@ -2,7 +2,8 @@
 
 Current architecture additions: DEC-039 — standalone CustomerApp Wald adoption; DEC-040 —
 reconciled source dictionary, completion, products, site identity and export scope; DEC-042 —
-approved immutable CUSTOMER-WALD02 source baseline and bounded adoption rules.
+approved immutable CUSTOMER-WALD02 source baseline and bounded adoption rules; DEC-043 —
+accepted corrected WALD02 output and bounded WALD03 architecture scope.
 Earlier sprint headers and decisions below are retained history; DEC-035 and subsequent
 decisions supersede conflicting assumptions.
 
@@ -898,3 +899,36 @@ Rules:
 Reason:
 The checksum-frozen manifest resolves CUSTOMER-WALD02's moving-source blocker while preserving
 the controlling principle that Wald may infer structure but cannot define business meaning.
+
+---
+
+## DEC-043
+
+Date:
+8 September 2026
+
+Decision:
+The corrected CUSTOMER-WALD02 QA commit
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` is accepted as the immutable input baseline
+for CUSTOMER-WALD03. The original `9980354d28bfe1ca7986e10a529ab073d95d0b91` candidate
+is superseded as an output baseline because dedicated QA found and corrected five reader
+defects.
+
+Rules:
+
+- The accepted reader identity is `wald-0.2.1`; the XLSX and CSV adapters are version `2`.
+- The malformed-XLSX, CSV memory-exhaustion and empty-XML corrections and their regressions
+  are part of the frozen core contract and must not be lost in later work.
+- `App\Wald` remains generic. CustomerApp business meaning must be implemented by composition
+  in a separate semantic-adapter boundary, not added to the Wald core.
+- CUSTOMER-WALD03 is scoped as a pure, versioned CustomerApp business dictionary and semantic
+  adapter. Scoping does not authorise implementation, persistence, import integration, Portal
+  workflow changes, dependency reconciliation, `main` or deployment.
+- The eight inherited Composer advisories and separate remediation commit
+  `5e7df0862648fd9c2ac964b31a13ad17df84fd12` remain a later combined-release concern.
+
+Reason:
+Independent QA established the portable core's safety and neutrality while exposing defects
+that make the original candidate unsuitable as the next immutable baseline. Freezing the
+corrected SHA prevents later dictionary work from regressing those protections or contaminating
+generic inference with CustomerApp business truth.

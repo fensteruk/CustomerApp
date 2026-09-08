@@ -1,14 +1,24 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD02 dedicated QA handoff — 8 September 2026
+## CUSTOMER-WALD02 acceptance / CUSTOMER-WALD03 scope handoff — 8 September 2026
 
-Local QA passed after five reader corrections on `qa/customer-wald02-2026-09-08`, starting
-from `9980354d28bfe1ca7986e10a529ab073d95d0b91`. Use the corrected QA commit, not the original
-candidate, for management acceptance/freeze. Reader `wald-0.2.1`; 208 focused tests / 1,262
-assertions; full suite 427 passed, 15 existing environment skips / 2,450 assertions.
-Details: `documentation/wald/customer-wald02-qa-2026-09-08.md`. Eight inherited Composer
-advisories remain separate from this gate. No push, main merge, WALD03 or deployment occurred.
-Earlier QA-pending handoff text below describes the original implementation candidate.
+Accepted immutable WALD03 input:
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` from
+`qa/customer-wald02-2026-09-08`; reader `wald-0.2.1`. Do not use superseded candidate
+`9980354d28bfe1ca7986e10a529ab073d95d0b91`. Dedicated QA passed 208 focused tests /
+1,262 assertions and 427 full-suite tests / 15 existing environment skips / 2,450 assertions.
+The five QA reader corrections are frozen core behaviour.
+
+WALD03 is scoped as a pure CustomerApp business dictionary and semantic adapter around the
+generic core. Work package:
+`documentation/work-packages/WP-CUSTOMER-WALD03-BUSINESS-DICTIONARY-ADAPTER.md`. It awaits
+explicit implementation approval. No runtime, database, upload, profile, review/commit, Portal
+workflow, dependency, `main` or deployment work occurred. Acceptance/scope record:
+`documentation/wald/customer-wald02-acceptance-wald03-scope-2026-09-08.md`.
+
+Eight inherited Composer advisories remain a separate combined-release concern; remediation
+commit `5e7df0862648fd9c2ac964b31a13ad17df84fd12` was not merged. Earlier handoff text below
+describes historical WALD02 stages.
 
 ## CUSTOMER-WALD02 implementation handoff — 4 September 2026
 

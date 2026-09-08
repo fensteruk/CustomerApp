@@ -1,11 +1,11 @@
 # Wald Distribution Divergence Register
 
-Date: 4 September 2026. Owner: Product and Architecture.
-Status: CUSTOMER-WALD02 dedicated local QA passed after reader corrections on
-`qa/customer-wald02-2026-09-08`; management acceptance of the corrected baseline remains.
-Not integrated, on `main` or deployed. See [the QA report](wald/customer-wald02-qa-2026-09-08.md).
+Last updated: 8 September 2026. Owner: Product and Architecture.
+Status: corrected CUSTOMER-WALD02 SHA
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted as the immutable WALD03 input. WALD03
+is scoped only and awaits implementation approval. Not integrated, on `main` or deployed.
 
-Authority: DEC-039/DEC-040 and
+Authority: DEC-039/DEC-040/DEC-042/DEC-043 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
 This register compares the inspected SiteApp implementation with the proposed CustomerApp
 distribution. A planned difference is not an implemented feature or an upstream change.
@@ -25,6 +25,10 @@ CustomerApp branch: `feature/customer-wald02-portable-core`; work package `243be
 core `d1c130a`, corpus/boundary tests `5ddaa26`. The complete adoption ledger and evidence are
 in `documentation/wald/customer-wald02-portable-core-2026-09-04.md`.
 
+Accepted CustomerApp WALD02 output: QA branch `qa/customer-wald02-2026-09-08`, commit
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db`, reader `wald-0.2.1`, adapter versions `2`.
+Original candidate `9980354` is superseded as a downstream baseline.
+
 Non-main CustomerApp evidence: committed feature chain
 `feature/manual-source-import-backend` (`04b560f`) →
 `feature/deterministic-spreadsheet-interpreter` (`a013ed1`) →
@@ -36,7 +40,7 @@ Observed code versions (not just initial WALD02 labels):
 
 | Component | SiteApp inspected value | CustomerApp rule |
 | --- | --- | --- |
-| Workbook profiler | `wald-0.2.0` | Retain when behaviour identical. |
+| Workbook profiler | `wald-0.2.0` | CustomerApp accepted reader is `wald-0.2.1` after WD-21–23 QA safety corrections. |
 | Structural rules | `wald.structure.v1.1` | Includes WALD06 Notes-first fix; do not revert to v1. |
 | Reasoning / ruleset | `wald-0.3.0` / `wald.generic-rules.v1` | Preserve coherent later context/provenance hooks. |
 | Confidence policy | `wald.confidence.v1` | Same caps, thresholds, ties and human-confirmed safeguards unless separately reviewed/versioned. |
@@ -71,7 +75,7 @@ Categories are deliberately explicit: **Generic improvement candidate for both**
 | WD-08 | CustomerApp-specific | Portal wording/layout/URLs, private storage/configuration and own worker/recovery command. | Planned; 05 resumption/access tests, 06 environment rehearsal. |
 | WD-09 | Generic improvement candidate for both | Make existing schema/registry/dictionary and persistence boundaries injectable where needed, preserving deterministic algorithms. | Candidate, not a package-extraction commitment. 02–04 review each seam; backport only separately approved. |
 | WD-10 | Generic improvement candidate for both | Any later merged-header, bounds, evidence, diagnostics or match correction proven by a failing generic fixture. | No new correction made here. Attach reproducer/version change before proposing a backport. |
-| WD-11 | Temporary fork difference | Initial verification corpus/environment differs; SiteApp's reported tests and outstanding MySQL/preview gates are not Portal results. | WALD02 evidence: focused 122 tests/1,040 assertions; full CustomerApp 356 tests (341 passed, 15 existing environment-gated skips)/2,228 assertions. Later phases record their own evidence. |
+| WD-11 | Temporary fork difference | Initial verification corpus/environment differs; SiteApp's reported tests and outstanding MySQL/preview gates are not Portal results. | Accepted WALD02 evidence: focused 208 tests/1,262 assertions; full CustomerApp 427 passes, 15 environment skips/2,450 assertions. Later phases record their own evidence. |
 | WD-12 | CustomerApp-specific | The audit checkout retains the internal DTO-import path; a workbook UI exists only on the non-main `feature/manual-source-import-ui` line and is not an accepted production fallback. | 05 must decide what Portal safeguards/UI concepts to adapt or explicitly defer; safe pause remains valid. |
 | WD-13 | Generic improvement candidate for both | Non-main CustomerApp deterministic XLSX inspection/header/value profiling and structure-equivalent regression fixtures may expose generic corrections useful to either distribution. | Compared in WALD02. The approved baseline supplies the broader generic core; no non-main runtime was merged or generic correction was required. |
 | WD-14 | CustomerApp-specific | Non-main source-site bindings, Call No. identity, explicit `PARTIAL_FILTERED_EXPORT`/stronger-scope confirmation, stale-preview checks, Portal projection reconciliation and Office review safeguards. | B-class downstream evidence for 04/05. Rebuild/adapt against final Wald staging and confirmed permissions. |
@@ -99,6 +103,15 @@ QA added `CustomerWaldDedicatedQaTest.php` and `scripts/verify-wald02-qa.php` (s
 corpus/integrity/standalone replay/benchmark only), and anchored one pre-existing Sprint 3D
 notification fixture's clock. These are not adopted upstream runtime files. No generic fix
 has been propagated to SiteApp and no Portal business-semantic change was made.
+
+## CUSTOMER-WALD03 scoped differences — 8 September 2026
+
+| ID | Category | Difference / treatment | Status and verification owner |
+|---|---|---|---|
+| WD-24 | CustomerApp-specific | Business meanings live in a pure adapter outside `App\Wald`, proposed under `App\SourceImport\Semantics`; core candidates/evidence are composed, not mutated. | Scoped only in CUSTOMER-WALD03; implementation approval and dedicated QA pending. |
+| WD-25 | Temporary fork difference | New dictionary identity is `customerapp.source-dictionary.v1` plus a canonical fingerprint; non-main config pipeline's numeric `semantic_version = 3` is not compatible identity. | Scoped. Every result must retain dictionary and accepted core identity; persistence remains WALD04+. |
+| WD-26 | CustomerApp-specific | Semantic classification (`CONFIRMED`, `UNKNOWN`, `AMBIGUOUS`, `INVALID`, `IGNORED`) is separate from resolution (`RESOLVED`, `REQUIRES_CONFIRMATION`, `BLOCKED`). | Scoped. Prevents invalid/unknown values or structural ambiguity from being represented as approved mappings. |
+| WD-27 | Temporary fork difference | Non-main `SiteAppImportDataDictionary`/config definitions are reimplemented behind pure contracts; `SourceCallTypeMapper` and fixed workbook contract are superseded; semantic test intent is reused. | Classification recorded in the WALD03 work package. No branch merge, file copy or deletion authorised. |
 
 ## Backport process
 

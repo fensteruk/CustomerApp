@@ -1,8 +1,8 @@
 # CUSTOMER-WALD02 — Portable Wald Core + Synthetic Corpus
 
 Date: 4 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: Dedicated local QA passed after reader corrections on 8 September 2026;
-management acceptance of the corrected baseline remains. See
+Status: Corrected QA baseline
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted on 8 September 2026. See
 `documentation/wald/customer-wald02-qa-2026-09-08.md`. No integration or deployment.
 
 ## 1. Objective and authority
