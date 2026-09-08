@@ -1,27 +1,26 @@
 # Current Sprint
 
-## CUSTOMER-WALD03 accepted / WALD04 scoped — 8 September 2026
+## CUSTOMER-WALD04 implementation — 8 September 2026
 
-Management accepted corrected QA snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
-from `qa/customer-wald03-2026-09-08` as the immutable WALD04 input. Original implementation
-candidate `574f19694595f300620713b0dbd4a7d27036d7d1` is not the accepted output.
-Dictionary `customerapp.source-dictionary.v1`, fingerprint
-`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
-W3Q-01–03 corrections at executable `f4fda0f` are frozen: exact quantities, confidence-version
-checks and result invariants. Generic Wald core remains unchanged.
+DEC-046 explicitly approves the bounded knowledge/profile backend on
+`feature/customer-wald04-knowledge-profiles`, created from exactly accepted WALD03
+`a80ce7d14206cf3f3a9343448d406f01ae927b88`. Dictionary v1 fingerprint
+`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` and generic core remain frozen.
 
-Accepted QA: 470 focused passes / 2,550 assertions; 678 combined Wald / 3,812;
-897 full CustomerApp passes, 15 existing environment skips / 5,000 assertions.
-WALD04 is **scope only**, not implemented or approved for implementation. Work package:
-`documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`.
-Office-only, site/family structural knowledge and retention are recommendations pending
-governance decisions G01–G09, not new permissions. Upload, binding runtime, preview/commit
-and Office import UI remain WALD05. Eight inherited advisories remain separate.
+G01–G08 and G09's mechanism are approved: Office-only scoped knowledge; separate answer,
+draft and activation; same actor allowed; immutable versions/history; explicit revocation;
+12-month reapproval and 24-month history with holds/dependency protection. The named Fenster
+data owner remains pending only before unattended production disposal. No disposal scheduler.
 
-Acceptance/scope evidence:
-`documentation/wald/customer-wald03-acceptance-wald04-scope-2026-09-08.md`.
-No runtime, migration, dependency, main, push, production or deployment changes in this task.
-Earlier entries below are historical, not current acceptance or phase-entry instructions.
+Local additive implementation and verification are recorded in
+`documentation/wald/customer-wald04-knowledge-profiles-2026-09-08.md`.
+Candidate `f0f97212b8b1be763b953414cfe65c8e3e3352e7` is ready for dedicated QA:
+MySQL 102 passes / 355 assertions; combined Wald 774 passes / 6 MySQL skips;
+full regression 993 passes / 21 environment skips. Eight inherited advisories remain separate.
+Dedicated QA and a newly accepted immutable output remain required. Source-site bindings,
+upload/import UI, review/commit and final-import audit retention remain WALD05. No main,
+push, production, deployment, SiteApp or dependency-remediation action is authorised.
+Earlier handoffs below are historical, not current phase-entry instructions.
 
 ## Historical WALD03 implementation handoff — 8 September 2026
 

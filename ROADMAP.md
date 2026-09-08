@@ -7,9 +7,11 @@ Current Wald update: management accepted corrected WALD03 snapshot
 It is the immutable WALD04 input, not original candidate `574f196`. Reader `wald-0.2.1`,
 dictionary `customerapp.source-dictionary.v1` and fingerprint
 `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` remain fixed.
-WALD04 is scoped only: ownership/permissions/retention decisions and explicit implementation
-approval are pending. No import integration, push or deployment.
-Evidence: `documentation/wald/customer-wald03-acceptance-wald04-scope-2026-09-08.md`.
+WALD04 implementation is explicitly approved by DEC-046; local additive backend verification
+passed and the candidate is ready for dedicated QA. G09 named-owner nomination gates
+unattended production disposal, not persistence.
+No import integration, push or deployment.
+Evidence: `documentation/wald/customer-wald04-knowledge-profiles-2026-09-08.md`.
 
 # Project Overview
 
@@ -19,8 +21,8 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD03 accepted; CUSTOMER-WALD04 scoped, governance approval required.**
-The current authority is the rebuilt `brief.md`, DEC-039–045,
+**CUSTOMER-WALD03 accepted; CUSTOMER-WALD04 approved implementation, dedicated QA pending.**
+The current authority is the rebuilt `brief.md`, DEC-039–046,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
@@ -51,7 +53,7 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | --- | --- | --- |
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
 | 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
-| 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Scope only in `WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`; G01–G09 proposals need approval; no runtime. |
+| 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Approved by DEC-046; bounded backend/persistence verified and ready for dedicated QA. Accepted output required; no automated disposal. |
 | 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
 

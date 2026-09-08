@@ -2,6 +2,9 @@
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Status: **IMPLEMENTATION APPROVED — DEC-046, 8 September 2026.**
+Implementation now passes local verification and is ready for dedicated QA; see
+[implementation evidence](../wald/customer-wald04-knowledge-profiles-2026-09-08.md).
+This is not QA acceptance, approval to begin WALD05, or a release/deployment claim.
 The explicit management instruction approves this bounded backend/persistence contract.
 G01–G08 and G09's retention/hold mechanism are approved. Historical proposal wording below
 is now the implementation contract except where this approval clarification supersedes it.
@@ -60,11 +63,11 @@ completeness or permission to commit.
 
 The following distinction governs the whole package:
 
-- **Accepted now:** WALD03 output and invariants; architecture-only scope task; no implementation.
+- **Accepted now:** frozen WALD03 and explicit WALD04 implementation/governance approval (DEC-046).
 - **Existing approved policy:** four Portal roles; Office global access including null organisation;
   external active-account/organisation/assigned-site containment; private evidence; dictionary authority.
-- **Proposed V1 design:** all knowledge-specific grants, lifecycle, retention and persistence below.
-  They become an implementation contract only after explicit approval of the decision table.
+- **Approved V1 contract:** knowledge grants, lifecycle, retention and persistence below, subject to
+  DEC-046's prohibition on automatic disposal and its named-owner deferral.
 - **Deferred:** global learned knowledge, source-site binding runtime, import commit and Office import UI.
 
 ## 3. Bounded architecture
@@ -188,7 +191,7 @@ inputs, never learned settings.
 ## 7. Deterministic family signatures and compatibility
 
 Version proposed algorithms as `customerapp.wald-profile-signature.v1` and
-`customerapp.wald-profile-compatibility.v1`; these are design identifiers, not implemented code.
+`customerapp.wald-profile-compatibility.v1`; these identify the WALD04 implementation contracts.
 Use canonical associative-key ordering and explicit list order. Retain the descriptor beside its
 SHA-256; hash equality alone does not authenticate origin or replace descriptor/scope checks.
 
@@ -307,7 +310,7 @@ artifact reference or safe refusal, never silent truncation of required candidat
 Hashes are integrity pointers, not recoverable replacements for destroyed raw evidence.
 If evidence expires, report “original replay unavailable”; never claim full reproducibility.
 
-## 11. Proposed persistence model — no DDL yet
+## 11. Approved persistence contract
 
 Separate mutable coordination from immutable interpretation and audit. Names are proposals.
 
@@ -359,10 +362,11 @@ Every subsequent match/reuse checks status and epoch; cached receipts cannot kee
 alive. Historical uses remain truthful. A review receipt pins the exact version/epoch; WALD05 must
 revalidate at its final commit boundary, never rely on a prior “valid” preview flag.
 
-## 13. Retention — proposals G04/G05/G09, NOT legal requirements
+## 13. Retention — approved G04/G05/G09 mechanism, NOT legal requirements
 
-These are operational recommendations for approval, not claims about law or existing deletion.
-No purge runs or storage changes are authorised by this document.
+DEC-046 approves these operational periods and metadata/hold mechanisms, not legal claims
+or existing deletion. Final-import retention and the named disposal owner remain deferred.
+No purge runs or processing-storage orchestration are authorised by this document.
 
 | Record class | Proposed V1 retention / expiry | Boundary |
 |---|---|---|
@@ -466,7 +470,7 @@ append-only history, sequence, actor, before/after and private reason patterns. 
 not call-off tables/events for import knowledge. No non-main stored data is presumed present
 or migrated; any later actual data inventory requires separate authority and a preservation plan.
 
-## 17. Required future implementation tests
+## 17. Acceptance scenarios and verification boundaries
 
 | Area | Required positive and negative cases |
 |---|---|
@@ -488,9 +492,11 @@ or migrated; any later actual data inventory requires separate authority and a p
 After governance approval and implementation: focused tests, full Wald, full CustomerApp,
 Pint, Composer validation/audit, build and diff checks; disposable MySQL evidence required for
 persistence/concurrency. Retain exact commands/results and separate inherited advisories.
-No test suite is invented or claimed to exist for this planned WALD04 scope.
+Actual implemented tests and exact results are in the implementation evidence linked above.
+Cleanup/deletion/tombstone/restoration scenarios remain future disposal-workflow requirements;
+WALD04 tests retention metadata, holds, dependencies and refusal, not an unapproved purge.
 
-## 18. Governance decision table — explicit approval still required
+## 18. Scope-stage decision table — approved/superseded by DEC-046
 
 | ID | Decision | Recommended V1 | Approval still required? |
 |---|---|---|---|
@@ -504,11 +510,11 @@ No test suite is invented or claimed to exist for this planned WALD04 scope.
 | G08 | Semantic confirmations / non-main reconciliation? | CC! occurrence-only correction, no reusable value aliases or ZZ9 service definitions; accept §16 dispositions, no legacy data auto-import. | Yes |
 | G09 | Hold, final audit and disposal governance? | Nominate Fenster data owner; approve minimal retained identity/backup expiry; proposed six-year final audit reviewed before WALD05. | Yes |
 
-G01/G02/G03/G05/G06/G08 and the WALD04-relevant evidence/hold portions of G09 are hard
-implementation-entry choices. G04, final-import audit in G09 and binding runtime G07 remain
-WALD05 gates; approve their deferral explicitly rather than silently implementing them now.
-Management may approve or amend recommendations by ID; only approved answers become authority.
-After decisions are recorded, issue a separate explicit WALD04 implementation instruction.
+DEC-046 approves G01–G08 and G09's metadata/hold/audit mechanism and explicitly authorises
+implementation. The table retains the scope-stage wording for traceability; its Yes entries
+are now satisfied except named disposal owner/backup governance and final-import audit retention.
+G04 metadata is approved in WALD04; upload/storage orchestration and G07 binding runtime remain
+WALD05. Named owner is required before unattended production disposal, not before persistence.
 
 ## 19. Non-goals, delivery and WALD05 entry
 
@@ -541,4 +547,6 @@ WALD05 entry requires:
 Eight inherited Composer advisories remain an independent combined-release gate.
 `5e7df0862648fd9c2ac964b31a13ad17df84fd12` is the separate remediation reference, not merged here.
 
-Recommendation: resolve the governance table, then seek explicit WALD04 implementation approval.
+Implementation authority is DEC-046. Local verification passed; begin dedicated QA, not deployment.
+Concrete entities, backend APIs, supported structural aliases, schema and verification limits are
+recorded in `../wald/customer-wald04-knowledge-profiles-2026-09-08.md`.

@@ -6,10 +6,11 @@ on `qa/customer-wald03-2026-09-08` accepted as immutable WALD04 input, including
 corrections `f4fda0f`. Original implementation candidate `574f196` is not the accepted output.
 Dictionary v1 fingerprint remains
 `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
-WALD04 is scoped only; governance and explicit implementation approval pending.
-Not integrated, on `main`, pushed or deployed. No WALD04 runtime has started.
+WALD04 implementation is approved by DEC-046 and verified on a local feature branch, ready
+for dedicated QA. G09 owner nomination gates unattended production disposal only. No WALD05,
+main, push or deployment. The original scope-stage rows below are superseded by WD-38–40.
 
-Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045 and
+Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045/DEC-046 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
 This register compares the inspected SiteApp implementation with the proposed CustomerApp
 distribution. A planned difference is not an implemented feature or an upstream change.
@@ -179,6 +180,17 @@ Read-only inspection of `04b560f` → `a013ed1` → `1e8c22b` confirms:
 
 Existing historical records/code are neither deleted nor silently migrated. No SiteApp source
 access/copy, generic-core modification or dependency change in this scope task.
+
+## WALD04 implementation differences — 8 September 2026
+
+| ID | Category | Implemented difference | Evidence |
+|---|---|---|---|
+| WD-38 | CustomerApp-specific | `App\\SourceImport\\Knowledge` owns Office-only scope, separate one-time answers/drafts/activation, immutable versions and revocation receipts. | DEC-046; focused security/lifecycle tests. Frozen Wald/semantic trees unchanged. |
+| WD-39 | CustomerApp-specific | Eight additive tables, composite ownership/version FKs and database-level immutable-history/evidence guards. Canonical JSON preserves numeric type across persistence. | SQLite and disposable MySQL 8.4 schema, rollback, upgrade and race verification in implementation report. |
+| WD-40 | Temporary fork difference | CustomerApp signature/matcher/schema v1; explicit structural role selectors, scoped fresh-evidence vetoes and no score/first winner. Metadata-only retention, holds and review expiry. | No SiteApp adoption/backport, no global aliases, no disposal scheduler or WALD05 binding runtime. |
+
+Report: [WALD04 implementation](wald/customer-wald04-knowledge-profiles-2026-09-08.md).
+No approved production or dedicated-QA acceptance claim is made by this implementation entry.
 
 ## Backport process
 

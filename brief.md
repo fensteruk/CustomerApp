@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD03 accepted; WALD04 scope only)
+**Last updated:** 8 September 2026 (WALD04 implementation ready for dedicated QA; feature branch only)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -350,9 +350,12 @@ on `qa/customer-wald03-2026-09-08`, containing executable corrections `f4fda0f`,
 immutable WALD04 input. Original candidate `574f196` is not the accepted output.
 Dictionary `customerapp.source-dictionary.v1`, fingerprint
 `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`, remains unchanged.
-WALD04 knowledge/profile governance is scoped in
-`documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md` only. Its proposed
-permissions/retention require approval; no WALD04 implementation or release is authorised.
+DEC-046 approves WALD04 knowledge/profile implementation under
+`documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`. Office-only knowledge,
+organisation/site/namespace/family containment, separate answer/draft/activation, 12-month review
+and 24-month retained history are approved. Additive local implementation passed verification;
+dedicated QA, acceptance and release remain separate. G09's named owner blocks unattended
+production disposal only; no deletion scheduling is enabled.
 Import/review/commit permissions, retention, source revision and commit-recovery rules remain
 explicit later gates.
 
@@ -387,7 +390,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88` accepted as immutable WALD04 input. WALD04 scoped only; governance decisions and explicit implementation approval pending. Local branch work, no import integration or deployment. |
+| Standalone Wald (8 September update) | Corrected WALD03 snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88` accepted as immutable WALD04 input. WALD04 implementation approved by DEC-046; local feature-branch verification, not accepted or deployed. Local branch work, no import integration or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -400,7 +403,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- approval of CUSTOMER-WALD04 knowledge governance and its separate implementation instruction,
+- dedicated QA/acceptance of the verified CUSTOMER-WALD04 candidate,
   then independently gated CUSTOMER-WALD05–06, pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;
@@ -437,8 +440,8 @@ Do not invent answers for:
 2. UK bank-holiday provider/dataset, update ownership and failure behaviour.
 3. Source owner/operator, immutable revision identity, stale ordering and multi-row `Call No.`
    semantics.
-4. Wald import, review, commit, dictionary and learned-knowledge approval permissions.
-5. Raw workbook, neutral staging, clarification, learned-answer and audit retention periods.
+4. WALD05 import/review/commit and controlled dictionary-change permissions; WALD04 Office knowledge rights are approved.
+5. Final-import audit/staging retention and G09 named disposal owner; WALD04 processing/knowledge periods and hold mechanism are approved.
 6. Import commit atomicity, rollback/recovery and partial-failure presentation.
 7. Any customer-safe projection of source fields beyond the approved product/status allowlist.
 8. Amendment failure/cancellation and explicit old-date reinstatement rules.
