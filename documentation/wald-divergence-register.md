@@ -3,9 +3,10 @@
 Last updated: 8 September 2026. Owner: Product and Architecture.
 Status: corrected CUSTOMER-WALD02 SHA
 `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted as the immutable WALD03 input. WALD03
-is explicitly approved and implemented at feature-branch candidate `1fee57d` on
-`feature/customer-wald03-business-dictionary`; dedicated QA pending. Not integrated, on
-`main` or deployed. WALD04 has not started.
+is explicitly approved and has passed dedicated QA after corrections at executable SHA
+`f4fda0f069bd5106a125b42615ca212294a9dfad` on `qa/customer-wald03-2026-09-08`.
+The following documentation commit records the gate; management freeze is recommended.
+Not integrated, on `main`, pushed or deployed. WALD04 has not started.
 
 Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
@@ -129,6 +130,22 @@ has been propagated to SiteApp and no Portal business-semantic change was made.
 Implementation report: [WALD03 evidence](wald/customer-wald03-business-dictionary-2026-09-08.md).
 Combined Wald tests: 552 passes / 2,969 assertions. Full CustomerApp: 771 passes / 15 existing
 environment-gated skips / 4,157 assertions. No SiteApp, dependency or production change.
+
+## WALD03 dedicated QA corrections — 8 September 2026
+
+These results supersede the implementation-stage "QA pending" and test counts above.
+See [WALD03 QA](wald/customer-wald03-qa-2026-09-08.md). The 52-file `app/Wald` tree remains
+exactly `30d1fc65e575242004eb335ad46a4d8ec920127a`, identical to accepted WALD02.
+
+| ID | Category | Difference / treatment | Verification |
+|---|---|---|---|
+| WD-30 | CustomerApp-specific | W3Q-01: validate finite float quantities through an exact three-place round trip, not global-precision-dependent string casts. | Excess precision is rejected, not rounded; fixed-point totals and dictionary v1 definitions/fingerprint unchanged. |
+| WD-31 | CustomerApp-specific | W3Q-02: reject missing/changed confidence-policy version at the semantic adapter boundary. | Checks pinned `wald.confidence.v1` even when the supplied manifest hash is internally valid. No generic-core change. |
+| WD-32 | CustomerApp-specific | W3Q-03: enforce semantic, service-composition and aggregate constructor invariants. | Contradictory resolution/value, completion/service and totals/BF states throw bounded exceptions. No persistence or business-rule expansion. |
+
+Corrected executable `f4fda0f`: 470 focused passes / 2,550 assertions; 678 combined Wald
+passes / 3,812; 897 full application passes / 15 existing environment skips / 5,000.
+These corrections are local CustomerApp adapter changes, not an upstream backport.
 
 ## Backport process
 

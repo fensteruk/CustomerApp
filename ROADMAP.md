@@ -6,8 +6,11 @@ Current Wald update: corrected CUSTOMER-WALD02 commit
 `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` is the accepted immutable WALD03 input; original
 candidate `9980354` is superseded. Reader `wald-0.2.1`. WALD03 is scoped as a CustomerApp
 business dictionary/semantic adapter, explicitly approved and implemented on
-`feature/customer-wald03-business-dictionary` at candidate `1fee57d`; dedicated WALD03 QA is
-pending. No import integration or deployment. Earlier phase-entry wording is historical.
+`feature/customer-wald03-business-dictionary`. Dedicated QA passed after W3Q-01–03 corrections
+at executable commit `f4fda0f069bd5106a125b42615ca212294a9dfad` on local branch
+`qa/customer-wald03-2026-09-08`; the following documentation commit records the gate.
+Recommend freezing the corrected QA snapshot. No import integration, push or deployment.
+Evidence: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
 
 # Project Overview
 
@@ -17,7 +20,7 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD02 accepted; CUSTOMER-WALD03 implemented and awaiting dedicated QA.**
+**CUSTOMER-WALD02 accepted; CUSTOMER-WALD03 dedicated QA passed, management freeze recommended.**
 The current authority is the rebuilt `brief.md`, DEC-039–044,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
@@ -48,7 +51,7 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | Order | Package | Exit |
 | --- | --- | --- |
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
-| 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Implemented feature-branch candidate `1fee57d`; 344 focused passes; dedicated QA and accepted output SHA pending. |
+| 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Dedicated QA passed: corrected executable `f4fda0f`; 470 focused passes. Freeze corrected QA snapshot; management acceptance pending. |
 | 3 | CUSTOMER-WALD04 — Clarification/profiles | Portal-owned scoped knowledge/history, explicit activation and safe additive persistence. |
 | 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |

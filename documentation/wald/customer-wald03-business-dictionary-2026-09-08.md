@@ -1,5 +1,11 @@
 # CUSTOMER-WALD03 Business Dictionary Adapter Report
 
+Historical implementation report: the original handoff below is superseded by the
+[dedicated WALD03 QA report](customer-wald03-qa-2026-09-08.md). QA found and corrected
+W3Q-01–03 at executable `f4fda0f069bd5106a125b42615ca212294a9dfad`; original candidate
+`574f196` must not be frozen as the corrected output. Historical test totals below are not
+the final QA totals. No deployment or WALD04 approval is implied.
+
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Status: **READY FOR DEDICATED QA — feature branch only.**
 Not accepted for WALD04, integrated, on main, release-approved or deployed.

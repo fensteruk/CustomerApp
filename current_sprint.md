@@ -1,6 +1,22 @@
 # Current Sprint
 
-## CUSTOMER-WALD03 implemented — dedicated QA pending — 8 September 2026
+## CUSTOMER-WALD03 dedicated QA passed — 8 September 2026
+
+QA branch: `qa/customer-wald03-2026-09-08`, created exactly from implementation candidate
+`574f19694595f300620713b0dbd4a7d27036d7d1`. Corrected executable SHA:
+`f4fda0f069bd5106a125b42615ca212294a9dfad`; the following documentation-only commit records
+this gate. W3Q-01–03 fixed precision-dependent quantities, confidence-version validation and
+result-constructor invariants. Dictionary identity and the 52-file generic Wald core are unchanged.
+Focused: 470 passes / 2,550 assertions. Combined Wald: 678 / 3,812. Full application:
+897 passes, 15 existing environment skips / 5,000 assertions. Eight inherited Composer
+advisories remain separate; security remediation was not merged.
+
+Recommend freezing the delivered corrected QA snapshot, not the original candidate. No push,
+`main`, migration, production, deployment or WALD04 implementation. Management acceptance and
+separate WALD04 scope/permissions/retention approval remain required. Full evidence:
+`documentation/wald/customer-wald03-qa-2026-09-08.md`.
+
+## Historical WALD03 implementation handoff — 8 September 2026
 
 Management accepted corrected CUSTOMER-WALD02 commit
 `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` as the immutable WALD03 input. Do not use

@@ -4,8 +4,12 @@ Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Status: Explicitly approved for implementation on 8 September 2026. Feature branch starts
 exactly at `4aa5ffb5a00527662ddfe66673edbfb18af9f0db`; documentation carried forward from
 reviewed scope commit `76ed196cd19f2d207f2a5d50006041f1b3d8b814` as metadata only.
-Implemented on `feature/customer-wald03-business-dictionary` at candidate `1fee57d`;
-dedicated QA and accepted output SHA pending. Evidence:
+Implemented on `feature/customer-wald03-business-dictionary`; exact QA input `574f196`.
+Dedicated QA passed after three contract-defined corrections at executable SHA
+`f4fda0f069bd5106a125b42615ca212294a9dfad` on `qa/customer-wald03-2026-09-08`.
+The following documentation commit records the gate. Management freeze is recommended;
+WALD04 remains separately gated. QA evidence: `documentation/wald/customer-wald03-qa-2026-09-08.md`.
+Historical implementation evidence:
 `documentation/wald/customer-wald03-business-dictionary-2026-09-08.md`.
 
 Implementation clarification: absent/blank quantity is zero within this supplied input only;
