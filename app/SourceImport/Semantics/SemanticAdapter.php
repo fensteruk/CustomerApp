@@ -106,6 +106,7 @@ final readonly class SemanticAdapter
             || ($manifest['engine_version'] ?? null) !== CoreIdentity::snapshot()['reasoning']
             || ($manifest['structural_rules_version'] ?? null) !== CoreIdentity::snapshot()['structure']
             || ($manifest['ruleset_version'] ?? null) !== CoreIdentity::snapshot()['rules']
+            || ($manifest['confidence_policy']['version'] ?? null) !== CoreIdentity::snapshot()['confidence']
             || ($data['manifest_hash'] ?? null) !== hash('sha256', json_encode($manifest, JSON_THROW_ON_ERROR))) {
             return 'INVALID_WALD_BASELINE';
         }

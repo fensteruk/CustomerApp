@@ -2,6 +2,9 @@
 
 namespace App\SourceImport\Semantics\Data;
 
+use App\SourceImport\Semantics\Dictionary\Quantity;
+use App\SourceImport\Semantics\Enums\Classification;
+use InvalidArgumentException;
 use JsonSerializable;
 
 final readonly class ProductRollup implements JsonSerializable
@@ -15,7 +18,40 @@ final readonly class ProductRollup implements JsonSerializable
         public bool $resolved,
         public DictionaryIdentity $dictionary,
         public array $reasons = [],
-    ) {}
+    ) {
+        $totals = ['WINDOWS' => 0, 'DOORS' => 0];
+        $seen = [];
+        $valid = $reasons === [];
+        $observedBf = false;
+        foreach ($items as $item) {
+            if (! $item instanceof SemanticResult || $item->concept !== 'product_quantity'
+                || $item->dictionary != $dictionary) {
+                throw new InvalidArgumentException('invalid_rollup_item');
+            }
+            $valid = $valid && $item->isResolved() && ! isset($seen[$item->lookupValue]);
+            $seen[$item->lookupValue] = true;
+            if (! $item->isResolved() || $item->classification === Classification::Ignored) {
+                continue;
+            }
+            $units = Quantity::units($item->value);
+            $group = $item->match['group'] ?? null;
+            if ($units === null || ! isset($totals[$group])) {
+                throw new InvalidArgumentException('invalid_rollup_item');
+            }
+            $observedBf = $observedBf || ($item->lookupValue === 'BF' && $units > 0);
+            if ($units > Quantity::MAX_UNITS - $totals[$group]) {
+                $valid = false;
+            } else {
+                $totals[$group] += $units;
+            }
+        }
+        if ($bfPresent !== $observedBf
+            || (! $resolved && ($totalWindows !== null || $totalDoors !== null))
+            || ($resolved && (! $valid || $totalWindows !== Quantity::decimal($totals['WINDOWS'])
+                || $totalDoors !== Quantity::decimal($totals['DOORS'])))) {
+            throw new InvalidArgumentException('inconsistent_product_rollup');
+        }
+    }
 
     public function jsonSerialize(): array
     {

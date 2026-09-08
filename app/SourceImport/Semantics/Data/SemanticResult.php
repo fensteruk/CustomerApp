@@ -4,6 +4,7 @@ namespace App\SourceImport\Semantics\Data;
 
 use App\SourceImport\Semantics\Enums\Classification;
 use App\SourceImport\Semantics\Enums\Resolution;
+use InvalidArgumentException;
 use JsonSerializable;
 
 final readonly class SemanticResult implements JsonSerializable
@@ -20,7 +21,13 @@ final readonly class SemanticResult implements JsonSerializable
         public array $suggestions = [],
         public array $reasons = [],
         public array $evidence = [],
-    ) {}
+    ) {
+        $known = in_array($classification, [Classification::Confirmed, Classification::Ignored], true);
+        if (($resolution === Resolution::Resolved && ! $known)
+            || ($value !== null && (! $known || $resolution === Resolution::Blocked))) {
+            throw new InvalidArgumentException('inconsistent_semantic_result');
+        }
+    }
 
     public function isResolved(): bool
     {

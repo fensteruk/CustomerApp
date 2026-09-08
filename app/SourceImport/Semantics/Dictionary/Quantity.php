@@ -14,7 +14,13 @@ final class Quantity
         if (is_bool($raw) || (is_float($raw) && ! is_finite($raw))) {
             return null;
         }
-        $text = trim((string) $raw);
+        // Float-to-string casts depend on PHP's global precision setting. Accept a
+        // float only when the three-place decimal round-trips to that exact float;
+        // never round an excess-precision value into an approved quantity.
+        $text = is_float($raw) ? sprintf('%.3F', $raw) : trim((string) $raw);
+        if (is_float($raw) && (float) $text !== $raw) {
+            return null;
+        }
         if (! preg_match('/^([0-9]+)(?:\.([0-9]{1,3}))?$/D', $text, $m)) {
             return null;
         }
