@@ -932,3 +932,37 @@ Independent QA established the portable core's safety and neutrality while expos
 that make the original candidate unsuitable as the next immutable baseline. Freezing the
 corrected SHA prevents later dictionary work from regressing those protections or contaminating
 generic inference with CustomerApp business truth.
+
+---
+
+## DEC-044
+
+Date:
+8 September 2026
+
+Decision:
+The user explicitly approved CUSTOMER-WALD03 implementation from exactly
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db`, using a new non-deploying feature branch.
+This supersedes only DEC-043's scope-only/implementation-permission status, not its frozen
+core, generic/domain boundary or release restrictions.
+
+Rules:
+
+- Implement pure CustomerApp dictionary/result contracts and an evidence-composing adapter
+  outside `App\Wald`; no core edits, database, SiteApp access, UI, workflow integration or WALD04.
+- Dictionary identity is `customerapp.source-dictionary.v1` plus a canonical SHA-256 fingerprint.
+  Labels, meanings, mappings and normalization rules are identity-bearing; changing them requires
+  a new version/fingerprint and regression review.
+- Implementation normalization uses fixed-point non-negative quantities with up to three decimal
+  places and a 999,999,999.999 per-value/total limit, consistent with existing decimal(12,3)
+  quantity precision. Blank/null is zero only within supplied input. No projection-absence authority.
+- Unknown/invalid meanings and unresolved Wald evidence cannot become approved facts. Stronger
+  export assertions still require downstream confirmation. Source completion needs known service
+  identity; operational dates never become Portal dates.
+- Eight inherited Composer advisories stay separate. Remediation `5e7df08` must not be merged here.
+- Delivery on a feature branch is not dedicated-QA acceptance, permission for WALD04, release,
+  a change to `main` or deployment. Freeze the accepted WALD03 output only after dedicated QA.
+
+Reason:
+The accepted WALD02 baseline and approved semantic contract permit a bounded implementation
+without moving business truth into inference or silently adopting the parallel import runtime.

@@ -4,6 +4,9 @@ Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Status: Explicitly approved for implementation on 8 September 2026. Feature branch starts
 exactly at `4aa5ffb5a00527662ddfe66673edbfb18af9f0db`; documentation carried forward from
 reviewed scope commit `76ed196cd19f2d207f2a5d50006041f1b3d8b814` as metadata only.
+Implemented on `feature/customer-wald03-business-dictionary` at candidate `1fee57d`;
+dedicated QA and accepted output SHA pending. Evidence:
+`documentation/wald/customer-wald03-business-dictionary-2026-09-08.md`.
 
 Implementation clarification: absent/blank quantity is zero within this supplied input only;
 it does not authorize projection zeroing. Quantities are non-negative finite decimals with up
@@ -29,7 +32,7 @@ The original `9980354d28bfe1ca7986e10a529ab073d95d0b91` candidate is superseded 
 not be used as the WALD03 input. The five QA reader corrections and their regressions are part
 of the frozen core contract.
 
-Authority is DEC-039, DEC-040, DEC-042, DEC-043, `brief.md`,
+Authority is DEC-039, DEC-040, DEC-042, DEC-043, DEC-044, `brief.md`,
 `documentation/siteapp-import-data-dictionary.md`, the WALD02 work package and
 `documentation/wald/customer-wald02-qa-2026-09-08.md`.
 
@@ -322,8 +325,8 @@ WALD03 does not implement:
 
 ## 18. Delivery and rollback boundary
 
-If later approved, implement WALD03 on a non-deploying feature branch from the exact accepted
-WALD02 SHA. Keep commits separable into contracts/dictionary, adapter, tests and evidence.
+The explicit implementation approval was executed on a non-deploying feature branch from the
+exact accepted WALD02 SHA, with separate contracts/dictionary, adapter, tests and evidence commits.
 
 Because this phase is pure and unreferenced by production paths, rollback before integration is
 removal of only the new semantic module, tests and WALD03 documentation. There must be no data,

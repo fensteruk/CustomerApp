@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD02 acceptance and WALD03 scope)
+**Last updated:** 8 September 2026 (WALD03 implementation; dedicated QA pending)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -342,8 +342,11 @@ for wholesale merge or deletion.
 
 The CUSTOMER-WALD02 source baseline is the approved 162-file manifest with digest
 `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`; its package is
-`documentation/work-packages/WP-CUSTOMER-WALD02-PORTABLE-CORE-CORPUS.md`. Do not begin
-CUSTOMER-WALD03 without explicit implementation approval for the separately scoped work package.
+`documentation/work-packages/WP-CUSTOMER-WALD02-PORTABLE-CORE-CORPUS.md`.
+Explicitly approved CUSTOMER-WALD03 is implemented on the non-deploying
+`feature/customer-wald03-business-dictionary` branch at candidate `1fee57d`, outside generic
+`App\Wald`. Dictionary `customerapp.source-dictionary.v1` and the semantic adapter await
+dedicated QA and output acceptance. WALD04 is not authorised by that implementation.
 Import/review/commit permissions, retention, source revision and commit-recovery rules remain
 explicit later gates.
 
@@ -378,7 +381,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Corrected CUSTOMER-WALD02 SHA `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted as immutable WALD03 input; WALD03 scoped only and awaits implementation approval; no import integration or deployment. |
+| Standalone Wald (8 September update) | Corrected CUSTOMER-WALD02 SHA `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` remains immutable input. WALD03 dictionary/adapter implemented at feature-branch candidate `1fee57d`, dedicated QA pending; no import integration or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -391,7 +394,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- explicit implementation approval for the scoped CUSTOMER-WALD03 package, then separately
+- dedicated QA and accepted output baseline for CUSTOMER-WALD03, then separately
   gated Wald phases CUSTOMER-WALD04–06, pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;

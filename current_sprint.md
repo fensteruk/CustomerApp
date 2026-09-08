@@ -1,6 +1,6 @@
 # Current Sprint
 
-## CUSTOMER-WALD02 accepted / CUSTOMER-WALD03 scoped — 8 September 2026
+## CUSTOMER-WALD03 implemented — dedicated QA pending — 8 September 2026
 
 Management accepted corrected CUSTOMER-WALD02 commit
 `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` as the immutable WALD03 input. Do not use
@@ -8,10 +8,15 @@ superseded candidate `9980354d28bfe1ca7986e10a529ab073d95d0b91`. Reader `wald-0.
 208 focused tests / 1,262 assertions and 427 full-suite passes / 15 environment-gated skips /
 2,450 assertions. The five QA reader corrections remain frozen core behaviour.
 
-CUSTOMER-WALD03 is scoped only in
-`documentation/work-packages/WP-CUSTOMER-WALD03-BUSINESS-DICTIONARY-ADAPTER.md` and awaits
-explicit implementation approval. No WALD03 runtime, integration, dependency, migration,
-`main`, production or deployment work started. Earlier WALD02 entries below are historical.
+CUSTOMER-WALD03 was explicitly approved and implemented on
+`feature/customer-wald03-business-dictionary`, starting exactly from that frozen WALD02 SHA.
+Candidate `1fee57de2830fc8a07cb0a14296e72c0ddbb2774` contains the pure dictionary, adapter and
+synthetic tests. Focused WALD03: 344 passes / 1,707 assertions; combined Wald: 552 passes /
+2,969 assertions; full CustomerApp: 771 passes / 15 environment skips / 4,157 assertions.
+Dedicated QA and an accepted output SHA remain required; WALD04 has not started.
+No generic core, import integration, dependency, migration, `main`, production or deployment
+change. Evidence: `documentation/wald/customer-wald03-business-dictionary-2026-09-08.md`.
+Earlier entries below are historical, not current phase gates.
 
 ## Current planning work — 4 September 2026
 

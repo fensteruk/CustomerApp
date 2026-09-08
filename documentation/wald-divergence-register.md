@@ -3,9 +3,11 @@
 Last updated: 8 September 2026. Owner: Product and Architecture.
 Status: corrected CUSTOMER-WALD02 SHA
 `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted as the immutable WALD03 input. WALD03
-is scoped only and awaits implementation approval. Not integrated, on `main` or deployed.
+is explicitly approved and implemented at feature-branch candidate `1fee57d` on
+`feature/customer-wald03-business-dictionary`; dedicated QA pending. Not integrated, on
+`main` or deployed. WALD04 has not started.
 
-Authority: DEC-039/DEC-040/DEC-042/DEC-043 and
+Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
 This register compares the inspected SiteApp implementation with the proposed CustomerApp
 distribution. A planned difference is not an implemented feature or an upstream change.
@@ -104,14 +106,29 @@ corpus/integrity/standalone replay/benchmark only), and anchored one pre-existin
 notification fixture's clock. These are not adopted upstream runtime files. No generic fix
 has been propagated to SiteApp and no Portal business-semantic change was made.
 
-## CUSTOMER-WALD03 scoped differences — 8 September 2026
+## CUSTOMER-WALD03 implemented differences — 8 September 2026
 
 | ID | Category | Difference / treatment | Status and verification owner |
 |---|---|---|---|
-| WD-24 | CustomerApp-specific | Business meanings live in a pure adapter outside `App\Wald`, proposed under `App\SourceImport\Semantics`; core candidates/evidence are composed, not mutated. | Scoped only in CUSTOMER-WALD03; implementation approval and dedicated QA pending. |
-| WD-25 | Temporary fork difference | New dictionary identity is `customerapp.source-dictionary.v1` plus a canonical fingerprint; non-main config pipeline's numeric `semantic_version = 3` is not compatible identity. | Scoped. Every result must retain dictionary and accepted core identity; persistence remains WALD04+. |
-| WD-26 | CustomerApp-specific | Semantic classification (`CONFIRMED`, `UNKNOWN`, `AMBIGUOUS`, `INVALID`, `IGNORED`) is separate from resolution (`RESOLVED`, `REQUIRES_CONFIRMATION`, `BLOCKED`). | Scoped. Prevents invalid/unknown values or structural ambiguity from being represented as approved mappings. |
-| WD-27 | Temporary fork difference | Non-main `SiteAppImportDataDictionary`/config definitions are reimplemented behind pure contracts; `SourceCallTypeMapper` and fixed workbook contract are superseded; semantic test intent is reused. | Classification recorded in the WALD03 work package. No branch merge, file copy or deletion authorised. |
+| WD-24 | CustomerApp-specific | Business meanings live under `App\SourceImport\Semantics`; core candidates/evidence are composed, not mutated. | Implemented at `9648f0d`/`e65fa2e`; no diff in `app/Wald` from accepted `4aa5ffb`. Dedicated QA pending. |
+| WD-25 | Temporary fork difference | Identity `customerapp.source-dictionary.v1`, fingerprint `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`; numeric `semantic_version = 3` is not compatible identity. | Implemented, golden identity/version-change tests at `1fee57d`. Every semantic leaf retains dictionary and accepted core identity; persistence remains WALD04+. |
+| WD-26 | CustomerApp-specific | Classification (`CONFIRMED`, `UNKNOWN`, `AMBIGUOUS`, `INVALID`, `IGNORED`) is separate from resolution (`RESOLVED`, `REQUIRES_CONFIRMATION`, `BLOCKED`). | Implemented. 344 focused tests / 1,707 assertions cover raw values, clarification, provenance and fail-closed composition; staging readiness always false. |
+| WD-27 | Temporary fork difference | Non-main dictionary/config intent is reimplemented purely; direct mapper and fixed workbook contract are superseded; semantic test intent is reused. | Completed bounded read-only comparison of `04b560f` → `a013ed1` → `1e8c22b`. No branch merge, copy or deletion; classifications below. |
+| WD-28 | CustomerApp-specific | Quantity normalization is fixed-point decimal(12,3); invalid/unknown/duplicate/overflow input suppresses both totals. BF is only an observed exact-code positive fact; no absence or lead-time authority. | Implemented; full product/quantity/BF matrix. Supplied-input rollups are dictionary primitives, not approval to stage rows. |
+| WD-29 | CustomerApp-specific | Semantic adapter checks source checksum, sheet, range, header/data-row distinction, target leader, manifest and confirmation state; formula caches/errors remain blocked. | Implemented with typed private observations. Real House No./Sales Plot ambiguity retains both core candidates; no tie-breaker or core change. |
+
+### WALD03 non-main import classification
+
+| Material | Classification | Implemented treatment |
+|---|---|---|
+| Synthetic semantic cases from `SiteAppImportSemanticCorrectionTest` | REUSE | Test intent recreated in pure WALD03 fixtures, not copied with DB/workflow dependencies. |
+| `SiteAppImportDataDictionary`, approved `config/siteapp_import.php` definitions and scope concepts | REIMPLEMENT | New immutable dictionary, fixed-point rollups, typed scope and canonical identity; no config/container or Portal enum coupling. |
+| `SourceCallTypeMapper`, `ManualSourceWorkbookContract`, fixed worksheet/header selection | SUPERSEDED | No historical Job Stage completion rules or direct mapper adopted. Exact field terminology is downstream of Wald evidence. |
+| `SpreadsheetStructureInterpreter`, profile/site-binding services, previews, projection import and Office UI | REFERENCE_ONLY | Read-only comparison material; WALD04/05 must explicitly adapt/supersede/defer. No runtime adoption or deletion. |
+
+Implementation report: [WALD03 evidence](wald/customer-wald03-business-dictionary-2026-09-08.md).
+Combined Wald tests: 552 passes / 2,969 assertions. Full CustomerApp: 771 passes / 15 existing
+environment-gated skips / 4,157 assertions. No SiteApp, dependency or production change.
 
 ## Backport process
 
