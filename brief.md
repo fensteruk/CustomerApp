@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD02 QA status only)
+**Last updated:** 8 September 2026 (WALD02 acceptance and WALD03 scope)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -315,8 +315,8 @@ CustomerApp is adopting a controlled fork of compatible generic SiteApp WALD01�
 and tests. CUSTOMER-WALD02's portable core and safe synthetic corpus are implemented on the
 non-deploying `feature/customer-wald02-portable-core` branch. Dedicated local QA passed on
 8 September after five reader corrections on `qa/customer-wald02-2026-09-08`; management
-acceptance/freeze of the corrected baseline remains (see
-`documentation/wald/customer-wald02-qa-2026-09-08.md`). They are
+acceptance froze corrected SHA `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` as the immutable
+WALD03 input (see `documentation/wald/customer-wald02-qa-2026-09-08.md`). They are
 not integrated into the import workflow, on `main`, release-approved or deployed.
 
 The path is:
@@ -343,8 +343,9 @@ for wholesale merge or deletion.
 The CUSTOMER-WALD02 source baseline is the approved 162-file manifest with digest
 `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`; its package is
 `documentation/work-packages/WP-CUSTOMER-WALD02-PORTABLE-CORE-CORPUS.md`. Do not begin
-CUSTOMER-WALD03 before acceptance of the corrected QA baseline and a separate approved work package. Import/review/commit
-permissions, retention, source revision and commit-recovery rules remain explicit later gates.
+CUSTOMER-WALD03 without explicit implementation approval for the separately scoped work package.
+Import/review/commit permissions, retention, source revision and commit-recovery rules remain
+explicit later gates.
 
 ## 14. Notifications, History and Customer Content
 
@@ -377,7 +378,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | CUSTOMER-WALD02 dedicated local QA passed after five reader corrections on `qa/customer-wald02-2026-09-08`; corrected-baseline acceptance remains; no import integration or deployment. |
+| Standalone Wald (8 September update) | Corrected CUSTOMER-WALD02 SHA `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` accepted as immutable WALD03 input; WALD03 scoped only and awaits implementation approval; no import integration or deployment. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -390,8 +391,8 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- acceptance/freeze of the corrected CUSTOMER-WALD02 QA baseline, then separately scoped Wald phases CUSTOMER-WALD03–06,
-  pilot and hardening;
+- explicit implementation approval for the scoped CUSTOMER-WALD03 package, then separately
+  gated Wald phases CUSTOMER-WALD04–06, pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;
 - approved UK bank-holiday provider and operational ownership;

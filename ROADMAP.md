@@ -2,11 +2,11 @@
 
 *Last Updated: 8 September 2026*
 
-Current WALD02 update: dedicated local QA passed after five reader corrections on
-`qa/customer-wald02-2026-09-08`. Management acceptance/freeze of the corrected baseline remains;
-the original `9980354` must not be frozen unchanged. See
-`documentation/wald/customer-wald02-qa-2026-09-08.md`. WALD03 is still planned and separately
-gated. The QA-pending wording in the 4 September planning snapshot below is historical.
+Current Wald update: corrected CUSTOMER-WALD02 commit
+`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` is the accepted immutable WALD03 input; original
+candidate `9980354` is superseded. Reader `wald-0.2.1`. WALD03 is scoped as a CustomerApp
+business dictionary/semantic adapter and awaits explicit implementation approval. The
+QA-pending wording in the 4 September planning snapshot below is historical.
 
 # Project Overview
 
@@ -16,18 +16,18 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD02 portable core and corpus implemented; dedicated QA is next.**
-The current authority is the rebuilt `brief.md`, DEC-039–042,
+**CUSTOMER-WALD02 accepted; CUSTOMER-WALD03 scoped and awaiting implementation approval.**
+The current authority is the rebuilt `brief.md`, DEC-039–043,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
 current work.
 
-The approved checksum manifest unblocked CUSTOMER-WALD02. The generic reader, profiler and
-reasoning core plus safe synthetic corpus now exist on the non-deploying
-`feature/customer-wald02-portable-core` branch (`d1c130a`, `5ddaa26`) and await dedicated QA.
-No Portal semantics, persistence, workflow integration or deployment was added. All later
-packages remain planned and require their own scoped implementation/release instructions.
+The approved checksum manifest unblocked CUSTOMER-WALD02. Its generic reader, profiler,
+reasoning core and safe corpus passed dedicated QA after five reader corrections; corrected
+commit `4aa5ffb` is the accepted output. No Portal semantics, persistence, workflow integration
+or deployment was added. WALD03 now has a scoped dictionary/adapter work package but no
+implementation authority. All later packages require their own scoped instructions.
 
 The 4 September reconciliation confirms PC1/CC1/CM1/CM2/CML, rejects literal `CC!` as a
 silent alias, makes `complete = Yes` authoritative for its source call-off part, confirms
@@ -40,14 +40,14 @@ the approved manifest digest
 `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`.
 
 A committed non-main CustomerApp line ending at `feature/manual-source-import-ui`
-(`1e8c22b`) is now recognised as architecture evidence. CUSTOMER-WALD02–05 must compare
-and classify its reusable generic mechanics, Portal-specific controls, superseded direct
-pipeline and corpus material; it must not be merged wholesale or treated as production.
+(`1e8c22b`) is recognised as architecture evidence. WALD02/03 recorded the relevant generic,
+dictionary, supersession and corpus classifications; WALD04/05 must continue the downstream
+profile/integration comparison. It must not be merged wholesale or treated as production.
 
 | Order | Package | Exit |
 | --- | --- | --- |
-| 1 | CUSTOMER-WALD02 — Portable core + corpus | Implemented on a non-deploying feature branch; dedicated QA pending; no domain writes. |
-| 2 | CUSTOMER-WALD03 — Portal semantics/dictionaries | Portal call-record schema and confirmed definitions; unknown meanings remain gated. |
+| 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
+| 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Scoped only; pure versioned CustomerApp meanings and clarification results; explicit implementation approval pending. |
 | 3 | CUSTOMER-WALD04 — Clarification/profiles | Portal-owned scoped knowledge/history, explicit activation and safe additive persistence. |
 | 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
