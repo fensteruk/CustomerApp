@@ -1264,3 +1264,41 @@ Reason:
 The user's inspection supplies the required human authority for the typo correction and a
 bounded exclusion. Keeping that authority attached to the artifact preserves original evidence
 and prevents the clarification from silently redefining other imports.
+
+---
+
+## DEC-051
+
+Date:
+8 September 2026
+
+Decision:
+The latest user continuation confirms that WALD05 implementation remains authorised and that
+actual workbook evidence, not hypothetical cross-visit cases, controls the immediate data gate.
+After the row audit, the user explicitly instructs exclusion of the `Nick TEST` record from this
+workbook's proposed import.
+
+Rules:
+
+- Retain DEC-050 unchanged: its CC! correction and CM2 exclusion remain workbook-specific.
+- Additionally exclude Sheet1 row 32, Call No. 5181, exact Site Name `Nick TEST`, from the workbook
+  with SHA-256 `ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`.
+  Keep the original source evidence. Do not edit the workbook, delete Portal data or produce any
+  completion, reversal or product effect from this excluded record.
+- This is an explicit row-specific selection, not a general test-site detector or future-workbook
+  alias. Changed bytes require separately matching reviewed provenance.
+- Continue the already authorised implementation after resolving actual blockers; do not request
+  another blanket WALD05 approval or revive W5-P01/P02 merely from synthetic possibilities.
+
+Read-only implementation discovery, not a new business decision:
+
+The audit now selects 45 records and excludes two (DEC-050 CM2 and this DEC-051 row). It found no
+duplicate Call No., conflicting included site/plot, invalid completion or invalid product value.
+The frozen XLSX reader nevertheless rejects workbook metadata with `invalid_xml`: an extension
+namespace's workbookPr reaches the core workbookPr parent-path check (W5-T01). The current
+continuation report distinguishes that technical compatibility failure from the cleared business
+data gate. No generic-core correction or runtime implementation is claimed by this decision.
+
+Reason:
+The user has explicitly narrowed the reviewed source selection. Keeping the exact artifact and
+row identity in its provenance prevents an audit exclusion becoming a global business rule.

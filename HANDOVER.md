@@ -1,6 +1,24 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD05 implementation authorised; projection clarification required — 8 September 2026
+## CUSTOMER-WALD05 actual workbook audit complete; reader compatibility failure — 8 September 2026
+
+Continue on `feature/customer-wald05-import-review-integration`, audited checkpoint `b221784...`.
+The DEC-050 workbook hash still matches. DEC-051 additionally excludes Sheet1 row 32 / Call No.
+5181 (Nick TEST); source bytes remain unchanged. Current selection: 45 included, two excluded,
+20 Windows / 24 Cavity Closers / one CML; 19 complete Yes / 26 No. No actual business-data
+ambiguity found; do not revive the earlier synthetic W5-P01/P02 pause for this sample.
+
+W5-T01: the frozen XLSX reader refuses the actual workbook's extension-namespace workbookPr at
+`workbook/extLst/ext/workbookPr` with invalid_xml. Next prerequisite is a narrowly reviewed,
+versioned reader correction preserving physical-lineage/unsafe-XML safeguards. No diagnostic
+parser fallback, source rewrite or unversioned baseline change. WALD05 implementation authority
+remains valid after this technical correction; runtime/schema work is not yet implemented.
+Private row inventory is under ignored `storage/app/wald05-audit-20260908/`; do not commit it.
+Combined Wald: 865 passed / 11 skipped; full: 1,084 passed / 26 skipped. Pint/validation/build pass;
+eight inherited Composer advisories. No MySQL WALD05 evidence, dedicated-QA readiness or deployment.
+[Current report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+
+## Historical CUSTOMER-WALD05 initial projection review — 8 September 2026
 
 DEC-049 records explicit implementation authority on
 `feature/customer-wald05-import-review-integration`, created from verified governance commit

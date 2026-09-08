@@ -1,9 +1,12 @@
 # Wald Distribution Divergence Register
 
 Last updated: 8 September 2026. Owner: Product and Architecture.
-Latest entry: DEC-049 authorises WALD05 implementation from verified governance commit
-`877bd3ff666873a0703c3b7671015ec4cfd2ee52`. W5-P01/P02 projection aggregation across distinct
-visits requires clarification before the affected runtime/schema work. I01–I10 remain approved.
+Latest entry: the DEC-050/051 actual workbook audit selects 45 records and intentionally excludes
+CM2 plus the exact Nick TEST record. No concrete business-data ambiguity was found. W5-T01 is a
+reproduced accepted-reader failure: an extension-namespace workbookPr is mistaken for the core
+element and fails the physical-parent check. No reader correction or runtime integration yet.
+DEC-049 implementation authority and I01–I10 remain approved; hypothetical W5-P01/P02 cases do
+not block this selected sample. The specific core compatibility correction needs review.
 See [implementation entry report](wald/customer-wald05-import-review-integration-2026-09-08.md).
 The earlier implementation-instruction gate below is satisfied; no runtime change is claimed.
 
@@ -204,6 +207,13 @@ access/copy, generic-core modification or dependency change in this scope task.
 
 Report: [WALD04 implementation](wald/customer-wald04-knowledge-profiles-2026-09-08.md).
 No approved production or dedicated-QA acceptance claim is made by this implementation entry.
+
+## WALD05 audit findings — 8 September 2026
+
+| ID | Category | Finding / disposition | Evidence |
+|---|---|---|---|
+| WD-44 | Candidate for both Wald distributions; NOT IMPLEMENTED | W5-T01: extension-namespace workbookPr is rejected by accepted local-name/parent-path handling. Needs a narrowly reviewed, versioned compatibility correction retaining unsafe-XML/physical-lineage safeguards. | Actual artifact reproduces invalid_xml before sheets; local independent audit is not a runtime fallback. No SiteApp access or backport. |
+| WD-45 | CustomerApp-specific reviewed selection; NOT RUNTIME | DEC-050 corrects CC! and excludes CM2 only for the exact approved bytes; DEC-051 also excludes exact row 32 / Call No. 5181. | Private inventory: 45 included, two explicitly excluded; dictionary and executable trees unchanged. No global alias or inferred test-site filter. |
 
 ## Backport process
 

@@ -1,6 +1,18 @@
 # Current Sprint
 
-## CUSTOMER-WALD05 implementation authorised; projection clarification required — 8 September 2026
+## CUSTOMER-WALD05 actual workbook audit complete; reader compatibility failure — 8 September 2026
+
+DEC-050/051 select 45 actual records and exclude CM2 plus the explicitly identified Nick TEST row.
+No duplicate Call No., invalid completion/product value or competing included site/plot was found.
+The prior synthetic W5-P01/P02 cases do not block this workbook. W5-T01 reproduces an accepted
+XLSX-reader metadata rejection caused by an extension-namespace workbookPr. The core correction
+needs a narrow review/versioned identity; no runtime integration or migration has started.
+Implementation authority remains valid; no further blanket approval is needed. Combined Wald:
+865 passed / 11 skipped; full application: 1,084 passed / 26 skipped. Eight inherited advisories
+remain. [Current report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+No main, push, production, SiteApp or deployment action. The original workbook is unchanged.
+
+## Historical CUSTOMER-WALD05 initial projection review — 8 September 2026
 
 DEC-049 records explicit implementation authority on
 `feature/customer-wald05-import-review-integration`, created from governance commit

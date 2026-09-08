@@ -1,13 +1,16 @@
 # CUSTOMER-WALD05 — Import, Review and Controlled Commit Integration
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: **IMPLEMENTATION AUTHORISED — DEC-049; PROJECTION-CONTRACT CLARIFICATION REQUIRED.**
+Status: **IMPLEMENTATION AUTHORISED — ACTUAL WORKBOOK AUDITED; W5-T01 READER COMPATIBILITY FAILURE.**
 
 The latest management instruction authorises implementation from governance-inclusive commit
 `877bd3ff666873a0703c3b7671015ec4cfd2ee52` on
 `feature/customer-wald05-import-review-integration`. Baseline ancestry and the documentation-only
-delta passed verification. Entry review exposed W5-P01/P02: aggregation of multiple distinct
-source visits into one Portal service state and plot/product quantity needs an explicit rule.
+delta passed verification. The actual DEC-050/051 workbook audit found no duplicate Call No.,
+competing included site/plot, invalid completion or invalid product quantity. Historical W5-P01/P02
+synthetic cases do not block this selection. The frozen XLSX reader instead refuses the actual
+workbook's extension-namespace workbookPr (W5-T01); a narrow versioned compatibility correction
+requires review before this workbook can traverse the accepted analysis path.
 See the [implementation entry report](../wald/customer-wald05-import-review-integration-2026-09-08.md).
 I01–I10 remain approved. No runtime implementation has started.
 
@@ -18,6 +21,10 @@ records in that workbook are excluded. PC1 and CM1 are full call-off examples. T
 CM1-versus-CM2 projection example therefore does not apply to that selected workbook scope.
 Preserve raw evidence and the artifact-bound approval; do not change the global dictionary.
 
+DEC-051 additionally excludes exact Sheet1 row 32 / Call No. 5181 / Nick TEST at the user's
+explicit request, for the same workbook hash. There are now 45 included records and two explicit
+exclusions. Never infer a general test-site filter, alter source bytes or apply excluded-row effects.
+
 [Final governance approval](../wald/customer-wald05-final-governance-approval-2026-09-08.md)
 supersedes the approval state in the earlier
 [decision-resolution report](../wald/customer-wald05-governance-resolution-2026-09-08.md).
@@ -25,8 +32,9 @@ I01–I10 are approved; neither report is implementation authority.
 
 This work package defines the bounded integration that turns private workbook evidence into
 reviewed neutral records and, only after a separate explicit Office action, commits approved
-source facts into CustomerApp projections. DEC-049 supplies implementation authority, subject to
-the projection clarification above. Production access, release and deployment remain excluded.
+source facts into CustomerApp projections. DEC-049 supplies implementation authority; no repeated
+blanket approval is needed. The actual reader failure above is distinct from business ambiguity.
+Production access, release and deployment remain excluded.
 
 ## 1. Immutable entry baseline
 
@@ -161,8 +169,9 @@ No merge, cherry-pick, wholesale copy, legacy-profile data migration or deletion
 
 ## 8. Proposed persistence separation
 
-Names are provisional. DEC-049 authorises additive implementation after the affected projection
-contract is clarified. Prefer additive tables and forward migrations.
+Names are provisional. DEC-049 authorises additive implementation. Actual unresolved source
+identity/meaning still fails closed; do not invent hypothetical blockers. Prefer additive tables
+and forward migrations.
 
 | Entity | Proposed responsibility |
 |---|---|
@@ -459,8 +468,8 @@ limits. Failed attempts and inherited advisories are reported separately from fi
 | I10 | Current importer/non-main disposition | Reimplement the neutral staging/commit boundary; reuse safe invariants/test intent only; reject obsolete mappings, source-wide absence, omitted zero and per-record commit; no wholesale merge or retirement. | APPROVED |
 | I11 | Pilot and cutover | Default off; WALD06 supervised family/site pilot after WALD05 QA; retirement separately approved. | DEFER_TO_WALD06 |
 
-DEC-048 approves I01–I10; DEC-049 supplies explicit implementation authority. W5-P01/P02 now gate
-the affected projection schema/commit implementation. I11 remains a WALD06/pilot decision, but
+DEC-048 approves I01–I10; DEC-049 supplies explicit implementation authority. The actual workbook
+gate above replaces the historical hypothetical W5-P01/P02 pause. I11 remains a WALD06/pilot decision, but
 its default-off boundary must be implemented and tested in WALD05.
 
 ## 25. WALD05 implementation and exit gates
@@ -472,8 +481,9 @@ Before implementation:
 3. keep unattended production deletion disabled until the G09 disposal owner is named;
 4. issue a separate explicit WALD05 implementation instruction and branch name (satisfied by
    DEC-049; governance-inclusive starting point verified);
-5. resolve W5-P01/P02 before implementing the affected projection schema/commit rules. These
-   concern aggregation across distinct visits, not the already approved one-visit Call No. grain.
+5. audit actual reviewed source records and resolve concrete blockers only. DEC-050/051's selected
+   sample has no concrete business-data ambiguity. W5-T01 is an actual accepted-reader metadata
+   rejection; its versioned compatibility correction must preserve the frozen safety guarantees.
 
 Before declaring ready for dedicated QA:
 

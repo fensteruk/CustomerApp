@@ -1,4 +1,171 @@
-# CUSTOMER-WALD05 Source Binding + Import Commit Implementation Report
+# CUSTOMER-WALD05 Implementation Continuation Report
+
+Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
+Current result: **PARTIAL — actual workbook audit completed; accepted reader compatibility failure reproduced. Not ready for WALD05 QA.**
+
+## Current authority and branch
+
+The latest management continuation instruction requires an actual workbook audit under DEC-050,
+then implementation without another blanket approval unless a real blocker is found. DEC-051
+subsequently excludes the exact Nick TEST record at the user's request. The earlier
+synthetic W5-P01/P02 examples are not grounds to stop this selected workbook. DEC-049's implementation
+authority remains valid. This report's current section supersedes the historical entry review below.
+
+Branch: `feature/customer-wald05-import-review-integration`.
+Audited checkpoint: `b221784be25e7cbff767a6b0ddad413d77c08036`.
+Accepted WALD04: `0e83eb2896e7c5144bc38c1be9713f3d205d93b8`.
+Documentation reset: `e84999cf66fc90aac3007842a538672b018b3e03`.
+The generic, semantic and knowledge executable trees listed in the historical input table below
+remain unchanged. No main, push, deployment, production or SiteApp action occurred.
+
+## Workbook integrity and actual audit
+
+The original local workbook remains unchanged and untracked. SHA-256 before/after inspection:
+`ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893`, matching DEC-050.
+One sheet, `Sheet1`, occupied range A1:AA49. Row 1 is the header; row 20 is entirely blank,
+not a source record with a missing Call No. Every other row from 2 through 49 is inventoried.
+
+| Actual finding | Result |
+|---|---|
+| Non-empty source records | 47 |
+| INCLUDED under the scoped business rules | 45 |
+| IGNORED_BY_DEC050 | 1; CM2 at row 19 |
+| IGNORED_BY_USER (DEC-051) | 1; Nick TEST at row 32, Call No. 5181 |
+| BLOCKING_INVALID / BLOCKING_AMBIGUOUS source records | 0 / 0 in the audited required fields |
+| Windows / Cavity Closers / CML selected records | 20 / 24 / 1 |
+| Raw PC1 / CC1 / CC! / CM1 / CM2 | 21 / 17 / 7 / 1 / 1 |
+| Included complete Yes / No / invalid | 19 / 26 / 0 |
+| Duplicate Call Nos., identical or conflicting | 0, across all 47 records including the excluded CM2 |
+| Blank / malformed Call Nos. in non-empty records | 0 / 0; every supplied identity is a positive exact integer |
+| Included exact source site names / site-and-plot identities | 12 / 45 |
+| Missing site or plot / competing included visits for an exact site-and-plot | 0 / 0 |
+| Formula cells | 0 |
+| Positive BF included rows | 7; rows 2, 5, 9, 42, 43, 44, 45 |
+| Blank BF included rows | None; the original blank at row 32 is now excluded by DEC-051 |
+| PC1 operational date values | 20 populated numeric date/time values; no Portal date authority |
+
+`INCLUDED` means selected by the workbook-specific business audit, **not staged, bound, reviewed
+or committable**. No Portal site mapping has been invented or verified by reading application data.
+All 12 included exact source names require explicit Office bindings to existing Portal sites before a real
+import. Names with/without a suffix remain separate exact source identities; descriptive Plot Ref
+strings are preserved whole, including leading zeroes. No name similarity, test-looking label,
+embedded plot number or date was used to infer a merge, exclusion, past-plot filter or new plot.
+Row 32 was excluded only after the user's explicit instruction, not because its label looked like
+test data. Its inventory class is IGNORED_BY_USER rather than misattributing it to DEC-050.
+
+All 13 approved product columns are physically present. None is absent. Included-record counts:
+
+| Product | Blank | Explicit zero | Positive | Invalid |
+|---|---:|---:|---:|---:|
+| VS, TT, BAY, ALI, AOV, FI (each) | 0 | 45 | 0 | 0 |
+| PSU | 0 | 21 | 24 | 0 |
+| PSG | 0 | 44 | 1 | 0 |
+| CDF | 0 | 26 | 19 | 0 |
+| CDU, CDG (each) | 0 | 45 | 0 | 0 |
+| PSP | 0 | 44 | 1 | 0 |
+| BF | 0 | 38 | 7 | 0 |
+
+All six excluded product columns are present and remain excluded. In particular, nonzero CAS
+does not become a Window quantity; the approved Windows columns in this sample are all zero.
+Absence safety still needs synthetic coverage because this sample has no absent approved column.
+Operational dates remain private PC1 arrival/install evidence. No lead-time date or completion
+date was calculated or imported. Both excluded rows produce no product or completion effect.
+
+The detailed inventory, raw-cell evidence, source values and exact name list are local only under
+`storage/app/wald05-audit-20260908/`, outside public storage and ignored by Git. The primary inventory
+is `row-inventory.json`. It contains every source coordinate, raw/effective code, Call No., site,
+plot, completion, operational date, product presence/value, classification and reason. It must not
+be staged or copied into the test corpus. The workbook was read with the bundled spreadsheet
+analysis tooling and independently compared against read-only OOXML extraction: 1,323 cell
+positions matched, zero disagreements. The accepted dictionary Quantity parser separately checked
+all 585 currently included product positions with zero invalid values (598 before DEC-051).
+These are audit checks, not an
+alternative runtime interpretation engine and not a successful Wald analysis.
+
+## Concrete ambiguity and accepted-reader gate
+
+**Concrete business-data ambiguity found: NONE.** The previous hypothetical cross-visit examples
+are not present in the selected data and do not block it. DEC-050 remains pinned to the exact
+workbook hash: seven CC! occurrences are confirmed CC1; one CM2 is ignored; the global dictionary
+and fingerprint are unchanged. Other workbooks inherit neither exception.
+
+**W5-T01 — reproduced technical failure:** the accepted `WorkbookSourceFactory` / XLSX reader
+refuses these exact bytes with `AnalysisProblem(problemCode: invalid_xml)` before returning sheets.
+In `xl/workbook.xml`, both these nodes are present:
+
+- core `{http://schemas.openxmlformats.org/spreadsheetml/2006/main}workbookPr`
+  at `workbook/workbookPr`;
+- extension `{http://schemas.microsoft.com/office/spreadsheetml/2010/11/main}workbookPr`
+  at `workbook/extLst/ext/workbookPr`, with `chartTrackingRefBase="1"`.
+
+`app/Wald/Services/XlsxWorkbookSource.php`, `nodes()`, selects wanted nodes by local name, then
+requires every workbookPr to have the core parent path. The differently namespaced extension
+therefore reaches the wrong path check and throws at line 318. This is an observed reader
+compatibility problem, not a duplicate, unknown business meaning or evidence that the workbook's
+records are invalid. The existing passing suites do not cover this actual metadata shape.
+
+The accepted generic core is frozen input to WALD05. No bypass, source rewrite, exception removal
+or unversioned core edit was made. The next technical prerequisite is a narrowly reviewed,
+versioned reader compatibility correction with a safe synthetic extension fixture, preserved
+physical-lineage/unsafe-XML negative tests, generic-core regression and a newly recorded executable
+identity. This is a specific core-baseline correction decision, not a request to reapprove WALD05.
+Do not substitute the local diagnostic extraction for the accepted runtime reader.
+
+## Runtime, persistence and integration state
+
+No WALD05 runtime implementation, migrations, source-site binding lifecycle, private intake/run
+state, manual ordering, analysis/knowledge integration, immutable staging, preview/staleness,
+projection adapter, completion transition, atomic commit, receipt/correction or concurrency work
+was added in this continuation. The private local audit files are not an upload/import subsystem.
+Portal dates, requests, histories and production structures remain untouched. No live source-site
+binding or import was performed. No MySQL WALD05 migration, upgrade or race evidence exists yet.
+No real workbook or customer-data fixture has been committed.
+
+## Fresh verification
+
+| Command / check | Actual result |
+|---|---|
+| `Get-FileHash -LiteralPath 'Copy of siteapp1.xlsx' -Algorithm SHA256` | DEC-050 match before/after; original unchanged |
+| Local bundled spreadsheet read and independent OOXML comparison | 47 records, 1,323 cell comparisons, zero differences |
+| `php storage/app/wald05-audit-20260908/verify-quantities.php` | 585 approved parser checks after DEC-051, zero invalid coordinates, exit 0 |
+| `php storage/app/wald05-audit-20260908/read-wald.php` | Reproduced `invalid_xml`, incomplete analysis, exit 2; initial uncaught diagnostic attempt exited 255 |
+| `php artisan test tests/Unit/Wald tests/Feature/Wald tests/Unit/Wald03 tests/Unit/Wald04 tests/Feature/Wald04 --compact` | 876 total: 865 passed, 11 skipped, 4,218 assertions; exit 0 |
+| `php artisan test --compact` | 1,110 total: 1,084 passed, 26 skipped, 5,406 assertions; exit 0 |
+| `vendor\bin\pint --test` | Passed |
+| `composer validate --strict` | Valid |
+| `composer audit --format=json` | Eight advisories across Filament (3), CommonMark (4), Livewire (1); exit 1. Cache-write warning, advisory retrieval succeeded |
+| `npm run build` | Initial sandbox child-process EPERM; authorised local retry passed, Vite 8.1.4 |
+| Focused WALD05 suite | Not implemented; no WALD05 tests run |
+| Disposable MySQL 8.4 WALD05 migrations/upgrade/races | Not run; no new schema or commit implementation to test |
+
+The eight inherited advisories remain separate. Remediation
+`5e7df0862648fd9c2ac964b31a13ad17df84fd12` was not merged; no lockfile changed.
+Final documentation path, diff, whitespace, workbook integrity and executable-tree checks are
+recorded in the handoff. Existing full regression passes do not establish WALD05 readiness or
+cover W5-T01; dedicated QA must not start yet.
+
+## Files, preserved work and next step
+
+Current task documentation: this report, `documentation/wald-divergence-register.md`,
+the WALD05 work package, `DECISIONS.md`, `brief.md`, `current_sprint.md`, `ROADMAP.md`, `HANDOVER.md`.
+Local diagnostic helpers/evidence remain ignored under `storage/app/wald05-audit-20260908/`.
+Unrelated `documentation/sprint-3e-date-negotiation-report.md`, the untracked original workbook
+and `output/` are preserved. No application file, accepted migration or dependency was edited.
+
+Resolve the narrowly scoped W5-T01 core compatibility correction and verify a new reader identity,
+then continue the already authorised WALD05 implementation. There is no renewed W5-P01/P02 question
+for this actual sample. WALD06 still requires completed and independently accepted WALD05, its own
+pilot/cutover approval, production storage/worker/backup/security evidence and separately approved
+deployment. G09's named unattended-disposal owner remains a disposal-only gate.
+
+CUSTOMER-WALD05 partially complete — further implementation required
+
+---
+
+# Historical initial projection-contract entry review
+
+The following is retained as historical evidence. Its synthetic examples and pause recommendation
+are superseded for the audited DEC-050 sample by the current continuation report above.
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
 Status: **BLOCKED at projection-contract review; runtime implementation has not started.**
