@@ -1,6 +1,30 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD04 dedicated QA passed — 8 September 2026
+## CUSTOMER-WALD04 accepted / CUSTOMER-WALD05 scoped — 8 September 2026
+
+Management accepts corrected WALD04 output
+`0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on
+`qa/customer-wald04-2026-09-08` as the immutable WALD05 input. Executable/test correction
+`9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, generic Wald tree `30d1fc65`, semantic
+tree `9cc8df4b` and dictionary v1 fingerprint `18718ef5…f8357` are frozen. Original
+candidate `2c7d015` is not the accepted output. DEC-047 records the acceptance.
+
+WALD05 is architecture/work-package scope only on
+`codex/docs-customer-wald05-scope-2026-09-08`. Proposed I01–I10 decisions cover Office
+permissions, source-site bindings, source revision/order, duplicate Call No. grain,
+complete-snapshot absence, neutral staging/review, atomic commit/recovery, final audit
+retention, queue/storage ownership and current/non-main importer disposition. None is
+implementation authority. [Acceptance report](documentation/wald/customer-wald04-acceptance-wald05-scope-2026-09-08.md)
+and [WALD05 work package](documentation/work-packages/WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md).
+
+The existing `SourceProjectionImportService` and `SourceCallTypeMapper` cannot be wired
+directly to Wald: current code retains outdated call-type/stage meanings, source-wide absence,
+omitted-product zeroing and per-record commit behavior. The non-main manual import line remains
+reference/reuse evidence only. No WALD05 runtime, migration, route, UI, queue or storage change;
+no main, push, production, SiteApp, dependency-remediation or deployment action. Eight inherited
+advisories remain. G09 named-owner nomination still gates unattended disposal.
+
+## Historical CUSTOMER-WALD04 dedicated QA passed — 8 September 2026
 
 Dedicated QA corrected candidate `2c7d0154e51a35b165c7e93f7dd256e2cf0f030f` on
 `qa/customer-wald04-2026-09-08`. Executable/test correction commit:

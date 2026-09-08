@@ -1,10 +1,10 @@
 # CUSTOMER-WALD04 — Knowledge Profiles and Clarification Governance
 
 Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: **IMPLEMENTATION APPROVED — DEC-046, 8 September 2026.**
-Implementation now passes local verification and is ready for dedicated QA; see
-[implementation evidence](../wald/customer-wald04-knowledge-profiles-2026-09-08.md).
-This is not QA acceptance, approval to begin WALD05, or a release/deployment claim.
+Status: **ACCEPTED CORRECTED OUTPUT — DEC-047, 8 September 2026.**
+Dedicated QA corrected and accepted output `0e83eb2896e7c5144bc38c1be9713f3d205d93b8`;
+see [QA evidence](../wald/customer-wald04-qa-2026-09-08.md). WALD05 is scoped separately;
+acceptance is not WALD05 implementation, release or deployment approval.
 The explicit management instruction approves this bounded backend/persistence contract.
 G01–G08 and G09's retention/hold mechanism are approved. Historical proposal wording below
 is now the implementation contract except where this approval clarification supersedes it.
@@ -530,11 +530,12 @@ authorised Actions, tests and evidence separately. No migration until scope/gove
 
 WALD05 entry requires:
 
-1. Explicit WALD04 implementation approval after required governance decisions.
-2. Dedicated WALD04 QA pass, immutable accepted output and supported knowledge schema/component pins.
-3. SQLite and disposable MySQL 8.4 evidence for containment, audit, idempotency and concurrency;
-   populated rollback/upgrade preservation and revocation-vs-use behaviour accepted.
-4. Stable trusted-context, reviewed-interpretation and reuse-receipt/revalidation contracts.
+1. WALD04 implementation approval after required governance decisions — satisfied by DEC-046.
+2. Dedicated WALD04 QA pass and immutable accepted output — satisfied by DEC-047 at `0e83eb2`.
+3. SQLite and disposable MySQL 8.4 evidence for containment, audit, idempotency, upgrade/
+   rollback preservation and concurrency — accepted from dedicated QA.
+4. Stable trusted-context, reviewed-interpretation and reuse-receipt/revalidation contracts —
+   accepted for WALD05 composition; receipts are advisory, not final-commit authority.
 5. Approved source operator/namespace/revision ordering, durable/transitional binding ownership,
    duplicate/multi-row Call No. grain and coverage handling.
 6. Separately approved upload/evidence/review/commit permissions, raw/preview/final-audit retention,
@@ -542,11 +543,11 @@ WALD05 entry requires:
 7. Explicit non-main profile/binding/preview/commit parity or supersession disposition.
 8. Private storage, own durable worker/recovery, backup/restore and remaining security/dependency
    gates addressed for the integration/pilot stage; no production claim from schema tests alone.
-9. A scoped WALD05 work package and explicit approval. WALD04 acceptance never authorises commit/UI.
+9. Scoped WALD05 work package — now present. I01–I10 and explicit implementation approval remain.
 
 Eight inherited Composer advisories remain an independent combined-release gate.
 `5e7df0862648fd9c2ac964b31a13ad17df84fd12` is the separate remediation reference, not merged here.
 
-Implementation authority is DEC-046. Local verification passed; begin dedicated QA, not deployment.
+WALD04 acceptance authority is DEC-047. WALD05 scoping does not authorise implementation or deployment.
 Concrete entities, backend APIs, supported structural aliases, schema and verification limits are
 recorded in `../wald/customer-wald04-knowledge-profiles-2026-09-08.md`.

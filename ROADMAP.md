@@ -2,19 +2,17 @@
 
 *Last Updated: 8 September 2026*
 
-Current Wald update: management accepted corrected WALD03 snapshot
-`a80ce7d14206cf3f3a9343448d406f01ae927b88` on `qa/customer-wald03-2026-09-08`.
-It is the immutable WALD04 input, not original candidate `574f196`. Reader `wald-0.2.1`,
-dictionary `customerapp.source-dictionary.v1` and fingerprint
-`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` remain fixed.
-WALD04 dedicated QA passed after corrections on `qa/customer-wald04-2026-09-08`;
-executable/test correction SHA `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`.
-The documentation-inclusive output in the task handoff is recommended for freeze, pending
-management acceptance. MySQL: 198 tests covered, seven race scenarios × 20 iterations;
-full application: 1,084 passes / 26 environment skips. Feature branch only, not deployed.
-G09 named-owner nomination gates unattended production disposal, not persistence.
-No WALD05 implementation, push, main change or deployment. Eight inherited advisories remain.
-Evidence: `documentation/wald/customer-wald04-qa-2026-09-08.md`.
+Current Wald update: management accepted corrected WALD04 output
+`0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on `qa/customer-wald04-2026-09-08`
+as the immutable WALD05 input, not original candidate `2c7d015`. Corrected executable/test
+revision `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, reader `wald-0.2.1`, dictionary
+`customerapp.source-dictionary.v1` and fingerprint
+`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` are frozen.
+WALD05 is scoped only in `WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md`; I01–I10 and
+separate implementation approval remain required. No WALD05 runtime, push, main change or
+deployment. G09 named-owner nomination still gates unattended disposal. Eight inherited
+advisories remain. Evidence:
+`documentation/wald/customer-wald04-acceptance-wald05-scope-2026-09-08.md`.
 
 # Project Overview
 
@@ -24,8 +22,8 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD03 accepted; corrected CUSTOMER-WALD04 dedicated QA passed, acceptance pending.**
-The current authority is the rebuilt `brief.md`, DEC-039–046,
+**CUSTOMER-WALD04 accepted; CUSTOMER-WALD05 scoped, governance approval required.**
+The current authority is the rebuilt `brief.md`, DEC-039–047,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
@@ -56,8 +54,8 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | --- | --- | --- |
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
 | 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
-| 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Dedicated QA passed after corrections on `qa/customer-wald04-2026-09-08`; corrected output recommended for freeze, management acceptance pending. No automated disposal or deployment. |
-| 4 | CUSTOMER-WALD05 — Import/review integration | Private upload, durable queue, resumable questions, neutral review/preview and controlled commit with preservation/parity tests. |
+| 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Accepted corrected snapshot `0e83eb2`; 198 MySQL tests covered, including 140 race groups; no automated disposal or deployment. |
+| 4 | CUSTOMER-WALD05 — Import/review integration | Scope only; private upload, durable queue, neutral staging/review and controlled commit proposed. I01–I10 and implementation approval required. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
 
 First usable milestone is the integrated 05 exit, not just a working profiler. It must

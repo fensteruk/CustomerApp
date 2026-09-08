@@ -50,7 +50,7 @@ Non-negotiable principles:
 | **ARCHITECTURAL DECISION** | Standalone CustomerApp Wald distribution; structure inference separated from controlled business meaning; private neutral staging/review/commit boundary; future source Site ID/reference as durable site identity; Site Name transitional only. |
 | **TEMPORARY IMPLEMENTATION** | The non-main manual XLSX/interpreter/profile/UI feature line and any exact-Site-Name binding used before durable source Site IDs are supplied. Neither is the final production architecture by existence alone. |
 | **UNRESOLVED GOVERNANCE DECISION (outside this semantic set)** | Source owner/revision authority; final import/knowledge abilities; retention; reviewed commit atomicity/recovery. |
-| **UNRESOLVED TECHNICAL DELIVERY ITEM** | Approved immutable SiteApp Wald source baseline; additive schema and revision-order enforcement; MySQL/worker/storage/pilot evidence; delivery of permanent source Site ID. |
+| **UNRESOLVED TECHNICAL DELIVERY ITEM** | SiteApp/WALD02 source baseline is resolved. Additive integration schema, source revision-order enforcement, worker/storage/pilot evidence and delivery of permanent source Site ID remain. |
 
 ## 2. Evidence baseline and limits
 
@@ -562,8 +562,8 @@ affected feature/pilot. None is a reason to rebuild the generic core.
 
 Existing unrelated decisions (CML expansion, amendment reasons, holiday provider and wider
 release work) remain with their owners. This package does not implement Sprint 3F or amend
-the released date-negotiation workflow. The exact upstream portable revision also requires
-technical owner sign-off because the current reference is uncommitted.
+the released date-negotiation workflow. DEC-042/043 subsequently resolved and accepted the
+immutable upstream/WALD02 baseline; DEC-047 now freezes the accepted WALD04 output for WALD05.
 
 ## 15. Implementation packages and dependency order
 
@@ -573,10 +573,10 @@ approval. Keep the existing Sprint 3 programme visible rather than renumbering i
 
 | Package | Bounded deliverable | Entry / exit gate |
 | --- | --- | --- |
-| CUSTOMER-WALD02 — Portable core + corpus | Freeze approved baseline; port reader/profiler/reasoning/diagnostic contracts with compatible tests and deterministic synthetic fixtures. No UI/domain writes or SiteApp persistence. | Implemented on `feature/customer-wald02-portable-core`; dedicated QA pending. Standalone boundary/security tests and version parity are recorded in the WALD02 report. |
+| CUSTOMER-WALD02 — Portable core + corpus | Freeze approved baseline; port reader/profiler/reasoning/diagnostic contracts with compatible tests and deterministic synthetic fixtures. No UI/domain writes or SiteApp persistence. | Accepted corrected baseline `4aa5ffb`, reader `wald-0.2.1`; no UI/domain writes or deployment. |
 | CUSTOMER-WALD03 — Portal semantics/dictionaries | Portal schema/role registry, approved dictionaries, full-column call-record validation and domain-adapter contract; customer-specific fixtures and unresolved-code handling. | 02 contracts stable. Exit: the reconciled call/completion/product/BF/field/scope map is correct; unknowns block dependent use; no SiteApp reference imports. |
-| CUSTOMER-WALD04 — Clarification/profiles | Portal-owned additive session/source/run/answer/profile/knowledge storage; scoped access; correction/revocation; adaptive matches and explicit activation. Contract-first staging/commit schema design. | 02–03; CW-D05 before usable access. Exit: isolation, tampering, stale/idempotent actions, immutable history and SQLite/MySQL migration plan; no commit path yet. |
-| CUSTOMER-WALD05 — Import/review integration | Private upload, durable queued orchestration/recovery, browser resumption, neutral staging, review/diff/preview and guarded Portal commit. Retained fallback and disposable parity harness. | 04; CW-D04/05/07 resolved and complete source/provenance contract. Exit: full synthetic end-to-end milestone below, preservation tests, real MySQL gate and no SiteApp dependency. |
+| CUSTOMER-WALD04 — Clarification/profiles | Accepted corrected snapshot `0e83eb2`; scoped Office knowledge, immutable evidence/profile lifecycle and MySQL concurrency verified. No commit path or automatic disposal. | Complete as immutable WALD05 input under DEC-047; not released/deployed. |
+| CUSTOMER-WALD05 — Import/review integration | Private upload, durable queued orchestration/recovery, browser resumption, neutral staging, review/diff/preview and guarded Portal commit. Retained fallback and disposable parity harness. | Scope only in `WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md`; I01–I10 and explicit implementation approval required. |
 | CUSTOMER-WALD06 — Pilot/hardening | Held-out ugly workbooks, supervised source-family pilot, scale/security/concurrency/accessibility/device tests, queue/storage/retention/backup/rollback rehearsal and evidence-led corrections. | 05 plus all applicable CW-D gates and separate pilot approval. Exit: zero unexplained parity differences, safe abstention and signed operational readiness; any retirement separately approved. |
 
 First working milestone is the **integrated CUSTOMER-WALD05 exit**, not reader-only

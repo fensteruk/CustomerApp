@@ -6,13 +6,13 @@ on `qa/customer-wald03-2026-09-08` accepted as immutable WALD04 input, including
 corrections `f4fda0f`. Original implementation candidate `574f196` is not the accepted output.
 Dictionary v1 fingerprint remains
 `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
-WALD04 dedicated QA passed with correction commit `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`
-on `qa/customer-wald04-2026-09-08`; documentation-inclusive output is recommended for freeze,
-pending management acceptance. [QA evidence](wald/customer-wald04-qa-2026-09-08.md).
-G09 owner nomination gates unattended production disposal only. No WALD05, main, push or
-deployment. The original scope-stage rows below are superseded by WD-38–41.
+WALD04 corrected output `0e83eb2896e7c5144bc38c1be9713f3d205d93b8`, including executable
+`9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, is accepted as immutable WALD05 input.
+[Acceptance/scope evidence](wald/customer-wald04-acceptance-wald05-scope-2026-09-08.md).
+WALD05 is scoped only; G09 owner nomination still gates unattended disposal. No WALD05
+runtime, main, push or deployment. The original scope-stage rows below are superseded by WD-38–42.
 
-Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045/DEC-046 and
+Authority: DEC-039/DEC-040/DEC-042/DEC-043/DEC-044/DEC-045/DEC-046/DEC-047 and
 [CUSTOMER-WALD01](work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md).
 This register compares the inspected SiteApp implementation with the proposed CustomerApp
 distribution. A planned difference is not an implemented feature or an upstream change.
@@ -191,6 +191,7 @@ access/copy, generic-core modification or dependency change in this scope task.
 | WD-39 | CustomerApp-specific | Eight additive tables, composite ownership/version FKs and database-level immutable-history/evidence guards. Canonical JSON preserves numeric type across persistence. | SQLite and disposable MySQL 8.4 schema, rollback, upgrade and race verification in implementation report. |
 | WD-40 | Temporary fork difference | CustomerApp signature/matcher/schema v1; explicit structural role selectors, scoped fresh-evidence vetoes and no score/first winner. Metadata-only retention, holds and review expiry. | No SiteApp adoption/backport, no global aliases, no disposal scheduler or WALD05 binding runtime. |
 | WD-41 | CustomerApp-specific | Dedicated QA hardens MySQL protected-field equality with a forward binary-comparison trigger migration and bounds profile/provenance/retention queries. Test-only UUID fixtures and memory allowance stabilize expanded gates. | W4Q-01–04, correction `9284bf5`; 198 MySQL tests covered, 140 race groups; frozen generic and semantic trees unchanged. No upstream adoption/backport or new business meaning. |
+| WD-42 | CustomerApp-specific | WALD05 proposes CustomerApp-owned artifact/operation/binding/staging/review/commit boundaries around the accepted core. Current legacy projection importer and non-main manual UI are evidence only, not direct commit authority. | DEC-047 and WALD05 scope; no runtime implemented, copied, merged or retired. |
 
 Report: [WALD04 implementation](wald/customer-wald04-knowledge-profiles-2026-09-08.md).
 No approved production or dedicated-QA acceptance claim is made by this implementation entry.

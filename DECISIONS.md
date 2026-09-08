@@ -1053,3 +1053,58 @@ Rules:
 Reason:
 Explicit governance allows safe local knowledge implementation without global learning,
 dictionary invention or premature import/disposal authority.
+
+---
+
+## DEC-047
+
+Date:
+8 September 2026
+
+Decision:
+Management accepts corrected CUSTOMER-WALD04 dedicated-QA output
+`0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on
+`qa/customer-wald04-2026-09-08` as the immutable input to CUSTOMER-WALD05. The original
+implementation candidate `2c7d0154e51a35b165c7e93f7dd256e2cf0f030f` is not the accepted
+output. This supersedes the pending-management-acceptance status after DEC-046, not the
+frozen Wald/dictionary boundary, WALD04 governance or release restrictions.
+
+Rules:
+
+- Corrected executable/test revision `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5` is part of
+  the accepted baseline. Preserve W4Q-01 binary MySQL evidence guards, W4Q-02 bounded
+  profile/provenance/retention queries and W4Q-03/04 deterministic test-harness corrections.
+- Accepted QA evidence is 198 MySQL tests / 862 assertions, including 140 real race groups /
+  280 independent workers; 187 focused SQLite passes / 11 MySQL skips / 406 assertions;
+  865 combined Wald passes / 11 skips / 4,218 assertions; and 1,084 full CustomerApp passes /
+  26 environment skips / 5,406 assertions.
+- Generic Wald tree `30d1fc65e575242004eb335ad46a4d8ec920127a`, semantic tree
+  `9cc8df4bc50a888ec49e6a93dddaba180a2d0d01`, dictionary
+  `customerapp.source-dictionary.v1` and fingerprint
+  `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`
+  remain frozen. WALD05 must compose these contracts rather than redefine them.
+- Authorise CUSTOMER-WALD05 architecture/work-package scoping only. Scoping must cover
+  CustomerApp-owned private intake, queued/resumable analysis, clarification, neutral staging,
+  explicit review, source/site/revision/coverage controls and a guarded Portal commit boundary.
+  It must reconcile the existing projection importer and non-main manual import evidence.
+- The WALD05 work package's proposed permissions, source revision rules, source-site binding
+  lifecycle, duplicate/multi-row Call No. treatment, commit unit/recovery and final-audit
+  retention are not approved by this acceptance. Record the choices and safe blocked states;
+  separately approve them before implementation.
+- The current `SourceProjectionImportService`, `SourceCallTypeMapper` and source schema are
+  retained evidence, not a ready Wald commit path. WALD05 must not route reviewed data into
+  their outdated mappings, source-wide absence handling, omitted-product zeroing or per-record
+  transactions without an approved corrective integration contract and regressions.
+- Non-main manual import/profile/binding/UI work ending at `1e8c22b` remains reference/reuse
+  material only. Do not merge, cherry-pick, migrate its profile data or adopt automatic learning.
+- No WALD05 runtime, migration, route, UI, queue, storage, binding, staging, import commit,
+  dictionary change, dependency remediation, `main`, push, production, SiteApp or deployment
+  action is authorised by this acceptance/scope task.
+- Eight inherited Composer advisories and separate remediation
+  `5e7df0862648fd9c2ac964b31a13ad17df84fd12` remain a combined-release concern.
+
+Reason:
+Dedicated QA established the WALD04 knowledge layer after correcting a MySQL immutability
+bypass and query-growth defect. Freezing the documentation-inclusive corrected output gives
+WALD05 a stable input while requiring the much broader import, source identity, commit and
+operational decisions to be made explicitly before application code is changed.
