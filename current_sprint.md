@@ -1,20 +1,27 @@
 # Current Sprint
 
-## CUSTOMER-WALD03 dedicated QA passed — 8 September 2026
+## CUSTOMER-WALD03 accepted / WALD04 scoped — 8 September 2026
 
-QA branch: `qa/customer-wald03-2026-09-08`, created exactly from implementation candidate
-`574f19694595f300620713b0dbd4a7d27036d7d1`. Corrected executable SHA:
-`f4fda0f069bd5106a125b42615ca212294a9dfad`; the following documentation-only commit records
-this gate. W3Q-01–03 fixed precision-dependent quantities, confidence-version validation and
-result-constructor invariants. Dictionary identity and the 52-file generic Wald core are unchanged.
-Focused: 470 passes / 2,550 assertions. Combined Wald: 678 / 3,812. Full application:
-897 passes, 15 existing environment skips / 5,000 assertions. Eight inherited Composer
-advisories remain separate; security remediation was not merged.
+Management accepted corrected QA snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
+from `qa/customer-wald03-2026-09-08` as the immutable WALD04 input. Original implementation
+candidate `574f19694595f300620713b0dbd4a7d27036d7d1` is not the accepted output.
+Dictionary `customerapp.source-dictionary.v1`, fingerprint
+`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
+W3Q-01–03 corrections at executable `f4fda0f` are frozen: exact quantities, confidence-version
+checks and result invariants. Generic Wald core remains unchanged.
 
-Recommend freezing the delivered corrected QA snapshot, not the original candidate. No push,
-`main`, migration, production, deployment or WALD04 implementation. Management acceptance and
-separate WALD04 scope/permissions/retention approval remain required. Full evidence:
-`documentation/wald/customer-wald03-qa-2026-09-08.md`.
+Accepted QA: 470 focused passes / 2,550 assertions; 678 combined Wald / 3,812;
+897 full CustomerApp passes, 15 existing environment skips / 5,000 assertions.
+WALD04 is **scope only**, not implemented or approved for implementation. Work package:
+`documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`.
+Office-only, site/family structural knowledge and retention are recommendations pending
+governance decisions G01–G09, not new permissions. Upload, binding runtime, preview/commit
+and Office import UI remain WALD05. Eight inherited advisories remain separate.
+
+Acceptance/scope evidence:
+`documentation/wald/customer-wald03-acceptance-wald04-scope-2026-09-08.md`.
+No runtime, migration, dependency, main, push, production or deployment changes in this task.
+Earlier entries below are historical, not current acceptance or phase-entry instructions.
 
 ## Historical WALD03 implementation handoff — 8 September 2026
 

@@ -966,3 +966,48 @@ Rules:
 Reason:
 The accepted WALD02 baseline and approved semantic contract permit a bounded implementation
 without moving business truth into inference or silently adopting the parallel import runtime.
+
+---
+
+## DEC-045
+
+Date:
+8 September 2026
+
+Decision:
+Management accepts corrected CUSTOMER-WALD03 QA snapshot
+`a80ce7d14206cf3f3a9343448d406f01ae927b88` on `qa/customer-wald03-2026-09-08`
+as the immutable input to CUSTOMER-WALD04. Original implementation candidate
+`574f19694595f300620713b0dbd4a7d27036d7d1` is not the accepted output.
+This supersedes the pending-management-acceptance status after DEC-044, not its separation
+of generic inference, business dictionary and Portal workflow.
+
+Rules:
+
+- Dictionary `customerapp.source-dictionary.v1`, fingerprint
+  `18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`, is unchanged and frozen.
+  Accepted WALD02 core remains `4aa5ffb5a00527662ddfe66673edbfb18af9f0db`, reader `wald-0.2.1`.
+- Preserve corrections in executable `f4fda0f069bd5106a125b42615ca212294a9dfad`:
+  W3Q-01 P1 exact quantities independent of PHP precision; W3Q-02 P2 confidence-version
+  validation; W3Q-03 P2 semantic/result-constructor invariants. Ambiguity, raw evidence and
+  semantic neutrality remain mandatory.
+- Accepted QA evidence: 470 focused tests / 2,550 assertions; 678 combined Wald / 3,812;
+  897 full CustomerApp passes, 15 existing environment-gated skips / 5,000 assertions.
+- Authorise CUSTOMER-WALD04 architecture/work-package scoping only, for persisted knowledge,
+  profiles and clarification governance. Do not implement runtime, migrations, UI or import commit.
+- `documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md` records proposals
+  for ownership, tenancy, abilities, activation, compatibility, revocation, retention and audit.
+  Its G01–G09 recommendations are NOT approved permissions or retention policy. Resolve the
+  required decisions and separately approve implementation before persistence work begins.
+- Keep structural profiles, occurrence-specific semantic confirmation and source-site binding
+  lifecycles distinct. No saved answer may override the controlled dictionary or become global
+  merely because one user/site approved it. Source-site binding runtime and upload/review/commit
+  remain separately scoped WALD05 work.
+- Eight inherited advisories and separate remediation
+  `5e7df0862648fd9c2ac964b31a13ad17df84fd12` remain a combined-release gate; no merge here.
+- Acceptance is not release approval: no main, push, production, SiteApp or deployment action.
+
+Reason:
+Dedicated QA fixed one arithmetic and two contract defects. Freezing the corrected snapshot
+preserves those protections while the next phase's real knowledge-governance decisions are
+made explicitly, without treating historical non-main profile code as approved architecture.
