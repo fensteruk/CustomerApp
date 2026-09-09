@@ -1,8 +1,21 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD05 backend candidate — 9 September 2026
+## CUSTOMER-WALD05 dedicated backend QA — 9 September 2026
 
-Continue on `feature/customer-wald05-import-review-integration`. DEC-053 supersedes the
+**FAIL — do not freeze an accepted WALD05 backend baseline yet.** Local QA branch
+`qa/customer-wald05-backend-2026-09-09` starts from exact `1dc6ee6a24026c970687472126dc295fb6f2b3c8`.
+Digest and source-order/projection-ownership bypasses are corrected; test-owner UUIDs prevent
+random race-fixture collisions. Remaining corrections: W5Q-03 durable stale/failure attempt audit
+outside atomic business effects, and W5Q-04 batched profile-receipt eligibility under commit locks.
+Use the [dedicated QA report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md), not
+the older implementation pass totals, for the next acceptance gate. No full Office UI or WALD06.
+One-site commits are bounded safely, but the shared stream/date/slot contract blocks naive
+multi-site splitting; the later pilot needs an explicit approved unit/order design.
+No actual workbook import, main, push, production, SiteApp or deployment action.
+
+## Historical CUSTOMER-WALD05 implementation handover — superseded by QA above
+
+The implementation branch was `feature/customer-wald05-import-review-integration`. DEC-053 supersedes the
 foundation-only checkpoint below. The default-off backend now connects private upload,
 durable analysis/clarification, immutable staging, explicit review and atomic source projection
 commit with source ordering, replacement, receipts and metadata-only retention. Application

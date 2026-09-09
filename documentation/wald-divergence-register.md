@@ -1,7 +1,14 @@
 # Wald Distribution Divergence Register
 
-Last updated: 8 September 2026. Owner: Product and Architecture.
-Latest entry: DEC-052's W5-T01 correction is implemented separately at
+Last updated: 9 September 2026. Owner: Product and Architecture.
+
+Latest QA: W5Q-01/02 correct CustomerApp-only transient canonical digest and source-order/
+projection-ownership checks. Backend application/projection/digest pins advance to v2; old staged
+v1 manifests become stale. Generic Wald and dictionary meaning remain unchanged. W5Q-03/04 remain
+open, so this local QA branch is not accepted or released. See
+[dedicated QA](wald/customer-wald05-backend-qa-2026-09-09.md). No SiteApp backport.
+
+Historical foundation entry: DEC-052's W5-T01 correction is implemented separately at
 `e9e1c3a2a3ff79cfe5f097bea143f51195becd55`: reader `wald-0.2.2`, XLSX adapter 3, CSV 2.
 Exact extension namespace/lineage handling preserves core metadata and XML safety guards;
 old knowledge pins become stale. The unchanged workbook now profiles successfully. DEC-050/051

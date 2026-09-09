@@ -2,13 +2,19 @@
 
 **Version:** Current product contract
 
-**Last updated:** 8 September 2026 (WALD05 reader correction and binding foundation)
+**Last updated:** 9 September 2026 (WALD05 dedicated backend QA)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
 This document replaces the previously layered brief. It states the current approved product
 truth without treating feature-branch work as released. Historical decisions and delivery
 evidence remain in `DECISIONS.md`, sprint reports and release records.
+
+**Current WALD05 gate:** Dedicated backend QA of `1dc6ee6a24026c970687472126dc295fb6f2b3c8`
+has not passed. The local QA branch corrects digest/source-order defects, but durable refusal audit
+and repeated profile-receipt queries still require correction. It is not an accepted baseline,
+on main or deployed. [QA evidence](documentation/wald/customer-wald05-backend-qa-2026-09-09.md).
+The one-site unit remains bounded; multi-site splitting cannot bypass the shared date/slot rule.
 
 ## 1. Executive Summary
 

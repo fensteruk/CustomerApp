@@ -1,6 +1,17 @@
 # Current Sprint
 
-## CUSTOMER-WALD05 backend candidate — 9 September 2026
+## CUSTOMER-WALD05 dedicated backend QA — 9 September 2026
+
+**FAIL — corrections required; do not freeze or start WALD06.** Dedicated QA of exact candidate
+`1dc6ee6a24026c970687472126dc295fb6f2b3c8` is recorded on local
+`qa/customer-wald05-backend-2026-09-09`. W5Q-01/02 correct transient digest identity and
+source-order/projection-ownership bypasses; W5Q-05 stabilises synthetic race owners.
+W5Q-03 (durable refusal/failure audit) and W5Q-04 (receipt-count N+1 queries) remain open.
+The shared date/slot rule separately blocks naive multi-site splitting for the later pilot.
+See [dedicated QA evidence](documentation/wald/customer-wald05-backend-qa-2026-09-09.md).
+Feature branch only; no main, push, production, customer import, SiteApp, full UI or deployment.
+
+## Historical CUSTOMER-WALD05 implementation status — superseded by QA above
 
 DEC-053 directs backend completion without the full Office UI. Private upload, durable leased
 analysis, immutable staging, explicit knowledge/binding checks, pinned review and one-run atomic

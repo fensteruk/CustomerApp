@@ -2,6 +2,13 @@
 
 *Last Updated: 9 September 2026*
 
+Latest gate: **WALD05 dedicated backend QA FAIL — corrections required** on local
+`qa/customer-wald05-backend-2026-09-09`, from `1dc6ee6a24026c970687472126dc295fb6f2b3c8`.
+W5Q-01/02/05 are corrected; W5Q-03 refusal/failure audit and W5Q-04 repeated receipt queries remain.
+Do not freeze this output or start WALD06. Shared-slot multi-site splitting is a separate pilot
+design blocker. [Current QA report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md).
+No main, push, deployment, full UI or actual customer workbook import.
+
 Current Wald update: management accepted corrected WALD04 output
 `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on `qa/customer-wald04-2026-09-08`
 as the immutable WALD05 input, not original candidate `2c7d015`. Corrected executable/test
