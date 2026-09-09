@@ -1,5 +1,35 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
+
+Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
+Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`
+merged first, security `5e7df08` second. Both are included in RC1, not newly on main
+or deployed. DEC-055 records this approval and the decision-number provenance.
+
+WALD02–05 remain accepted separate feature work but are excluded from RC1, as are
+ADMIN-SITE02, old manual importer/interpreter/UI, unfinished source integration,
+WALD06 and the multi-site pilot. Do not merge their runtime or migrations to obtain docs.
+RC1 has exactly 12 migrations; no historical migration edits. Populated amendment rollback
+would lose metadata and is not an approved production recovery strategy.
+
+RC1-T01 was an inherited stale date fixture, not a product defect. CUSTOMER-RELEASE02A
+approved a test-only correction; focused/full SQLite, disposable MySQL 8.4.11, Composer,
+Pint and build gates passed. The commit containing this status is the frozen QA candidate;
+use the exact SHA in the release handoff and do not change it after dedicated QA begins.
+Pre-QA verification and final freeze are recorded in
+[RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md).
+Dedicated release QA must use the final frozen SHA; passing build checks is not deployment
+approval. No main push, production access, Forge change, RC push or deployment is authorised.
+
+Last repository-proved successful production release: Sprint 3E `9111d76`, Forge 76326195,
+11 migrations. Main `0873bac` contains later fixes; its current live deployment is not
+proved here. Fresh production verification is a later release prerequisite.
+
+The entries below are historical branch evidence, including superseded deployment claims,
+old sprint numbering and pre-security advisory counts. They do not override this status or
+the current brief. Their reports and historical decisions remain preserved.
+
 ## Sprint 3F final product decisions — 3 September 2026
 
 Product integration is complete on `feature/sprint-3f-date-amendments`, following
