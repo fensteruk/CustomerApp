@@ -3,9 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Enums\CallOffServiceType;
+use App\Enums\PlotOverallStatus;
 use App\Enums\PlotServicePresentationState;
 use App\Models\CallOffRequest;
 use App\Models\ProjectedPlotService;
+use App\Models\Site;
 use App\Services\PlotOverviewQueryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
@@ -25,6 +27,8 @@ class SiteDashboardController extends Controller
             'plot' => ['nullable', 'string', 'max:100'],
             'service' => ['nullable', 'string', Rule::enum(CallOffServiceType::class)],
             'status' => ['nullable', 'string', Rule::enum(PlotServicePresentationState::class)],
+            'overall_status' => ['nullable', 'array', 'max:5'],
+            'overall_status.*' => ['string', Rule::enum(PlotOverallStatus::class)],
             'show_completed' => ['nullable', 'boolean'],
         ]);
 
@@ -32,8 +36,15 @@ class SiteDashboardController extends Controller
             'plot' => $filters['plot'] ?? '',
             'service' => $filters['service'] ?? '',
             'status' => $filters['status'] ?? '',
+            'overall_status' => array_values(array_unique($filters['overall_status'] ?? [])),
             'show_completed' => (bool) ($filters['show_completed'] ?? false),
         ];
+
+        $activeFilterCount = (int) filled($filters['plot'])
+            + (int) filled($filters['service'])
+            + (int) filled($filters['status'])
+            + count($filters['overall_status'])
+            + (int) $filters['show_completed'];
 
         return view('portal.site-dashboard', [
             'activeSite' => $activeSite->load('customerOrganisation'),
@@ -53,6 +64,12 @@ class SiteDashboardController extends Controller
             'filters' => $filters,
             'serviceTypes' => CallOffServiceType::cases(),
             'states' => PlotServicePresentationState::cases(),
+            'overallStatuses' => PlotOverallStatus::cases(),
+            'activeFilterCount' => $activeFilterCount,
+            'assignedSites' => Site::query()
+                ->assignedTo($user)
+                ->orderBy('name')
+                ->get(['sites.id', 'sites.name']),
             'lastSynchronisedAt' => ($synchronisedAt = $activeSite->projectedPlots()->max('synchronised_at')) === null
                 ? null
                 : CarbonImmutable::parse($synchronisedAt),

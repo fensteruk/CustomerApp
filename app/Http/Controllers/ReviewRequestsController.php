@@ -92,6 +92,9 @@ class ReviewRequestsController extends Controller
                 'site' => $validated['site'] ?? '',
                 'service' => $validated['service'] ?? '',
             ],
+            'activeFilterCount' => (int) filled($status)
+                + (int) isset($validated['site'])
+                + (int) isset($validated['service']),
         ]);
     }
 

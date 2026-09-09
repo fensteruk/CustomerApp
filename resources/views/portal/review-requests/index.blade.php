@@ -1,5 +1,50 @@
-<x-layouts.portal title="Review Requests | Fenster Customer Portal">
-    <section class="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8" aria-labelledby="page-title">
+<x-layouts.portal title="Review Requests | Fenster Customer Portal" sidebar-label="Filters" :sidebar-badge="$activeFilterCount">
+    <x-slot:sidebar>
+        <section aria-labelledby="review-filters-heading">
+            <div class="flex items-center justify-between gap-3 px-3">
+                <h2 id="review-filters-heading" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Review filters</h2>
+                @if ($activeFilterCount > 0)
+                    <span class="rounded-full bg-sky-600 px-2 py-0.5 text-xs font-extrabold text-white">{{ $activeFilterCount }} active</span>
+                @endif
+            </div>
+            <form method="GET" action="{{ route('portal.review-requests') }}" class="mt-4 space-y-5" aria-label="Review request filters">
+                <div>
+                    <label for="status" class="sidebar-label">Status</label>
+                    <select id="status" name="status" class="sidebar-input">
+                        @foreach ($statuses as $status)
+                            <option value="{{ $status->value }}" @selected($filters['status'] === $status->value)>{{ $status->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="site" class="sidebar-label">Site</label>
+                    <select id="site" name="site" class="sidebar-input">
+                        <option value="">All sites</option>
+                        @foreach ($assignedSites as $site)
+                            <option value="{{ $site->id }}" @selected((string) $filters['site'] === (string) $site->id)>{{ $site->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label for="service" class="sidebar-label">Service type</label>
+                    <select id="service" name="service" class="sidebar-input">
+                        <option value="">All services</option>
+                        @foreach ($serviceTypes as $serviceType)
+                            <option value="{{ $serviceType->value }}" @selected($filters['service'] === $serviceType->value)>{{ $serviceType->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="space-y-2">
+                    <button type="submit" class="sidebar-button">Apply filters</button>
+                    @if ($activeFilterCount > 1 || filled($filters['site']) || filled($filters['service']))
+                        <a href="{{ route('portal.review-requests') }}" class="sidebar-clear">Clear filters</a>
+                    @endif
+                </div>
+            </form>
+        </section>
+    </x-slot:sidebar>
+
+    <section class="mx-auto max-w-[96rem] px-3 py-5 sm:px-4 xl:px-5" aria-labelledby="page-title">
         <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <p class="eyebrow">Fenster Office Staff</p>
@@ -20,39 +65,7 @@
             </div>
         @endif
 
-        <form method="GET" action="{{ route('portal.review-requests') }}" class="mt-8 grid gap-4 rounded-lg border border-slate-200 bg-white p-5 shadow-sm md:grid-cols-4" aria-label="Review request filters">
-            <div>
-                <label for="status" class="form-label">Status</label>
-                <select id="status" name="status" class="form-input">
-                    @foreach ($statuses as $status)
-                        <option value="{{ $status->value }}" @selected($filters['status'] === $status->value)>{{ $status->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label for="site" class="form-label">Assigned site</label>
-                <select id="site" name="site" class="form-input">
-                    <option value="">All assigned sites</option>
-                    @foreach ($assignedSites as $site)
-                        <option value="{{ $site->id }}" @selected((string) $filters['site'] === (string) $site->id)>{{ $site->name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div>
-                <label for="service" class="form-label">Service type</label>
-                <select id="service" name="service" class="form-input">
-                    <option value="">All services</option>
-                    @foreach ($serviceTypes as $serviceType)
-                        <option value="{{ $serviceType->value }}" @selected($filters['service'] === $serviceType->value)>{{ $serviceType->label() }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="flex items-end">
-                <button type="submit" class="primary-button w-full">Apply filters</button>
-            </div>
-        </form>
-
-        <div class="mt-6 grid gap-4">
+        <div class="mt-5 grid gap-4">
             @forelse ($requests as $callOffRequest)
                 <article class="review-card" aria-labelledby="review-request-{{ $callOffRequest->uuid }}">
                     <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
@@ -102,7 +115,7 @@
             @empty
                 <div class="empty-state">
                     <h2 class="text-lg font-bold text-slate-900">No requests match these filters</h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-700">There are no call-offs in your assigned review scope for the selected filters.</p>
+                    <p class="mt-2 text-sm leading-6 text-slate-700">There are no call-offs in the Office review scope for the selected filters.</p>
                 </div>
             @endforelse
         </div>
