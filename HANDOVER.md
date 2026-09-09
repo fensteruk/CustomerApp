@@ -1,5 +1,47 @@
 # Fenster Customer Portal Handover
 
+## Sprint 3F final product decisions — 3 September 2026
+
+Product integration is complete on `feature/sprint-3f-date-amendments`, following
+baseline `4773c37` and race correction `38b058f`. DEC-039 confirms all seven stable
+reason codes, required Other explanation (maximum 2,000 characters) and optional text
+for other reasons. Customer/Office history keeps reason and Additional information separate.
+On Hold — Date Change Requested feeds existing Call-Offs In Progress; completed-service
+precedence is unchanged. No new overall status or transaction/locking change was needed.
+
+Verification: 91 ordinary Sprint 3F cases / 1,055 assertions; full SQLite 313 passed,
+38 MySQL-only skipped / 2,268 assertions; targeted MySQL Office race 10/10 iterations,
+292 assertions. Fresh isolated SQLite seed, Pint, Composer validation and build passed.
+Composer audit still reports eight inherited advisories; dependencies were not changed.
+After preview recovery, browser checks passed at desktop/mobile widths (1280px/390px),
+including keyboard focus, conditional Other validation, On Hold, Office review and resolution.
+No browser console errors/warnings were observed; dedicated QA is still required.
+
+No current Sprint 3F product decisions remain. Next: dedicated Sprint 3F QA, separate
+Composer security reconciliation and final combined release-candidate verification.
+No main change, push, deployment or Wald/import modification. See
+`documentation/sprint-3f-date-amendments-2026-09-03.md` for details and file list.
+
+## Initial Sprint 3F implementation update — 3 September 2026 (historical)
+
+Current work is Date Amendments After Date Agreed, reusing Sprint 3E. It is isolated on
+`feature/sprint-3f-date-amendments` from local main `0873bac79edf578e9f4a9417e3cafae34e8aa925`.
+This supersedes older release-status/numbering statements below for the current task.
+Those entries remain historical evidence, not a claim about today's production state.
+
+Implementation is **blocked for sign-off**, not complete: Product must approve amendment
+reason values and confirm the preserved On Hold aggregate plot status. Reasons are empty
+and customer initiation fails closed until confirmed. Disposable MySQL 8.4, dedicated
+keyboard/mobile QA and reconciliation with the separate security dependency branch remain
+release gates. No main merge, push, deployment or Wald/import modification was performed.
+
+See `documentation/sprint-3f-date-amendments-2026-09-03.md` for the domain, files,
+command evidence, migration rehearsal, eight new MySQL race cases and handoff actions.
+
+Final local gate: 264 tests passed / 23 MySQL-only skipped, 1,378 assertions.
+Fresh SQLite seed, non-empty upgrade, Pint, Composer validation and build passed.
+Composer audit reports eight inherited advisories; security reconciliation remains separate.
+
 ## Release-management status — 25 August 2026
 
 Production serves `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` through the

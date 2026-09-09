@@ -8,7 +8,22 @@ The Customer Portal is a standalone customer-facing request and communication ap
 
 # Current Version
 
-**Current Milestone:** `Sprint 3E release candidate (MySQL gate blocked)`
+**Current Milestone:** `Sprint 3F date amendments — product decisions integrated, dedicated QA next`
+
+3 September 2026: the current user-approved sequence calls the initial agreement
+workflow Sprint 3E and Date Amendments After Date Agreed Sprint 3F. That naming
+supersedes the original management-programme numbering retained below.
+The feature worktree starts from local main `0873bac`, which includes Sprint 3E and
+the Office-organisation correction. Older release paragraphs below are historical.
+
+The amendment engine and final management decisions are implemented. DEC-039 confirms
+the seven reason codes, required Other explanation and existing On Hold overall-status
+treatment. No Sprint 3F product decision remains. The Office race fix passed the full
+MySQL gate; its targeted regression remains green after product integration.
+Dedicated Sprint 3F QA, separate Composer security reconciliation and final combined
+release-candidate verification remain. This is not deployment or company-test approval.
+No deployment or main merge/push occurred.
+See `documentation/sprint-3f-date-amendments-2026-09-03.md`.
 
 Release-management update: production serves `main`
 `f801c91113bd13656c6cbffdd3d82c12d4a95846`, deployed successfully after the documented
