@@ -1,6 +1,6 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 8 September 2026*
+*Last Updated: 9 September 2026*
 
 Current Wald update: management accepted corrected WALD04 output
 `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on `qa/customer-wald04-2026-09-08`
@@ -13,10 +13,12 @@ DEC-048 approves WALD05 I01–I10 governance in
 governance-inclusive `877bd3ff...`. DEC-050/051 actual workbook selection contains 45 included
 records and two explicit exclusions, with no concrete business-data ambiguity. DEC-052's W5-T01
 correction is implemented at `e9e1c3a...` as reader wald-0.2.2 / XLSX adapter 3; the frozen values
-above remain historical input. Default-off WALD05 binding/version/audit foundation is implemented;
-private runs, staging, preview and projection commit remain. No push, main change or deployment. G09
+above remain historical input. DEC-053's default-off backend candidate implements private runs,
+immutable staging, pinned review and atomic projection commit, including ordering/replacement.
+The supported unit is one bound site/table and 500 nonempty rows; unsupported units refuse.
+Dedicated backend QA, full Office UI and actual-workbook pilot remain. No push, main change or deployment. G09
 named-owner nomination still gates unattended disposal. Eight inherited advisories remain.
-Evidence: `documentation/wald/customer-wald05-final-governance-approval-2026-09-08.md`.
+Evidence: `documentation/wald/customer-wald05-backend-completion-2026-09-09.md`.
 
 # Project Overview
 
@@ -26,8 +28,8 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD05 reader correction and binding foundation implemented; end-to-end import incomplete.**
-The current authority is the rebuilt `brief.md`, DEC-039–052,
+**CUSTOMER-WALD05 bounded backend candidate implemented; dedicated QA and full Office UI remain.**
+The current authority is the rebuilt `brief.md`, DEC-039–053,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
@@ -61,7 +63,7 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
 | 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
 | 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Accepted corrected snapshot `0e83eb2`; 198 MySQL tests covered, including 140 race groups; no automated disposal or deployment. |
-| 4 | CUSTOMER-WALD05 — Import/review integration | W5-T01 corrected under DEC-052; default-off binding/version/audit foundation implemented and MySQL-tested. Private runs, staging, preview, observations, projection commit/UI and end-to-end QA remain. No new blanket permission required. |
+| 4 | CUSTOMER-WALD05 — Import/review integration | DEC-053 backend candidate implements bounded private upload through atomic reviewed commit with immutable history. Dedicated backend QA and separately scoped full Office UI remain; actual mixed-site workbook has not been imported. No new blanket permission required. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
 
 First usable milestone is the integrated 05 exit, not just a working profiler. It must

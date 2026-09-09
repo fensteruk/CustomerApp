@@ -1,6 +1,22 @@
 # Current Sprint
 
-## CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
+## CUSTOMER-WALD05 backend candidate — 9 September 2026
+
+DEC-053 directs backend completion without the full Office UI. Private upload, durable leased
+analysis, immutable staging, explicit knowledge/binding checks, pinned review and one-run atomic
+projection commit are implemented on `feature/customer-wald05-import-review-integration`.
+Ordering, idempotency, explicit successor correction, observation/receipt history and retention
+metadata are included. Default off; no routes, production worker, purge or old-importer cutover.
+Supported unit: one bound site, one visible unmerged table/sheet, maximum 500 nonempty rows.
+Unsupported/mixed-site units refuse entirely. No real customer workbook import was performed.
+The [backend completion report](documentation/wald/customer-wald05-backend-completion-2026-09-09.md)
+is the current verification/QA handover: backend READY FOR QA. Focused 114 passes / 12 skips;
+combined 991 / 23; full 1,210 / 38. MySQL 113 non-race passes / one skip plus 12 passing race
+scenarios, 80 groups / 160 workers. Upgrade guards pass; disposable server stopped.
+Acceptance, Office UI, WALD06 and release remain separate.
+Eight inherited advisories remain; no main, push, SiteApp, Sprint 3F or deployment work.
+
+## Historical CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
 
 DEC-052 authorises W5-T01 correction and continued implementation. Reader correction
 `e9e1c3a2a3ff79cfe5f097bea143f51195becd55` uses wald-0.2.2 / XLSX adapter 3; old knowledge pins

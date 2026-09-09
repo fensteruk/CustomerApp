@@ -329,7 +329,8 @@ non-deploying `feature/customer-wald02-portable-core` branch. Dedicated local QA
 8 September after five reader corrections on `qa/customer-wald02-2026-09-08`; management
 acceptance froze corrected SHA `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` as the immutable
 WALD03 input (see `documentation/wald/customer-wald02-qa-2026-09-08.md`). They are
-not integrated into the import workflow, on `main`, release-approved or deployed.
+historical phase-only results, not proof of integration, main, release approval or deployment.
+The later DEC-053 backend candidate below supplies bounded workflow integration on its feature branch.
 
 The path is:
 
@@ -377,9 +378,13 @@ commit `877bd3ff666873a0703c3b7671015ec4cfd2ee52`. The DEC-050/051 actual workbo
 45 records and excludes CM2 plus the exact Nick TEST record. It found no concrete business-data
 ambiguity; earlier hypothetical W5-P01/P02 cases do not block this sample. DEC-052 authorises
 W5-T01's narrow reader correction, implemented as `wald-0.2.2` / XLSX adapter 3 at `e9e1c3a...`.
-The unchanged workbook now profiles successfully. WALD05's default-off Office binding/version/audit
-foundation is implemented with additive SQLite/MySQL verification. Private runs, staging, preview,
-projection/whole-import commit and UI remain unimplemented; WALD05 is partial, not QA-ready.
+The unchanged workbook now profiles successfully. DEC-053 directs backend completion, without the
+full Office UI. The default-off candidate now includes private runs, accepted analysis/knowledge,
+immutable staging, pinned review and atomic source projection commit. Supported units are one
+explicitly bound site, one visible unmerged table and at most 500 nonempty rows; unsupported units
+block entirely. The actual mixed-site workbook has not been imported. Dedicated backend QA is the
+next gate; full Office UI, pilot/cutover and release remain separate. See
+`documentation/wald/customer-wald05-backend-completion-2026-09-09.md` for exact verification.
 No global dictionary change or import fallback. G09's unnamed owner blocks unattended production
 disposal only; no deletion scheduling is enabled.
 
@@ -414,7 +419,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (8 September update) | Accepted WALD04 `0e83eb289...` is historical input. DEC-052 reader correction `e9e1c3a...` and default-off WALD05 binding foundation are feature-branch-only. Full regression: 1,149 passes / 30 skips. End-to-end import remains unimplemented; no main, push or deployment. |
+| Standalone Wald (9 September update) | Accepted WALD04 `0e83eb289...`, reader correction `e9e1c3a...` and binding foundation `d1b5de1...` are historical inputs. DEC-053 backend candidate adds bounded private upload through reviewed atomic commit; feature branch only, not dedicated-QA accepted or deployed. Full Office UI and actual-workbook pilot remain. Exact results are in the 9 September backend completion report. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -427,7 +432,7 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- completion of CUSTOMER-WALD05 private runs, staging, review and controlled commit,
+- dedicated QA of CUSTOMER-WALD05's bounded backend, separately scoped Office UI completion,
   then independently gated CUSTOMER-WALD06 pilot and hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;

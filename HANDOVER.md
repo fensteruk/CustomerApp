@@ -1,6 +1,25 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
+## CUSTOMER-WALD05 backend candidate — 9 September 2026
+
+Continue on `feature/customer-wald05-import-review-integration`. DEC-053 supersedes the
+foundation-only checkpoint below. The default-off backend now connects private upload,
+durable analysis/clarification, immutable staging, explicit review and atomic source projection
+commit with source ordering, replacement, receipts and metadata-only retention. Application
+services are the entry points; no full Office UI, routes, worker or deletion scheduler was added.
+
+Read the [current backend report](documentation/wald/customer-wald05-backend-completion-2026-09-09.md)
+for exact test commands/results, supported bounds, W5-T02 digest correction, old-importer parity
+disposition and QA instructions. Backend READY FOR QA: full regression 1,210 passes / 38 skips;
+MySQL 80 race groups / 160 workers and upgrade guards pass. Disposable server stopped.
+One site/table and 500 nonempty rows is the supported atomic
+unit; mixed-site or competing-visit input refuses entirely. Do not claim the actual twelve-site
+workbook has been imported, silently partition it or generalise DEC-050/051 to changed bytes.
+No further blanket implementation permission is needed. Dedicated backend QA comes next;
+full UI, WALD06/cutover, security reconciliation and production release remain separate gates.
+No main, push, production, SiteApp or Sprint 3F changes. Eight inherited advisories remain.
+
+## Historical CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
 
 Continue on `feature/customer-wald05-import-review-integration`. DEC-052 authorises the bounded
 reader correction and ongoing WALD05 implementation; no further blanket permission is needed.

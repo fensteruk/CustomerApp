@@ -1,7 +1,15 @@
 # CUSTOMER-WALD05 — Import, Review and Controlled Commit Integration
 
-Date: 8 September 2026. Owner: CustomerApp Wald Architecture / Integration.
-Status: **PARTIAL IMPLEMENTATION — W5-T01 CORRECTED; BINDING FOUNDATION TESTED; END-TO-END IMPORT OUTSTANDING.**
+Date: 9 September 2026. Owner: CustomerApp Wald Architecture / Integration.
+Status: **BOUNDED BACKEND CANDIDATE IMPLEMENTED — DEDICATED QA AND FULL OFFICE UI REMAIN.**
+
+DEC-053 records the latest backend-completion instruction. It expressly excludes full Office UI
+from this task; services, not HTTP endpoints, are its application boundary. The implemented unit
+is one explicitly bound organisation/site, one visible unmerged table/sheet, maximum 500 nonempty
+rows. Mixed-site/unsupported units and competing visits for a single plot refuse entirely; no
+automatic partition, inferred aggregation or partial success. The actual sample was not imported.
+See the [current backend report](../wald/customer-wald05-backend-completion-2026-09-09.md) for
+verification, W5-T02's separate bounded transient digest and exact parity/rollout limitations.
 
 The latest management instruction authorises implementation from governance-inclusive commit
 `877bd3ff666873a0703c3b7671015ec4cfd2ee52` on
@@ -15,8 +23,9 @@ CSV stays 2 and the dictionary is unchanged. The original workbook now profiles 
 See the [implementation entry report](../wald/customer-wald05-import-review-integration-2026-09-08.md).
 I01–I10 remain approved. The default-off Office binding/version/audit foundation and pure
 ordering/selection contracts are implemented and tested on SQLite and disposable MySQL 8.4.
-Upload, staging, preview, whole-import projection commit and UI remain unimplemented. No QA,
-main or deployment acceptance is claimed; no further blanket approval is needed to continue.
+Private upload, staging, pinned preview and whole-import projection commit are now implemented
+under DEC-053. Full Office UI remains outside this task. No dedicated-QA, main or deployment
+acceptance is claimed; no further blanket approval is needed to continue.
 
 DEC-050 subsequently records the user's
 [workbook-specific clarification](../wald/customer-wald05-workbook-clarification-2026-09-08.md):

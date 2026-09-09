@@ -151,13 +151,20 @@ it creates an unsafe-reversal reconciliation issue and preserves that newer requ
 
 ## Transport and scheduling
 
-No XLSX/CSV parser, source path, credential or scheduler is configured on the audited
-checkout. A committed non-main manual XLSX feature line exists, but it is not approved for
-production adoption. The standalone Wald adapter will validate into this contract and invoke the
-reviewed Portal import boundary. The temporary manual ordering contract above governs WALD05 V1
+DEC-053's feature-branch backend now provides CustomerApp-private XLSX/CSV upload and a
+reviewed atomic source adapter. It is default off, with no HTTP route, scheduler or production
+credential configured by this task. Its supported unit is one bound site, one visible unmerged
+table/sheet and at most 500 nonempty rows; unsupported units refuse entirely. The old execution
+path remains intact pending approved cutover. A separate non-main manual XLSX feature line is
+reference/reuse material, not approved production architecture. The temporary manual order governs WALD05 V1
 until RedZebra supplies a real revision/API. Credentials, production cadence and operational
 rollout remain delivery items.
 
-Unexpected importer failures mark their import run as failed and write only safe diagnostic
+The retained legacy importer marks unexpected failures on its run and writes only safe diagnostic
 metadata (source name, import-run UUID and exception class) to the application log. Raw
-payloads, credentials and exception messages must not be logged by this layer.
+payloads, credentials and exception messages must not be logged by this layer. The WALD05 backend
+stores only safe analysis failure codes in its private durable run/audit; it does not log raw
+exceptions. A failed backend commit rolls back the complete transaction and leaves the prior
+review state intact, never a partial success or a separately persisted failed receipt.
+Current verification and parity limits are recorded in
+`documentation/wald/customer-wald05-backend-completion-2026-09-09.md`.

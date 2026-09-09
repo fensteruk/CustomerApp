@@ -173,6 +173,8 @@ rewriting retained history.
 The confirmed values above are not open semantic questions. DEC-048 approves the WALD05 V1
 permissions, binding, ordering, Call No. grain, partial-only scope, readiness, atomicity,
 six-year minimal committed-audit retention, queue/storage model and importer disposition.
-A separate explicit WALD05 implementation instruction is still required. Production queue/
-worker operations, unattended disposal ownership, WALD06 pilot/cutover and any additional
-customer-safe source field remain later independent gates.
+DEC-049 and DEC-053 supply explicit WALD05 implementation authority. The bounded backend candidate
+is documented in `documentation/wald/customer-wald05-backend-completion-2026-09-09.md`; this does
+not change the dictionary's meanings or fingerprint. Dedicated backend QA, full Office UI,
+production queue/worker operations, unattended disposal ownership, WALD06 pilot/cutover and any
+additional customer-safe source field remain separate gates.

@@ -21,6 +21,48 @@ final class Canonical
         return hash('sha256', self::json($value));
     }
 
+    /** Hash-only transient engine evidence; never a persistence payload allowance.
+     * Same canonical bytes as hash(), streamed with an independent finite 4 MiB ceiling.
+     */
+    public static function evidenceHash(mixed $value): string
+    {
+        $context = hash_init('sha256');
+        $bytes = 0;
+        $append = function (string $part) use ($context, &$bytes): void {
+            $bytes += strlen($part);
+            if ($bytes > 4 * 1024 * 1024) {
+                throw new InvalidArgumentException('transient_evidence_hash_limit');
+            }
+            hash_update($context, $part);
+        };
+        $walk = function (mixed $node) use (&$walk, $append): void {
+            if (! is_array($node)) {
+                $append(self::json($node));
+
+                return;
+            }
+            $list = array_is_list($node);
+            if (! $list) {
+                ksort($node, SORT_STRING);
+            }
+            $append($list ? '[' : '{');
+            $first = true;
+            foreach ($node as $key => $child) {
+                if (! $first) {
+                    $append(',');
+                } $first = false;
+                if (! $list) {
+                    $append(self::json((string) $key).':');
+                }
+                $walk($child);
+            }
+            $append($list ? ']' : '}');
+        };
+        $walk($value);
+
+        return hash_final($context);
+    }
+
     private static function sort(mixed $value): mixed
     {
         if (is_array($value)) {

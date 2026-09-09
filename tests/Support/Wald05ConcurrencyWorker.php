@@ -2,9 +2,12 @@
 
 use App\Models\User;
 use App\SourceImport\Integration\ImportConflict;
+use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\SourceBindingService;
+use App\SourceImport\Knowledge\Actions\RevokeProfile;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
 require __DIR__.'/../../vendor/autoload.php';
@@ -37,11 +40,32 @@ try {
     }
     $actor = User::query()->findOrFail($input['actor']);
     $scope = new KnowledgeScope(...$input['scope']);
-    $service = new SourceBindingService;
-    if (! in_array($input['operation'], ['draft', 'activate', 'revoke'], true)) {
+    $service = match ($input['operation']) {
+        'commit' => new ImportReview,
+        'profile_revoke' => new RevokeProfile,
+        default => new SourceBindingService,
+    };
+    if (! in_array($input['operation'], ['draft', 'activate', 'revoke', 'commit', 'profile_revoke', 'projection_change'], true)) {
         throw new RuntimeException('invalid_test_operation');
     }
-    $result = $service->{$input['operation']}($actor, $scope, ...$input['arguments']);
+    if ($input['operation'] === 'projection_change') {
+        $result = DB::transaction(function () use ($input, $scope) {
+            [$id, $epoch] = $input['arguments'];
+            $service = DB::table('projected_plot_services')->where('id', $id)->whereIn('projected_plot_id', DB::table('projected_plots')->select('id')->where('site_id', $scope->siteId))->lockForUpdate()->firstOrFail();
+            if ((int) $service->wald_epoch !== $epoch) {
+                throw new ImportConflict('projection_epoch_conflict');
+            }
+            DB::table('projected_plot_services')->where('id', $id)->update(['source_updated_at' => now()]);
+
+            return ['changed' => true];
+        }, 3);
+    } else {
+        $method = $input['operation'] === 'profile_revoke' ? 'handle' : $input['operation'];
+        $result = $service->{$method}($actor, $scope, ...$input['arguments']);
+        if ($result instanceof Model) {
+            $result = ['uuid' => $result->uuid];
+        }
+    }
     echo json_encode(['ok' => true, 'result' => $result], JSON_THROW_ON_ERROR);
 } catch (Throwable $error) {
     echo json_encode(['ok' => false, 'exception' => $error::class, 'code' => $error instanceof ImportConflict ? $error->getMessage() : null], JSON_THROW_ON_ERROR);

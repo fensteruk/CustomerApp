@@ -1,5 +1,10 @@
 # CUSTOMER-WALD05 Implementation Continuation Report
 
+Historical foundation checkpoint. The
+[9 September backend completion report](customer-wald05-backend-completion-2026-09-09.md)
+supersedes the incomplete-backend status below. Original test evidence remains historical;
+it is not backend acceptance, real-workbook import or deployment evidence.
+
 Date: 8 September 2026. Current result: **PARTIAL — W5-T01 corrected; WALD05 binding foundation
 implemented and tested. No remaining workbook business-data blocker. End-to-end import is not
 implemented and dedicated WALD05 QA must not begin yet.**

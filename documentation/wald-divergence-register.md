@@ -218,6 +218,19 @@ No approved production or dedicated-QA acceptance claim is made by this implemen
 | WD-45 | CustomerApp-specific reviewed selection; PURE HELPER IMPLEMENTED, NOT CONNECTED TO IMPORT | ReviewedWorkbookSelection implements DEC-050 CC! correction/CM2 exclusion only for exact approved bytes and DEC-051 exact row 32 / Call No. 5181 / Nick TEST exclusion. | ContractsTest covers changed checksum/tuple refusal and raw evidence preservation. 45 included, two excluded; dictionary unchanged. No global alias or inferred test-site filter. |
 | WD-46 | CustomerApp-specific binding foundation; PARTIAL WALD05 | Office-controlled exact source identity, immutable binding versions/command audit, current epoch pins, authenticated replay and default-off policy. One additive migration creates three tables and six immutability guards. | SourceImport/Integration, SourceBindingTest and MysqlFoundationConcurrencyTest; SQLite and disposable MySQL checks pass, including 40 race groups / 80 workers and upgrade guards. No upload/staging/preview/whole-import commit/UI or source-use history yet. |
 
+## WALD05 backend differences — 9 September 2026
+
+The WD-45/46 rows above describe the historical foundation checkpoint. WD-47 now connects that
+selection and binding foundation to the bounded backend; no SiteApp adoption/backport occurred.
+
+| ID | Category | Implemented difference | Evidence / identity |
+|---|---|---|---|
+| WD-47 | CustomerApp-specific integration | Private artifacts, leased durable runs, accepted analysis/clarification, immutable staged rows/reviews, downstream projection adapter, ordering, one-run atomic commit, replacement, observations and receipts. One bound site/table, 500-row bound; unsupported units refuse entirely. | `app/SourceImport/Integration`, additive 2026_09_09_000012 migration; backend application/projection identities v1. Origin is the feature-branch backend commit containing the 9 September completion report. No full UI, old-importer retirement or production operation. |
+| WD-48 | CustomerApp-specific adapter correction, W5-T02 | Accepted analysis snapshots previously used the small retained-payload hashing ceiling for complete transient reasoning evidence, rejecting an ordinary synthetic seven-row workbook. `Canonical::evidenceHash` streams identical canonical bytes under a separate 4 MiB ceiling; only snapshot profile/reasoning hashing and bounded staged-rowset hashing use it. Persistent JSON/hash ceilings, matching/activation policy, generic core and dictionary remain unchanged. | `Knowledge/Canonical.php`, `Knowledge/AnalysisSnapshot.php`, BackendSafetyTest digest invariants and pipeline/performance suites. `customerapp.wald-transient-evidence-digest.v1` is pinned in backend identity. No automatic profile migration, semantic override or upstream backport. Dedicated backend QA must review this narrow integration correction. |
+
+Current verification and old-importer parity disposition:
+[backend completion report](wald/customer-wald05-backend-completion-2026-09-09.md).
+
 ## Backport process
 
 1. For each nontrivial fork change, add/update a ledger entry with reason, category, source

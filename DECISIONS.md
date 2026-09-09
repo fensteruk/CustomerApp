@@ -1332,3 +1332,52 @@ Rules:
 Reason:
 The actual workbook exposed a reproducible metadata compatibility defect. Explicit permission
 allows a narrow versioned repair while retaining the accepted safety boundaries and history.
+
+---
+
+## DEC-053
+
+Date:
+9 September 2026
+
+Decision:
+The latest explicit user instruction is to complete the CUSTOMER-WALD05 backend/application
+layer for dedicated QA on `feature/customer-wald05-import-review-integration`, continuing from
+reader correction `e9e1c3a2a3ff79cfe5f097bea143f51195becd55` and binding foundation
+`d1b5de13b260dde77867fdb8ac73296e49994c14`. This supersedes the earlier foundation-only delivery
+checkpoint, not the accepted business dictionary or I01–I10 governance.
+
+Rules:
+
+- Finish private upload, durable analysis/run lifecycle, immutable staging, non-mutating review,
+  dependency-pinned preview, source projection adapter, one-run atomic commit, ordering,
+  idempotency, explicit replacement, immutable observation/receipt history and retention metadata.
+- Do not build the full Office UI in this task. The application services are the tested backend
+  entry points; no public endpoint, queue worker, production purge or cutover is authorised.
+- Preserve DEC-050/051 exact-artifact selection, the approved dictionary, explicit knowledge
+  activation and source bindings. No global CC! alias, CM2 exclusion or cross-visit business rule.
+- Unsupported data/layouts must refuse the complete bounded unit, never silently split or commit
+  a subset. Document implemented limits and unverified real-workbook coverage honestly.
+- Require focused, combined and full regression, failure injection, disposable MySQL 8.4
+  migration/upgrade and repeated real concurrency evidence before backend QA readiness.
+- Preserve the old importer until independently approved WALD06 cutover. Record parity gaps and
+  retirement criteria; do not merge the non-main manual UI/profile implementation wholesale.
+- Keep eight inherited Composer advisories separate; do not merge remediation
+  `5e7df0862648fd9c2ac964b31a13ad17df84fd12` in this task. No main, push, deployment,
+  production, SiteApp, Sprint 3F or WALD06 action.
+
+Implementation evidence, not a new management approval:
+
+The backend candidate is described in
+`documentation/wald/customer-wald05-backend-completion-2026-09-09.md`. Its supported atomic unit
+is one explicitly bound Portal organisation/site, one visible unmerged table/sheet and at most
+500 nonempty rows. Mixed-site workbooks and competing distinct visits for a single plot refuse
+review/commit; no new sum/latest/any/all rule is inferred. This is not evidence of importing the
+actual twelve-site sample. W5-T02 adds a separate bounded transient evidence digest in the
+CustomerApp knowledge adapter; persistent payload ceilings, generic core, matching policy and
+dictionary remain unchanged. Dedicated QA must review this integration change and these bounds.
+
+Reason:
+The user explicitly requests completion rather than another foundation checkpoint or blanket
+approval question. Backend QA readiness is distinct from full Office UI, pilot, acceptance,
+release and production readiness.

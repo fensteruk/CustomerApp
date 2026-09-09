@@ -129,8 +129,8 @@ final readonly class AnalysisSnapshot
             unset($candidate);
         }
         unset($clarification);
-        $data = ['source_checksum' => $p['source_checksum'], 'analysis_hash' => Canonical::hash($p),
-            'reasoning_hash' => Canonical::hash($r), 'pins' => (new KnowledgeIdentity)->current(),
+        $data = ['source_checksum' => $p['source_checksum'], 'analysis_hash' => Canonical::evidenceHash($p),
+            'reasoning_hash' => Canonical::evidenceHash($r), 'pins' => (new KnowledgeIdentity)->current(),
             'tables' => $tables, 'questions' => $questions,
             'fresh' => ['complete' => $r['complete'] ?? false, 'clarifications' => $clarifications,
                 'targets' => $r['targets'] ?? [], 'warnings' => $r['warnings'] ?? []]];
