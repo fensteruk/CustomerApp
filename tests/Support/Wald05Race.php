@@ -6,7 +6,7 @@ use Symfony\Component\Process\Process;
 
 final class Wald05Race
 {
-    public static function run(array $actors, $scope, array $operations): array
+    public static function run(array $actors, $scope, array $operations, array $scopes = []): array
     {
         $directory = storage_path('framework/testing/wald05-race-'.Wald04Fixtures::command());
         mkdir($directory, 0700, true);
@@ -16,7 +16,8 @@ final class Wald05Race
         $processes = [];
         try {
             foreach ($operations as $i => [$operation, $arguments]) {
-                $input = ['actor' => $actors[$i]->id, 'scope' => [$scope->organisationId, $scope->siteId, $scope->namespace, $scope->family],
+                $workerScope = $scopes[$i] ?? $scope;
+                $input = ['actor' => $actors[$i]->id, 'scope' => [$workerScope->organisationId, $workerScope->siteId, $workerScope->namespace, $workerScope->family],
                     'operation' => $operation, 'arguments' => $arguments, 'ready' => $directory.'/ready'.$i, 'barrier' => $directory.'/go'];
                 $process = new Process([PHP_BINARY, base_path('tests/Support/Wald05ConcurrencyWorker.php'), base64_encode(json_encode($input, JSON_THROW_ON_ERROR))], base_path(), $env);
                 $process->setTimeout(40)->start();

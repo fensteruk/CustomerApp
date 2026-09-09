@@ -32,7 +32,7 @@ final class ImportReview
             if ($blockers === []) {
                 try {
                     $this->ordering($run, $stage, $scope, $stream);
-                    $projection = (new ProjectionSnapshot)->capture($scope, $rows);
+                    $projection = (new ProjectionSnapshot)->capture($scope, $rows, $run);
                 } catch (ImportConflict $e) {
                     $blockers[] = $e->getMessage();
                 }
@@ -138,7 +138,7 @@ final class ImportReview
         }
         $this->dependencies($actor, $scope, $run, $manifest, $rows);
         $this->ordering($run, $stage, $scope, $stream);
-        if (Canonical::hash((new ProjectionSnapshot)->capture($scope, $rows)) !== Canonical::hash($payload['projection'])) {
+        if (Canonical::hash((new ProjectionSnapshot)->capture($scope, $rows, $run)) !== Canonical::hash($payload['projection'])) {
             throw new ImportConflict('stale_projection');
         }
 

@@ -1,6 +1,7 @@
 <?php
 
 use App\Models\User;
+use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
 use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\SourceBindingService;
@@ -42,10 +43,11 @@ try {
     $scope = new KnowledgeScope(...$input['scope']);
     $service = match ($input['operation']) {
         'commit' => new ImportReview,
+        'claim' => new ImportAnalysis,
         'profile_revoke' => new RevokeProfile,
         default => new SourceBindingService,
     };
-    if (! in_array($input['operation'], ['draft', 'activate', 'revoke', 'commit', 'profile_revoke', 'projection_change'], true)) {
+    if (! in_array($input['operation'], ['draft', 'activate', 'revoke', 'commit', 'claim', 'profile_revoke', 'projection_change'], true)) {
         throw new RuntimeException('invalid_test_operation');
     }
     if ($input['operation'] === 'projection_change') {

@@ -52,7 +52,7 @@ final class Wald04Fixtures
 
     public static function owner(): array
     {
-        $org = CustomerOrganisation::factory()->create();
+        $org = CustomerOrganisation::factory()->create(['name' => 'Wald QA '.self::command()]);
         $site = Site::factory()->create(['customer_organisation_id' => $org->id]);
         $office = User::factory()->create(['customer_organisation_id' => null, 'email' => self::command().'@example.test',
             'portal_role_id' => PortalRole::query()->where('identifier', 'fenster_office_staff')->value('id'),

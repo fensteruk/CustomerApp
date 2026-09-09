@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\DB;
 final class ProjectionSnapshot
 {
     /** Lock order: services -> requests -> negotiations -> proposals -> history. */
-    public function capture(KnowledgeScope $scope, array $rows): array
+    public function capture(KnowledgeScope $scope, array $rows, object $run): array
     {
         $facts = array_column(array_values(array_filter($rows, fn ($r) => ! $r['excluded'])), 'facts');
         $references = array_values(array_unique(array_column($facts, 'plot')));
@@ -23,7 +23,11 @@ final class ProjectionSnapshot
         $history = DB::table('call_off_status_histories')->whereIn('call_off_request_id', $requests->pluck('id'))->orderBy('id')->limit(10001)->lockForUpdate()->get();
         $batches = DB::table('call_off_batches')->whereIn('id', $requests->pluck('call_off_batch_id'))->orderBy('id')->limit(10001)->lockForUpdate()->get();
         $calls = DB::table('projected_plot_services')->whereIn('source_call_number', array_column($facts, 'call_number'))->orderBy('id')->lockForUpdate()->get();
-        $visits = DB::table('wald_source_visits')->whereIn('identity_hash', array_map(fn ($f) => Canonical::hash([$scope->namespace, $f['call_number']]), $facts))->orderBy('id')->lockForUpdate()->get();
+        $visits = DB::table('wald_source_visits')->where(function ($q) use ($scope, $facts, $services) {
+            $q->whereIn('identity_hash', array_map(fn ($f) => Canonical::hash([$scope->namespace, $f['call_number']]), $facts))
+                ->orWhereIn('projected_plot_service_id', $services->pluck('id'));
+        })->orderBy('id')->limit(10001)->lockForUpdate()->get();
+        $observations = DB::table('wald_visit_observations')->whereIn('id', $visits->pluck('observation_id')->filter())->get()->keyBy('visit_id');
         $digests = [];
         foreach (compact('plots', 'services', 'products', 'requests', 'negotiations', 'proposals', 'history', 'batches', 'calls', 'visits') as $key => $items) {
             if ($items->count() > 10000) {
@@ -44,6 +48,10 @@ final class ProjectionSnapshot
             }
             $plot = $matches->first();
             $service = $plot ? $services->first(fn ($s) => (int) $s->projected_plot_id === (int) $plot->id && $s->service_identifier === $f['service']) : null;
+            $owners = $service ? $visits->where('projected_plot_service_id', $service->id) : collect();
+            if ($owners->count() > 1 || ($owners->isNotEmpty() && $owners->first()->identity_hash !== Canonical::hash([$scope->namespace, $f['call_number']]))) {
+                throw new ImportConflict('projection_source_identity_conflict');
+            }
             $call = $calls->first(fn ($s) => $s->source_call_number === $f['call_number']);
             if ($call && (! $service || (int) $call->id !== (int) $service->id)) {
                 throw new ImportConflict('call_identity_changed');
@@ -59,6 +67,15 @@ final class ProjectionSnapshot
             $visit = $visits->firstWhere('identity_hash', Canonical::hash([$scope->namespace, $f['call_number']]));
             if ($visit && ((int) $visit->site_id !== $scope->siteId || $visit->plot_reference !== $f['plot'] || $visit->service_identifier !== $f['service'])) {
                 throw new ImportConflict('call_identity_changed');
+            }
+            // Visit identity is namespace-wide, even when a different workbook family is used.
+            // A family change cannot manufacture newer source authority for the same slot.
+            if ($visit && $visit->export_order > $run->export_order) {
+                throw new ImportConflict('older_visit_observation');
+            }
+            if ($visit && $visit->export_order === $run->export_order && $visit->fact_hash !== Canonical::hash($f)
+                && ($run->predecessor_id === null || (int) ($observations->get($visit->id)?->run_id) !== (int) $run->predecessor_id)) {
+                throw new ImportConflict('explicit_visit_correction_required');
             }
             $oldProducts = $plot ? $products->where('projected_plot_id', $plot->id)->pluck('quantity', 'product_code')->all() : [];
             $changedProducts = [];

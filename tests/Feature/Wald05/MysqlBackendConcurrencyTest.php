@@ -21,7 +21,7 @@ beforeEach(function () {
 afterEach(fn () => B::$callBase = 1001);
 
 it('preserves atomic ordering and dependency outcomes in repeated independent connection races', function (string $scenario) {
-    for ($iteration = 0; $iteration < 5; $iteration++) {
+    for ($iteration = 0; $iteration < 20; $iteration++) {
         [$first, $initialScope] = F::owner();
         $scope = new KnowledgeScope($initialScope->organisationId, $initialScope->siteId, 'race-'.F::command(), 'family-v1');
         B::$callBase = 100000 + $scope->siteId * 1000;

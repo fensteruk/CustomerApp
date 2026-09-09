@@ -44,6 +44,8 @@ final class Canonical
             $list = array_is_list($node);
             if (! $list) {
                 ksort($node, SORT_STRING);
+                // Sorting numeric keys can turn an associative array into a JSON list.
+                $list = array_is_list($node);
             }
             $append($list ? '[' : '{');
             $first = true;
