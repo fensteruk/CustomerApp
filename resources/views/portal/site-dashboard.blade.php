@@ -1,15 +1,96 @@
-<x-layouts.portal title="Site dashboard | Fenster Customer Portal">
-    <section class="mx-auto max-w-7xl px-4 py-7 sm:px-6 lg:px-8" aria-labelledby="page-title">
-        <div class="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
+<x-layouts.portal title="Site dashboard | Fenster Customer Portal" sidebar-label="Filters" :sidebar-badge="$activeFilterCount">
+    <x-slot:sidebar>
+        <section aria-labelledby="sidebar-site-heading">
+            <div class="flex items-center justify-between gap-3 px-3">
+                <h2 id="sidebar-site-heading" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Active site</h2>
+            </div>
+            <form method="POST" action="{{ route('sites.active.store') }}" class="mt-3 space-y-3">
+                @csrf
+                <label for="sidebar-site" class="sr-only">Active site</label>
+                <select id="sidebar-site" name="site_id" class="sidebar-input mt-0">
+                    @foreach ($assignedSites as $site)
+                        <option value="{{ $site->id }}" @selected($site->is($activeSite))>{{ $site->name }}</option>
+                    @endforeach
+                </select>
+                <button type="submit" class="sidebar-clear">Switch site</button>
+            </form>
+        </section>
+
+        <section class="mt-5 border-t border-slate-700 pt-5" aria-labelledby="sidebar-filters-heading">
+            <div class="flex items-center justify-between gap-3 px-3">
+                <h2 id="sidebar-filters-heading" class="text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Filters</h2>
+                @if ($activeFilterCount > 0)
+                    <span class="rounded-full bg-sky-600 px-2 py-0.5 text-xs font-extrabold text-white">{{ $activeFilterCount }} active</span>
+                @endif
+            </div>
+
+            <form method="GET" action="{{ route('portal.site-dashboard') }}" class="mt-4 space-y-5" aria-label="Filter plot overview">
+                <div>
+                    <label for="plot" class="sidebar-label">Find a plot</label>
+                    <input id="plot" name="plot" type="search" value="{{ $filters['plot'] }}" class="sidebar-input" placeholder="e.g. Plot 101">
+                </div>
+
+                <fieldset>
+                    <legend class="sidebar-label">Overall status</legend>
+                    <div class="mt-2 space-y-1">
+                        @foreach ($overallStatuses as $overallStatus)
+                            <label class="flex min-h-11 cursor-pointer items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-semibold text-slate-100 hover:bg-slate-800">
+                                <input type="checkbox" name="overall_status[]" value="{{ $overallStatus->value }}" @checked(in_array($overallStatus->value, $filters['overall_status'], true)) class="sidebar-check">
+                                <span>{{ $overallStatus->label() }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                </fieldset>
+
+                <div>
+                    <label for="service" class="sidebar-label">Service activity</label>
+                    <select id="service" name="service" class="sidebar-input">
+                        <option value="">All services</option>
+                        @foreach ($serviceTypes as $serviceType)
+                            <option value="{{ $serviceType->value }}" @selected($filters['service'] === $serviceType->value)>{{ $serviceType->label() }}</option>
+                        @endforeach
+                    </select>
+                </div>
+
+                <details @if ($filters['status'] !== '') open @endif class="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
+                    <summary class="min-h-8 cursor-pointer text-sm font-bold text-slate-100">Advanced filters</summary>
+                    <div class="mt-3">
+                        <label for="status" class="sidebar-label">Service status</label>
+                        <select id="status" name="status" class="sidebar-input">
+                            <option value="">All statuses</option>
+                            @foreach ($states as $state)
+                                <option value="{{ $state->value }}" @selected($filters['status'] === $state->value)>{{ $state->label() }}</option>
+                            @endforeach
+                        </select>
+                        <p class="mt-2 text-xs leading-5 text-slate-400">Matches any service, or the service selected above.</p>
+                    </div>
+                </details>
+
+                <label class="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border border-slate-700 px-3 py-2 text-sm font-bold text-slate-100 hover:bg-slate-800">
+                    <input type="checkbox" name="show_completed" value="1" @checked($filters['show_completed']) class="sidebar-check">
+                    Show Completed
+                </label>
+
+                <div class="space-y-2">
+                    <button type="submit" class="sidebar-button">Apply filters</button>
+                    @if ($activeFilterCount > 0)
+                        <a href="{{ route('portal.site-dashboard') }}" class="sidebar-clear">Clear filters</a>
+                    @endif
+                </div>
+            </form>
+        </section>
+    </x-slot:sidebar>
+
+    <section class="w-full px-3 py-5 sm:px-4 xl:px-3 2xl:px-5" aria-labelledby="page-title">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
             <div>
                 <p class="eyebrow">{{ $activeSite->name }}</p>
-                <h1 id="page-title" class="page-title">Plot overview</h1>
-                <p class="page-intro">See each plot and its current Cavity Closers, Windows, Snagging and CML status.</p>
+                <h1 id="page-title" class="mt-1 text-2xl font-bold tracking-tight text-slate-950 sm:text-3xl">Plots &amp; call-offs</h1>
+                <p class="mt-1 text-sm leading-6 text-slate-600">Cavity Closers, Windows, Snagging and CML status for every plot.</p>
             </div>
-            <div class="flex flex-col gap-3 sm:flex-row">
-                <a href="{{ route('portal.call-offs.create') }}" class="primary-button">New Call Off</a>
-                <a href="{{ route('portal.call-offs.trash') }}" class="secondary-button">Trash</a>
-                <a href="{{ route('sites.select') }}" class="secondary-button">Change site</a>
+            <div class="flex flex-col gap-2 sm:flex-row">
+                <a href="{{ route('portal.call-offs.create') }}" class="primary-button min-h-11 px-4 py-2 text-sm">New Call Off</a>
+                <a href="{{ route('portal.call-offs.trash') }}" class="secondary-button min-h-11 px-4 py-2 text-sm">Trash</a>
             </div>
         </div>
 
@@ -21,13 +102,13 @@
             <div class="mt-6 rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-900" role="alert">{{ $errors->first() }}</div>
         @endif
 
-        <dl class="mt-8 grid gap-4 sm:grid-cols-3" aria-label="Site context">
-            <div class="summary-card"><dt class="text-sm font-medium text-slate-600">Customer</dt><dd class="text-xl font-bold text-slate-900">{{ $activeSite->customerOrganisation->name }}</dd></div>
-            <div class="summary-card"><dt class="text-sm font-medium text-slate-600">Active site user</dt><dd class="text-xl font-bold text-slate-900">{{ $signedInUser->name }}</dd></div>
-            <div class="summary-card"><dt class="text-sm font-medium text-slate-600">Plots shown</dt><dd class="text-4xl font-bold tracking-tight text-slate-900">{{ $plots->total() }}</dd></div>
+        <dl class="mt-5 flex flex-wrap gap-x-8 gap-y-3 rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm shadow-sm" aria-label="Site context">
+            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Customer</dt><dd class="mt-0.5 font-bold text-slate-950">{{ $activeSite->customerOrganisation->name }}</dd></div>
+            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Signed in as</dt><dd class="mt-0.5 font-bold text-slate-950">{{ $signedInUser->name }}</dd></div>
+            <div><dt class="text-xs font-bold uppercase tracking-wide text-slate-500">Plots shown</dt><dd class="mt-0.5 font-bold text-slate-950">{{ $plots->total() }}</dd></div>
         </dl>
 
-        <div class="mt-6 flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
+        <div class="mt-3 flex flex-col gap-2 text-sm text-slate-600 sm:flex-row sm:items-center sm:justify-between">
             @if ($lastSynchronisedAt !== null)
                 <p><span class="font-bold text-slate-800">Last updated:</span> {{ $lastSynchronisedAt->format('j M Y, H:i') }}</p>
             @else
@@ -38,72 +119,40 @@
             @endif
         </div>
 
-        <section class="mt-8" aria-labelledby="plots-heading">
-            <div>
-                <h2 id="plots-heading" class="section-title">Plots at {{ $activeSite->name }}</h2>
-                <p class="mt-1 text-sm text-slate-600">One row per plot. Fully completed plots are hidden until you choose to show them.</p>
+        <section class="mt-5" aria-labelledby="plots-heading">
+            <div class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+                <div>
+                    <h2 id="plots-heading" class="section-title">Plots at {{ $activeSite->name }}</h2>
+                    <p class="mt-1 text-sm text-slate-600">One row per plot. Fully completed plots are hidden by default.</p>
+                </div>
+                @if ($activeFilterCount > 0)
+                    <p class="text-sm font-bold text-sky-800" role="status">{{ $activeFilterCount }} {{ Illuminate\Support\Str::plural('filter', $activeFilterCount) }} active</p>
+                @endif
             </div>
 
-            <form method="GET" action="{{ route('portal.site-dashboard') }}" class="mt-5 grid gap-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:grid-cols-2 xl:grid-cols-5" aria-label="Filter plot overview">
-                <div class="sm:col-span-2 xl:col-span-1">
-                    <label for="plot" class="form-label">Find a plot</label>
-                    <input id="plot" name="plot" type="search" value="{{ $filters['plot'] }}" class="form-input" placeholder="e.g. Plot 101">
-                </div>
-                <div>
-                    <label for="service" class="form-label">Service activity</label>
-                    <select id="service" name="service" class="form-input">
-                        <option value="">All services</option>
-                        @foreach ($serviceTypes as $serviceType)
-                            <option value="{{ $serviceType->value }}" @selected($filters['service'] === $serviceType->value)>{{ $serviceType->label() }}</option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs leading-4 text-slate-600">Shows plots with a current call-off or completion for this service.</p>
-                </div>
-                <div>
-                    <label for="status" class="form-label">Service status</label>
-                    <select id="status" name="status" class="form-input">
-                        <option value="">All statuses</option>
-                        @foreach ($states as $state)
-                            <option value="{{ $state->value }}" @selected($filters['status'] === $state->value)>{{ $state->label() }}</option>
-                        @endforeach
-                    </select>
-                    <p class="mt-1 text-xs leading-4 text-slate-600">Matches any service, or the service selected above.</p>
-                </div>
-                <label class="flex min-h-12 items-center gap-3 rounded-lg border border-slate-300 px-3 py-2 text-sm font-bold text-slate-800 xl:mt-7">
-                    <input type="checkbox" name="show_completed" value="1" @checked($filters['show_completed']) class="h-5 w-5 rounded border-slate-300 text-sky-700 focus:ring-sky-700">
-                    Show Completed
-                </label>
-                <div class="flex flex-col gap-2 sm:col-span-2 sm:flex-row xl:col-span-1 xl:flex-col xl:justify-end">
-                    <button type="submit" class="primary-button w-full">Apply filters</button>
-                    @if (collect($filters)->except('show_completed')->filter()->isNotEmpty() || $filters['show_completed'])
-                        <a href="{{ route('portal.site-dashboard') }}" class="secondary-button w-full">Clear filters</a>
-                    @endif
-                </div>
-            </form>
-
             @if ($plots->isNotEmpty())
-                <form method="POST" action="{{ route('portal.call-offs.dashboard-selection') }}" class="mt-5 hidden lg:block" x-data="{ selected: [] }">
+                <form method="POST" action="{{ route('portal.call-offs.dashboard-selection') }}" class="mt-4 hidden xl:block" x-data="{ selected: [] }">
                     @csrf
-                    <div class="mb-3 flex items-center justify-between gap-4 rounded-lg bg-sky-50 p-3"><p class="text-sm text-slate-700"><strong x-text="selected.length">0</strong> <span x-text="selected.length === 1 ? 'plot selected' : 'plots selected'">plots selected</span><span class="block">Selections are page-scoped and clear when you change page or filters.</span></p><button type="submit" class="primary-button" x-bind:disabled="selected.length === 0" x-bind:aria-disabled="(selected.length === 0).toString()">Call Off Selected</button></div>
-                <div class="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full border-collapse text-left">
+                    <div class="mb-2 flex items-center justify-between gap-4 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2"><p class="text-sm text-slate-700"><strong x-text="selected.length">0</strong> <span x-text="selected.length === 1 ? 'plot selected' : 'plots selected'">plots selected</span><span class="ml-2 text-xs text-slate-500">Page-scoped</span></p><button type="submit" class="primary-button min-h-10 px-4 py-2 text-sm" x-bind:disabled="selected.length === 0" x-bind:aria-disabled="(selected.length === 0).toString()">Call Off Selected</button></div>
+                <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
+                    <div>
+                        <table class="min-w-[62rem] w-full border-collapse text-left">
                             <caption class="sr-only">Plot overview for {{ $activeSite->name }}</caption>
-                            <thead class="bg-slate-900 text-white">
+                            <thead class="sticky top-16 z-10 bg-slate-900 text-white shadow-sm">
                                 <tr>
-                                    <th scope="col" class="px-4 py-4 text-sm font-bold">Plot</th>
-                                    @foreach ($serviceTypes as $serviceType)<th scope="col" class="min-w-44 px-3 py-4 text-sm font-bold">{{ $serviceType->label() }}</th>@endforeach
-                                    <th scope="col" class="min-w-44 px-3 py-4 text-sm font-bold">Overall Status</th>
-                                    <th scope="col" class="px-4 py-4 text-sm font-bold">Actions</th>
+                                    <th scope="col" class="min-w-28 px-3 py-3 text-sm font-bold">Plot</th>
+                                    @foreach ($serviceTypes as $serviceType)<th scope="col" class="min-w-36 px-2 py-3 text-sm font-bold">{{ $serviceType->label() }}</th>@endforeach
+                                    <th scope="col" class="min-w-40 px-2 py-3 text-sm font-bold">Overall Status</th>
+                                    <th scope="col" class="min-w-32 px-3 py-3 text-sm font-bold">Actions</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-200">
                                 @foreach ($plots as $overview)
                                     <tr @class(['bg-indigo-50' => $overview->overallStatus === App\Enums\PlotOverallStatus::FullyCompleted, 'bg-white' => $overview->overallStatus !== App\Enums\PlotOverallStatus::FullyCompleted])>
-                                        <th scope="row" class="px-4 py-5 align-top text-base font-bold text-slate-950"><label class="flex items-center gap-3"><input type="checkbox" name="plots[]" value="{{ $overview->plot->uuid }}" class="h-5 w-5 rounded border-slate-300 text-sky-700 focus:ring-sky-700" x-model="selected" @disabled($overview->overallStatus === App\Enums\PlotOverallStatus::FullyCompleted)><span>{{ $overview->plot->plot_reference }}</span></label></th>
-                                        @foreach ($serviceTypes as $serviceType)<td class="px-3 py-4 align-top"><x-plot-service-status :service="$overview->services[$serviceType->value]" /></td>@endforeach
-                                        <td class="px-3 py-4 align-top"><x-plot-overall-status :status="$overview->overallStatus" /></td>
-                                        <td class="px-4 py-4 align-top"><div class="flex min-w-28 flex-col gap-2"><a href="{{ route('portal.plots.show', $overview->plot) }}" class="secondary-button min-h-11 px-3 py-2 text-sm">View details</a><a href="{{ route('portal.call-offs.create', ['plots' => [$overview->plot->uuid]]) }}" class="secondary-button min-h-11 px-3 py-2 text-sm" aria-label="Call off for {{ $overview->plot->plot_reference }}. Choose service in the next step.">Call Off</a></div></td>
+                                        <th scope="row" class="px-3 py-3 align-top text-sm font-extrabold text-slate-950"><label class="flex min-h-10 items-center gap-2"><input type="checkbox" name="plots[]" value="{{ $overview->plot->uuid }}" class="h-5 w-5 rounded border-slate-300 text-sky-700 focus:ring-sky-700" x-model="selected" @disabled($overview->overallStatus === App\Enums\PlotOverallStatus::FullyCompleted)><span>{{ $overview->plot->plot_reference }}</span></label></th>
+                                        @foreach ($serviceTypes as $serviceType)<td class="px-2 py-3 align-top"><x-plot-service-status :service="$overview->services[$serviceType->value]" compact /></td>@endforeach
+                                        <td class="px-2 py-3 align-top"><x-plot-overall-status :status="$overview->overallStatus" class="px-2 py-1 text-xs" /></td>
+                                        <td class="px-3 py-3 align-top"><div class="flex min-w-28 flex-col gap-1.5"><a href="{{ route('portal.plots.show', $overview->plot) }}" class="secondary-button min-h-10 px-2 py-1.5 text-xs">View details</a><a href="{{ route('portal.call-offs.create', ['plots' => [$overview->plot->uuid]]) }}" class="secondary-button min-h-10 px-2 py-1.5 text-xs" aria-label="Call off for {{ $overview->plot->plot_reference }}. Choose service in the next step.">Call Off</a></div></td>
                                     </tr>
                                 @endforeach
                             </tbody>
@@ -112,7 +161,7 @@
                 </div>
                 </form>
 
-                <form method="POST" action="{{ route('portal.call-offs.dashboard-selection') }}" class="mt-5 space-y-4 lg:hidden" x-data="{ selected: [] }">
+                <form method="POST" action="{{ route('portal.call-offs.dashboard-selection') }}" class="mt-4 space-y-3 xl:hidden" x-data="{ selected: [] }">
                     @csrf
                     @foreach ($plots as $overview)
                         <article @class(['rounded-xl border p-4 shadow-sm' => true, 'border-indigo-300 bg-indigo-50' => $overview->overallStatus === App\Enums\PlotOverallStatus::FullyCompleted, 'border-slate-200 bg-white' => $overview->overallStatus !== App\Enums\PlotOverallStatus::FullyCompleted]) aria-labelledby="plot-{{ $overview->plot->uuid }}">
