@@ -42,12 +42,12 @@ try {
     $actor = User::query()->findOrFail($input['actor']);
     $scope = new KnowledgeScope(...$input['scope']);
     $service = match ($input['operation']) {
-        'commit' => new ImportReview,
+        'commit', 'commit_fail' => new ImportReview,
         'claim' => new ImportAnalysis,
         'profile_revoke' => new RevokeProfile,
         default => new SourceBindingService,
     };
-    if (! in_array($input['operation'], ['draft', 'activate', 'revoke', 'commit', 'claim', 'profile_revoke', 'projection_change'], true)) {
+    if (! in_array($input['operation'], ['draft', 'activate', 'revoke', 'commit', 'commit_fail', 'claim', 'profile_revoke', 'projection_change'], true)) {
         throw new RuntimeException('invalid_test_operation');
     }
     if ($input['operation'] === 'projection_change') {
@@ -62,7 +62,18 @@ try {
             return ['changed' => true];
         }, 3);
     } else {
-        $method = $input['operation'] === 'profile_revoke' ? 'handle' : $input['operation'];
+        if ($input['operation'] === 'commit_fail') {
+            $enabled = true;
+            DB::connection()->beforeExecuting(function ($sql) use (&$enabled) {
+                if ($enabled && str_starts_with(strtolower($sql), 'insert into `wald_visit_observations`')) {
+                    $enabled = false;
+                    throw new RuntimeException('synthetic_race_failure');
+                }
+            });
+        }
+        $method = match ($input['operation']) {
+            'profile_revoke' => 'handle', 'commit_fail' => 'commit', default => $input['operation']
+        };
         $result = $service->{$method}($actor, $scope, ...$input['arguments']);
         if ($result instanceof Model) {
             $result = ['uuid' => $result->uuid];

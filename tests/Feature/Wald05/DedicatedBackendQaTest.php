@@ -177,16 +177,16 @@ it('W5Q exposes the shared-slot multi-site pilot boundary without silently split
     expect(DB::table('projected_plots')->where('site_id', $site->id)->count())->toBe(0);
 });
 
-it('W5Q records the unresolved refusal-audit gap without confusing it with partial commit', function () {
+it('W5Q preserves durable refusal audit without confusing it with partial commit', function () {
     [$actor, $scope] = F::owner();
     B::binding($actor, $scope);
     $preview = B::reviewed($actor, $scope);
     $before = DB::table('wald_import_commands')->count();
     $this->travel(25)->hours();
     expect(fn () => B::commit($actor, $scope, $preview))->toThrow(ImportConflict::class, 'stale_preview');
-    // Diagnostic evidence for W5Q-03: the candidate has no separate durable refusal journal.
     expect(DB::table('wald_import_commands')->count())->toBe($before)
-        ->and(DB::table('wald_import_receipts')->count())->toBe(0);
+        ->and(DB::table('wald_import_receipts')->count())->toBe(0)
+        ->and(DB::table('wald_commit_attempt_outcomes')->value('outcome'))->toBe('STALE');
 });
 
 it('W5Q measures the receipt-count query slope omitted by the row-only benchmark', function () {
@@ -207,7 +207,7 @@ it('W5Q measures the receipt-count query slope omitted by the row-only benchmark
 
         return $selects;
     };
-    foreach ([1, 7] as $uses) {
+    foreach ([1, 7, 20] as $uses) {
         [$actor, $initial] = F::owner();
         $scope = new KnowledgeScope($initial->organisationId, $initial->siteId, 'query-'.F::command(), 'family-v1');
         B::$callBase = 100000 + $scope->siteId * 1000;
@@ -220,6 +220,6 @@ it('W5Q measures the receipt-count query slope omitted by the row-only benchmark
         }
     }
     fwrite(STDERR, json_encode(['wald05_qa_profile_receipt_selects' => $counts]).PHP_EOL);
-    // Diagnostic evidence of W5Q-04, not acceptance of linear repeated receipt queries.
-    expect($counts[7])->toBeGreaterThan($counts[1]);
+    expect(max($counts) - min($counts))->toBeLessThanOrEqual(2)
+        ->and(max($counts))->toBeLessThanOrEqual(100);
 });

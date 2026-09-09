@@ -18,7 +18,7 @@ final class ImportStore
         }
         $hash = Canonical::hash([$scope->columns(), $ability, $payload]);
 
-        return DB::transaction(function () use ($actor, $scope, $ability, $command, $hash, $write): array {
+        $operation = function () use ($actor, $scope, $ability, $command, $hash, $write): array {
             $fresh = (new ImportPolicy)->authorize($actor, $scope, $ability, true);
             $prior = DB::table('wald_import_commands')->where('actor_id', $fresh->id)->where('command_uuid', $command)->first();
             if ($prior) {
@@ -39,6 +39,10 @@ final class ImportStore
                 'created_at' => now('UTC'), 'retain_until' => now('UTC')->addYears(6)]);
 
             return $result;
-        }, DB::getDriverName() === 'mysql' ? 3 : 1); // Only recognised MySQL concurrency errors are retried.
+        };
+
+        return $ability === 'commit'
+            ? (new CommitAttemptJournal)->execute($actor, $scope, $command, $hash, $payload, $operation)
+            : DB::transaction($operation, DB::getDriverName() === 'mysql' ? 3 : 1);
     }
 }

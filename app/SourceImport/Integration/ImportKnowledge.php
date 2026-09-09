@@ -4,7 +4,7 @@ namespace App\SourceImport\Integration;
 
 use App\Models\User;
 use App\SourceImport\Knowledge\Canonical;
-use App\SourceImport\Knowledge\KnowledgeQueries;
+use App\SourceImport\Knowledge\KnowledgePolicy;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use App\SourceImport\Knowledge\KnowledgeStore;
 use App\SourceImport\Knowledge\Models\Clarification;
@@ -45,10 +45,11 @@ final class ImportKnowledge
             throw new ImportConflict('knowledge_receipt_budget_exceeded');
         }
         $usePins = [];
+        if ($uses->isNotEmpty()) {
+            (new KnowledgePolicy)->authorize($actor, $scope, 'reuse');
+        }
+        (new ProfileReceiptBatch)->assertEligible($context, $snapshot, $profiles, $questions, $uses);
         foreach ($uses as $use) {
-            if (! (new KnowledgeQueries)->receiptEligible($actor, $scope, $use->uuid)) {
-                throw new ImportConflict('stale_profile_receipt');
-            }
             $role = 'structure:'.$use->selection['role'];
             if (! array_key_exists($role, $selections)) {
                 $selections[$role] = [...$use->selection, 'profile_receipt' => $use->uuid];
