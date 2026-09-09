@@ -1,6 +1,17 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
+## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
+
+Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
+forward QA. RCQ-01 is `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`. Before traffic is reopened, a
+failed release may restore the fresh pre-deployment database snapshot and previous verified code
+release together. After reopening or any Sprint 3F write, old main is forbidden; recover forward
+from the exact deployed RC or a compatible descendant. A Forge code/symlink rollback does not
+restore MySQL. CUSTOMER-RELEASE03A is documentation-only and permits merge-to-main preparation,
+not a main push, deployment or production change. See
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
+
+## CUSTOMER-RELEASE02 — reduced RC1 build (historical pre-QA status) — 9 September 2026
 
 Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
 Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`

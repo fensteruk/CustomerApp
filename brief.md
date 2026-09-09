@@ -11,9 +11,13 @@ RC1 is being prepared on `release/customerapp-2026-09-09-rc1` from
 `0873bac79edf578e9f4a9417e3cafae34e8aa925`. It includes Sprint 3F through
 `60aa9e2c72074dea2f8a4812aab238ff5d2791d5`, followed by security remediation
 `5e7df0862648fd9c2ac964b31a13ad17df84fd12`. It is not on main, deployed or
-dedicated-QA approved. Pre-QA passed after the approved test-only date-fixture correction.
-The commit containing this brief and the RC1 build record is the frozen candidate; its exact
-SHA is recorded in the release handoff and must be used unchanged for dedicated QA.
+production-approved. Pre-QA passed after the approved test-only date-fixture correction,
+and dedicated QA passed its forward functional, security, browser, migration and concurrency
+gates against frozen application checkpoint
+`ac250a8e9eef4b40591872de9275d802c76e4fba`. CUSTOMER-RELEASE03A resolves the remaining
+RCQ-01 release-recovery constraint with a strict pre-traffic rollback window and post-traffic
+roll-forward-only policy. Documentation-only descendants do not change the executable RC;
+their exact SHA must be recorded in the release handoff.
 
 The last successful production release proved by inspected repository evidence is
 Sprint 3E `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`, Forge deployment 76326195,
@@ -160,11 +164,19 @@ These retain separately gated product intent; no production queue/provider is as
 
 RC1 has 11 unchanged baseline migrations plus additive
 `2026_09_03_000014_add_date_amendment_metadata.php`. Its populated down would delete
-amendment metadata and is not the production recovery strategy. Use a rehearsed forward
-repair or compatible code rollback against the forward schema, with an approved backup.
+amendment metadata and is not the production recovery strategy. Before traffic is reopened,
+recovery may restore both a fresh pre-deployment database snapshot and the previously verified
+application release. After traffic is reopened or any Sprint 3F write occurs, old main is not
+compatible recovery: keep RC-generation-compatible code and roll forward from the exact
+deployed RC or a descendant. A full pre-deployment database restore after reopening is a major
+incident/business data-loss decision, not routine rollback.
 
 Require focused/full SQLite, isolated MySQL 8.4 migrations/upgrade/concurrency, strict Composer
 validation/audit, Pint and build before candidate freeze. Dedicated release QA then runs against
-the exact frozen SHA, including Office/Site User, mobile/accessibility, history/notifications,
-security and repeated source/Office races. No main push or deployment until separate approval.
-See [RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md).
+the exact frozen application SHA, including Office/Site User, mobile/accessibility,
+history/notifications, security and repeated source/Office races. The approved production
+sequence is backup, capture current release/schema evidence, maintenance mode, deploy exact
+approved RC, forward migrate/cache refresh, read-only smoke, then reopen. No main push or
+deployment occurs without separate approval. See the
+[RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md) and
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).

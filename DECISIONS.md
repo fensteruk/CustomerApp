@@ -810,3 +810,40 @@ Rules and outcome:
   release handling.
 - npm audit remains a separate release-risk review item: 14 development/build dependency
   entries (five high, nine moderate); production dependencies are clean under `--omit=dev`.
+
+---
+
+## DEC-057
+
+Date: 9 September 2026
+
+Decision: CUSTOMER-RELEASE03A approves a two-stage RC1 production recovery contract and
+classifies RCQ-01 as `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`.
+
+- RC1 can persist notification type `call_off_amendment_requested`; old main at
+  `0873bac79edf578e9f4a9417e3cafae34e8aa925` cannot cast that enum value. Old main is therefore
+  not an approved rollback target after Sprint 3F writes may exist.
+- The deployment remains in maintenance mode from the final pre-deployment evidence/backup
+  through deployment, forward migration, cache refresh and controlled smoke. No normal Office
+  or customer workflow traffic is allowed before the release owner reopens the site.
+- Before reopening and before any Sprint 3F business write, failure may be recovered by restoring
+  the fresh pre-deployment database snapshot and previous verified application release together,
+  then verifying ledger, caches and old-production smoke before reopening.
+- After reopening or any Sprint 3F write, recovery is roll-forward only from the exact deployed
+  RC or a compatible descendant. A code-release/symlink switch does not restore MySQL. Restoring
+  a pre-deployment database after traffic would discard legitimate writes and requires a separate
+  major-incident/business data-loss decision.
+- Do not use populated `migrate:rollback` as the recovery strategy: the additive Sprint 3F
+  migration's down path removes amendment metadata and cannot make old code recognise the new
+  notification value.
+- Frozen executable checkpoint
+  `ac250a8e9eef4b40591872de9275d802c76e4fba` remains unchanged. Documentation-only descendants
+  may record this decision and historical-document labels without changing the executable tree.
+- This decision permits merge-to-main preparation only. It does not authorise a main push,
+  production deployment, Forge change, migration, backup operation or production write.
+
+Reason:
+Dedicated QA proved forward behaviour but reproduced a `ValueError` when old main read a genuine
+RC1 amendment-notification row. The schema migration is additive; persisted enum/domain data is
+the compatibility boundary. A maintenance-mode cutover creates an auditable rollback window,
+while roll-forward preserves post-release writes and truth once the site has reopened.

@@ -1,6 +1,17 @@
 # Fenster Customer Portal ROADMAP
 
-## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
+## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
+
+Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
+forward QA. RCQ-01 is `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`: pre-traffic failure may restore
+the fresh pre-deployment database snapshot plus previous verified release; post-traffic or
+post-Sprint3F-write recovery is roll-forward only from the deployed RC or compatible descendant.
+Old main is not a post-write rollback target, and a Forge code/symlink switch does not restore
+MySQL. This documentation-only approval permits merge-to-main preparation but does not authorise
+a main push, production deployment or production change. See
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
+
+## CUSTOMER-RELEASE02 — reduced RC1 build (historical pre-QA status) — 9 September 2026
 
 Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
 Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`

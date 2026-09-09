@@ -1,5 +1,12 @@
 # Fenster Customer Portal v1.0.0-rc.1
 
+> **Historical/superseded release-preparation record (7 August 2026).** This document describes
+> an earlier three-service, pre-amendment candidate and is not the current RC1 release contract.
+> Use `brief.md`, `DECISIONS.md`, `documentation/customer-release02-rc1-build-2026-09-09.md`
+> and `documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md` for the current
+> reduced RC1 scope, QA evidence and recovery policy. The historical content below is retained
+> unchanged for audit traceability.
+
 **Status:** Release-candidate preparation only — not approved for production deployment
 
 **Assessment date:** 7 August 2026

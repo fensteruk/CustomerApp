@@ -1,6 +1,18 @@
 # Current Sprint
 
-## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
+## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
+
+Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
+functional, security, browser, migration and concurrency QA. RCQ-01 is
+`RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`: before reopening traffic, a failed release may restore
+the fresh pre-deployment database snapshot and previous verified application release together;
+after reopening or any Sprint 3F write, old main is forbidden and recovery is roll-forward from
+the deployed RC or a compatible descendant. Forge code-release/symlink rollback does not restore
+MySQL. CUSTOMER-RELEASE03A changes documentation only; it authorises merge-to-main preparation,
+not a main push, deployment or production change. See
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
+
+## CUSTOMER-RELEASE02 — reduced RC1 build (historical pre-QA status) — 9 September 2026
 
 Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
 Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`

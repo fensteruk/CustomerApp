@@ -222,3 +222,24 @@ and npm build-risk disposition), and later separately approved
 production-state/backup/upgrade/deployment verification. No further feature is required.
 
 CustomerApp RC1 built — ready for dedicated release QA
+
+## CUSTOMER-RELEASE03A recovery addendum — 9 September 2026
+
+Dedicated QA ran against frozen executable checkpoint
+`ac250a8e9eef4b40591872de9275d802c76e4fba` and passed the forward functional, security,
+browser, migration and concurrency gates. It retained RCQ-01/P1: old main cannot enum-cast an
+actual RC1 `call_off_amendment_requested` notification row. That original QA finding remains
+valid evidence and is not erased by this addendum.
+
+DEC-057 resolves RCQ-01 as `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`. RC1 must be cut over under
+maintenance after a fresh verified database backup and capture of current SHA/release/migration
+ledger. Before reopening and before any Sprint 3F write, failure may restore the snapshot and
+previous verified code together. After reopening or any Sprint 3F write, old main is forbidden;
+recovery is roll-forward from the exact deployed RC or a compatible descendant. A Forge release
+symlink/code switch does not restore MySQL, and the populated amendment migration down is not a
+recovery plan.
+
+This addendum and the associated release-document corrections are documentation-only descendants
+of the frozen executable checkpoint. They permit merge-to-main preparation only and do not
+authorise a main push, deployment, Forge change or production operation. See
+`documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md`.
