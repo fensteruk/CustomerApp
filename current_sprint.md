@@ -1,6 +1,20 @@
 # Current Sprint
 
-## CUSTOMER-WALD05 dedicated backend QA — 9 September 2026
+## CUSTOMER-WALD05 correction requalification — 9 September 2026
+
+**PASS — corrected bounded backend eligible to freeze.** DEC-054 authorises only W5Q-03/04
+corrections; committed candidate `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` remained fixed for
+all acceptance processes on local `qa/customer-wald05-backend-2026-09-09`. Durable private attempt audit and bounded batch
+profile eligibility are implemented; W5Q-01/02/05 remain preserved. Focused, combined, full
+regression, independent MySQL non-race and both additive upgrade paths pass. Fresh MySQL
+concurrency passes 320 groups / 640 workers; disjoint MySQL suites total 240 passes, one skip,
+2,256 assertions, zero failures/errors. The disposable server was normally shut down.
+The multi-site shared-slot **PILOT_BLOCKER** remains separately scoped WALD06/pilot design.
+Full Office UI, cutover and release remain separate; eight inherited advisories are unchanged.
+See [fresh QA evidence](documentation/wald/customer-wald05-backend-qa-2026-09-09.md).
+No main, push, GitHub Actions, production, customer import, SiteApp, WALD06 or deployment.
+
+## Historical CUSTOMER-WALD05 original dedicated backend QA — superseded by requalification above
 
 **FAIL — corrections required; do not freeze or start WALD06.** Dedicated QA of exact candidate
 `1dc6ee6a24026c970687472126dc295fb6f2b3c8` is recorded on local

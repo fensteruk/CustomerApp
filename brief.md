@@ -2,7 +2,7 @@
 
 **Version:** Current product contract
 
-**Last updated:** 9 September 2026 (WALD05 dedicated backend QA)
+**Last updated:** 9 September 2026 (WALD05 W5Q-03/04 correction and requalification)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
@@ -10,11 +10,15 @@ This document replaces the previously layered brief. It states the current appro
 truth without treating feature-branch work as released. Historical decisions and delivery
 evidence remain in `DECISIONS.md`, sprint reports and release records.
 
-**Current WALD05 gate:** Dedicated backend QA of `1dc6ee6a24026c970687472126dc295fb6f2b3c8`
-has not passed. The local QA branch corrects digest/source-order defects, but durable refusal audit
-and repeated profile-receipt queries still require correction. It is not an accepted baseline,
-on main or deployed. [QA evidence](documentation/wald/customer-wald05-backend-qa-2026-09-09.md).
-The one-site unit remains bounded; multi-site splitting cannot bypass the shared date/slot rule.
+**Current WALD05 gate:** W5Q-03/04 corrections are committed at
+`dbd17c68a04c028418e2d8a08fc43312aae5fe3b` on local `qa/customer-wald05-backend-2026-09-09`;
+fresh requalification **passed** and this bounded backend is eligible to freeze. Durable private
+attempt audit preserves atomic business rollback; batched profile checks retain authority/freshness
+and bounded query growth. Earlier digest/source-order fixes remain. This is feature-branch work,
+not on main or deployed.
+[QA evidence](documentation/wald/customer-wald05-backend-qa-2026-09-09.md) preserves the original
+failed gate. The one-site unit remains bounded; multi-site splitting cannot bypass the shared
+date/slot rule and remains a separate WALD06/pilot architecture blocker.
 
 ## 1. Executive Summary
 
@@ -388,9 +392,10 @@ The unchanged workbook now profiles successfully. DEC-053 directs backend comple
 full Office UI. The default-off candidate now includes private runs, accepted analysis/knowledge,
 immutable staging, pinned review and atomic source projection commit. Supported units are one
 explicitly bound site, one visible unmerged table and at most 500 nonempty rows; unsupported units
-block entirely. The actual mixed-site workbook has not been imported. Dedicated backend QA is the
-next gate; full Office UI, pilot/cutover and release remain separate. See
-`documentation/wald/customer-wald05-backend-completion-2026-09-09.md` for exact verification.
+block entirely. DEC-054 authorises only W5Q-03/04 correction and fresh backend acceptance, whose
+current state is at the top of this brief. The actual mixed-site workbook has not been imported;
+full Office UI, pilot/cutover and release remain separate. See
+`documentation/wald/customer-wald05-backend-qa-2026-09-09.md` for exact verification.
 No global dictionary change or import fallback. G09's unnamed owner blocks unattended production
 disposal only; no deletion scheduling is enabled.
 
@@ -425,7 +430,7 @@ Status is deliberately separated from product intent:
 | Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
 | Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
 | Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (9 September update) | Accepted WALD04 `0e83eb289...`, reader correction `e9e1c3a...` and binding foundation `d1b5de1...` are historical inputs. DEC-053 backend candidate adds bounded private upload through reviewed atomic commit; feature branch only, not dedicated-QA accepted or deployed. Full Office UI and actual-workbook pilot remain. Exact results are in the 9 September backend completion report. |
+| Standalone Wald (9 September update) | Corrected backend candidate `dbd17c68...` preserves accepted Wald inputs and closes W5Q-03/04 implementation gaps under DEC-054; fresh acceptance status is recorded above and in the dedicated QA report. Feature branch only, not on main or deployed. Full Office UI and actual-workbook pilot remain. |
 
 Implemented foundation already evidenced in the repository includes authentication, customer
 organisations, four Portal roles, site assignments and active site context, server-side
@@ -438,8 +443,8 @@ notifications. Exact release state must still follow the table above.
 Approved direction, not a delivery claim:
 
 - dedicated QA and release decision for Sprint 3F;
-- dedicated QA of CUSTOMER-WALD05's bounded backend, separately scoped Office UI completion,
-  then independently gated CUSTOMER-WALD06 pilot and hardening;
+- freeze the fresh-QA-passed corrected CUSTOMER-WALD05 backend; separately scope
+  Office UI completion and multi-site architecture before independently gated WALD06 pilot/hardening;
 - safe source scheduling/synchronisation after manual import is proven;
 - completed Office account/organisation/site-assignment administration;
 - approved UK bank-holiday provider and operational ownership;
@@ -487,5 +492,6 @@ Do not invent answers for:
 The confirmed per-visit semantic set in Sections 10–12 remains approved. WALD05 implementation
 authority is recorded by DEC-049. DEC-050/051 are exact-workbook exceptions, not global dictionary
 changes. The actual selected data has no W5-P01/P02 conflict; W5-T01 is corrected under DEC-052.
-No new blanket approval is required to finish WALD05. Dedicated QA and independently approved
-pilot/release gates follow implementation.
+The corrected bounded WALD05 backend passed fresh dedicated QA under DEC-054. Full Office UI,
+multi-site pilot architecture and independently approved pilot/release gates remain separate;
+no new blanket approval question should reopen the two corrected backend defects.

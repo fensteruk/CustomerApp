@@ -1381,3 +1381,40 @@ Reason:
 The user explicitly requests completion rather than another foundation checkpoint or blanket
 approval question. Backend QA readiness is distinct from full Office UI, pilot, acceptance,
 release and production readiness.
+
+## DEC-054
+
+Date:
+9 September 2026
+
+Decision:
+The user explicitly authorises correction of only W5Q-03 (durable refused/failed commit-attempt
+audit) and W5Q-04 (repeated profile-receipt eligibility queries) on
+`qa/customer-wald05-backend-2026-09-09`, starting from QA handoff
+`324cacfd53cf031b284464fb8ca97b20ff1a6598`. Preserve W5Q-01/02/05 and all other approved
+WALD05 behavior. This is bounded defect correction and requalification, not wider architecture
+or production authority.
+
+Rules:
+
+- A reviewed run's business effects remain atomic. Private immutable attempt evidence may
+  survive a refusal or business rollback; it is not a failed business receipt or partial import.
+- Attempt metadata must remain bounded, attributable and private, with deterministic command
+  deduplication/recovery and no raw workbook, credential or exception-message disclosure.
+- Batch current profile/receipt dependencies without weakening authority, scope, freshness,
+  competing-match checks, provenance or existing memory/row budgets.
+- Commit the corrections, then start fresh acceptance processes against the new exact candidate.
+  Reuse neither old candidate acceptance nor the earlier mixed-definition race run. Require
+  focused, combined, full regression and independent disposable MySQL 8.4 non-race, schema,
+  upgrade, retry and repeated concurrency evidence, including new attempt-audit races.
+- Keep the actual multi-site export's shared date/slot conflict as a separate **PILOT_BLOCKER**.
+  A passed bounded backend gate does not authorise splitting the workbook, WALD06, full Office
+  UI, pilot execution or cutover.
+- Preserve the original failed gate in the QA report. Recommend freezing only the newly
+  corrected candidate after fresh acceptance passes; QA evidence is not deployment evidence.
+- No main, push, GitHub Actions, production, SiteApp or deployment. Do not merge separate
+  Composer remediation `5e7df0862648fd9c2ac964b31a13ad17df84fd12` or change lockfiles.
+
+Reason:
+The user separates two correctable backend defects from the later multi-site pilot design.
+This narrows the next gate without weakening source atomicity or expanding the supported unit.

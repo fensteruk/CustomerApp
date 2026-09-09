@@ -2,12 +2,12 @@
 
 *Last Updated: 9 September 2026*
 
-Latest gate: **WALD05 dedicated backend QA FAIL — corrections required** on local
-`qa/customer-wald05-backend-2026-09-09`, from `1dc6ee6a24026c970687472126dc295fb6f2b3c8`.
-W5Q-01/02/05 are corrected; W5Q-03 refusal/failure audit and W5Q-04 repeated receipt queries remain.
-Do not freeze this output or start WALD06. Shared-slot multi-site splitting is a separate pilot
-design blocker. [Current QA report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md).
-No main, push, deployment, full UI or actual customer workbook import.
+Latest gate: **WALD05 W5Q-03/04 fresh requalification PASS; bounded backend eligible to freeze** on local
+`qa/customer-wald05-backend-2026-09-09`, candidate `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`.
+W5Q-01/02/05 remain preserved. DEC-054 keeps durable attempt audit and bounded profile checks
+separate from the shared-slot multi-site **PILOT_BLOCKER**. Fresh concurrency passed 320 groups /
+640 workers; no bounded backend blocker remains. [Current QA report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md)
+preserves the original failed gate. No main, push, deployment, full UI or real workbook import.
 
 Current Wald update: management accepted corrected WALD04 output
 `0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on `qa/customer-wald04-2026-09-08`
@@ -23,7 +23,8 @@ correction is implemented at `e9e1c3a...` as reader wald-0.2.2 / XLSX adapter 3;
 above remain historical input. DEC-053's default-off backend candidate implements private runs,
 immutable staging, pinned review and atomic projection commit, including ordering/replacement.
 The supported unit is one bound site/table and 500 nonempty rows; unsupported units refuse.
-Dedicated backend QA, full Office UI and actual-workbook pilot remain. No push, main change or deployment. G09
+The current correction gate is recorded above; full Office UI and actual-workbook pilot remain.
+No push, main change or deployment. G09
 named-owner nomination still gates unattended disposal. Eight inherited advisories remain.
 Evidence: `documentation/wald/customer-wald05-backend-completion-2026-09-09.md`.
 
@@ -35,8 +36,8 @@ Any later read-only SiteApp integration must not duplicate its operational workf
 
 # Current Planning Milestone
 
-**CUSTOMER-WALD05 bounded backend candidate implemented; dedicated QA and full Office UI remain.**
-The current authority is the rebuilt `brief.md`, DEC-039–053,
+**CUSTOMER-WALD05 corrected backend QA passed; full Office UI and multi-site pilot remain.**
+The current authority is the rebuilt `brief.md`, DEC-039–054,
 `documentation/siteapp-import-data-dictionary.md` and
 `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
 The contradiction register preserves stale/historical statements without treating them as
@@ -70,7 +71,7 @@ profile/integration comparison. It must not be merged wholesale or treated as pr
 | 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
 | 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
 | 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Accepted corrected snapshot `0e83eb2`; 198 MySQL tests covered, including 140 race groups; no automated disposal or deployment. |
-| 4 | CUSTOMER-WALD05 — Import/review integration | DEC-053 backend candidate implements bounded private upload through atomic reviewed commit with immutable history. Dedicated backend QA and separately scoped full Office UI remain; actual mixed-site workbook has not been imported. No new blanket permission required. |
+| 4 | CUSTOMER-WALD05 — Import/review integration | Corrected backend `dbd17c68...` adds durable attempt audit and batched receipt eligibility under DEC-054; fresh QA status above governs freeze. Separately scoped full Office UI remains; actual mixed-site workbook has not been imported. |
 | 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
 
 First usable milestone is the integrated 05 exit, not just a working profiler. It must

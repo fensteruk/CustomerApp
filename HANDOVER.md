@@ -1,6 +1,24 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD05 dedicated backend QA — 9 September 2026
+## CUSTOMER-WALD05 correction requalification — 9 September 2026
+
+**PASS — recommend freezing the corrected bounded backend.** The W5Q-03/04 correction candidate is
+`dbd17c68a04c028418e2d8a08fc43312aae5fe3b`, committed before all fresh acceptance processes on
+local `qa/customer-wald05-backend-2026-09-09`. W5Q-01/02/05 are preserved. Private immutable
+intent/outcome audit survives business rollback; batched current profile dependencies have
+constant 70 reads at 1/7/20 receipts and retain tenant/freshness/competition checks.
+Focused, combined, full regression, independent MySQL non-race and both additive upgrades pass;
+the fresh race gate passes 320 groups / 640 workers, zero failures. Disjoint MySQL suites total
+240 passes, one skip and 2,256 assertions. Full CustomerApp: 1,314 passes / 49 environment skips /
+6,193 assertions. The disposable server was normally shut down; no bounded backend blocker remains.
+Use the [fresh report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md), which retains
+the original FAIL below its correction section. DEC-054 is the bounded correction authority.
+The shared-slot multi-site **PILOT_BLOCKER** remains separate; do not split/import the actual
+workbook or start WALD06/full Office UI without their scoped instructions. Eight inherited
+Composer advisories remain separate; remediation was not merged.
+No main, push, GitHub Actions, production, SiteApp, real import, WALD06 or deployment occurred.
+
+## Historical CUSTOMER-WALD05 original dedicated backend QA — superseded by requalification above
 
 **FAIL — do not freeze an accepted WALD05 backend baseline yet.** Local QA branch
 `qa/customer-wald05-backend-2026-09-09` starts from exact `1dc6ee6a24026c970687472126dc295fb6f2b3c8`.

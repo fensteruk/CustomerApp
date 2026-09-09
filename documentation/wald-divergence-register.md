@@ -2,11 +2,12 @@
 
 Last updated: 9 September 2026. Owner: Product and Architecture.
 
-Latest QA: W5Q-01/02 correct CustomerApp-only transient canonical digest and source-order/
-projection-ownership checks. Backend application/projection/digest pins advance to v2; old staged
-v1 manifests become stale. Generic Wald and dictionary meaning remain unchanged. W5Q-03/04 remain
-open, so this local QA branch is not accepted or released. See
-[dedicated QA](wald/customer-wald05-backend-qa-2026-09-09.md). No SiteApp backport.
+Latest correction: W5Q-03/04 at `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` adds CustomerApp-only
+durable attempt audit and operation-local batch profile eligibility. Backend application identity
+is v3; projection and transient digest remain v2, preserving W5Q-01/02 and synthetic-fixture
+W5Q-05. Older staged application-v2 manifests become stale. Generic Wald and dictionary meaning
+remain unchanged. Fresh backend acceptance passed on the local QA branch; no release or SiteApp
+backport. See [dedicated QA](wald/customer-wald05-backend-qa-2026-09-09.md).
 
 Historical foundation entry: DEC-052's W5-T01 correction is implemented separately at
 `e9e1c3a2a3ff79cfe5f097bea143f51195becd55`: reader `wald-0.2.2`, XLSX adapter 3, CSV 2.
@@ -235,8 +236,18 @@ selection and binding foundation to the bounded backend; no SiteApp adoption/bac
 | WD-47 | CustomerApp-specific integration | Private artifacts, leased durable runs, accepted analysis/clarification, immutable staged rows/reviews, downstream projection adapter, ordering, one-run atomic commit, replacement, observations and receipts. One bound site/table, 500-row bound; unsupported units refuse entirely. | `app/SourceImport/Integration`, additive 2026_09_09_000012 migration; backend application/projection identities v1. Origin is the feature-branch backend commit containing the 9 September completion report. No full UI, old-importer retirement or production operation. |
 | WD-48 | CustomerApp-specific adapter correction, W5-T02 | Accepted analysis snapshots previously used the small retained-payload hashing ceiling for complete transient reasoning evidence, rejecting an ordinary synthetic seven-row workbook. `Canonical::evidenceHash` streams identical canonical bytes under a separate 4 MiB ceiling; only snapshot profile/reasoning hashing and bounded staged-rowset hashing use it. Persistent JSON/hash ceilings, matching/activation policy, generic core and dictionary remain unchanged. | `Knowledge/Canonical.php`, `Knowledge/AnalysisSnapshot.php`, BackendSafetyTest digest invariants and pipeline/performance suites. `customerapp.wald-transient-evidence-digest.v1` is pinned in backend identity. No automatic profile migration, semantic override or upstream backport. Dedicated backend QA must review this narrow integration correction. |
 
-Current verification and old-importer parity disposition:
+Historical implementation verification and old-importer parity disposition:
 [backend completion report](wald/customer-wald05-backend-completion-2026-09-09.md).
+
+## WALD05 dedicated QA corrections — 9 September 2026
+
+These CustomerApp integration corrections do not change portable Wald or source meaning.
+WD-47/48 retain their original implementation identity; the current identities below supersede it.
+
+| ID | Category | Corrected difference | Evidence / identity |
+|---|---|---|---|
+| WD-49 | CustomerApp-specific QA correction, W5Q-01/02/05 | Canonical transient digest parity, namespace-wide visit ordering and projection ownership protection; collision-resistant synthetic race owners. | `9f5751f7a6d62b4ae989e34f3894e3b57011a0a8`; projection/digest v2, preserved by fresh correction candidate. Original QA still failed W5Q-03/04. |
+| WD-50 | CustomerApp-specific QA correction, W5Q-03/04 | Independent immutable commit intent with one terminal outcome; atomic business/savepoint boundary and bounded retry/recovery. Operation-local batched current profile/version/provenance eligibility replaces repeated per-receipt queries; existing budgets and vetoes remain. | `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`; Integration classes, additive 000013 audit migration and positive CorrectionRequalification/DedicatedBackendQa/MysqlAttemptConcurrency tests. Application v3, projection/digest v2. Fresh gate in linked QA report; no generic backport, full UI, pilot or deployment. |
 
 ## Backport process
 

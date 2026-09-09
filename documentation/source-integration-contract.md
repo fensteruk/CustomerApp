@@ -1,6 +1,6 @@
 # Customer Portal — Source Integration Contract
 
-_Sprint 3B — 20 August 2026; WALD05 governance updated 8 September 2026_
+_Sprint 3B — 20 August 2026; WALD05 attempt-audit correction updated 9 September 2026_
 
 ## CUSTOMER-WALD01A reconciliation addendum — 4 September 2026
 
@@ -164,7 +164,17 @@ The retained legacy importer marks unexpected failures on its run and writes onl
 metadata (source name, import-run UUID and exception class) to the application log. Raw
 payloads, credentials and exception messages must not be logged by this layer. The WALD05 backend
 stores only safe analysis failure codes in its private durable run/audit; it does not log raw
-exceptions. A failed backend commit rolls back the complete transaction and leaves the prior
-review state intact, never a partial success or a separately persisted failed receipt.
+exceptions. A failed backend commit rolls back all business effects and leaves the prior
+review state intact, never a partial success or a separately persisted failed business receipt.
+Under DEC-054, a separate private immutable commit-attempt intent survives business rollback;
+at most one terminal outcome records success, stale/refused/conflicted rejection or failure.
+Success effects, business receipt and success outcome commit together. Exact actor/command
+retries deduplicate; a terminal failed command needs a new command for a corrected attempt.
+An unavailable outcome store may leave only the durable intent, never invented success; a
+matching retry can recover that incomplete attempt. Runtime commit entry requires a top-level
+transaction boundary. Audit metadata excludes raw rows, filenames, credentials and exception
+messages. Existing holds and restrictive history references remain; no disposal policy or
+scheduler is added. This is feature-branch behavior, not an HTTP endpoint or deployed service.
 Current verification and parity limits are recorded in
-`documentation/wald/customer-wald05-backend-completion-2026-09-09.md`.
+`documentation/wald/customer-wald05-backend-qa-2026-09-09.md`; the earlier backend completion
+report remains historical implementation evidence.

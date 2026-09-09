@@ -2,6 +2,266 @@
 
 Date: 9 September 2026. Owner: CustomerApp QA / Testing.
 
+## W5Q-03 / W5Q-04 correction and fresh requalification — 9 September 2026
+
+**PASS — corrected bounded WALD05 backend is eligible to freeze.** Fresh acceptance against
+`dbd17c68a04c028418e2d8a08fc43312aae5fe3b` closes W5Q-03 and W5Q-04 with no remaining
+bounded backend blockers. This section supersedes the original gate for this candidate only;
+the original FAIL evidence below remains unchanged. This is not full UI, pilot or release approval.
+
+### Corrected candidate and bounded authority
+
+- Starting QA handoff: `324cacfd53cf031b284464fb8ca97b20ff1a6598`.
+- Corrected executable/test candidate: `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`.
+- Branch: `qa/customer-wald05-backend-2026-09-09`; local only.
+- User explicitly authorised W5Q-03 and W5Q-04 corrections and fresh acceptance, not WALD06,
+  multi-site design, dependency remediation, main, push, production or deployment.
+- W5Q-01/02/05 remain preserved. No generic Wald, dictionary, existing projection guard,
+  route, UI, dependency or historical migration was changed.
+- Backend application identity advances to v3. Projection and transient digest remain v2.
+  Historical staged application-v2 manifests cannot silently commit under new behavior.
+
+### W5Q-03: durable intent and immutable outcome
+
+`CommitAttemptJournal` surrounds the existing `ImportStore` business operation. Two new private
+tables retain a bounded immutable intent and at most one immutable terminal outcome for an
+actor/command UUID. The forward migration adds restrictive ownership references, a composite
+preview/run foreign key and four unconditional UPDATE/DELETE guards. No existing data is rewritten.
+
+1. A short transaction registers intent before business execution, using current stored authority,
+   a scoped run and a hash of the complete command payload. An identical command reuses the intent;
+   changed payload under that token conflicts. Unknown targets cannot create orphan journal entries.
+2. Execution obtains current actor/role/owner/site locks, then the attempt lock, then enters the
+   unchanged import operation. Its run/stream/knowledge/binding/Portal aggregate lock order remains.
+3. Business work has a savepoint inside the audit execution transaction. Success effects, existing
+   success command audit, business receipt and SUCCEEDED outcome commit together. A semantic refusal
+   or injected exception rolls back the business savepoint; its terminal audit outcome then commits.
+4. Recognised MySQL concurrency errors escape to the bounded whole-transaction retry (three total
+   attempts). Exhaustion records FAILED after rollback. Validation/stale/authority failures are not
+   retried as transient errors. No per-row commit, queue, mail or legacy-importer fallback exists.
+5. A crash or unavailable outcome store can leave an intent with **no terminal outcome**. This is
+   incomplete evidence, never fabricated success/failure. A matching command may resume; success
+   receipts and terminal outcomes prevent duplicate effects. If the database cannot register intent,
+   business execution never starts. Persistence availability cannot be guaranteed by an audit table.
+
+Runtime commit callers must enter without an ambient transaction; otherwise they are refused.
+Only the framework's testing environment permits its enclosing rollback-isolation transaction.
+Real MySQL worker and standalone upgrade calls exercise the actual top-level boundary.
+
+Outcomes are SUCCEEDED, FAILED, REFUSED, STALE or CONFLICTED; these are audit classifications,
+not new import-run product states. Same-key terminal failure remains terminal: retrying corrected
+conditions requires an explicit new command, preserving the old historical outcome. Successful
+same-key replay reauthorises access and returns the existing result. New-key receipt replay is
+attributed separately without repeating projection effects.
+
+The intent retains run/preview/stage references, actor ID and stored role/active snapshot, source
+date/slot, workbook hash, binding/version references, profile identities, component pins, knowledge
+hash and command identity. It does not retain workbook rows, display filename, stack traces,
+credentials or raw exception messages. Metadata is bounded at 64 KiB; source row inspection is
+bounded by the existing 500-row unit. An authorised paginated audit query caps each page at 100.
+
+Authority loss is audited only for a known non-preview uploader/reviewer on the exact scoped run.
+Unrelated external probes receive the normal generic denial and no linked record or target data.
+This is not a new general security-event system. Audit access remains current Office/private.
+Existing run holds and success-receipt retention references remain protected; no disposal scheduler
+or new failed-attempt deletion period is invented. Future disposal must respect these dependencies.
+
+Positive tests cover expiry, revoked binding/profile, projection epoch, historical dictionary/reader
+pins, inactive/role-changed actors, ordering/duplicate/identity review blockers, rollback after
+observations/products/receipts/required audit, exact replay, command collision, private reads,
+direct SQL/ORM immutability and outcome-store recovery. Historical-pin cases construct new immutable
+fixture rows; they do not disable guards or mutate executable constants during acceptance.
+
+### W5Q-04: operation-local batch eligibility
+
+The cause was one `KnowledgeQueries::receiptEligible` invocation per applied use. Each invocation
+reloaded authority, context, profiles, selected versions and provenance. `ImportKnowledge` now
+retains one fresh reuse-authority check and passes its already scoped/locked dependencies to
+`ProfileReceiptBatch`. Selected active versions and current provenance are each loaded once;
+matching and every receipt check then use bounded in-memory collections, not SQL in loops.
+
+The existing 50-profile/50-use overflow guards remain. Root SQL includes organisation, site,
+namespace and family; child queries are constrained by those selected IDs. No global hydration,
+cross-operation cache, first-profile winner, competitor truncation or increased budget was added.
+Revocation, expiry, epoch/version, current answers/evidence, descriptor compatibility, dictionary/
+reader pins, provenance and competing matches remain vetoes. Receipt selection equality is also
+checked against the current matching result.
+
+| Applied receipts | Original QA commit SELECTs | Corrected fresh-acceptance SELECTs |
+|---|---:|---:|
+| 1 | 60 | 70 |
+| 7 | 138 | 70 |
+| 20 | Not measured | 70 |
+
+The extra fixed audit work explains the higher one-receipt cost. The positive acceptance assertion
+requires maximum minus minimum <=2 and maximum <=100; observed fresh-acceptance growth is zero. Existing
+7/100/500-row assertions remain <90 reads and <384 MiB, unchanged. Invalid-use batches, actual
+competing profile activation and superseded answer provenance refuse. No stale authority is cached.
+
+### Fresh verification
+
+All final application processes started after the corrected commit. Executable files remain fixed
+for the entire acceptance run; the earlier mixed-definition race qualification is not reused.
+Disposable MySQL 8.4.11 is independently initialised in
+`storage/app/wald05-requal-20260909/data`, bound only to 127.0.0.1:33489, X protocol off.
+No Windows service, environment file, normal local database or production resource is used.
+
+Preflight only (not final acceptance): focused 215 passed / 23 MySQL skips / 747 assertions;
+three later positive tests passed / 18 assertions; MySQL retry/schema 5 passed / 27 assertions;
+WALD04 additive upgrade preserved all 34 old tables and refused all three populated rollbacks.
+One early test found revoked-binding refusal classified REFUSED; corrected its audit classification
+to STALE while preserving the original exception and source-binding behavior.
+
+The corrected candidate was committed at 12:13:21 +01:00, before any final acceptance process.
+No executable/test/migration edits occurred during those processes. Final results:
+
+| Gate | Total | Passed | Skipped | Assertions | Failures/errors |
+|---|---:|---:|---:|---:|---:|
+| Focused WALD05, SQLite | 241 | 218 | 23 | 765 | 0 |
+| Combined Wald, SQLite | 1,129 | 1,095 | 34 | 5,005 | 0 |
+| Full CustomerApp, SQLite | 1,363 | 1,314 | 49 | 6,193 | 0 |
+| Independent WALD05 non-race, MySQL 8.4.11 | 218 | 217 | 1 | 763 | 0 |
+| Fresh MySQL races/retry/schema | 23 | 23 | 0 | 1,493 | 0 |
+
+The two disjoint MySQL suites total **240 passes, one SQLite-only skip, 2,256 assertions**
+and zero failures/errors. Upgrade scripts and the extra measurement rerun are additional,
+not double-counted. All five final JUnit reports contain zero failures and errors.
+
+Fresh concurrency evidence: **320 groups / 640 separate worker processes / zero failures**:
+
+- Eight retained backend scenarios x20 =160 groups: double commit, same Call No. update,
+  AM/PM, older/newer, binding change, profile revocation, projection epoch, same-slot correction.
+- Four retained foundation scenarios x10 =40 groups: activation/activation, exact command
+  replay, draft/draft, activation/revocation.
+- Three independent QA scenarios x20 =60 groups: analysis claims, actually applied profile
+  receipt against revocation, cross-family visit writers.
+- Three new attempt-audit scenarios x20 =60 groups: simultaneous stale commits, concurrent
+  identical command and failed-attempt/successful-commit races.
+
+The 18 scenario tests plus four retry cases and one schema case all passed in 1,489.386 seconds.
+No iteration count or loser/effect assertion was reduced. The new audit scenarios retained
+exactly 100 terminal records: 40 STALE, 51 SUCCEEDED and nine FAILED, with no missing or duplicate
+terminal outcomes. Exact-command pairs shared one attempt; distinct commands retained separate
+truth. Both real failure and receipt-replay orderings occurred in the failure/success scenario.
+
+SQLite skips include MySQL-specific gates; the MySQL non-race skip is SQLite-specific.
+No environment skip is promoted to a pass. Broader non-WALD05 MySQL races are not rerun here.
+JUnit evidence is retained locally (ignored, not committed):
+`storage/framework/testing/wald05-requal-final-{focused,combined,full,mysql-nonrace,races}.xml`.
+
+Exact acceptance commands, from the repository root:
+
+```powershell
+php artisan test tests/Feature/Wald05 tests/Unit/Wald05 --compact --log-junit=storage/framework/testing/wald05-requal-final-focused.xml
+php artisan test tests/Unit/Wald tests/Feature/Wald tests/Unit/Wald03 tests/Unit/Wald04 tests/Feature/Wald04 tests/Unit/Wald05 tests/Feature/Wald05 --compact --log-junit=storage/framework/testing/wald05-requal-final-combined.xml
+php artisan test --compact --log-junit=storage/framework/testing/wald05-requal-final-full.xml
+# MySQL processes explicitly use testing, mysql, empty DB_URL, loopback port 33489,
+# synthetic database names below, root/empty local-only password, array mail/cache/session.
+$qaTests = @(rg --files tests/Feature/Wald05 | Where-Object { $_ -notmatch 'Mysql' })
+php vendor/pestphp/pest/bin/pest --configuration=phpunit.mysql.xml @qaTests tests/Unit/Wald05 --compact --log-junit=storage/framework/testing/wald05-requal-final-mysql-nonrace.xml
+php artisan migrate --force --no-interaction
+php vendor/pestphp/pest/bin/pest --configuration=phpunit.mysql.xml tests/Feature/Wald05/MysqlBackendQaTest.php tests/Feature/Wald05/MysqlBackendConcurrencyTest.php tests/Feature/Wald05/MysqlFoundationConcurrencyTest.php tests/Feature/Wald05/MysqlAttemptConcurrencyTest.php --compact --log-junit=storage/framework/testing/wald05-requal-final-races.xml
+php scripts/verify-wald05-qa-upgrade.php --acceptance
+php scripts/verify-wald05-qa-upgrade.php --from-wald05 --acceptance
+php vendor/bin/pint --test
+composer validate --strict
+composer audit --format=json
+npm run build
+git diff --check
+```
+
+The independent non-race schema is `customerapp_wald05_requal_nonrace`; the separate race/retry
+schema is `customerapp_wald05_requal_final`. The latter migrated all 16 migrations successfully.
+Both standalone upgrade checks completed successfully after the candidate commit:
+
+- `customerapp_wald05_requal_upgrade_final`: WALD04 baseline 13 migrations plus three additive
+  migrations; all 34 pre-existing data tables preserved, allowing only the newly added epoch field.
+- `customerapp_wald05_requal_upgrade_current_final`: existing WALD05 baseline 15 migrations plus
+  the new audit migration; all 45 pre-existing data tables preserved, including existing epochs,
+  Portal dates/products/history and synthetic prior binding/staging/knowledge evidence.
+- Both: empty rollback/reapply passed; all three WALD05 populated rollbacks refused **before
+  any DDL or immutability guard removal**. Existing migrations were not edited.
+- Direct fresh-MySQL schema inspection confirmed four new audit guards and five restrictive
+  foreign keys. Retry evidence contains four SUCCEEDED outcomes (including explicit new-command
+  replays), one FAILED `transient_retries_exhausted` and one FAILED
+  `business_transaction_failed`; no terminal audit category contains provider output.
+
+MySQL 7/100/500-row benchmarks retained fixed 64 commit reads without source completion and 66
+with completion. Maximum observed test-process memory was 100,663,296 bytes (96 MiB), beneath
+the unchanged 384 MiB assertion; largest completion case took 36.332 seconds while parallel QA
+was running. Combined SQLite peaks were 111,149,056 bytes (106 MiB). These are synthetic local
+budgets, not production latency promises. Profile receipt growth stayed zero at 1/7/20.
+An additional fresh MySQL evidence-only rerun of `DedicatedBackendQaTest.php` with
+`--filter='receipt-count query slope' --compact` passed one test/four assertions and printed
+70/70/70 exactly (30.294 s); it is not double-counted in the disjoint acceptance totals above.
+
+Full Pint and `composer validate --strict` passed. `npm run build` passed (Vite 8.1.4, 7.93 s);
+the sandbox initially denied the build subprocess, then the approved local rerun succeeded.
+`composer audit --format=json` returned exit 1: eight inherited advisories, five high, two medium,
+one low, across Filament, CommonMark and Livewire. A preliminary summary script miscounted JSON
+properties; the corrected fresh audit confirmed **eight**, not 72. No manifests/lockfiles or
+separate remediation `5e7df0862648fd9c2ac964b31a13ad17df84fd12` were merged or changed.
+These remain a separate security/release gate, not a hidden pass or a new WALD05 defect.
+
+Static review found explicit insert-column allowlists rather than request mass assignment;
+audit reads freshly authorise Office scope and resolve the exact scoped run. No new route,
+customer serialization, raw-error logging, legacy importer coupling or external-service access
+was added. Browser/mobile/accessibility and HTTP upload controls remain untested later UI gates.
+All 11 correction PHP files passed `php -l`; all 33 local Markdown links in the eight task
+documents resolve. `git diff --check` passed. A direct comparison with handoff `324cacfd...`
+confirmed the entire original report body from `## Overall result` onward is unchanged.
+
+After all MySQL gates completed, the exact loopback server/version/port/datadir was reverified
+and `mysqladmin --no-defaults --protocol=TCP --host=127.0.0.1 --port=33489 --user=root shutdown`
+requested a normal shutdown at 11:39:19 UTC; the log confirms **Shutdown complete** at
+11:39:20.876 UTC. The port was no longer listening. Disposable
+schemas/logs remain private local evidence; nothing was deleted or applied to the normal local
+or production database. This task adds one forward migration, applied only in disposable QA.
+
+The separate multi-site **PILOT_BLOCKER** remains WALD06/pilot design work, not a W5Q-03/W5Q-04 backend
+defect. One bound site/table is internally bounded; multiple site commits cannot bypass the
+shared date/slot ordering contract. No pilot design or real-workbook import occurred.
+
+Recommendation: freeze the corrected executable/test SHA as the QA-passed **bounded backend**
+baseline, then separately scope multi-site pilot architecture and full Office UI. Keep dependency
+security, browser/device/accessibility, operations, cutover and production release gates separate.
+No architecture decision is required to close these two corrected backend defects.
+
+### Correction files
+
+- `app/SourceImport/Integration/BackendStore.php`
+- `app/SourceImport/Integration/CommitAttemptJournal.php`
+- `app/SourceImport/Integration/ImportKnowledge.php`
+- `app/SourceImport/Integration/ImportStore.php`
+- `app/SourceImport/Integration/ProfileReceiptBatch.php`
+- `database/migrations/2026_09_09_000013_create_wald_commit_attempt_audit.php`
+- `scripts/verify-wald05-qa-upgrade.php`
+- `tests/Feature/Wald05/CorrectionRequalificationTest.php`
+- `tests/Feature/Wald05/DedicatedBackendQaTest.php`
+- `tests/Feature/Wald05/MysqlAttemptConcurrencyTest.php`
+- `tests/Support/Wald05ConcurrencyWorker.php`
+
+Documentation-only handoff files (separate from the fixed executable candidate):
+
+- `documentation/wald/customer-wald05-backend-qa-2026-09-09.md`
+- `documentation/source-integration-contract.md`
+- `documentation/wald-divergence-register.md`
+- `DECISIONS.md` (append-only DEC-054 records the latest explicit user authority)
+- `brief.md`
+- `current_sprint.md`
+- `ROADMAP.md`
+- `HANDOVER.md`
+
+Unrelated local edits to `documentation/sprint-3e-date-negotiation-report.md`, the untracked
+`Copy of siteapp1.xlsx` and `output/` are preserved and excluded. No workbook, generated output,
+database, credentials or environment file is staged. Main and cached origin/main remain
+`0873bac79edf578e9f4a9417e3cafae34e8aa925`; there was no fetch, push or remote action.
+
+## Historical original dedicated gate — FAIL, before W5Q-03/W5Q-04 correction
+
+The remaining sections record the original candidate review, partial corrections and failed
+handoff. They are retained evidence, not the fresh corrected candidate's acceptance result.
+
 ## Overall result
 
 **FAIL — corrections required. Do not freeze this branch as an accepted WALD05 baseline.**
