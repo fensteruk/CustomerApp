@@ -1,5 +1,20 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
+
+**PASS; READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.** Continue from the QA
+lineage beginning at corrected executable SHA `10f0a56ac1987754ab0c31b45fc08138ba25e3f8`, which is
+the frozen RC `2e58bedcb70c487dfee1ae9f01a087c7ed8117e6` plus a two-file test-harness-only ordering
+correction. The application/runtime candidate is unchanged. Dedicated scope, migration, admin,
+security, regression, browser, responsive, accessibility, performance, SQLite and MySQL 8.4.11
+evidence passed. Production dependency audits are clean; 14 locked development/build advisories
+remain a non-blocking maintenance item. No push, `main` merge, production access, migration or
+deployment occurred. A separate release decision and production recovery controls are still
+required before any deployment. See
+`documentation/customerapp-next-release-dedicated-qa-2026-09-10.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-NEXT-RELEASE01 — Sidebar + Admin + Synthetic Demo RC1 — 10 September 2026
 
 **READY_FOR_DEDICATED_QA on a non-deploying release branch.** The candidate branch is

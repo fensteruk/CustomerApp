@@ -1,5 +1,20 @@
 # Current Sprint
 
+## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
+
+**PASS; READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.** Frozen RC
+`2e58bedcb70c487dfee1ae9f01a087c7ed8117e6` passed scope, migration, admin, security,
+regression, browser, responsive, accessibility, performance, SQLite and MySQL 8.4.11 QA.
+One P3 test-harness ordering defect was corrected without an application/runtime change at
+`10f0a56ac1987754ab0c31b45fc08138ba25e3f8`. Full SQLite: 393 passed / 43 intentional skips /
+2,784 assertions. Full MySQL: 430 passed / 1 intentional skip / 3,820 assertions, plus five
+guarded admin races and 40 repeated deterministic Sprint 3E ordering cases. Production dependency
+audits are clean; 14 locked development/build advisories do not block this release. No push,
+`main` merge, production access, migration or deployment occurred. See
+`documentation/customerapp-next-release-dedicated-qa-2026-09-10.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-NEXT-RELEASE01 — Sidebar + Admin + Synthetic Demo RC1 — 10 September 2026
 
 **READY_FOR_DEDICATED_QA on a non-deploying release branch.** The candidate branch is
