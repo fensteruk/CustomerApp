@@ -130,6 +130,34 @@ it('fails closed when the runtime demo flag is disabled', function (): void {
     $this->get(route('office.workspace.imports'))->assertOk()->assertDontSee('New Import');
 });
 
+it('has no direct mutation route for any common write method', function (string $method): void {
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
+        'customer_organisation_id' => null,
+    ]);
+    $before = [
+        'customers' => CustomerOrganisation::query()->count(),
+        'sites' => Site::query()->count(),
+        'imports' => DB::table('wald_import_runs')->count(),
+        'bindings' => DB::table('wald_source_bindings')->count(),
+        'audit' => DB::table('administrative_audits')->count(),
+    ];
+
+    $this->actingAs($office)->call($method, '/development/import-studio', [
+        'customer_organisation_id' => 999,
+        'site_id' => 999,
+        'commit' => true,
+        'workbook' => 'forged.xlsx',
+    ])->assertMethodNotAllowed();
+
+    expect([
+        'customers' => CustomerOrganisation::query()->count(),
+        'sites' => Site::query()->count(),
+        'imports' => DB::table('wald_import_runs')->count(),
+        'bindings' => DB::table('wald_source_bindings')->count(),
+        'audit' => DB::table('administrative_audits')->count(),
+    ])->toEqual($before);
+})->with(['POST', 'PUT', 'PATCH', 'DELETE']);
+
 it('does not register demo routes when the application boots as production even if the flag is requested', function (): void {
     $process = new Process([
         PHP_BINARY,
