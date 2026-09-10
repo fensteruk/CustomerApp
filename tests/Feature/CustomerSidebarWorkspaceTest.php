@@ -172,6 +172,26 @@ it('keeps existing service filters shareable through plot pagination', function 
         ->assertSee('overall_status%5B0%5D=call_offs_in_progress', false);
 });
 
+it('rejects malformed or unsupported sidebar filter query values', function (array $query, string $errorKey): void {
+    $user = sidebarSiteUser();
+    $site = sidebarAssignedSite($user);
+    sidebarPlot($site, 'Validation Plot');
+
+    $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->from('/portal/site-dashboard')
+        ->get('/portal/site-dashboard?'.http_build_query($query))
+        ->assertRedirect('/portal/site-dashboard')
+        ->assertSessionHasErrors($errorKey);
+})->with([
+    'unknown overall status' => [['overall_status' => ['not-a-real-status']], 'overall_status.0'],
+    'scalar overall status' => [['overall_status' => 'nothing_called_off'], 'overall_status'],
+    'too many overall statuses' => [['overall_status' => array_fill(0, 6, 'nothing_called_off')], 'overall_status'],
+    'unknown service' => [['service' => 'doors'], 'service'],
+    'unknown service status' => [['status' => 'internal-status'], 'status'],
+    'invalid completed flag' => [['show_completed' => 'sometimes'], 'show_completed'],
+]);
+
 it('renders an Office-only sidebar and keeps review filters in that workspace', function (): void {
     $officeUser = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
         'customer_organisation_id' => null,
@@ -202,6 +222,8 @@ it('provides an accessible tablet and mobile drawer with focus containment', fun
         ->assertSee('aria-controls="portal-sidebar"', false)
         ->assertSee(':aria-modal="desktop ? null : \'true\'"', false)
         ->assertSee(':inert="!desktop && !sidebarOpen"', false)
+        ->assertSee('hidden rounded min-[360px]:block xl:hidden', false)
+        ->assertSee('@click.outside="close(false)"', false)
         ->assertSee('Filters');
 
     $script = file_get_contents(resource_path('js/app.js'));
@@ -211,6 +233,8 @@ it('provides an accessible tablet and mobile drawer with focus containment', fun
         ->toContain('handleSidebarKeydown(event)')
         ->toContain("event.key !== 'Tab'")
         ->toContain("document.querySelector('[data-sidebar-trigger]')?.focus()")
+        ->toContain('close(returnFocus = true)')
+        ->toContain('if (returnFocus)')
         ->toContain('if (!this.open) return;');
 });
 
@@ -219,4 +243,19 @@ it('keeps unauthenticated role preview outside the authenticated application sid
         ->assertOk()
         ->assertSee('Development preview')
         ->assertDontSee('data-portal-sidebar', false);
+});
+
+it('contains long unbroken plot references within desktop rows and responsive cards', function (): void {
+    $user = sidebarSiteUser();
+    $site = sidebarAssignedSite($user);
+    $reference = 'PLOT-'.str_repeat('UNBROKEN', 20);
+    sidebarPlot($site, $reference);
+
+    $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get('/portal/site-dashboard')
+        ->assertOk()
+        ->assertSee($reference)
+        ->assertSee('min-w-0 [overflow-wrap:anywhere]', false)
+        ->assertSee('min-w-0 text-xl font-bold text-slate-950 [overflow-wrap:anywhere]', false);
 });

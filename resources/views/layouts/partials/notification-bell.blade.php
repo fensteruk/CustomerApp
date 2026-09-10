@@ -9,7 +9,7 @@
         <a href="{{ route('portal.notifications.centre') }}" class="ml-2 rounded px-2 py-3 text-sm font-bold text-sky-800 underline underline-offset-2">Notifications{{ $notificationUnreadCount > 0 ? ' ('.$notificationUnreadCount.' unread)' : '' }}</a>
     </noscript>
 
-    <div id="notification-panel" x-cloak x-show="open" x-transition @click.outside="close()" class="fixed inset-x-2 top-20 z-40 max-h-[calc(100vh-5.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl sm:absolute sm:right-0 sm:left-auto sm:top-auto sm:mt-2 sm:max-h-none sm:w-[22rem]" role="region" aria-label="Recent notifications">
+    <div id="notification-panel" x-cloak x-show="open" x-transition @click.outside="close(false)" class="fixed inset-x-2 top-20 z-40 max-h-[calc(100vh-5.5rem)] overflow-hidden rounded-xl border border-slate-200 bg-white text-slate-900 shadow-xl sm:absolute sm:right-0 sm:left-auto sm:top-auto sm:mt-2 sm:max-h-none sm:w-[22rem]" role="region" aria-label="Recent notifications">
         <div class="flex items-center justify-between gap-3 border-b border-slate-200 px-4 py-3">
             <div>
                 <h2 class="text-base font-bold">Notifications</h2>
@@ -38,7 +38,7 @@
                         <div class="min-w-0 flex-1">
                             <span class="sr-only" x-text="notification.read_at ? 'Read notification' : 'Unread notification'"></span>
                             <p class="text-xs font-extrabold uppercase tracking-wide text-slate-600" x-text="notification.type_label"></p>
-                            <a :href="notification.open_url" @click="close()" class="mt-1 block text-sm font-bold leading-5 text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-sky-700" x-text="notification.message"></a>
+                            <a :href="notification.open_url" @click="close(false)" class="mt-1 block text-sm font-bold leading-5 text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-sky-700" x-text="notification.message"></a>
                             <time class="mt-1 block text-xs text-slate-600" :datetime="notification.created_at" x-text="notification.created_at_label"></time>
                             <div class="mt-2 flex flex-wrap gap-2">
                                 <button type="button" x-show="!notification.read_at" @click="markRead(notification.uuid)" class="min-h-10 rounded px-2 text-xs font-bold text-sky-800 hover:bg-sky-100">Mark as read</button>

@@ -64,7 +64,7 @@
                         @endif
                     </button>
 
-                    <a href="{{ route('dashboard') }}" class="ml-1 rounded xl:hidden">
+                    <a href="{{ route('dashboard') }}" class="ml-1 hidden rounded min-[360px]:block xl:hidden">
                         <span class="text-xl font-light tracking-tight text-slate-950">fenster</span>
                     </a>
 
