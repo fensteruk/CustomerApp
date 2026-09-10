@@ -1,9 +1,65 @@
 import '@fontsource-variable/inter';
 import Alpine from 'alpinejs';
+import { officeAdminForm } from './office-admin-form';
 
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('officeAdminForm', officeAdminForm);
+    Alpine.data('portalShell', () => ({
+        sidebarOpen: false,
+        desktop: false,
+        desktopQuery: null,
+
+        init() {
+            this.desktopQuery = window.matchMedia('(min-width: 1280px)');
+            this.desktop = this.desktopQuery.matches;
+
+            this.desktopQuery.addEventListener('change', (event) => {
+                this.desktop = event.matches;
+
+                if (this.desktop) this.sidebarOpen = false;
+
+                document.documentElement.classList.remove('overflow-hidden');
+            });
+        },
+
+        openSidebar() {
+            this.sidebarOpen = true;
+            document.documentElement.classList.add('overflow-hidden');
+            this.$nextTick(() => this.$refs.sidebarClose?.focus());
+        },
+
+        closeSidebar() {
+            if (!this.sidebarOpen) return;
+
+            this.sidebarOpen = false;
+            document.documentElement.classList.remove('overflow-hidden');
+            window.setTimeout(() => document.querySelector('[data-sidebar-trigger]')?.focus(), 0);
+        },
+
+        handleSidebarKeydown(event) {
+            if (this.desktop || !this.sidebarOpen || event.key !== 'Tab') return;
+
+            const focusable = [...this.$refs.sidebar.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+            )].filter((element) => !element.hidden && element.offsetParent !== null);
+
+            if (focusable.length === 0) return;
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        },
+    }));
+
     Alpine.data('lifecycleSelection', () => ({
         selected: {},
 
@@ -49,9 +105,11 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        close() {
+        close(returnFocus = true) {
+            if (!this.open) return;
+
             this.open = false;
-            this.$nextTick(() => this.$refs.bellButton?.focus());
+            if (returnFocus) this.$nextTick(() => this.$refs.bellButton?.focus());
         },
 
         ariaLabel() {

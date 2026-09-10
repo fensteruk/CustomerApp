@@ -20,6 +20,8 @@ use App\Http\Controllers\ReviewRequestsController;
 use App\Http\Controllers\SiteDashboardController;
 use Illuminate\Support\Facades\Route;
 
+require __DIR__.'/office-workspace.php';
+
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');

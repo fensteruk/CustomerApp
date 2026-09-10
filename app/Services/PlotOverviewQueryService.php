@@ -22,7 +22,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class PlotOverviewQueryService
 {
-    /** @param array{plot?: string, service?: string, status?: string, show_completed?: bool} $filters */
+    /** @param array{plot?: string, service?: string, status?: string, overall_status?: array<int, string>, show_completed?: bool} $filters */
     public function paginate(Site $site, array $filters): LengthAwarePaginator
     {
         $query = ProjectedPlot::query()
@@ -48,6 +48,10 @@ class PlotOverviewQueryService
 
         $service = CallOffServiceType::tryFrom((string) ($filters['service'] ?? ''));
         $state = PlotServicePresentationState::tryFrom((string) ($filters['status'] ?? ''));
+        $overallStatuses = collect($filters['overall_status'] ?? [])
+            ->map(fn (string $status): ?PlotOverallStatus => PlotOverallStatus::tryFrom($status))
+            ->filter()
+            ->values();
 
         if ($service !== null || $state !== null) {
             $query->whereHas('services', function (Builder $serviceQuery) use ($service, $state): void {
@@ -63,7 +67,18 @@ class PlotOverviewQueryService
             });
         }
 
-        if (! ($filters['show_completed'] ?? false)) {
+        if ($overallStatuses->isNotEmpty()) {
+            $query->where(function (Builder $statusQuery) use ($overallStatuses): void {
+                foreach ($overallStatuses as $index => $overallStatus) {
+                    $method = $index === 0 ? 'where' : 'orWhere';
+                    $statusQuery->{$method}(fn (Builder $constraint): Builder => $this->applyOverallStatusConstraint($constraint, $overallStatus));
+                }
+            });
+        }
+
+        $fullyCompletedRequested = $overallStatuses->contains(PlotOverallStatus::FullyCompleted);
+
+        if (! ($filters['show_completed'] ?? false) && ! $fullyCompletedRequested) {
             $query->where(function (Builder $builder): void {
                 $builder
                     ->has('services', '<', count(CallOffServiceType::cases()))
@@ -195,6 +210,55 @@ class PlotOverviewQueryService
             PlotServicePresentationState::NotCalledOff => $query
                 ->whereNull('source_completed_at')
                 ->whereNull('source_completion_observed_at')
+                ->whereDoesntHave('callOffRequests', fn (Builder $requests): Builder => $requests
+                    ->whereNull('trashed_at')
+                    ->whereIn('status', $this->conflictActiveStatuses())),
+        };
+    }
+
+    private function applyOverallStatusConstraint(Builder $query, PlotOverallStatus $status): Builder
+    {
+        $completedService = fn (Builder $services): Builder => $services->where(function (Builder $completion): void {
+            $completion
+                ->whereNotNull('source_completed_at')
+                ->orWhereNotNull('source_completion_observed_at');
+        });
+        $unresolvedStatuses = [
+            CallOffRequestStatus::Submitted->value,
+            CallOffRequestStatus::AwaitingFenster->value,
+            CallOffRequestStatus::AwaitingSiteUser->value,
+            CallOffRequestStatus::AmendmentOnHold->value,
+        ];
+        $dateAgreedStatuses = [
+            CallOffRequestStatus::Approved->value,
+            CallOffRequestStatus::DateAgreed->value,
+        ];
+
+        return match ($status) {
+            PlotOverallStatus::FullyCompleted => $query->whereHas(
+                'services',
+                $completedService,
+                '>=',
+                count(CallOffServiceType::cases()),
+            ),
+            PlotOverallStatus::PartiallyCompleted => $query
+                ->whereHas('services', $completedService)
+                ->whereHas('services', $completedService, '<', count(CallOffServiceType::cases())),
+            PlotOverallStatus::CallOffsInProgress => $query
+                ->whereDoesntHave('services', $completedService)
+                ->whereHas('callOffRequests', fn (Builder $requests): Builder => $requests
+                    ->whereNull('trashed_at')
+                    ->whereIn('status', $unresolvedStatuses)),
+            PlotOverallStatus::DatesAgreed => $query
+                ->whereDoesntHave('services', $completedService)
+                ->whereDoesntHave('callOffRequests', fn (Builder $requests): Builder => $requests
+                    ->whereNull('trashed_at')
+                    ->whereIn('status', $unresolvedStatuses))
+                ->whereHas('callOffRequests', fn (Builder $requests): Builder => $requests
+                    ->whereNull('trashed_at')
+                    ->whereIn('status', $dateAgreedStatuses)),
+            PlotOverallStatus::NothingCalledOff => $query
+                ->whereDoesntHave('services', $completedService)
                 ->whereDoesntHave('callOffRequests', fn (Builder $requests): Builder => $requests
                     ->whereNull('trashed_at')
                     ->whereIn('status', $this->conflictActiveStatuses())),
