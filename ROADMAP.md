@@ -1,5 +1,19 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-UI-SIDEBAR — accepted for next-release integration — 10 September 2026
+
+The corrected sidebar candidate `c80ab5b76a161f340b8786c709b93fecfae47633`
+passed dedicated QA and is the accepted `NEXT_RELEASE` baseline. Original candidate
+`d76ddbba47ba7b16e6376d2f089ab06b4cc46187` is superseded as an acceptance
+candidate. The baseline remains on `feature/customer-ui-sidebar-workspace`; it is not
+merged to RC1 or `main` and is not deployed.
+
+Potential next-release integration candidates are this accepted sidebar, ADMIN-SITE02 once
+QA-approved and, after its own separate QA, the possible ADMIN-SITE03 synthetic import
+demo. This entry authorises no integration between those streams. See the
+[acceptance record](documentation/customer-ui-sidebar-acceptance-2026-09-10.md) and
+[dedicated QA report](documentation/customer-ui-sidebar-dedicated-qa-2026-09-10.md).
+
 ## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
 
 Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
@@ -30,7 +44,7 @@ The entries below are historical branch evidence, including superseded deploymen
 old sprint numbering and pre-security advisory counts. They do not override this status or
 the current brief. Their reports and historical decisions remain preserved.
 
-*Last Updated: 25 August 2026*
+*Last Updated: 10 September 2026*
 
 # Project Overview
 

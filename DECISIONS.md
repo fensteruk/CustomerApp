@@ -810,3 +810,36 @@ Rules and outcome:
   release handling.
 - npm audit remains a separate release-risk review item: 14 development/build dependency
   entries (five high, nine moderate); production dependencies are clean under `--omit=dev`.
+
+---
+
+## DEC-057
+
+Date: 10 September 2026
+
+Decision: CUSTOMER-UI-SIDEBAR dedicated QA passed and management accepts
+`c80ab5b76a161f340b8786c709b93fecfae47633` as the immutable sidebar code
+baseline for `NEXT_RELEASE`. Original implementation candidate
+`d76ddbba47ba7b16e6376d2f089ab06b4cc46187` is superseded as an acceptance
+candidate.
+
+Accepted evidence and corrections:
+
+- focused tests: 17 passed / 114 assertions;
+- related UI regression: 121 passed / 748 assertions;
+- full suite: 331 passed / 38 skipped / 2,367 assertions;
+- responsive desktop, tablet and mobile coverage; role navigation and 403 containment;
+  keyboard, focus and accessibility smoke; long-list performance; clean Composer audit;
+  and passing Vite production build;
+- UIQ-01 P1 corrects extreme plot-reference wrapping;
+- UIQ-02 P2 corrects 320px header overflow; and
+- UIQ-03 P1 corrects notification/drawer focus interaction.
+
+Release rules:
+
+- preserve the accepted corrections and the dedicated QA report as historical evidence;
+- hold the sidebar for next-release integration and do not reopen or modify RC1;
+- do not merge this feature into RC1 or `main`, and do not deploy it under this decision;
+- consider ADMIN-SITE02 only after its own QA approval and ADMIN-SITE03 only after separate
+  synthetic-import-demo QA; and
+- this acceptance does not authorise merging any candidate stream.

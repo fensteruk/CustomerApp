@@ -1,5 +1,26 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-UI-SIDEBAR accepted baseline — 10 September 2026
+
+Dedicated QA passed for corrected candidate
+`c80ab5b76a161f340b8786c709b93fecfae47633` on
+`feature/customer-ui-sidebar-workspace`. It is the accepted `NEXT_RELEASE` sidebar
+baseline. Original candidate `d76ddbba47ba7b16e6376d2f089ab06b4cc46187`
+is superseded as an acceptance candidate.
+
+The accepted candidate includes QA corrections for extreme plot-reference wrapping,
+320px header overflow and notification/drawer focus interaction. The final evidence is
+17 focused tests / 114 assertions, 121 related UI regression tests / 748 assertions and
+331 full-suite passes / 38 skips / 2,367 assertions, with responsive, access,
+accessibility, long-list, Composer audit and Vite build gates passing.
+
+Release disposition is `NEXT_RELEASE`. RC1 is unchanged and must not be reopened for this
+feature. No merge to RC1 or `main`, push or deployment occurred. Later integration may
+consider the accepted sidebar, ADMIN-SITE02 only after QA approval and possibly ADMIN-SITE03
+after separate synthetic-import-demo QA. See the
+[acceptance record](documentation/customer-ui-sidebar-acceptance-2026-09-10.md) and
+[preserved QA report](documentation/customer-ui-sidebar-dedicated-qa-2026-09-10.md).
+
 ## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
 
 Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.

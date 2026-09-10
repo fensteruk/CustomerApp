@@ -1,5 +1,23 @@
 # Current Sprint
 
+## CUSTOMER-UI-SIDEBAR acceptance — 10 September 2026
+
+Dedicated sidebar QA passed on the corrected candidate
+`c80ab5b76a161f340b8786c709b93fecfae47633`. This is the accepted
+`NEXT_RELEASE` baseline for the CustomerApp sidebar workspace. The original implementation
+candidate `d76ddbba47ba7b16e6376d2f089ab06b4cc46187` is superseded as an
+acceptance candidate.
+
+The accepted baseline includes the three QA corrections: extreme plot-reference wrapping,
+320px header overflow and notification/drawer focus interaction. Evidence comprises 17
+focused tests / 114 assertions, 121 related UI regression tests / 748 assertions and the
+full suite at 331 passed / 38 skipped / 2,367 assertions, plus responsive, access,
+accessibility, long-list, Composer audit and Vite build checks.
+
+This acceptance does not reopen, modify or merge into RC1. It is not on `main` and was not
+deployed. See the [acceptance record](documentation/customer-ui-sidebar-acceptance-2026-09-10.md)
+and preserved [dedicated QA report](documentation/customer-ui-sidebar-dedicated-qa-2026-09-10.md).
+
 ## CUSTOMER-RELEASE02 — reduced RC1 build — 9 September 2026
 
 Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
