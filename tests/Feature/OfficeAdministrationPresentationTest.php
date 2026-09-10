@@ -117,7 +117,7 @@ it('renders every empty site section safely', function (string $section, string 
         ->not->toContain('Add Plot', 'Edit Plot', 'Delete Plot');
 })->with([
     ['overview', 'Not available yet'], ['plots', 'No plots yet'], ['users', 'No assigned users'],
-    ['source', 'Source binding information is not available yet'], ['imports', 'Import history is not available yet'], ['audit', 'No administration activity'],
+    ['source', 'Source binding information is not available yet'], ['imports', 'No import integration has been released yet'], ['audit', 'No administration activity'],
 ]);
 
 it('renders assigned user labels and escapes email and name', function (): void {
@@ -152,7 +152,7 @@ it('distinguishes unavailable source integrations from an empty integrated histo
     expect($html)->toContain($heading)->not->toContain('No imports recorded', '>Not linked<');
 })->with([
     ['source', 'Source binding information is not available yet'],
-    ['imports', 'Import history is not available yet'],
+    ['imports', 'No import integration has been released yet'],
 ]);
 
 it('shows commitment only from a supplied receipt with a correctly converted timestamp', function (): void {

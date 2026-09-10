@@ -1,7 +1,7 @@
 <section aria-labelledby="imports-title">
     <h2 id="imports-title" class="section-title">Import History</h2>
     @if (($items['availability'] ?? '') !== 'AVAILABLE')
-        <div class="empty-state mt-4"><h3 class="font-bold">Import history is not available yet</h3><p class="mt-2">Import Studio is being prepared. No new import can be started from this page yet.</p></div>
+        <div class="empty-state mt-4"><h3 class="font-bold">No import integration has been released yet</h3><p class="mt-2">Import Studio is being prepared. No new import can be started from this page yet.</p></div>
     @else
         <div class="admin-card-grid mt-4">
             @forelse ($items['runs'] as $run)

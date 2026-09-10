@@ -1,5 +1,8 @@
 # CustomerApp Sidebar Dedicated UI QA Report
 
+> Historical candidate QA evidence. The integrated RC1 scope and current release status are
+> defined by `customerapp-next-release-rc1-build-report-2026-09-10.md` and DEC-061.
+
 Date: 10 September 2026
 
 QA gate: `CUSTOMER-UI-SIDEBAR02`

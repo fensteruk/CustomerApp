@@ -1,33 +1,29 @@
-# Fenster Customer Portal — RC1 Product and Release Brief
+# Fenster Customer Portal — Next Release RC1 Product and Release Brief
 
-Last updated: 9 September 2026.
-Authority: approved CUSTOMER-RELEASE02, current management product decisions and the
+Last updated: 10 September 2026.
+Authority: CUSTOMER-NEXT-RELEASE01, DEC-061, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
 ## Release truth
 
-RC1 is being prepared on `release/customerapp-2026-09-09-rc1` from
-`0873bac79edf578e9f4a9417e3cafae34e8aa925`. It includes Sprint 3F through
-`60aa9e2c72074dea2f8a4812aab238ff5d2791d5`, followed by security remediation
-`5e7df0862648fd9c2ac964b31a13ad17df84fd12`. It is not on main, deployed or
-production-approved. Pre-QA passed after the approved test-only date-fixture correction,
-and dedicated QA passed its forward functional, security, browser, migration and concurrency
-gates against frozen application checkpoint
-`ac250a8e9eef4b40591872de9275d802c76e4fba`. CUSTOMER-RELEASE03A resolves the remaining
-RCQ-01 release-recovery constraint with a strict pre-traffic rollback window and post-traffic
-roll-forward-only policy. Documentation-only descendants do not change the executable RC;
-their exact SHA must be recorded in the release handoff.
+The next release candidate is built on the non-deploying branch
+`release/customerapp-next-release-admin-demo-rc1` from exact production/main checkpoint
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. It adds the accepted sidebar workspace,
+Office-only customer/site administration, active/inactive lifecycle, immutable admin audit,
+read-only plots/users and truthful unavailable source/import states. It is ready for dedicated
+QA, not on `main`, not pushed and not deployed. Current production remains unchanged.
 
-The last successful production release proved by inspected repository evidence is
-Sprint 3E `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`, Forge deployment 76326195,
-with 11 migrations. Main contains later Office authorisation and Date Agreed filter fixes,
-but today's served SHA must be verified separately; no production access occurs in this task.
+The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
+Its routes are absent in production even if the flag is set, it writes nothing and it has no
+upload, binding, Wald invocation or commit endpoint. Production navigation contains only real
+destinations: Review Requests, Customers and Notifications for authorised Office Staff.
 
-WALD02–05 are accepted feature-stream work but excluded from RC1, including their
-migrations, profiles, bindings and projection triggers. ADMIN-SITE02, earlier manual import/
-interpreter/UI branches, unfinished source integration, WALD06 and the multi-site pilot
-are excluded. Exclusion is not deletion or reversal of their management acceptance.
+WALD02–05 remain accepted feature-stream work but are excluded from this RC, including all five
+of their migrations, profiles, bindings, runtime and projection triggers. Real source binding,
+workbook upload, analysis, staging, commit, multi-site import, WALD06, RedZebra API and automatic
+purge remain a future coherent import release. Exclusion preserves that lineage; it does not
+delete or reverse it.
 
 ## Product boundary
 
@@ -156,15 +152,17 @@ Notifications derive from committed event-time truth, reauthorise recipients/des
 remain idempotent. A later completion cannot erase a genuinely committed Date Agreed event.
 Completion sends no notification. Reading/dismissing a notification never changes domain history.
 
-RC1 adds no email/Resend, persistent worker, scheduler, automatic purge, API/writeback,
-Import Studio, admin screens, calendar/PDF, attachments, reminders, SSO/MFA or external AI.
-These retain separately gated product intent; no production queue/provider is assumed.
+This RC adds no email/Resend, persistent worker, scheduler, automatic purge, API/writeback,
+real Import Studio, real Wald runtime, calendar/PDF, attachments, reminders, SSO/MFA or
+external AI. Customer/site administration is included; plot and assigned-user views remain
+read-only. No production queue/provider is assumed.
 
 ## QA and recovery
 
-RC1 has 11 unchanged baseline migrations plus additive
-`2026_09_03_000014_add_date_amendment_metadata.php`. Its populated down would delete
-amendment metadata and is not the production recovery strategy. Before traffic is reopened,
+The production base has 12 migrations. This RC retains them byte-for-byte and adds only
+`2026_09_09_000014_add_customer_site_administration.php`, producing 13 total migrations and
+no Wald migration. The administration migration is additive, backfills active UUID-bearing
+customer/site rows and preserves relationships and dependent records. Before traffic is reopened,
 recovery may restore both a fresh pre-deployment database snapshot and the previously verified
 application release. After traffic is reopened or any Sprint 3F write occurs, old main is not
 compatible recovery: keep RC-generation-compatible code and roll forward from the exact
@@ -178,5 +176,5 @@ history/notifications, security and repeated source/Office races. The approved p
 sequence is backup, capture current release/schema evidence, maintenance mode, deploy exact
 approved RC, forward migrate/cache refresh, read-only smoke, then reopen. No main push or
 deployment occurs without separate approval. See the
-[RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md) and
+[next-release RC1 build record](documentation/customerapp-next-release-rc1-build-report-2026-09-10.md) and
 [RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).

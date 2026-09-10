@@ -49,16 +49,18 @@
                                 <span>Customers</span>
                             </a>
                         </li>
-                        <li>
-                            <a
-                                href="{{ route('office.workspace.imports') }}"
-                                @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('office.workspace.imports', 'development.import-studio.*')])
-                                @if (request()->routeIs('office.workspace.imports', 'development.import-studio.*')) aria-current="page" @endif
-                            >
-                                <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5" /></svg>
-                                <span>Imports</span>
-                            </a>
-                        </li>
+                        @if (Route::has('development.import-studio.show') && config('import-demo.enabled'))
+                            <li>
+                                <a
+                                    href="{{ route('office.workspace.imports') }}"
+                                    @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('office.workspace.imports', 'development.import-studio.*')])
+                                    @if (request()->routeIs('office.workspace.imports', 'development.import-studio.*')) aria-current="page" @endif
+                                >
+                                    <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5" /></svg>
+                                    <span>Imports <span class="sr-only">— demo only</span></span>
+                                </a>
+                            </li>
+                        @endif
                     @endcan
                 @else
                     <li>

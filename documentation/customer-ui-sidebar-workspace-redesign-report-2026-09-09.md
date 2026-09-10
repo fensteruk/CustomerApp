@@ -1,5 +1,8 @@
 # CustomerApp sidebar workspace redesign evidence
 
+> Historical candidate evidence. The accepted integration and current release state are
+> defined by `customerapp-next-release-rc1-build-report-2026-09-10.md` and DEC-061.
+
 Date: 2026-09-09
 
 Branch: `feature/customer-ui-sidebar-workspace`

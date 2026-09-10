@@ -84,9 +84,8 @@ it('uses site context only as a contained launch label and leaves every relevant
     $tables = [
         'customer_organisations', 'sites', 'projected_plots', 'projected_plot_services',
         'call_off_batches', 'call_off_requests', 'call_off_status_histories',
-        'administrative_audits', 'wald_source_bindings', 'wald_binding_versions',
-        'wald_import_runs', 'wald_import_streams', 'wald_import_stages', 'wald_staged_rows',
-        'wald_import_previews', 'wald_import_receipts',
+        'administrative_audits', 'source_import_runs', 'source_projection_issues',
+        'source_projection_events',
     ];
     $before = collect($tables)->mapWithKeys(fn (string $table): array => [$table => DB::table($table)->count()]);
 
@@ -128,6 +127,7 @@ it('fails closed when the runtime demo flag is disabled', function (): void {
 
     $this->actingAs($office)->get('/development/import-studio')->assertNotFound();
     $this->get(route('office.workspace.imports'))->assertOk()->assertDontSee('New Import');
+    $this->get(route('office.workspace.customers.index'))->assertOk()->assertDontSee('>Imports', false);
 });
 
 it('has no direct mutation route for any common write method', function (string $method): void {
@@ -137,8 +137,8 @@ it('has no direct mutation route for any common write method', function (string 
     $before = [
         'customers' => CustomerOrganisation::query()->count(),
         'sites' => Site::query()->count(),
-        'imports' => DB::table('wald_import_runs')->count(),
-        'bindings' => DB::table('wald_source_bindings')->count(),
+        'imports' => DB::table('source_import_runs')->count(),
+        'issues' => DB::table('source_projection_issues')->count(),
         'audit' => DB::table('administrative_audits')->count(),
     ];
 
@@ -152,8 +152,8 @@ it('has no direct mutation route for any common write method', function (string 
     expect([
         'customers' => CustomerOrganisation::query()->count(),
         'sites' => Site::query()->count(),
-        'imports' => DB::table('wald_import_runs')->count(),
-        'bindings' => DB::table('wald_source_bindings')->count(),
+        'imports' => DB::table('source_import_runs')->count(),
+        'issues' => DB::table('source_projection_issues')->count(),
         'audit' => DB::table('administrative_audits')->count(),
     ])->toEqual($before);
 })->with(['POST', 'PUT', 'PATCH', 'DELETE']);
