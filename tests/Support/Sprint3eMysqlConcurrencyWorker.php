@@ -31,6 +31,7 @@ $arguments = array_slice($argv, 2);
 $barrier = array_pop($arguments);
 $delayMilliseconds = (int) array_pop($arguments);
 $officeRaceWinner = getenv('MYSQL_GATE_OFFICE_RACE_WINNER') ?: null;
+$firstOperation = getenv('MYSQL_GATE_FIRST_OPERATION') ?: null;
 $officeRaceTrace = [];
 
 try {
@@ -55,6 +56,10 @@ try {
         usleep($delayMilliseconds * 1000);
     }
 
+    if ($firstOperation !== null && $operation !== $firstOperation) {
+        mysqlGateAwaitMarker($barrier.'.first-operation-completed');
+    }
+
     match ($operation) {
         'agree' => app(AgreeRequestedCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1])),
         'propose' => app(ProposeAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), $arguments[2]),
@@ -71,6 +76,9 @@ try {
 
     if ($officeRaceWinner === $operation) {
         touch($barrier.'.office-winner-committed');
+    }
+    if ($firstOperation === $operation) {
+        touch($barrier.'.first-operation-completed');
     }
     mysqlGateResult(true, $operation, arguments: $arguments);
 } catch (Throwable $exception) {
