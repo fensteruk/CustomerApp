@@ -20,7 +20,6 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
                 Route::get('/', [Pages::class, 'site'])->name('sites.show');
                 Route::get('/edit', [Pages::class, 'siteForm'])->name('sites.edit');
                 Route::get('/change-status', [Pages::class, 'siteLifecycle'])->name('sites.lifecycle');
-                Route::get('/import-source-data', [Pages::class, 'imports'])->name('sites.import');
             });
         });
     });

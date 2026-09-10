@@ -113,7 +113,7 @@ it('renders every empty site section safely', function (string $section, string 
         default => adminPageItems(),
     };
     $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => $section, 'items' => $items, 'search' => ''])->render();
-    expect($html)->toContain($expected, 'Import Source Data', 'aria-label="Site sections"')
+    expect($html)->toContain($expected, 'aria-label="Site sections"')
         ->not->toContain('Add Plot', 'Edit Plot', 'Delete Plot');
 })->with([
     ['overview', 'Not linked'], ['plots', 'No plots yet'], ['users', 'No assigned users'],
@@ -199,6 +199,7 @@ it('renders only allowlisted audit values with truthful role attribution', funct
 });
 
 it('makes the future import entry honest and has no upload or commit control', function (): void {
+    config(['import-demo.enabled' => false]);
     $html = view('office.imports', ['site' => adminSiteViewData()])->render();
     expect($html)->toContain('Not available yet', 'Import Studio is being prepared', 'Synthetic Meadow')
         ->not->toContain('type="file"', 'multipart/form-data', '>Commit<', 'New Import');
