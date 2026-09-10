@@ -65,7 +65,14 @@ class ReviewRequestsController extends Controller
                     ->where('site_id', (int) $validated['site']));
             })
             ->when(isset($validated['service']), fn ($query) => $query
-                ->whereHas('batch', fn ($batchQuery) => $batchQuery->where('service_identifier', $validated['service'])))
+                ->where(function ($serviceQuery) use ($validated): void {
+                    $serviceQuery->where('service_identifier', $validated['service'])
+                        ->orWhere(function ($legacyQuery) use ($validated): void {
+                            $legacyQuery->whereNull('service_identifier')
+                                ->whereHas('batch', fn ($batchQuery) => $batchQuery
+                                    ->where('service_identifier', $validated['service']));
+                        });
+                }))
             ->with([
                 'projectedPlot:id,plot_reference',
                 'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',

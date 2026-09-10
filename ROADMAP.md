@@ -1,5 +1,30 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-FIX-QUEUECARD01 — Office queue-card correction — 10 September 2026
+
+**READY_FOR_QA on a non-deploying patch branch.** Production/main checkpoint
+`eb149a9ab28f9131f9d26971f13bd289ff1afba6` remains untouched. The executable fix
+is `8f28cc50f513c2fae2464abdbf0e7b11ed13f7bf` on
+`fix/office-queue-card-request-values`.
+
+The inherited queue card defect was reproduced: child requests for Windows / 5 October,
+Cavity Closers / 12 October and CML / 19 October all showed the parent batch's
+Windows / 1 October values, while their details pages were correct. Cards and the service
+filter now prefer authoritative request-level service/date values and retain the batch only
+as a legacy null-field fallback. Batch identity, status/date semantics, workflow, Sprint 3F,
+notifications, authorisation and persistence are unchanged.
+
+Evidence: 11 focused tests / 62 assertions; 134 related Review Requests and Sprint 3E/3F
+tests / 1,327 assertions; full suite 329 passed / 38 skipped / 2,344 assertions. A warmed
+query check stayed at 8 queries for both one and ten cards. Pint, strict Composer validation,
+clean Composer audit, production asset build and whitespace checks passed. No migration,
+main push, deployment, production access or unrelated WALD/admin/sidebar change occurred.
+Recommended release disposition: `NEXT_PATCH`, subject to dedicated QA and separate release
+approval. See the
+[correction report](documentation/office-queue-card-correction-2026-09-10.md).
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
 
 Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
