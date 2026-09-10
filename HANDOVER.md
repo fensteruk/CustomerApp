@@ -1,5 +1,88 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
+
+Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
+forward QA. RCQ-01 is `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`. Before traffic is reopened, a
+failed release may restore the fresh pre-deployment database snapshot and previous verified code
+release together. After reopening or any Sprint 3F write, old main is forbidden; recover forward
+from the exact deployed RC or a compatible descendant. A Forge code/symlink rollback does not
+restore MySQL. CUSTOMER-RELEASE03A is documentation-only and permits merge-to-main preparation,
+not a main push, deployment or production change. See
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
+
+## CUSTOMER-RELEASE02 — reduced RC1 build (historical pre-QA status) — 9 September 2026
+
+Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
+Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`
+merged first, security `5e7df08` second. Both are included in RC1, not newly on main
+or deployed. DEC-055 records this approval and the decision-number provenance.
+
+WALD02–05 remain accepted separate feature work but are excluded from RC1, as are
+ADMIN-SITE02, old manual importer/interpreter/UI, unfinished source integration,
+WALD06 and the multi-site pilot. Do not merge their runtime or migrations to obtain docs.
+RC1 has exactly 12 migrations; no historical migration edits. Populated amendment rollback
+would lose metadata and is not an approved production recovery strategy.
+
+RC1-T01 was an inherited stale date fixture, not a product defect. CUSTOMER-RELEASE02A
+approved a test-only correction; focused/full SQLite, disposable MySQL 8.4.11, Composer,
+Pint and build gates passed. The commit containing this status is the frozen QA candidate;
+use the exact SHA in the release handoff and do not change it after dedicated QA begins.
+Pre-QA verification and final freeze are recorded in
+[RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md).
+Dedicated release QA must use the final frozen SHA; passing build checks is not deployment
+approval. No main push, production access, Forge change, RC push or deployment is authorised.
+
+Last repository-proved successful production release: Sprint 3E `9111d76`, Forge 76326195,
+11 migrations. Main `0873bac` contains later fixes; its current live deployment is not
+proved here. Fresh production verification is a later release prerequisite.
+
+The entries below are historical branch evidence, including superseded deployment claims,
+old sprint numbering and pre-security advisory counts. They do not override this status or
+the current brief. Their reports and historical decisions remain preserved.
+
+## Sprint 3F final product decisions — 3 September 2026
+
+Product integration is complete on `feature/sprint-3f-date-amendments`, following
+baseline `4773c37` and race correction `38b058f`. DEC-039 confirms all seven stable
+reason codes, required Other explanation (maximum 2,000 characters) and optional text
+for other reasons. Customer/Office history keeps reason and Additional information separate.
+On Hold — Date Change Requested feeds existing Call-Offs In Progress; completed-service
+precedence is unchanged. No new overall status or transaction/locking change was needed.
+
+Verification: 91 ordinary Sprint 3F cases / 1,055 assertions; full SQLite 313 passed,
+38 MySQL-only skipped / 2,268 assertions; targeted MySQL Office race 10/10 iterations,
+292 assertions. Fresh isolated SQLite seed, Pint, Composer validation and build passed.
+Composer audit still reports eight inherited advisories; dependencies were not changed.
+After preview recovery, browser checks passed at desktop/mobile widths (1280px/390px),
+including keyboard focus, conditional Other validation, On Hold, Office review and resolution.
+No browser console errors/warnings were observed; dedicated QA is still required.
+
+No current Sprint 3F product decisions remain. Next: dedicated Sprint 3F QA, separate
+Composer security reconciliation and final combined release-candidate verification.
+No main change, push, deployment or Wald/import modification. See
+`documentation/sprint-3f-date-amendments-2026-09-03.md` for details and file list.
+
+## Initial Sprint 3F implementation update — 3 September 2026 (historical)
+
+Current work is Date Amendments After Date Agreed, reusing Sprint 3E. It is isolated on
+`feature/sprint-3f-date-amendments` from local main `0873bac79edf578e9f4a9417e3cafae34e8aa925`.
+This supersedes older release-status/numbering statements below for the current task.
+Those entries remain historical evidence, not a claim about today's production state.
+
+Implementation is **blocked for sign-off**, not complete: Product must approve amendment
+reason values and confirm the preserved On Hold aggregate plot status. Reasons are empty
+and customer initiation fails closed until confirmed. Disposable MySQL 8.4, dedicated
+keyboard/mobile QA and reconciliation with the separate security dependency branch remain
+release gates. No main merge, push, deployment or Wald/import modification was performed.
+
+See `documentation/sprint-3f-date-amendments-2026-09-03.md` for the domain, files,
+command evidence, migration rehearsal, eight new MySQL race cases and handoff actions.
+
+Final local gate: 264 tests passed / 23 MySQL-only skipped, 1,378 assertions.
+Fresh SQLite seed, non-empty upgrade, Pint, Composer validation and build passed.
+Composer audit reports eight inherited advisories; security reconciliation remains separate.
+
 ## Release-management status — 25 August 2026
 
 Production serves `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` through the

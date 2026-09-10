@@ -10,6 +10,7 @@ use App\Http\Requests\ApproveCallOffDecisionRequest;
 use App\Http\Requests\RejectCallOffDecisionRequest;
 use App\Models\CallOffRequest;
 use App\Models\Site;
+use App\Services\CallOffDateViewService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -104,7 +105,7 @@ class ReviewRequestsController extends Controller
 
         return view('portal.review-requests.show', [
             'callOffRequest' => $callOffRequest,
-        ]);
+        ] + app(CallOffDateViewService::class)->forRequest($callOffRequest, $user));
     }
 
     public function approve(
@@ -175,7 +176,7 @@ class ReviewRequestsController extends Controller
 
         return $callOffRequest->load([
             'projectedPlot:id,site_id,plot_reference',
-            'projectedPlotService:id,projected_plot_id,service_identifier,source_completed_at,source_completion_observed_at',
+            'projectedPlotService:id,projected_plot_id,service_identifier,source_present,source_completed_at,source_completion_observed_at',
             'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
             'batch.site:id,customer_organisation_id,name,location',
             'batch.site.customerOrganisation:id,name',

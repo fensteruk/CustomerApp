@@ -7,6 +7,7 @@ use App\Contracts\HolidayProvider;
 use App\Events\CallOffAlternativeAccepted;
 use App\Events\CallOffAlternativeProposed;
 use App\Events\CallOffAlternativeRejected;
+use App\Events\CallOffAmendmentRequested;
 use App\Events\CallOffApproved;
 use App\Events\CallOffDateAgreed;
 use App\Events\CallOffRejected;
@@ -48,6 +49,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(CallOffSubmitted::class, [CallOffNotificationListener::class, 'submitted']);
+        Event::listen(CallOffAmendmentRequested::class, [CallOffNotificationListener::class, 'amendmentRequested']);
         Event::listen(CallOffApproved::class, [CallOffNotificationListener::class, 'approved']);
         Event::listen(CallOffRejected::class, [CallOffNotificationListener::class, 'rejected']);
         Event::listen(CallOffDateAgreed::class, [CallOffNotificationListener::class, 'dateAgreed']);

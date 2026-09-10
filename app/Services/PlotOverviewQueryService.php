@@ -115,7 +115,7 @@ class PlotOverviewQueryService
 
             $serviceOverviews[$service->value] = new PlotServiceOverview(
                 service: $service,
-                state: $request === null ? PlotServicePresentationState::NotCalledOff : PlotServicePresentationState::AwaitingDate,
+                state: $request === null ? PlotServicePresentationState::NotCalledOff : ($request->status === CallOffRequestStatus::AmendmentOnHold ? PlotServicePresentationState::OnHold : PlotServicePresentationState::AwaitingDate),
             );
         }
 
@@ -139,7 +139,9 @@ class PlotOverviewQueryService
             return PlotOverallStatus::PartiallyCompleted;
         }
 
-        if (in_array(PlotServicePresentationState::AwaitingDate, $states, true)) {
+        // Preserve the pre-Sprint-3F aggregate treatment of AmendmentOnHold as
+        // unresolved work; source completion still has higher precedence.
+        if (in_array(PlotServicePresentationState::AwaitingDate, $states, true) || in_array(PlotServicePresentationState::OnHold, $states, true)) {
             return PlotOverallStatus::CallOffsInProgress;
         }
 
@@ -174,6 +176,12 @@ class PlotOverviewQueryService
                 ->whereHas('callOffRequests', fn (Builder $requests): Builder => $requests
                     ->whereNull('trashed_at')
                     ->whereIn('status', [CallOffRequestStatus::Approved->value, CallOffRequestStatus::DateAgreed->value])),
+            PlotServicePresentationState::OnHold => $query
+                ->whereNull('source_completed_at')
+                ->whereNull('source_completion_observed_at')
+                ->whereHas('callOffRequests', fn (Builder $requests): Builder => $requests
+                    ->whereNull('trashed_at')
+                    ->where('status', CallOffRequestStatus::AmendmentOnHold->value)),
             PlotServicePresentationState::AwaitingDate => $query
                 ->whereNull('source_completed_at')
                 ->whereNull('source_completion_observed_at')
@@ -183,7 +191,6 @@ class PlotOverviewQueryService
                         CallOffRequestStatus::Submitted->value,
                         CallOffRequestStatus::AwaitingFenster->value,
                         CallOffRequestStatus::AwaitingSiteUser->value,
-                        CallOffRequestStatus::AmendmentOnHold->value,
                     ])),
             PlotServicePresentationState::NotCalledOff => $query
                 ->whereNull('source_completed_at')

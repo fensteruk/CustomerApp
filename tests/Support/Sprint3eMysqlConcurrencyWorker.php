@@ -4,6 +4,7 @@ use App\Actions\CallOff\AcceptAlternativeCallOffDateAction;
 use App\Actions\CallOff\AgreeRequestedCallOffDateAction;
 use App\Actions\CallOff\ProposeAlternativeCallOffDateAction;
 use App\Actions\CallOff\RejectAlternativeCallOffDateAction;
+use App\Actions\CallOff\RequestCallOffAmendmentAction;
 use App\Data\SourceRecord;
 use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
@@ -14,7 +15,10 @@ use App\Models\User;
 use App\Services\SourceProjectionImportService;
 use Carbon\CarbonImmutable;
 use Illuminate\Contracts\Console\Kernel;
+use Illuminate\Database\Events\QueryExecuted;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
+use Tests\Support\CommittedMysqlFixtureScope;
 
 require __DIR__.'/../../vendor/autoload.php';
 
@@ -26,8 +30,18 @@ $operation = $argv[1] ?? '';
 $arguments = array_slice($argv, 2);
 $barrier = array_pop($arguments);
 $delayMilliseconds = (int) array_pop($arguments);
+$officeRaceWinner = getenv('MYSQL_GATE_OFFICE_RACE_WINNER') ?: null;
+$officeRaceTrace = [];
 
 try {
+    if (! app()->environment('testing') || DB::connection()->getDriverName() !== 'mysql') {
+        throw new RuntimeException('Concurrency workers require an isolated MySQL testing environment.');
+    }
+    CommittedMysqlFixtureScope::assertSafe();
+    config(['call_off_amendments.reasons' => ['test_reason' => 'Synthetic MySQL test reason']]);
+    if ($officeRaceWinner !== null) {
+        mysqlGateSynchronizeOfficeSnapshot($officeRaceWinner, $operation, $barrier);
+    }
     $deadline = microtime(true) + 20;
     while (! file_exists($barrier)) {
         if (microtime(true) > $deadline) {
@@ -46,14 +60,72 @@ try {
         'propose' => app(ProposeAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), $arguments[2]),
         'accept' => app(AcceptAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), mysqlGateProposal($arguments[2])),
         'reject' => app(RejectAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), mysqlGateProposal($arguments[2]), 'The alternative is not suitable.'),
+        'amend-request' => app(RequestCallOffAmendmentAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1])->batch->site, mysqlGateRequest($arguments[1]), ['requested_date' => $arguments[2], 'reason_code' => 'test_reason'], $arguments[3]),
+        'amend-agree' => app(AgreeRequestedCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), true, $arguments[2]),
+        'amend-propose' => app(ProposeAlternativeCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]), $arguments[2], null, null, $arguments[3], true),
+        'crash-after-agree' => mysqlGateCrashAfterAgreement($arguments),
         'source-complete' => mysqlGateCompleteSourceService($arguments[0]),
         'source-missing' => mysqlGateMarkSourceMissing($arguments[0]),
         default => throw new InvalidArgumentException("Unknown MySQL gate operation: {$operation}"),
     };
 
+    if ($officeRaceWinner === $operation) {
+        touch($barrier.'.office-winner-committed');
+    }
     mysqlGateResult(true, $operation, arguments: $arguments);
 } catch (Throwable $exception) {
     mysqlGateResult(false, $operation, $exception, $arguments);
+}
+
+/**
+ * Force an earlier REPEATABLE READ snapshot in both genuine worker transactions.
+ * The nominated winner commits before the loser's first aggregate locking read.
+ * No application mocks or isolation-level changes are involved.
+ */
+function mysqlGateSynchronizeOfficeSnapshot(string $winner, string $operation, string $barrier): void
+{
+    if (! in_array($winner, ['amend-agree', 'amend-propose'], true)
+        || ! in_array($operation, ['amend-agree', 'amend-propose'], true)) {
+        throw new InvalidArgumentException('Office snapshot synchronization requires two Office decisions.');
+    }
+    $captured = false;
+    DB::listen(function (QueryExecuted $query) use ($winner, $operation, $barrier, &$captured): void {
+        global $officeRaceTrace;
+        $officeRaceTrace[] = ['sql' => $query->sql, 'transaction_level' => DB::transactionLevel()];
+        $normalized = str_replace(['`', '"'], '', strtolower($query->sql));
+        if ($captured || DB::transactionLevel() === 0
+            || ! str_starts_with($normalized, 'select projected_plot_service_id from call_off_requests')
+            || str_contains($normalized, 'for update')) {
+            return;
+        }
+        $captured = true;
+        touch($barrier.'.office-snapshot-'.$operation);
+        $other = $operation === 'amend-agree' ? 'amend-propose' : 'amend-agree';
+        mysqlGateAwaitMarker($barrier.'.office-snapshot-'.$other);
+        $officeRaceTrace[] = ['phase' => 'both_consistent_snapshots_established'];
+        if ($operation !== $winner) {
+            mysqlGateAwaitMarker($barrier.'.office-winner-committed');
+            $officeRaceTrace[] = ['phase' => 'winner_committed_before_loser_aggregate_locks'];
+        }
+    });
+}
+
+function mysqlGateAwaitMarker(string $path): void
+{
+    $deadline = microtime(true) + 20;
+    while (! file_exists($path)) {
+        if (microtime(true) > $deadline) {
+            throw new RuntimeException('The synchronized Office race marker was not released.');
+        }
+        usleep(10_000);
+        clearstatcache(true, $path);
+    }
+}
+
+function mysqlGateCrashAfterAgreement(array $arguments): never
+{
+    app(AgreeRequestedCallOffDateAction::class)->handle(mysqlGateUser($arguments[0]), mysqlGateRequest($arguments[1]));
+    exit(17); // Deliberate process failure after a real commit, used only by isolation regression.
 }
 
 function mysqlGateUser(string $id): User
@@ -104,11 +176,16 @@ function mysqlGateMarkSourceMissing(string $serviceId): void
 /** @param array<int, string> $arguments */
 function mysqlGateResult(bool $ok, string $operation, ?Throwable $exception = null, array $arguments = []): never
 {
+    global $officeRaceTrace, $officeRaceWinner;
     echo json_encode([
         'ok' => $ok,
         'operation' => $operation,
         'exception' => $exception === null ? null : $exception::class,
         'message' => $exception === null ? null : $exception->getMessage(),
+        'sqlstate' => $exception instanceof QueryException ? ($exception->errorInfo[0] ?? null) : null,
+        'driver_code' => $exception instanceof QueryException ? ($exception->errorInfo[1] ?? null) : null,
+        'office_race_winner' => $officeRaceWinner,
+        'office_race_trace' => $officeRaceTrace,
         'durable_state' => mysqlGateDurableState($operation, $arguments),
     ], JSON_THROW_ON_ERROR);
 
@@ -121,7 +198,7 @@ function mysqlGateResult(bool $ok, string $operation, ?Throwable $exception = nu
 function mysqlGateDurableState(string $operation, array $arguments): array
 {
     $requestId = match ($operation) {
-        'agree', 'propose', 'accept', 'reject' => $arguments[1] ?? null,
+        'agree', 'propose', 'accept', 'reject', 'amend-request', 'amend-agree', 'amend-propose' => $arguments[1] ?? null,
         'source-complete', 'source-missing' => ProjectedPlotService::query()
             ->find($arguments[0] ?? null)?->callOffRequests()
             ->orderBy('id')

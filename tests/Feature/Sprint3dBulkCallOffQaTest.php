@@ -305,7 +305,10 @@ test('the temporary per-request notifications use each multi-service request con
     [$user, $site] = sprint3dQaUser();
     $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create();
     $plot = sprint3dQaPlot($site, 'Plot 12');
-    $dates = ['2026-10-02', '2026-10-05', '2026-10-06', '2026-10-07'];
+    $firstDate = CarbonImmutable::today()->addWeeks(6)->nextWeekday();
+    $dates = collect(range(0, 3))
+        ->map(fn (int $offset): string => $firstDate->addWeekdays($offset)->toDateString())
+        ->all();
     $items = collect(CallOffServiceType::cases())->map(function (CallOffServiceType $service, int $index) use ($dates, $plot): array {
         return [
             'plot_service_id' => $plot->services()->where('service_identifier', $service->value)->value('id'),

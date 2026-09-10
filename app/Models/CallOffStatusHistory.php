@@ -12,6 +12,25 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class CallOffStatusHistory extends Model
 {
+    public function recordedActorName(): string
+    {
+        return $this->after_state['actor_name'] ?? $this->performedBy?->name ?? 'Fenster Customer Portal';
+    }
+
+    public function recordedActorRole(): ?string
+    {
+        return $this->after_state['actor_role'] ?? $this->performedBy?->portalRole?->name;
+    }
+
+    public function recordedAgreedDate(): ?string
+    {
+        if ($this->event_type !== CallOffHistoryEventType::DateAgreed) {
+            return null;
+        }
+
+        return $this->after_state['agreed_date'] ?? null;
+    }
+
     /** @use HasFactory<CallOffStatusHistoryFactory> */
     use HasFactory, HasUuid;
 
