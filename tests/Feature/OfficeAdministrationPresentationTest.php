@@ -1,6 +1,8 @@
 <?php
 
 use App\Enums\PortalRoleIdentifier;
+use App\Models\CustomerOrganisation;
+use App\Models\Site;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -41,7 +43,9 @@ function adminSiteViewData(): array
 {
     return ['uuid' => '00000000-0000-4000-8000-000000000002', 'name' => 'Synthetic Meadow',
         'customer' => adminCustomerViewData(), 'location' => null, 'is_active' => true,
-        'effective_is_active' => true, 'lock_version' => 2, 'plot_count' => 250, 'assignment_count' => 30];
+        'effective_is_active' => true, 'lock_version' => 2, 'plot_count' => 250, 'assignment_count' => 30,
+        'source_reference' => ['source' => 'synthetic', 'identifier' => 'SOURCE-SITE-42'],
+        'source_binding_state' => 'ACTIVE'];
 }
 
 function adminPageItems(array $items = [], ?int $total = null): LengthAwarePaginator
@@ -104,7 +108,7 @@ it('does not require a source reference when adding a site', function (): void {
 
 it('renders every empty site section safely', function (string $section, string $expected): void {
     $items = match ($section) {
-        'overview', 'source' => ['availability' => 'AVAILABLE', 'active_bindings' => []],
+        'overview', 'source' => ['availability' => 'AVAILABLE', 'active_bindings' => [], 'bindings' => adminPageItems()],
         'imports' => ['availability' => 'AVAILABLE', 'runs' => adminPageItems()],
         default => adminPageItems(),
     };
@@ -129,12 +133,16 @@ it('renders paginated source plots without turning source data into editing cont
     $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => 'plots', 'search' => 'LONG',
         'items' => adminPageItems([[
             'plot_reference' => $reference, 'source_identity' => ['identifier' => 'SOURCE-42'],
+            'overall_status' => ['value' => 'available', 'label' => 'Available'],
+            'product_totals' => ['windows' => '12', 'doors' => '2', 'bifold' => '1'],
             'is_completed' => false, 'synchronised_at' => '2026-09-10T11:00:00+01:00',
             'services' => [['service' => 'windows', 'source_present' => true,
+                'portal_status' => ['value' => 'outstanding', 'label' => 'Outstanding', 'date' => null],
                 'source_completed_at' => null, 'source_completion_observed_at' => null]],
         ]], 500)])->render();
     expect($html)->toContain('500 plots', 'page=2', 'name="section" value="plots"', 'value="LONG"',
-        'SOURCE-42', 'Windows', '10 Sep 2026, 10:00 UTC', '&lt;script&gt;', 'Read-only source information')
+        'SOURCE-42', 'Available', 'Windows 12', 'Doors 2', 'Bifold 1', 'Outstanding',
+        '10 Sep 2026, 10:00 UTC', '&lt;script&gt;', 'Read-only source information')
         ->not->toContain($reference, 'Add Plot', 'Edit Plot', 'Delete Plot');
 });
 
@@ -159,12 +167,13 @@ it('shows commitment only from a supplied receipt with a correctly converted tim
 
 it('displays source binding summaries without raw private metadata', function (): void {
     $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => 'source', 'search' => '',
-        'items' => ['availability' => 'AVAILABLE', 'active_bindings' => [[
+        'items' => ['availability' => 'AVAILABLE', 'active_bindings' => [], 'bindings' => adminPageItems([[
             'state' => 'ACTIVE', 'source_identity' => 'SOURCE-42', 'identity_kind' => 'SOURCE_SITE_ID',
+            'source_namespace' => 'synthetic', 'version' => 2, 'reason' => 'Approved mapping',
             'created_by' => 'Synthetic Office', 'last_changed_at' => '2026-09-10T10:00:00Z',
             'epoch' => 29, 'hash' => 'PRIVATE-HASH', 'private_evidence' => 'PRIVATE-WORKBOOK',
-        ]]]])->render();
-    expect($html)->toContain('SOURCE-42', 'Active', 'Synthetic Office')
+        ]])]])->render();
+    expect($html)->toContain('SOURCE-42', 'Active', 'Synthetic Office', 'Version', 'Approved mapping')
         ->not->toContain('PRIVATE-HASH', 'PRIVATE-WORKBOOK', 'Revoke', 'Activate Binding');
 });
 
@@ -193,6 +202,44 @@ it('makes the future import entry honest and has no upload or commit control', f
     $html = view('office.imports', ['site' => adminSiteViewData()])->render();
     expect($html)->toContain('Not available yet', 'Import Studio is being prepared', 'Synthetic Meadow')
         ->not->toContain('type="file"', 'multipart/form-data', '>Commit<', 'New Import');
+});
+
+it('binds the administration workspace to the real secured lifecycle endpoints', function (): void {
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
+        'customer_organisation_id' => null,
+    ]);
+
+    $customerResponse = $this->actingAs($office)->postJson(route('portal.office.customers.store'), [
+        'name' => 'Integrated Customer',
+    ])->assertCreated();
+    $customer = CustomerOrganisation::query()->where('uuid', $customerResponse->json('customer.uuid'))->firstOrFail();
+
+    $this->get(route('office.workspace.customers.show', $customer))
+        ->assertOk()
+        ->assertSee('Integrated Customer')
+        ->assertSee('Add Site');
+
+    $siteResponse = $this->postJson(route('portal.office.customers.sites.store', $customer), [
+        'name' => 'Integrated Site',
+        'location' => 'York',
+    ])->assertCreated();
+    $site = Site::query()->where('uuid', $siteResponse->json('site.uuid'))->firstOrFail();
+
+    $this->get(route('office.workspace.sites.show', [$customer, $site]))
+        ->assertOk()
+        ->assertSee('Integrated Site')
+        ->assertSee('Not linked')
+        ->assertSee('External access');
+
+    $this->postJson(route('portal.office.sites.deactivate', [$customer, $site]), [
+        'reason' => 'Integration lifecycle check.',
+        'lock_version' => 1,
+    ])->assertOk();
+
+    $this->get(route('office.workspace.sites.show', [$customer, $site, 'section' => 'audit']))
+        ->assertOk()
+        ->assertSee('External access is blocked')
+        ->assertSee('Integration lifecycle check.');
 });
 
 it('denies every external role direct workspace entry', function (PortalRoleIdentifier $role): void {

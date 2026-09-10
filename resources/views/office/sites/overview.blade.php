@@ -7,12 +7,14 @@
         <div><dt class="admin-term">Location</dt><dd class="admin-value">{{ $site['location'] ?: 'Not added' }}</dd></div>
         <div><dt class="admin-term">Plots</dt><dd class="admin-value">{{ $site['plot_count'] }}</dd></div>
         <div><dt class="admin-term">Assigned users</dt><dd class="admin-value">{{ $site['assignment_count'] }}</dd></div>
+        <div><dt class="admin-term">Source reference</dt><dd class="admin-value [overflow-wrap:anywhere]">{{ $site['source_reference']['identifier'] ?? 'Not recorded' }}</dd></div>
+        <div><dt class="admin-term">Source binding</dt><dd class="admin-value">{{ $site['source_binding_state'] === 'ACTIVE' ? 'Active' : 'Not linked' }}</dd></div>
     </dl>
     <div class="admin-card mt-4">
         <h3 class="font-bold">Source binding</h3>
         @if (($items['availability'] ?? '') !== 'AVAILABLE')
             <p class="mt-2 text-sm text-slate-600">Source binding information is not available yet.</p>
-        @elseif (! empty($items['active_bindings']))
+        @elseif (($site['source_binding_state'] ?? 'NOT_LINKED') === 'ACTIVE' && ! empty($items['active_bindings']))
             <p class="mt-2 text-sm text-slate-600">Active — linked to source data.</p>
             @foreach ($items['active_bindings'] as $binding)<p class="mt-2 font-semibold [overflow-wrap:anywhere]">{{ $binding['source_identity'] }}</p>@endforeach
         @else
