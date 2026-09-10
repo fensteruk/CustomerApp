@@ -45,7 +45,7 @@ function adminSiteViewData(): array
         'customer' => adminCustomerViewData(), 'location' => null, 'is_active' => true,
         'effective_is_active' => true, 'lock_version' => 2, 'plot_count' => 250, 'assignment_count' => 30,
         'source_reference' => ['source' => 'synthetic', 'identifier' => 'SOURCE-SITE-42'],
-        'source_binding_state' => 'ACTIVE'];
+        'source_binding_state' => 'NOT_YET_INTEGRATED'];
 }
 
 function adminPageItems(array $items = [], ?int $total = null): LengthAwarePaginator
@@ -108,16 +108,16 @@ it('does not require a source reference when adding a site', function (): void {
 
 it('renders every empty site section safely', function (string $section, string $expected): void {
     $items = match ($section) {
-        'overview', 'source' => ['availability' => 'AVAILABLE', 'active_bindings' => [], 'bindings' => adminPageItems()],
-        'imports' => ['availability' => 'AVAILABLE', 'runs' => adminPageItems()],
+        'overview', 'source' => ['availability' => 'NOT_YET_INTEGRATED', 'active_bindings' => [], 'bindings' => null],
+        'imports' => ['availability' => 'NOT_YET_INTEGRATED', 'runs' => []],
         default => adminPageItems(),
     };
     $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => $section, 'items' => $items, 'search' => ''])->render();
     expect($html)->toContain($expected, 'Import Source Data', 'aria-label="Site sections"')
         ->not->toContain('Add Plot', 'Edit Plot', 'Delete Plot');
 })->with([
-    ['overview', 'Not linked'], ['plots', 'No plots yet'], ['users', 'No assigned users'],
-    ['source', 'Not linked'], ['imports', 'No imports recorded'], ['audit', 'No administration activity'],
+    ['overview', 'Not available yet'], ['plots', 'No plots yet'], ['users', 'No assigned users'],
+    ['source', 'Source binding information is not available yet'], ['imports', 'Import history is not available yet'], ['audit', 'No administration activity'],
 ]);
 
 it('renders assigned user labels and escapes email and name', function (): void {
@@ -228,7 +228,7 @@ it('binds the administration workspace to the real secured lifecycle endpoints',
     $this->get(route('office.workspace.sites.show', [$customer, $site]))
         ->assertOk()
         ->assertSee('Integrated Site')
-        ->assertSee('Not linked')
+        ->assertSee('Not available yet')
         ->assertSee('External access');
 
     $this->postJson(route('portal.office.sites.deactivate', [$customer, $site]), [

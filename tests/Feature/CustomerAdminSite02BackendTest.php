@@ -300,7 +300,7 @@ it('does not translate unrelated database failures into duplicate-name validatio
     expect($customer->fresh()->name)->not->toBe('Renamed');
 });
 
-it('provides bounded safe customer site plot user binding and import read models without N plus one queries', function (): void {
+it('provides bounded safe customer site plot and user read models with truthful unavailable import states', function (): void {
     $office = adminSite02User(PortalRoleIdentifier::FensterOfficeStaff);
     $customer = CustomerOrganisation::factory()->create(['name' => 'Read Model Customer']);
     $site = Site::factory()->create([
@@ -322,15 +322,12 @@ it('provides bounded safe customer site plot user binding and import read models
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'CDG', 'quantity' => '1.000']);
     ProjectedPlotProduct::query()->create(['projected_plot_id' => $plot->id, 'product_code' => 'BF', 'quantity' => '3.000']);
 
-    adminSite02Binding($office, $customer, $site, 'Draft source', null);
-    adminSite02Binding($office, $customer, $site, 'Active source', 1);
-
     $this->actingAs($office)->getJson(route('portal.office.customers.index', ['per_page' => 1]))
         ->assertOk()->assertJsonPath('per_page', 1);
     $this->getJson(route('portal.office.customers.sites.index', [$customer, 'per_page' => 1]))
         ->assertOk()->assertJsonPath('per_page', 1)
         ->assertJsonPath('data.0.source_reference.identifier', 'LEGACY-001')
-        ->assertJsonPath('data.0.source_binding_state', 'ACTIVE');
+        ->assertJsonPath('data.0.source_binding_state', 'NOT_YET_INTEGRATED');
     $this->getJson(route('portal.office.sites.plots', [$customer, $site, 'per_page' => 1]))
         ->assertOk()
         ->assertJsonPath('data.0.plot_reference', 'Plot 100')
@@ -342,10 +339,16 @@ it('provides bounded safe customer site plot user binding and import read models
         ->assertOk()->assertJsonMissingPath('data.0.id')->assertJsonMissingPath('data.0.customer_organisation_id')
         ->assertJsonPath('data.0.email', $assigned->email);
     $this->getJson(route('portal.office.sites.source-binding', [$customer, $site, 'per_page' => 1]))
-        ->assertOk()->assertJsonPath('state', 'ACTIVE')->assertJsonPath('bindings.per_page', 1)
+        ->assertOk()
+        ->assertJsonPath('availability', 'NOT_YET_INTEGRATED')
+        ->assertJsonPath('state', 'NOT_YET_INTEGRATED')
+        ->assertJsonPath('bindings', null)
         ->assertJsonMissing(['definition_hash', 'identity_hash', 'epoch']);
     $this->getJson(route('portal.office.sites.imports', [$customer, $site, 'per_page' => 1]))
-        ->assertOk()->assertJsonPath('availability', 'AVAILABLE')->assertJsonPath('runs.per_page', 1)
+        ->assertOk()
+        ->assertJsonPath('availability', 'NOT_YET_INTEGRATED')
+        ->assertJsonPath('empty_state', 'No import integration has been released yet.')
+        ->assertJsonCount(0, 'runs')
         ->assertJsonMissing(['storage_key', 'original_name', 'workbook_hash', 'failure_code']);
 
     Site::factory()->count(3)->create(['customer_organisation_id' => $customer->id]);
@@ -418,46 +421,4 @@ function adminSite02User(
     return User::factory()->role($role)->create(array_merge([
         'customer_organisation_id' => $role === PortalRoleIdentifier::FensterOfficeStaff ? $customer?->id : ($customer ?? CustomerOrganisation::factory()->create())->id,
     ], $attributes));
-}
-
-function adminSite02Binding(
-    User $actor,
-    CustomerOrganisation $customer,
-    Site $site,
-    string $identity,
-    ?int $activeVersion,
-): void {
-    $bindingId = DB::table('wald_source_bindings')->insertGetId([
-        'uuid' => (string) Str::uuid(),
-        'identity_hash' => hash('sha256', $identity),
-        'source_namespace' => 'siteapp',
-        'identity_kind' => 'EXACT_SITE_NAME',
-        'source_identity' => $identity,
-        'latest_version' => 1,
-        'active_version' => null,
-        'revoked_through' => 0,
-        'epoch' => 0,
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
-    DB::table('wald_binding_versions')->insert([
-        'uuid' => (string) Str::uuid(),
-        'binding_id' => $bindingId,
-        'version' => 1,
-        'customer_organisation_id' => $customer->id,
-        'site_id' => $site->id,
-        'actor_id' => $actor->id,
-        'actor_name' => $actor->name,
-        'reason' => 'Approved test binding.',
-        'definition_hash' => hash('sha256', $identity.'definition'),
-        'created_at' => now(),
-    ]);
-
-    if ($activeVersion !== null) {
-        DB::table('wald_source_bindings')->where('id', $bindingId)->update([
-            'active_version' => $activeVersion,
-            'epoch' => 1,
-            'updated_at' => now(),
-        ]);
-    }
 }

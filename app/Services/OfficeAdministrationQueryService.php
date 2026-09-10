@@ -8,11 +8,8 @@ use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
 use App\Policies\OfficeAdministrationPolicy;
-use App\SourceImport\Semantics\Dictionary\Quantity;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Schema;
 
 final class OfficeAdministrationQueryService
 {
@@ -86,8 +83,6 @@ final class OfficeAdministrationQueryService
                 }))
             ->when($active !== null, fn (Builder $query) => $query->where('is_active', $active));
 
-        $this->addActiveBindingCount($query);
-
         return $query
             ->orderBy('name')
             ->orderBy('id')
@@ -104,8 +99,6 @@ final class OfficeAdministrationQueryService
             ->where('uuid', $siteUuid)
             ->with('customerOrganisation:id,uuid,name,is_active')
             ->withCount(['projectedPlots', 'assignments']);
-
-        $this->addActiveBindingCount($query);
 
         $site = $query->firstOrFail();
 
@@ -210,52 +203,13 @@ final class OfficeAdministrationQueryService
         $this->policy->authorize($actor, 'view');
         $this->assertContained($customer, $site);
 
-        if (! Schema::hasTable('wald_source_bindings')) {
-            return [
-                'availability' => 'NOT_YET_INTEGRATED',
-                'state' => 'NOT_LINKED',
-                'active_bindings' => [],
-                'bindings' => null,
-            ];
-        }
-
-        $scopedVersions = DB::table('wald_binding_versions as version')
-            ->join('wald_source_bindings as binding', 'binding.id', '=', 'version.binding_id')
-            ->where('version.customer_organisation_id', $customer->getKey())
-            ->where('version.site_id', $site->getKey())
-            ->select([
-                'binding.source_namespace', 'binding.identity_kind', 'binding.source_identity',
-                'binding.latest_version', 'binding.active_version', 'binding.revoked_through',
-                'binding.updated_at', 'version.version', 'version.actor_name', 'version.reason',
-                'version.created_at',
-            ]);
-
-        $bindings = (clone $scopedVersions)
-            ->orderByDesc('version.id')
-            ->paginate($this->perPage($perPage))
-            ->through(fn ($binding): array => $this->bindingSummary($binding));
-
-        $activeBindingRows = (clone $scopedVersions)
-            ->whereColumn('version.version', 'binding.active_version')
-            ->orderBy('binding.source_namespace')
-            ->orderBy('binding.id')
-            ->limit(101)
-            ->get();
-        $activeBindingsTruncated = $activeBindingRows->count() > 100;
-        $activeBindings = $activeBindingRows
-            ->take(100)
-            ->map(fn ($binding): array => $this->bindingSummary($binding))
-            ->all();
-
-        $latest = (clone $scopedVersions)->orderByDesc('version.id')->first();
-
         return [
-            'availability' => 'AVAILABLE',
-            'state' => $activeBindings !== [] ? 'ACTIVE' : ($latest === null ? 'NOT_LINKED' : $this->bindingState($latest)),
-            'has_active_binding' => $activeBindings !== [],
-            'active_bindings' => $activeBindings,
-            'active_bindings_truncated' => $activeBindingsTruncated,
-            'bindings' => $bindings,
+            'availability' => 'NOT_YET_INTEGRATED',
+            'state' => 'NOT_YET_INTEGRATED',
+            'has_active_binding' => false,
+            'active_bindings' => [],
+            'active_bindings_truncated' => false,
+            'bindings' => null,
         ];
     }
 
@@ -264,53 +218,10 @@ final class OfficeAdministrationQueryService
         $this->policy->authorize($actor, 'view');
         $this->assertContained($customer, $site);
 
-        if (! Schema::hasTable('wald_import_runs')) {
-            return ['availability' => 'NOT_YET_INTEGRATED', 'empty_state' => 'Import history is not integrated yet.', 'runs' => []];
-        }
-
-        $runs = DB::table('wald_import_runs as run')
-            ->leftJoin('wald_import_receipts as receipt', 'receipt.run_id', '=', 'run.id')
-            ->where('run.customer_organisation_id', $customer->getKey())
-            ->where('run.site_id', $site->getKey())
-            ->orderByDesc('run.id')
-            ->select([
-                'run.uuid', 'run.source_namespace', 'run.workbook_family', 'run.uploader_name',
-                'run.export_date', 'run.export_slot', 'run.state', 'run.predecessor_id', 'run.created_at',
-                'run.updated_at', 'run.terminal_at', 'receipt.uuid as receipt_uuid', 'receipt.revision',
-                'receipt.payload as receipt_payload', 'receipt.created_at as committed_at',
-            ])
-            ->paginate($this->perPage($perPage));
-
-        $runs->through(function ($run): array {
-            $payload = $run->receipt_payload === null ? [] : json_decode($run->receipt_payload, true);
-            $payload = is_array($payload) ? $payload : [];
-
-            return [
-                'uuid' => $run->uuid,
-                'source_namespace' => $run->source_namespace,
-                'workbook_family' => $run->workbook_family,
-                'uploader_name' => $run->uploader_name,
-                'export_date' => $run->export_date,
-                'export_slot' => $run->export_slot,
-                'state' => $run->state,
-                'is_correction' => $run->predecessor_id !== null,
-                'is_superseded' => $run->state === 'SUPERSEDED',
-                'created_at' => $run->created_at,
-                'updated_at' => $run->updated_at,
-                'terminal_at' => $run->terminal_at,
-                'receipt' => $run->receipt_uuid === null ? null : [
-                    'uuid' => $run->receipt_uuid,
-                    'revision' => (int) $run->revision,
-                    'committed_at' => $run->committed_at,
-                    'counts' => $this->safeImportCounts($payload['counts'] ?? null),
-                ],
-            ];
-        });
-
         return [
-            'availability' => 'AVAILABLE',
-            'empty_state' => $runs->isEmpty() ? 'No imports have been recorded for this site.' : null,
-            'runs' => $runs,
+            'availability' => 'NOT_YET_INTEGRATED',
+            'empty_state' => 'No import integration has been released yet.',
+            'runs' => [],
         ];
     }
 
@@ -370,7 +281,7 @@ final class OfficeAdministrationQueryService
                 'source' => $site->external_source,
                 'identifier' => $site->external_identifier,
             ],
-            'source_binding_state' => (int) ($site->active_source_bindings_count ?? 0) > 0 ? 'ACTIVE' : 'NOT_LINKED',
+            'source_binding_state' => 'NOT_YET_INTEGRATED',
             'created_at' => $site->created_at?->toISOString(),
             'updated_at' => $site->updated_at?->toISOString(),
         ];
@@ -386,77 +297,24 @@ final class OfficeAdministrationQueryService
         return max(1, min(100, $perPage));
     }
 
-    /** @param Builder<Site> $query */
-    private function addActiveBindingCount(Builder $query): void
-    {
-        if (! Schema::hasTable('wald_source_bindings')) {
-            return;
-        }
-
-        $query->addSelect([
-            'active_source_bindings_count' => DB::table('wald_binding_versions as binding_version')
-                ->join('wald_source_bindings as binding', 'binding.id', '=', 'binding_version.binding_id')
-                ->selectRaw('COUNT(*)')
-                ->whereColumn('binding_version.site_id', 'sites.id')
-                ->whereColumn('binding_version.version', 'binding.active_version'),
-        ]);
-    }
-
     /** @param array<int, string> $codes */
     private function productTotal(ProjectedPlot $plot, array $codes): string
     {
         $units = $plot->products
             ->whereIn('product_code', $codes)
-            ->reduce(fn (int $total, $product): int => $total + (Quantity::units($product->quantity) ?? 0), 0);
+            ->reduce(fn (int $total, $product): int => $total + $this->quantityUnits($product->quantity), 0);
 
-        return Quantity::decimal($units);
+        return intdiv($units, 1000).'.'.str_pad((string) ($units % 1000), 3, '0', STR_PAD_LEFT);
     }
 
-    private function bindingSummary(object $binding): array
+    private function quantityUnits(mixed $quantity): int
     {
-        return [
-            'source_namespace' => $binding->source_namespace,
-            'identity_kind' => $binding->identity_kind,
-            'source_identity' => $binding->source_identity,
-            'state' => $this->bindingState($binding),
-            'version' => (int) $binding->version,
-            'created_by' => $binding->actor_name,
-            'reason' => $binding->reason,
-            'created_at' => $binding->created_at,
-            'last_changed_at' => $binding->updated_at,
-        ];
-    }
-
-    private function bindingState(object $binding): string
-    {
-        $version = (int) $binding->version;
-        $activeVersion = $binding->active_version === null ? null : (int) $binding->active_version;
-        $revokedThrough = (int) $binding->revoked_through;
-
-        if ($activeVersion === $version) {
-            return 'ACTIVE';
+        $value = trim((string) $quantity);
+        if (! preg_match('/^(\d+)(?:\.(\d{1,3}))?$/', $value, $matches)) {
+            return 0;
         }
 
-        if ($revokedThrough === $version) {
-            return 'REVOKED';
-        }
-
-        if (($activeVersion !== null && $version < $activeVersion) || ($revokedThrough > 0 && $version < $revokedThrough)) {
-            return 'SUPERSEDED';
-        }
-
-        return 'DRAFT';
-    }
-
-    private function safeImportCounts(mixed $counts): ?array
-    {
-        if (! is_array($counts)) {
-            return null;
-        }
-
-        return collect(['seen', 'excluded', 'applied', 'created', 'updated', 'unchanged'])
-            ->filter(fn (string $key): bool => is_int($counts[$key] ?? null))
-            ->mapWithKeys(fn (string $key): array => [$key => $counts[$key]])
-            ->all();
+        return ((int) $matches[1] * 1000)
+            + (int) str_pad($matches[2] ?? '', 3, '0', STR_PAD_RIGHT);
     }
 }

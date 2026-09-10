@@ -8,7 +8,7 @@
         <div><dt class="admin-term">Plots</dt><dd class="admin-value">{{ $site['plot_count'] }}</dd></div>
         <div><dt class="admin-term">Assigned users</dt><dd class="admin-value">{{ $site['assignment_count'] }}</dd></div>
         <div><dt class="admin-term">Source reference</dt><dd class="admin-value [overflow-wrap:anywhere]">{{ $site['source_reference']['identifier'] ?? 'Not recorded' }}</dd></div>
-        <div><dt class="admin-term">Source binding</dt><dd class="admin-value">{{ $site['source_binding_state'] === 'ACTIVE' ? 'Active' : 'Not linked' }}</dd></div>
+        <div><dt class="admin-term">Source binding</dt><dd class="admin-value">{{ $site['source_binding_state'] === 'ACTIVE' ? 'Active' : ($site['source_binding_state'] === 'NOT_YET_INTEGRATED' ? 'Not available yet' : 'Not linked') }}</dd></div>
     </dl>
     <div class="admin-card mt-4">
         <h3 class="font-bold">Source binding</h3>
