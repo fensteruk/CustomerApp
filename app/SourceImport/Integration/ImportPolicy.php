@@ -23,8 +23,14 @@ final class ImportPolicy
         if (! $fresh || ! $fresh->is_active || $fresh->is_preview_user || $role !== 'fenster_office_staff') {
             throw new AuthorizationException('Import access denied.');
         }
-        $owner = DB::table('customer_organisations')->where('id', $scope->organisationId);
-        $site = DB::table('sites')->where('id', $scope->siteId)->where('customer_organisation_id', $scope->organisationId);
+        $requiresActiveScope = ! in_array($ability, ['binding_audit', 'audit'], true);
+        $owner = DB::table('customer_organisations')
+            ->where('id', $scope->organisationId)
+            ->when($requiresActiveScope, fn ($query) => $query->where('is_active', true));
+        $site = DB::table('sites')
+            ->where('id', $scope->siteId)
+            ->where('customer_organisation_id', $scope->organisationId)
+            ->when($requiresActiveScope, fn ($query) => $query->where('is_active', true));
         if (! ($lock ? $owner->lockForUpdate() : $owner)->first() || ! ($lock ? $site->sharedLock() : $site)->first()) {
             throw new AuthorizationException('Import scope denied.');
         }
