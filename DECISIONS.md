@@ -1418,3 +1418,56 @@ Rules:
 Reason:
 The user separates two correctable backend defects from the later multi-site pilot design.
 This narrows the next gate without weakening source atomicity or expanding the supported unit.
+
+---
+
+## DEC-059
+
+Date:
+10 September 2026
+
+Decision:
+CUSTOMER-ADMIN-SITE02B implements the separately approved customer/site administration backend
+and security contract on non-deploying branch
+`feature/admin-site02a-customer-site-backend-security`. The latest inspected parallel UI decision
+is DEC-058 at checkpoint `13897dbc38e8615e0e1d2c0bca9bf28e33e9b934`; this decision deliberately
+uses the next global number even though DEC-055–058 are not ancestors of this backend branch.
+
+Rules and implementation contract:
+
+- Customers and sites have stable external UUIDs, explicit active state and optimistic versions.
+  Create, safe edit, deactivate and reactivate require current stored active non-preview Office
+  authority. There is no V1 hard delete.
+- Lifecycle reason, actor and time live in immutable append-only administration audit. Entity
+  state plus event history is the approved simpler equivalent to duplicating deactivation
+  metadata on mutable rows.
+- Inactive customer/site scope blocks all three external roles while retaining relationships and
+  Office historical inspection. Reactivating a customer does not reactivate an independently
+  inactive site or user.
+- Customer name identity stays globally unique, including inactive rows. Site name is unique
+  within its customer. Normalization collapses surrounding/repeated whitespace and comparisons
+  remain case-insensitive under the current database contract.
+- General site edit never changes source identity. Projected plots, assignments, WALD bindings
+  and import records are read-only in this slice. No import/binding/plot mutation is authorised.
+- Growing Office lists are bounded/paginated and expose safe DTOs rather than unrestricted ORM
+  collections or private Wald evidence. Scoped UUID routing, server-selected command fields,
+  repeated parent containment and stored-role rechecks are mandatory.
+- Mutations and audit append are atomic. Existing records backfill active/version 1; populated
+  rollback refuses to discard lifecycle/audit truth. MySQL row locks, expected versions and exact
+  unique constraints determine concurrent winners without a global lock.
+- The backend candidate is ready only for integration with the prepared UI followed by dedicated
+  end-to-end QA. The parallel branches' documentation/routes must be reconciled deliberately.
+  No main, RC1, push, production, deployment, ADMIN-SITE03, WALD06 or dependency change.
+
+Implementation evidence, not release approval:
+
+The code candidate through `b3d7922` passes focused SQLite and disposable MySQL 8.4.11 security,
+upgrade and five two-connection race scenarios. Exact final totals and the inherited dependency
+audit state are recorded in
+`documentation/admin/customer-admin-site02-backend-2026-09-10.md`. Separate reviewed dependency
+remediation on the UI/next-release line must be preserved during integration; this task does not
+alter lockfiles.
+
+Reason:
+This freezes a small, auditable backend contract that the already-prepared UI can consume without
+moving business rules into Blade or coupling CustomerApp to SiteApp/import operations.

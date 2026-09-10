@@ -1,6 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 9 September 2026*
+*Last Updated: 10 September 2026*
+
+Latest administration gate: **CUSTOMER-ADMIN-SITE02 backend/security READY FOR UI INTEGRATION,
+not released.** Code candidate `b3d7922` on
+`feature/admin-site02a-customer-site-backend-security` adds customer/site lifecycle, immutable
+audit, fail-closed Office policy, inactive external-scope enforcement and bounded read-only
+administration summaries. SQLite/full regression and disposable MySQL 8.4 clean/upgrade/race
+gates pass. Integrate with prepared UI `13897dbc...`, preserve its reviewed dependency state,
+then run dedicated end-to-end QA. No main, RC1, push, production, deployment, ADMIN-SITE03 or
+WALD06 action. [Backend report](documentation/admin/customer-admin-site02-backend-2026-09-10.md).
 
 Latest gate: **WALD05 W5Q-03/04 fresh requalification PASS; bounded backend eligible to freeze** on local
 `qa/customer-wald05-backend-2026-09-09`, candidate `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`.

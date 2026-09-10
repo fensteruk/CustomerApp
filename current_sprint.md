@@ -1,5 +1,19 @@
 # Current Sprint
 
+## CUSTOMER-ADMIN-SITE02 backend/security — 10 September 2026
+
+**READY FOR UI INTEGRATION — not released.** DEC-059 records the customer/site lifecycle,
+stored-role Office authorization, inactive-scope effects, immutable admin audit, bounded read
+models and scoped JSON contracts implemented through code candidate `b3d7922` on
+`feature/admin-site02a-customer-site-backend-security`. SQLite security and full regression,
+disposable MySQL 8.4.11 clean/upgrade and five real race scenarios pass. Projected plots,
+assignments and accepted WALD05 summaries are read-only; no import/binding mutation exists.
+Prepared UI checkpoint `13897dbc...` remains untouched and must be integrated next on a
+non-deploying line, followed by dedicated end-to-end QA. Eight inherited advisories on this
+backend base remain separate; preserve the UI/next-release security remediation at integration.
+No main, push, RC1, production, deployment, ADMIN-SITE03 or WALD06 action.
+[Backend report](documentation/admin/customer-admin-site02-backend-2026-09-10.md).
+
 ## CUSTOMER-WALD05 correction requalification — 9 September 2026
 
 **PASS — corrected bounded backend eligible to freeze.** DEC-054 authorises only W5Q-03/04

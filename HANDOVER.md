@@ -1,5 +1,22 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-ADMIN-SITE02 backend/security — 10 September 2026
+
+Continue with **UI integration and dedicated QA**, not more backend architecture. The non-deploying
+backend branch `feature/admin-site02a-customer-site-backend-security` uses base `2c4e870...`; code
+candidate `b3d7922` implements additive lifecycle schema, atomic immutable audit, stored active
+Office authorization, inactive customer/site external-access removal, UUID/scoped endpoints and
+bounded plot/user/binding/import summaries. Five real two-process MySQL races, MySQL clean/upgrade
+and SQLite/full regression pass. Read the
+[backend report](documentation/admin/customer-admin-site02-backend-2026-09-10.md) and DEC-059.
+
+Integrate only these backend commits with prepared UI checkpoint `13897dbc...` on a clean
+next-release branch. Resolve parallel routes and DEC-055–059/status docs deliberately; retain UI
+workspace routes and its reviewed clean dependency state. Then run positive mutations, full
+security/IDOR, responsive browser/mobile, keyboard/focus, MySQL and full regression as one
+integrated candidate. Do not start ADMIN-SITE03, mutate plots/bindings/imports, merge to `main`,
+push, touch RC1/production or deploy. The shared-slot Wald pilot blocker remains separately owned.
+
 ## CUSTOMER-WALD05 correction requalification — 9 September 2026
 
 **PASS — recommend freezing the corrected bounded backend.** The W5Q-03/04 correction candidate is
