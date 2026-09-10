@@ -6,15 +6,15 @@ use App\Contracts\HolidayProvider;
 use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffDateProposalType;
 use App\Enums\CallOffHistoryEventType;
-use App\Enums\CallOffNegotiationPurpose;
-use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
 use App\Events\CallOffAlternativeProposed;
-use App\Models\CallOffDateNegotiation;
 use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
 use App\Models\User;
+use App\Services\CallOffAmendmentRules;
+use App\Services\CallOffLeadTimeService;
 use Carbon\CarbonImmutable;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
@@ -25,30 +25,26 @@ class ProposeAlternativeCallOffDateAction
         private readonly DetermineCallOffEligibilityAction $eligibility = new DetermineCallOffEligibilityAction,
         private readonly LockCallOffDateNegotiationAggregateAction $locks = new LockCallOffDateNegotiationAggregateAction,
         private readonly RecordCallOffStatusHistoryAction $history = new RecordCallOffStatusHistoryAction,
+        private readonly ResolveCallOffNegotiationAction $cycles = new ResolveCallOffNegotiationAction,
     ) {}
 
-    public function handle(User $actor, CallOffRequest $request, string $proposedDate, ?string $customerMessage = null, ?string $internalReason = null): CallOffDateProposal
+    public function handle(User $actor, CallOffRequest $request, string $proposedDate, ?string $customerMessage = null, ?string $internalReason = null, ?string $expectedNegotiationUuid = null, bool $acknowledgeEarlyDate = false): CallOffDateProposal
     {
         $date = $this->validDate($proposedDate);
 
-        $proposal = DB::transaction(function () use ($actor, $request, $date, $customerMessage, $internalReason): CallOffDateProposal {
-            [$request] = $this->locks->handle($request);
+        $proposal = DB::transaction(function () use ($actor, $request, $date, $customerMessage, $internalReason, $expectedNegotiationUuid, $acknowledgeEarlyDate): CallOffDateProposal {
+            [$request, $service] = $this->locks->handle($request);
+            $actor = $actor->fresh() ?? throw new AuthorizationException;
             $this->eligibility->ensureCanProposeAlternativeDate($actor, $request);
-            $negotiation = CallOffDateNegotiation::query()
-                ->where('call_off_request_id', $request->id)
-                ->where('purpose', CallOffNegotiationPurpose::Initial)
-                ->where('status', CallOffNegotiationStatus::Open)
-                ->lockForUpdate()
-                ->first();
-            $negotiation ??= CallOffDateNegotiation::query()->create(['call_off_request_id' => $request->id, 'purpose' => CallOffNegotiationPurpose::Initial, 'status' => CallOffNegotiationStatus::Open, 'active_negotiation_key' => 'initial:'.$request->id, 'opened_at' => now()]);
-
-            $requestedDateProposal = $this->requestedDateProposal($negotiation, $request);
-
-            if ($negotiation->proposals()
-                ->where('status', CallOffDateProposalStatus::AwaitingResponse)
-                ->where('proposal_type', '!=', CallOffDateProposalType::CustomerRequestedDate)
-                ->exists()) {
-                throw ValidationException::withMessages(['proposal' => 'This call-off already has an alternative awaiting a customer response.']);
+            $negotiation = $this->cycles->forOffice($request, $expectedNegotiationUuid);
+            $requestedDateProposal = $this->cycles->requestedProposal($negotiation, $request);
+            $isEarly = false;
+            if ($negotiation->isAmendment()) {
+                app(CallOffAmendmentRules::class)->validateDate($date->toDateString());
+                $isEarly = $date->lessThan(app(CallOffLeadTimeService::class)->earliestNormalDate($service));
+                if ($isEarly && ! $acknowledgeEarlyDate) {
+                    throw ValidationException::withMessages(['early_date_acknowledgement' => 'Acknowledge the earlier-than-normal date before proposing it.']);
+                }
             }
 
             if ($requestedDateProposal->status === CallOffDateProposalStatus::AwaitingResponse) {
@@ -59,11 +55,12 @@ class ProposeAlternativeCallOffDateAction
                 ]);
             }
 
-            $proposal = $negotiation->proposals()->create(['sequence' => ((int) $negotiation->proposals()->lockForUpdate()->max('sequence')) + 1, 'proposal_type' => CallOffDateProposalType::FensterAlternativeDate, 'status' => CallOffDateProposalStatus::AwaitingResponse, 'proposed_date' => $date, 'proposed_by_user_id' => $actor->id, 'customer_response' => $customerMessage, 'internal_reason' => $internalReason, 'proposed_at' => now()]);
+            $proposal = $negotiation->proposals()->create(['sequence' => ((int) $negotiation->proposals()->lockForUpdate()->max('sequence')) + 1, 'proposal_type' => CallOffDateProposalType::FensterAlternativeDate, 'status' => CallOffDateProposalStatus::AwaitingResponse, 'proposed_date' => $date, 'proposed_by_user_id' => $actor->id, 'customer_response' => $customerMessage, 'internal_reason' => $internalReason, 'proposed_at' => now(), 'is_earlier_date_exception' => $isEarly, 'earlier_date_acknowledged_at' => $isEarly ? now() : null]);
             $before = $request->stateSnapshot();
             $previous = $request->status;
-            $request->update(['status' => CallOffRequestStatus::AwaitingSiteUser]);
-            $this->history->handle($request, $actor, CallOffHistoryEventType::AlternativeDateProposed, $previous, CallOffRequestStatus::AwaitingSiteUser, $before, $request->fresh()->stateSnapshot(), $customerMessage, $internalReason);
+            $nextStatus = $negotiation->isAmendment() ? CallOffRequestStatus::AmendmentOnHold : CallOffRequestStatus::AwaitingSiteUser;
+            $request->update(['status' => $nextStatus]);
+            $this->history->handle($request, $actor, CallOffHistoryEventType::AlternativeDateProposed, $previous, $nextStatus, $before, $request->fresh()->stateSnapshot() + ['negotiation_uuid' => $negotiation->uuid, 'proposal_uuid' => $proposal->uuid, 'proposed_date' => $date->toDateString()], $customerMessage, $internalReason);
 
             return $proposal;
         });
@@ -86,27 +83,5 @@ class ProposeAlternativeCallOffDateAction
         }
 
         return $date;
-    }
-
-    private function requestedDateProposal(CallOffDateNegotiation $negotiation, CallOffRequest $request): CallOffDateProposal
-    {
-        $request->loadMissing('batch');
-
-        return CallOffDateProposal::query()
-            ->where('call_off_date_negotiation_id', $negotiation->id)
-            ->where('proposal_type', CallOffDateProposalType::CustomerRequestedDate)
-            ->lockForUpdate()
-            ->first()
-            ?? CallOffDateProposal::query()->create([
-                'call_off_date_negotiation_id' => $negotiation->id,
-                'proposal_type' => CallOffDateProposalType::CustomerRequestedDate,
-                'sequence' => 1,
-                'status' => CallOffDateProposalStatus::AwaitingResponse,
-                'proposed_date' => $request->requested_date,
-                'proposed_by_user_id' => $request->batch->submitted_by_user_id,
-                'customer_response' => $request->customer_response,
-                'is_earlier_date_exception' => $request->is_early_date_exception,
-                'proposed_at' => now(),
-            ]);
     }
 }

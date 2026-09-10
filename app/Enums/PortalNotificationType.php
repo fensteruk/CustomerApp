@@ -11,6 +11,7 @@ enum PortalNotificationType: string
     case CallOffAlternativeProposed = 'call_off_alternative_proposed';
     case CallOffAlternativeAccepted = 'call_off_alternative_accepted';
     case CallOffAlternativeRejected = 'call_off_alternative_rejected';
+    case CallOffAmendmentRequested = 'call_off_amendment_requested';
 
     public function label(): string
     {
@@ -22,6 +23,7 @@ enum PortalNotificationType: string
             self::CallOffAlternativeProposed => 'Alternative date proposed',
             self::CallOffAlternativeAccepted => 'Alternative date accepted',
             self::CallOffAlternativeRejected => 'Alternative date rejected',
+            self::CallOffAmendmentRequested => 'Date change requested',
         };
     }
 }

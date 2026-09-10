@@ -66,11 +66,11 @@
                     <dl class="mt-5 grid gap-4 text-sm md:grid-cols-3">
                         <div>
                             <dt>Service type</dt>
-                            <dd>{{ $callOffRequest->batch->service_identifier->label() }}</dd>
+                            <dd>{{ $callOffRequest->effectiveServiceIdentifier()?->label() ?? 'Not available' }}</dd>
                         </div>
                         <div>
                             <dt>Requested date</dt>
-                            <dd>{{ $callOffRequest->batch->requested_date->format('j M Y') }}</dd>
+                            <dd>{{ $callOffRequest->effectiveRequestedDate()?->format('j M Y') ?? 'Not available' }}</dd>
                         </div>
                         <div>
                             <dt>Submitting user</dt>

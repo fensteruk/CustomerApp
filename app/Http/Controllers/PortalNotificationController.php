@@ -147,6 +147,7 @@ class PortalNotificationController extends Controller
                 PortalNotificationType::CallOffAlternativeProposed => "Fenster proposed an alternative {$service} date for {$plot} at {$site}.",
                 PortalNotificationType::CallOffAlternativeAccepted => "A site user accepted the alternative {$service} date for {$plot} at {$site}.",
                 PortalNotificationType::CallOffAlternativeRejected => "A site user rejected the alternative {$service} date for {$plot} at {$site}.",
+                PortalNotificationType::CallOffAmendmentRequested => "A site user requested a new {$service} date for {$plot} at {$site}. Review the date change.",
                 default => 'There is an update about one of your call-offs.',
             },
             'open_url' => route('portal.notifications.open', $notification),

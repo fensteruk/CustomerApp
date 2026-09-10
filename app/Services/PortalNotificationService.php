@@ -2,8 +2,11 @@
 
 namespace App\Services;
 
+use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffRequestStatus;
 use App\Enums\PortalNotificationType;
+use App\Models\CallOffDateNegotiation;
+use App\Models\CallOffDateProposal;
 use App\Models\CallOffRequest;
 use App\Models\PortalNotification;
 use App\Models\Site;
@@ -26,7 +29,15 @@ class PortalNotificationService
             'projectedPlot',
         ]);
 
-        if ($request->batch->submittedBy->is_preview_user) {
+        $cycle = $eventReference === null ? null : $request->dateNegotiations()->where('uuid', $eventReference)->first();
+        if ($cycle === null && $eventReference !== null) {
+            $proposal = CallOffDateProposal::query()->where('uuid', $eventReference)
+                ->whereHas('negotiation', fn ($query) => $query->where('call_off_request_id', $request->id))->first();
+            $cycle = $proposal === null ? null : $request->dateNegotiations()->whereKey($proposal->call_off_date_negotiation_id)->first();
+        }
+        $amendment = $cycle?->isAmendment() ? $cycle : null;
+        $submitter = $amendment?->requestedBy ?? $request->batch->submittedBy;
+        if ($submitter->is_preview_user) {
             return;
         }
 
@@ -37,6 +48,7 @@ class PortalNotificationService
             PortalNotificationType::CallOffDateAgreed, PortalNotificationType::CallOffAlternativeAccepted => [CallOffRequestStatus::DateAgreed],
             PortalNotificationType::CallOffAlternativeProposed => [CallOffRequestStatus::AwaitingSiteUser],
             PortalNotificationType::CallOffAlternativeRejected => [CallOffRequestStatus::AwaitingFenster],
+            PortalNotificationType::CallOffAmendmentRequested => [CallOffRequestStatus::AmendmentOnHold],
         };
 
         $hasHistoricalDateAgreement = $allowHistoricalDateAgreement
@@ -44,34 +56,43 @@ class PortalNotificationService
             && $request->status === CallOffRequestStatus::Completed
             && $request->histories()->where('event_type', 'date_agreed')->exists();
 
-        if (! in_array($request->status, $expectedStatuses, true) && ! $hasHistoricalDateAgreement) {
+        $hasCommittedAmendmentEvent = $amendment !== null && match ($type) {
+            PortalNotificationType::CallOffAmendmentRequested => true,
+            PortalNotificationType::CallOffDateAgreed => $amendment->resulting_agreed_date !== null,
+            PortalNotificationType::CallOffAlternativeProposed => isset($proposal),
+            PortalNotificationType::CallOffAlternativeAccepted => isset($proposal) && $proposal->status === CallOffDateProposalStatus::Accepted,
+            PortalNotificationType::CallOffAlternativeRejected => isset($proposal) && $proposal->status === CallOffDateProposalStatus::Rejected,
+            default => false,
+        };
+        if (! in_array($request->status, $expectedStatuses, true) && ! $hasHistoricalDateAgreement && ! $hasCommittedAmendmentEvent) {
             return;
         }
 
         $site = $request->batch->site;
-        $recipients = $this->recipients($request, $type, $site);
+        $recipients = $this->recipients($request, $type, $site, $amendment);
         $customerResponse = match ($type) {
             PortalNotificationType::CallOffSubmitted => $request->batch->customer_response,
             PortalNotificationType::CallOffApproved => $this->latestCustomerResponse($request, 'approved'),
             PortalNotificationType::CallOffRejected => $this->latestCustomerResponse($request, 'rejected'),
-            PortalNotificationType::CallOffAlternativeProposed => $this->latestCustomerResponse($request, 'alternative_date_proposed'),
-            PortalNotificationType::CallOffAlternativeRejected => $this->latestCustomerResponse($request, 'alternative_date_rejected'),
+            PortalNotificationType::CallOffAlternativeProposed => $this->latestCustomerResponse($request, 'alternative_date_proposed', $amendment === null ? null : $eventReference),
+            PortalNotificationType::CallOffAlternativeRejected => $this->latestCustomerResponse($request, 'alternative_date_rejected', $amendment === null ? null : $eventReference),
             PortalNotificationType::CallOffDateAgreed, PortalNotificationType::CallOffAlternativeAccepted => null,
+            PortalNotificationType::CallOffAmendmentRequested => $amendment?->customer_response,
         };
 
-        DB::transaction(function () use ($recipients, $request, $site, $type, $customerResponse, $eventReference): void {
+        DB::transaction(function () use ($recipients, $request, $site, $type, $customerResponse, $eventReference, $amendment): void {
             foreach ($recipients as $recipient) {
-                $this->createForRecipient($recipient, $request, $site, $type, $customerResponse, $eventReference);
+                $this->createForRecipient($recipient, $request, $site, $type, $customerResponse, $eventReference, $amendment);
             }
         });
     }
 
     /** @return Collection<int, User> */
-    private function recipients(CallOffRequest $request, PortalNotificationType $type, Site $site): Collection
+    private function recipients(CallOffRequest $request, PortalNotificationType $type, Site $site, ?CallOffDateNegotiation $amendment = null): Collection
     {
-        $submitter = $request->batch->submittedBy;
+        $submitter = $amendment?->requestedBy ?? $request->batch->submittedBy;
 
-        if (in_array($type, [PortalNotificationType::CallOffAlternativeAccepted, PortalNotificationType::CallOffAlternativeRejected], true)) {
+        if (in_array($type, [PortalNotificationType::CallOffAlternativeAccepted, PortalNotificationType::CallOffAlternativeRejected, PortalNotificationType::CallOffAmendmentRequested], true)) {
             return $this->activeOfficeStaff();
         }
 
@@ -112,6 +133,7 @@ class PortalNotificationService
         PortalNotificationType $type,
         ?string $customerResponse,
         ?string $eventReference,
+        ?CallOffDateNegotiation $amendment = null,
     ): void {
         $eventKey = $type->value.':'.($eventReference ?? $request->uuid);
         $routeName = $recipient->isFensterOfficeStaff()
@@ -135,7 +157,7 @@ class PortalNotificationService
                     'site_name' => $site->name,
                     'plot_reference' => $request->projectedPlot->plot_reference,
                     'service_identifier' => $request->effectiveServiceIdentifier(),
-                    'requested_date' => $request->requested_date ?? $request->batch->requested_date,
+                    'requested_date' => $amendment?->requested_date ?? $request->requested_date ?? $request->batch->requested_date,
                     'current_status' => $request->status,
                     'customer_response' => $customerResponse,
                     'route_name' => $routeName,
@@ -157,10 +179,11 @@ class PortalNotificationService
             ->exists();
     }
 
-    private function latestCustomerResponse(CallOffRequest $request, string $eventType): ?string
+    private function latestCustomerResponse(CallOffRequest $request, string $eventType, ?string $proposalUuid = null): ?string
     {
         return $request->histories()
             ->where('event_type', $eventType)
+            ->when($proposalUuid !== null, fn ($query) => $query->where('after_state->proposal_uuid', $proposalUuid))
             ->latest('sequence')
             ->value('customer_response');
     }

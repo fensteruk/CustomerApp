@@ -10,6 +10,7 @@ use App\Http\Requests\ApproveCallOffDecisionRequest;
 use App\Http\Requests\RejectCallOffDecisionRequest;
 use App\Models\CallOffRequest;
 use App\Models\Site;
+use App\Services\CallOffDateViewService;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,14 +42,37 @@ class ReviewRequestsController extends Controller
                 ? CallOffRequestStatus::AwaitingFenster->value
                 : CallOffRequestStatus::Submitted->value);
 
+        if ($status === CallOffRequestStatus::Approved->value) {
+            $status = CallOffRequestStatus::DateAgreed->value;
+            $request->query->set('status', $status);
+        }
+
         $requests = CallOffRequest::query()
-            ->when($status !== '', fn ($query) => $query->where('status', $status))
+            ->when($status !== '', function ($query) use ($status): void {
+                if ($status === CallOffRequestStatus::DateAgreed->value) {
+                    $query->whereIn('status', [
+                        CallOffRequestStatus::Approved->value,
+                        CallOffRequestStatus::DateAgreed->value,
+                    ]);
+
+                    return;
+                }
+
+                $query->where('status', $status);
+            })
             ->when(isset($validated['site']), function ($query) use ($validated): void {
                 $query->whereHas('batch', fn ($batchQuery) => $batchQuery
                     ->where('site_id', (int) $validated['site']));
             })
             ->when(isset($validated['service']), fn ($query) => $query
-                ->whereHas('batch', fn ($batchQuery) => $batchQuery->where('service_identifier', $validated['service'])))
+                ->where(function ($serviceQuery) use ($validated): void {
+                    $serviceQuery->where('service_identifier', $validated['service'])
+                        ->orWhere(function ($legacyQuery) use ($validated): void {
+                            $legacyQuery->whereNull('service_identifier')
+                                ->whereHas('batch', fn ($batchQuery) => $batchQuery
+                                    ->where('service_identifier', $validated['service']));
+                        });
+                }))
             ->with([
                 'projectedPlot:id,plot_reference',
                 'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
@@ -66,7 +90,10 @@ class ReviewRequestsController extends Controller
             'assignedSites' => $assignedSites,
             'requests' => $requests,
             'serviceTypes' => CallOffServiceType::cases(),
-            'statuses' => CallOffRequestStatus::cases(),
+            'statuses' => array_values(array_filter(
+                CallOffRequestStatus::cases(),
+                fn (CallOffRequestStatus $status): bool => $status !== CallOffRequestStatus::Approved,
+            )),
             'filters' => [
                 'status' => $status,
                 'site' => $validated['site'] ?? '',
@@ -85,7 +112,7 @@ class ReviewRequestsController extends Controller
 
         return view('portal.review-requests.show', [
             'callOffRequest' => $callOffRequest,
-        ]);
+        ] + app(CallOffDateViewService::class)->forRequest($callOffRequest, $user));
     }
 
     public function approve(
@@ -156,7 +183,7 @@ class ReviewRequestsController extends Controller
 
         return $callOffRequest->load([
             'projectedPlot:id,site_id,plot_reference',
-            'projectedPlotService:id,projected_plot_id,service_identifier,source_completed_at,source_completion_observed_at',
+            'projectedPlotService:id,projected_plot_id,service_identifier,source_present,source_completed_at,source_completion_observed_at',
             'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
             'batch.site:id,customer_organisation_id,name,location',
             'batch.site.customerOrganisation:id,name',

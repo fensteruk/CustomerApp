@@ -12,6 +12,7 @@ enum PlotServicePresentationState: string
     case NotCalledOff = 'not_called_off';
     case AwaitingDate = 'awaiting_date';
     case DateAgreed = 'date_agreed';
+    case OnHold = 'on_hold';
     case Completed = 'completed';
 
     public function label(): string
@@ -20,6 +21,7 @@ enum PlotServicePresentationState: string
             self::NotCalledOff => 'Not Called Off',
             self::AwaitingDate => 'Called Off — Awaiting Date',
             self::DateAgreed => 'Date Agreed',
+            self::OnHold => 'On Hold — Date Change Requested',
             self::Completed => 'Completed',
         };
     }
@@ -29,6 +31,7 @@ enum PlotServicePresentationState: string
         return match ($this) {
             self::NotCalledOff => 'slate',
             self::AwaitingDate => 'amber',
+            self::OnHold => 'amber',
             self::DateAgreed => 'emerald',
             self::Completed => 'sky',
         };
