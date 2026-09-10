@@ -53,8 +53,8 @@ class CallOffDateViewService
                 || ($decisionEarliestDate !== null && $decisionDate !== null && $decisionDate->lessThan($decisionEarliestDate)));
 
         return [
-            'requestDate' => $request->requested_date ?? $request->batch->requested_date,
-            'agreedDate' => ($isOnHold || $isCompleted || $isClosedAfterReversal) ? null : ($request->agreed_date ?? ($request->isLegacyDateAgreed() ? ($request->requested_date ?? $request->batch->requested_date) : null)),
+            'requestDate' => $request->effectiveRequestedDate(),
+            'agreedDate' => ($isOnHold || $isCompleted || $isClosedAfterReversal) ? null : ($request->agreed_date ?? ($request->isLegacyDateAgreed() ? $request->effectiveRequestedDate() : null)),
             'statusLabel' => $isCompleted ? 'Completed' : ($isClosedAfterReversal ? 'Source completion reversed — request remains closed' : ($isOnHold ? 'On Hold — Date Change Requested' : $request->status->label())),
             'isClosedAfterReversal' => $isClosedAfterReversal,
             'isCompleted' => $isCompleted, 'isSourceAvailable' => $isSourceAvailable,
