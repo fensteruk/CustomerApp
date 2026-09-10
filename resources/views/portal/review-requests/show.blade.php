@@ -35,7 +35,7 @@
                 </div>
                 <div>
                     <dt>Requested date</dt>
-                    <dd>{{ ($callOffRequest->requested_date ?? $callOffRequest->batch->requested_date)?->format('j M Y') }}</dd>
+                    <dd>{{ $callOffRequest->effectiveRequestedDate()?->format('j M Y') }}</dd>
                 </div>
                 <div>
                     <dt>Submitter</dt>
