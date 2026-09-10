@@ -1,5 +1,32 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-ADMIN-SITE02 UI preparation — 10 September 2026
+
+**PARTIAL — feature branch only; not ready for dedicated QA.** The UI work on
+`feature/customer-admin-site02` starts from accepted sidebar documentation checkpoint
+`307e3fa78e88b26d0e102642087dc504a4a9572e` and retains sidebar code
+`c80ab5b76a161f340b8786c709b93fecfae47633`.
+
+Customer/site lists, metadata and lifecycle forms, read-only site sections, safe import
+placeholders and presentation tests are prepared against the inspected ADMIN-SITE02A draft
+contract. The user confirmed that another task owns that backend: consume it when ready,
+do not duplicate it. Its worktree remains uncommitted at this checkpoint, so no backend
+implementation or migration has been copied into this branch.
+
+The workspace is **not currently available as a working administration feature**:
+the required backend query service, policies, UUID/lifecycle schema and JSON mutations
+are not yet integrated. Existing application regression passes do not establish new
+administration workflow correctness. Positive HTTP, security, MySQL and responsive browser
+verification remain integration gates. See the
+[implementation and backend handoff](documentation/admin/customer-admin-site02-implementation-2026-09-10.md)
+for exact entry points, evidence and missing contract fields.
+
+A01/A02/A03/A04 are recorded in DEC-058: active/inactive lifecycle, optional source
+reference, source-managed read-only plots and a separately scoped ADMIN-SITE03 demo.
+This work remains `NEXT_RELEASE`; it does not reopen RC1, merge to main, deploy, or
+claim any current production state. Earlier dated entries below are historical evidence
+and do not override this feature-branch status.
+
 ## CUSTOMER-UI-SIDEBAR — accepted for next-release integration — 10 September 2026
 
 The corrected sidebar candidate `c80ab5b76a161f340b8786c709b93fecfae47633`

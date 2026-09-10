@@ -35,6 +35,31 @@
                             <span>Review Requests</span>
                         </a>
                     </li>
+                    @can('viewAny', \App\Models\CustomerOrganisation::class)
+                        <li>
+                            <a
+                                href="{{ route('office.workspace.customers.index') }}"
+                                @class([
+                                    'portal-nav-link',
+                                    'portal-nav-link-active' => request()->routeIs('office.workspace.customers.*', 'office.workspace.sites.*') && ! request()->routeIs('office.workspace.sites.import'),
+                                ])
+                                @if (request()->routeIs('office.workspace.customers.*', 'office.workspace.sites.*') && ! request()->routeIs('office.workspace.sites.import')) aria-current="page" @endif
+                            >
+                                <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21h18M5 21V3h10v18M15 9h4v12M8 7h4M8 11h4M8 15h4" /></svg>
+                                <span>Customers</span>
+                            </a>
+                        </li>
+                        <li>
+                            <a
+                                href="{{ route('office.workspace.imports') }}"
+                                @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('office.workspace.imports', 'office.workspace.sites.import')])
+                                @if (request()->routeIs('office.workspace.imports', 'office.workspace.sites.import')) aria-current="page" @endif
+                            >
+                                <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5" /></svg>
+                                <span>Imports</span>
+                            </a>
+                        </li>
+                    @endcan
                 @else
                     <li>
                         <a

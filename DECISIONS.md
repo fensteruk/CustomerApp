@@ -843,3 +843,32 @@ Release rules:
 - consider ADMIN-SITE02 only after its own QA approval and ADMIN-SITE03 only after separate
   synthetic-import-demo QA; and
 - this acceptance does not authorise merging any candidate stream.
+
+---
+
+## DEC-058
+
+Date: 10 September 2026
+
+Decision: CUSTOMER-ADMIN-SITE02 is approved as a next-release CustomerApp administration
+slice, with its backend owned by the separate ADMIN-SITE02A task and this UI task consuming
+that backend only when ready. The latest user clarification explicitly prohibits duplicating
+the concurrent backend implementation. This decision supersedes older planned-only
+administration scope where contradictory, not the existing security or release gates.
+
+- A01: customers and sites support create, edit, deactivate and reactivate; no hard delete.
+  Inactive customer/site external access fails safely while Office historical inspection and
+  relationships remain intact. Material mutations require durable backend audit.
+- A02: a site may be created without a source reference. Source binding remains separate
+  from ordinary site metadata and cannot be rewritten through general edit forms.
+- A03: plots remain source-managed; administration lists/searches/inspects them read-only.
+- A04: ADMIN-SITE03 owns any future synthetic Import Studio demo. ADMIN-SITE02 provides
+  only safe coming-next entry points, no workbook upload, binding mutation or commit UI.
+- The UI starts from accepted sidebar checkpoint
+  `307e3fa78e88b26d0e102642087dc504a4a9572e`, retaining accepted code
+  `c80ab5b76a161f340b8786c709b93fecfae47633`, on a clean non-deploying feature branch.
+- Draft contract inspection and isolated presentation tests are not integrated backend
+  evidence. Do not mark the feature QA-ready until the finished backend, required read
+  summaries, security/schema verification and responsive browser checks are complete.
+- No main/RC1 modification, production experiment, deployment, dependency upgrade,
+  ADMIN-SITE03 implementation or WALD06 is authorised by this decision.

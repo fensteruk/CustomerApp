@@ -1,9 +1,11 @@
 import '@fontsource-variable/inter';
 import Alpine from 'alpinejs';
+import { officeAdminForm } from './office-admin-form';
 
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
+    Alpine.data('officeAdminForm', officeAdminForm);
     Alpine.data('portalShell', () => ({
         sidebarOpen: false,
         desktop: false,
