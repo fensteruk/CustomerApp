@@ -2,13 +2,22 @@
 
 **Version:** Current product contract
 
-**Last updated:** 9 September 2026 (WALD05 W5Q-03/04 correction and requalification)
+**Last updated:** 10 September 2026 (next-release admin integration and synthetic demo QA)
 
 **Scope:** CustomerApp Version 1 and approved delivery direction
 
 This document replaces the previously layered brief. It states the current approved product
 truth without treating feature-branch work as released. Historical decisions and delivery
 evidence remain in `DECISIONS.md`, sprint reports and release records.
+
+**Current next-release gate:** On non-deploying `feature/customer-next-release-master`, the
+accepted strong sidebar and prepared Office administration UI are integrated with the secured
+customer/site lifecycle backend and have passed dedicated SQLite, MySQL 8.4 and responsive browser
+QA. A separate local/test-only, default-off synthetic Import Studio storyboard has also passed its
+zero-write and production-route-absence gate. This is not on `main` or deployed. Real upload,
+Wald browser execution, source-binding mutation, commit and WALD06 multi-site behaviour remain
+excluded. Release consolidation must deliberately confirm the branch's separately accepted
+WALD02–05 backend ancestry and six additive migrations before any release branch is created.
 
 **Current WALD05 gate:** W5Q-03/04 corrections are committed at
 `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` on local `qa/customer-wald05-backend-2026-09-09`;

@@ -1471,3 +1471,54 @@ alter lockfiles.
 Reason:
 This freezes a small, auditable backend contract that the already-prepared UI can consume without
 moving business rules into Blade or coupling CustomerApp to SiteApp/import operations.
+
+---
+
+## DEC-060
+
+Date:
+10 September 2026
+
+Decision:
+The user's CUSTOMER-NEXT-RELEASE master instruction authorises sequential integration and QA of
+CUSTOMER-ADMIN-SITE02 followed by a strictly local/test-only ADMIN-SITE03 synthetic Import Studio
+storyboard, stopping before `main`, push or deployment. The production reference remains
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. Accepted sidebar code/docs
+`c80ab5b76a161f340b8786c709b93fecfae47633` / `307e3fa78e88b26d0e102642087dc504a4a9572e`
+and prepared admin UI `13897dbc38e8615e0e1d2c0bca9bf28e33e9b934` are explicit inputs.
+
+Rules and accepted result:
+
+- Customers and sites use the DEC-059 no-delete lifecycle, safe metadata, optimistic versions,
+  persisted Office authority, immutable atomic audit and inactive external-access effects.
+- Plots, assigned users, source bindings and import history are bounded read-only administration
+  views. Binding activation/revocation, plot mutation and real import controls remain excluded.
+- The accepted strong sidebar exposes only real destinations. `Import Source Data` enters the
+  synthetic storyboard only when its default-off flag is explicitly enabled in local/testing;
+  production registration omits the demo routes.
+- ADMIN-SITE03 uses one versioned, bundled, fictional, precomputed manifest. It makes no upload,
+  parser/Wald, network/AI, binding, staging, projection, queue, database, receipt or notification
+  call. Only GET/HEAD routes exist. The disabled final control cannot commit.
+- Controlled preview Office users may view this zero-write local storyboard, but this grants no
+  real admin/import authority. Real admin writes continue to require an active persisted
+  non-preview Office user. All three external roles remain denied.
+- The integrated admin candidate passes dedicated MySQL 8.4.11 lifecycle/security/concurrency QA.
+  The demo passes production-route-absence, forced-write, zero-persistence and desktop/tablet/mobile
+  browser QA. Exact evidence is in the two dedicated QA reports and master report.
+- The branch contains separately accepted WALD02–05 backend ancestry because ADMIN-SITE02 was
+  implemented from that line. Release consolidation must explicitly confirm that backend and its
+  five Wald migrations are in release scope; otherwise select only the admin/sidebar/demo commits
+  onto the production baseline. Neither path is authorised in this decision.
+- No `main` merge, push, release tag, production migration, customer import or deployment is
+  authorised. WALD06, real Import Studio integration, automatic purge, RedZebra API and unfinished
+  account-management work remain separate.
+
+Parallel-history note:
+Accepted sidebar and prepared-UI branches contain their own DEC-055–058 identifiers, while the
+Wald/admin ancestry uses the ledger visible here through DEC-059. Their approved pinned content is
+integrated by SHA and restated above; the historical files are not silently renumbered or treated
+as a second current ledger.
+
+Reason:
+This preserves the exact accepted inputs and security boundaries while making the combined
+candidate's ancestry and release-selection decision visible before any production-capable action.

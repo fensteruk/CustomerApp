@@ -1,6 +1,23 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-ADMIN-SITE02 backend/security — 10 September 2026
+## CUSTOMER-NEXT-RELEASE master — 10 September 2026
+
+Continue with **release consolidation review**, not more feature implementation. Non-deploying
+`feature/customer-next-release-master` integrates production `e757bb6...`, accepted sidebar
+`c80ab5b...`/`307e3fa...`, prepared admin UI `13897dbc...`, QA-passed CUSTOMER-ADMIN-SITE02 and
+QA-passed local/test-only ADMIN-SITE03. Admin acceptance is `e71b35f...`; demo acceptance is
+`107506a...`. Full regression is 1,489 passes / 77 skips / 7,796 assertions; Composer/npm audits
+are clean; MySQL 8.4.11 integrated admin QA passes.
+
+Read the [master report](documentation/customerapp-next-release-master-report-2026-09-10.md),
+[admin QA](documentation/admin/customer-admin-site02-dedicated-qa-2026-09-10.md), [demo
+QA](documentation/admin/customer-admin-site03-dedicated-qa-2026-09-10.md) and DEC-060. Confirm
+the release scope deliberately: this branch contains the separately accepted WALD02–05 backend
+ancestry and five Wald migrations in addition to the admin migration. Real Import Studio UI,
+WALD06, automatic purge, RedZebra API and unfinished account management stay excluded. Do not
+merge `main`, push, tag or deploy without separate explicit approval and production gates.
+
+## Historical CUSTOMER-ADMIN-SITE02 backend/security — superseded by master handover above
 
 Continue with **UI integration and dedicated QA**, not more backend architecture. The non-deploying
 backend branch `feature/admin-site02a-customer-site-backend-security` uses base `2c4e870...`; code

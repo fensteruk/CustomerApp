@@ -1,6 +1,23 @@
 # Current Sprint
 
-## CUSTOMER-ADMIN-SITE02 backend/security — 10 September 2026
+## CUSTOMER-NEXT-RELEASE master — 10 September 2026
+
+**READY FOR RELEASE CONSOLIDATION — not released.** DEC-060 records the sequential integration of
+production baseline `e757bb651f9aa95d67b808a97433d27bc29d03c3`, accepted sidebar pins
+`c80ab5b...`/`307e3fa...`, prepared admin UI `13897dbc...`, CUSTOMER-ADMIN-SITE02 and the
+strictly local/test-only ADMIN-SITE03 synthetic storyboard on
+`feature/customer-next-release-master`. Admin dedicated QA is accepted at `e71b35f...`; demo
+dedicated QA is accepted at `107506a...`. Final regression passes **1,489 tests / 77 skips / 7,796
+assertions**; Composer and npm audits are clean; integrated MySQL 8.4.11 admin QA passes 46 tests,
+one intended skip and 334 assertions. No production impact occurred.
+
+Next: perform deliberate release consolidation only. Confirm whether the separately accepted
+WALD02–05 ancestry and its five migrations should ship with the admin migration. Real import UI,
+WALD06, API integration, automatic purge and unfinished account management remain excluded. Do
+not merge to `main`, push, tag or deploy without a new explicit approval. See
+[master report](documentation/customerapp-next-release-master-report-2026-09-10.md).
+
+## Historical CUSTOMER-ADMIN-SITE02 backend/security — superseded by master status above
 
 **READY FOR UI INTEGRATION — not released.** DEC-059 records the customer/site lifecycle,
 stored-role Office authorization, inactive-scope effects, immutable admin audit, bounded read
