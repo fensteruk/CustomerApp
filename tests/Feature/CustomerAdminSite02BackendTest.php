@@ -16,12 +16,14 @@ use App\Models\Site;
 use App\Models\User;
 use App\Policies\OfficeAdministrationPolicy;
 use App\Services\OfficeAdministrationQueryService;
+use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Str;
+use Tests\Support\Wald05BackendFixtures as WaldBackend;
 
 uses(RefreshDatabase::class);
 
@@ -368,6 +370,34 @@ it('provides bounded safe customer site plot user binding and import read models
     DB::disableQueryLog();
 
     expect($manySiteQueries)->toBe($oneSiteQueries)->and($manyPlotQueries)->toBe($onePlotQueries);
+});
+
+it('summarizes accepted committed and replacement import history without private evidence', function (): void {
+    config(['wald_import.enabled' => true]);
+    $customer = CustomerOrganisation::factory()->create();
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id]);
+    $office = adminSite02User(PortalRoleIdentifier::FensterOfficeStaff);
+    $scope = new KnowledgeScope($customer->id, $site->id, 'admin-site02-'.Str::uuid(), 'family-v1');
+    WaldBackend::binding($office, $scope);
+    $first = WaldBackend::reviewed($office, $scope, date: '2026-09-09');
+    WaldBackend::commit($office, $scope, $first);
+    $replacement = WaldBackend::reviewed(
+        $office,
+        $scope,
+        [0 => ['VS' => '4.000']],
+        date: '2026-09-09',
+        predecessor: $first['run'],
+    );
+    WaldBackend::commit($office, $scope, $replacement);
+
+    $this->actingAs($office)->getJson(route('portal.office.sites.imports', [$customer, $site]))
+        ->assertOk()
+        ->assertJsonPath('availability', 'AVAILABLE')
+        ->assertJsonPath('runs.data.0.is_correction', true)
+        ->assertJsonPath('runs.data.0.replacement_reason', 'Explicit corrected export.')
+        ->assertJsonPath('runs.data.0.receipt.counts.seen', 7)
+        ->assertJsonPath('runs.data.1.is_superseded', true)
+        ->assertJsonMissing(['storage_key', 'original_name', 'workbook_hash', 'failure_code', 'receipt_payload']);
 });
 
 it('backfills legacy customer and site lifecycle columns and preserves ownership on upgrade', function (): void {

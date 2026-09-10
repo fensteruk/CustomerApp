@@ -276,7 +276,7 @@ final class OfficeAdministrationQueryService
             ->select([
                 'run.uuid', 'run.source_namespace', 'run.workbook_family', 'run.uploader_name',
                 'run.export_date', 'run.export_slot', 'run.state', 'run.predecessor_id', 'run.created_at',
-                'run.updated_at', 'run.terminal_at', 'receipt.uuid as receipt_uuid', 'receipt.revision',
+                'run.replacement_reason', 'run.updated_at', 'run.terminal_at', 'receipt.uuid as receipt_uuid', 'receipt.revision',
                 'receipt.payload as receipt_payload', 'receipt.created_at as committed_at',
             ])
             ->paginate($this->perPage($perPage));
@@ -295,6 +295,7 @@ final class OfficeAdministrationQueryService
                 'state' => $run->state,
                 'is_correction' => $run->predecessor_id !== null,
                 'is_superseded' => $run->state === 'SUPERSEDED',
+                'replacement_reason' => $run->replacement_reason,
                 'created_at' => $run->created_at,
                 'updated_at' => $run->updated_at,
                 'terminal_at' => $run->terminal_at,
