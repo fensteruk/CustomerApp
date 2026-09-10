@@ -31,21 +31,28 @@ class DatabaseSeeder extends Seeder
             );
         }
 
-        $organisation = CustomerOrganisation::query()->firstOrCreate([
+        $organisation = CustomerOrganisation::query()->firstOrNew([
             'name' => 'Fenster Preview Customer',
         ]);
+
+        $organisation->uuid ??= (string) Str::uuid();
+        $organisation->save();
 
         $sites = collect([
             ['name' => 'Meadow View', 'location' => 'Birmingham'],
             ['name' => 'Oaklands', 'location' => 'Coventry'],
             ['name' => 'Willow Park', 'location' => 'Solihull'],
-        ])->map(fn (array $site): Site => Site::query()->updateOrCreate(
-            [
+        ])->map(function (array $site) use ($organisation): Site {
+            $record = Site::query()->firstOrNew([
                 'customer_organisation_id' => $organisation->id,
                 'name' => $site['name'],
-            ],
-            ['location' => $site['location']],
-        ));
+            ]);
+            $record->uuid ??= (string) Str::uuid();
+            $record->location = $site['location'];
+            $record->save();
+
+            return $record;
+        });
 
         foreach (PortalRoleIdentifier::cases() as $roleIdentifier) {
             $role = PortalRole::query()->where('identifier', $roleIdentifier->value)->firstOrFail();
