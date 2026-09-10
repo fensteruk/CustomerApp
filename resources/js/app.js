@@ -103,11 +103,11 @@ document.addEventListener('alpine:init', () => {
             }
         },
 
-        close() {
+        close(returnFocus = true) {
             if (!this.open) return;
 
             this.open = false;
-            this.$nextTick(() => this.$refs.bellButton?.focus());
+            if (returnFocus) this.$nextTick(() => this.$refs.bellButton?.focus());
         },
 
         ariaLabel() {
