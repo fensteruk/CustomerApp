@@ -4,7 +4,9 @@
         <header class="admin-page-header">
             <div><p class="eyebrow">Site Details</p><h1 class="admin-title">{{ $site['name'] }}</h1><p class="admin-intro">{{ $site['location'] ?: 'No location added' }}</p></div>
             <div class="admin-actions">
-                <a class="primary-button" href="{{ route('office.workspace.sites.import', [$site['customer']['uuid'], $site['uuid']]) }}">Import Source Data</a>
+                @if (Route::has('development.import-studio.site'))
+                    <a class="primary-button" href="{{ route('development.import-studio.site', [$site['customer']['uuid'], $site['uuid']]) }}">Import Source Data <span class="sr-only">— demo only</span></a>
+                @endif
                 <a class="secondary-button" href="{{ route('office.workspace.sites.edit', [$site['customer']['uuid'], $site['uuid']]) }}">Edit Site</a>
                 <a class="admin-link-button" href="{{ route('office.workspace.sites.lifecycle', [$site['customer']['uuid'], $site['uuid']]) }}">{{ $site['is_active'] ? 'Deactivate' : 'Reactivate' }}</a>
             </div>

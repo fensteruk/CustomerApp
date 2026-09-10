@@ -22,6 +22,10 @@ use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/office-workspace.php';
 
+if (app()->environment(['local', 'testing']) && config('import-demo.enabled')) {
+    require __DIR__.'/import-demo.php';
+}
+
 Route::get('/', function () {
     if (auth()->check()) {
         return redirect()->route('dashboard');
