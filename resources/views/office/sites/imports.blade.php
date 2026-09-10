@@ -11,8 +11,14 @@
                     <dl class="mt-4 space-y-3 text-sm">
                         <div><dt class="admin-term">Uploaded by</dt><dd class="admin-value">{{ $run['uploader_name'] }}</dd></div>
                         <div><dt class="admin-term">Status</dt><dd class="admin-value">{{ ['UPLOADED' => 'Uploaded', 'ANALYSING' => 'Analysis in progress', 'NEEDS_CLARIFICATION' => 'Needs clarification', 'REQUIRES_REVIEW' => 'Ready for review', 'REVIEWED' => 'Reviewed', 'READY_TO_COMMIT' => 'Review approved', 'COMMITTING' => 'Commit in progress', 'COMMITTED' => 'Committed', 'FAILED' => 'Needs attention', 'SUPERSEDED' => 'Superseded'][$run['state']] ?? 'Status unavailable' }}</dd></div>
+                        @if ($run['is_correction'] ?? false)<div><dt class="admin-term">Import type</dt><dd class="admin-value">Correction</dd></div>@endif
+                        @if ($run['is_superseded'] ?? false)<div><dt class="admin-term">Current record</dt><dd class="admin-value">Superseded by a later import</dd></div>@endif
+                        @if (! empty($run['replacement_reason']))<div><dt class="admin-term">Replacement reason</dt><dd class="admin-value">{{ $run['replacement_reason'] }}</dd></div>@endif
                         @if ($run['receipt'])
                             <div><dt class="admin-term">Committed</dt><dd class="admin-value">{{ \Illuminate\Support\Carbon::parse($run['receipt']['committed_at'])->utc()->format('j M Y, H:i') }} UTC</dd></div>
+                            @if (! empty($run['receipt']['counts']))
+                                <div><dt class="admin-term">Committed records</dt><dd class="admin-value">{{ collect($run['receipt']['counts'])->map(fn ($count, $label) => str($label)->replace('_', ' ')->title().': '.$count)->join(' · ') }}</dd></div>
+                            @endif
                         @endif
                     </dl>
                 </article>
