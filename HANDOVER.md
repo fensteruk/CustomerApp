@@ -1,307 +1,223 @@
 # Fenster Customer Portal Handover
 
-## CUSTOMER-WALD05 correction requalification — 9 September 2026
+## CUSTOMER-WALD06 integration reconciliation — 11 September 2026
 
-**PASS — recommend freezing the corrected bounded backend.** The W5Q-03/04 correction candidate is
-`dbd17c68a04c028418e2d8a08fc43312aae5fe3b`, committed before all fresh acceptance processes on
-local `qa/customer-wald05-backend-2026-09-09`. W5Q-01/02/05 are preserved. Private immutable
-intent/outcome audit survives business rollback; batched current profile dependencies have
-constant 70 reads at 1/7/20 receipts and retain tenant/freshness/competition checks.
-Focused, combined, full regression, independent MySQL non-race and both additive upgrades pass;
-the fresh race gate passes 320 groups / 640 workers, zero failures. Disjoint MySQL suites total
-240 passes, one skip and 2,256 assertions. Full CustomerApp: 1,314 passes / 49 environment skips /
-6,193 assertions. The disposable server was normally shut down; no bounded backend blocker remains.
-Use the [fresh report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md), which retains
-the original FAIL below its correction section. DEC-054 is the bounded correction authority.
-The shared-slot multi-site **PILOT_BLOCKER** remains separate; do not split/import the actual
-workbook or start WALD06/full Office UI without their scoped instructions. Eight inherited
-Composer advisories remain separate; remediation was not merged.
-No main, push, GitHub Actions, production, SiteApp, real import, WALD06 or deployment occurred.
+The canonical `feature/customer-wald-next` line retains accepted WALD02–05 at
+`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` and is being reconciled by a normal merge with
+current local `main` `dcea43e3266c06044c498ab2540b25c233a5d847`. The merge combines the
+current non-Wald product/release truth with the accepted corrected Wald backend; it does not
+promote either feature-branch state to deployed truth. CUSTOMER-WALD06 is the approved next
+bounded phase for a default-off multi-site Import Studio and supervised local/test pilot.
 
-## Historical CUSTOMER-WALD05 original dedicated backend QA — superseded by requalification above
+The WALD05 corrected executable baseline remains
+`dbd17c68a04c028418e2d8a08fc43312aae5fe3b`. The actual workbook decisions remain exactly:
+include PC1, CC1 (treat the observed `CC!` typo as CC1) and CM1; exclude CM2 and the explicitly
+identified `NICK TEST` row. Do not expose the workbook, private source evidence or internal
+itemised data to customers. No push, production access, deployment or SiteApp change is
+authorised by this continuation.
 
-**FAIL — do not freeze an accepted WALD05 backend baseline yet.** Local QA branch
-`qa/customer-wald05-backend-2026-09-09` starts from exact `1dc6ee6a24026c970687472126dc295fb6f2b3c8`.
-Digest and source-order/projection-ownership bypasses are corrected; test-owner UUIDs prevent
-random race-fixture collisions. Remaining corrections: W5Q-03 durable stale/failure attempt audit
-outside atomic business effects, and W5Q-04 batched profile-receipt eligibility under commit locks.
-Use the [dedicated QA report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md), not
-the older implementation pass totals, for the next acceptance gate. No full Office UI or WALD06.
-One-site commits are bounded safely, but the shared stream/date/slot contract blocks naive
-multi-site splitting; the later pilot needs an explicit approved unit/order design.
-No actual workbook import, main, push, production, SiteApp or deployment action.
+Earlier entries below are preserved evidence and do not override this status.
 
-## Historical CUSTOMER-WALD05 implementation handover — superseded by QA above
+## CUSTOMER-GIT-CLEANUP02 — Remote consolidation handover — 11 September 2026
 
-The implementation branch was `feature/customer-wald05-import-review-integration`. DEC-053 supersedes the
-foundation-only checkpoint below. The default-off backend now connects private upload,
-durable analysis/clarification, immutable staging, explicit review and atomic source projection
-commit with source ordering, replacement, receipts and metadata-only retention. Application
-services are the entry points; no full Office UI, routes, worker or deletion scheduler was added.
+Remote cleanup is complete. `origin/main` remains
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`; canonical accepted unreleased Wald is published as
+`origin/feature/customer-wald-next` at `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec`. All 12
+annotated preservation tags were published and verified by their peeled commit targets. Ten
+preserved non-main remote QA/feature/release branches were deleted only after per-tip ancestry
+proof. Local `main` was not pushed, Forge/production was not contacted and no deployment occurred.
 
-Read the [current backend report](documentation/wald/customer-wald05-backend-completion-2026-09-09.md)
-for exact test commands/results, supported bounds, W5-T02 digest correction, old-importer parity
-disposition and QA instructions. Backend READY FOR QA: full regression 1,210 passes / 38 skips;
-MySQL 80 race groups / 160 workers and upgrade guards pass. Disposable server stopped.
-One site/table and 500 nonempty rows is the supported atomic
-unit; mixed-site or competing-visit input refuses entirely. Do not claim the actual twelve-site
-workbook has been imported, silently partition it or generalise DEC-050/051 to changed bytes.
-No further blanket implementation permission is needed. Dedicated backend QA comes next;
-full UI, WALD06/cutover, security reconciliation and production release remain separate gates.
-No main, push, production, SiteApp or Sprint 3F changes. Eight inherited advisories remain.
+Do not resolve the remaining dirty worktrees as part of ordinary branch cleanup. The two attached
+historical local branch refs and the detached Sprint 3E temp worktree require a separate user-file
+preservation decision. See `documentation/customerapp-git-consolidation-2026-09-11.md`.
 
-## Historical CUSTOMER-WALD05 reader correction and binding foundation — 8 September 2026
+Earlier entries below are historical evidence and do not override this status.
 
-Continue on `feature/customer-wald05-import-review-integration`. DEC-052 authorises the bounded
-reader correction and ongoing WALD05 implementation; no further blanket permission is needed.
-Reader correction SHA `e9e1c3a2a3ff79cfe5f097bea143f51195becd55`: wald-0.2.2 / XLSX 3, CSV 2;
-old knowledge pins stale, dictionary fingerprint unchanged. The exact original workbook now
-profiles successfully and remains untracked/unchanged. DEC-050/051 select 45 rows, exclude two.
+## CUSTOMER-GIT-CLEANUP01 — Git ownership handover — 11 September 2026
 
-The default-off binding foundation adds exact Office-controlled identity/version lifecycle,
-immutable history, authenticated command replay, current-epoch validation and bounded audits.
-One additive migration creates three tables with six immutability guards. Pure ExportOrder and
-exact-artifact selection helpers are tested but not yet wired into an import run.
-Next: private upload/durable runs, accepted analysis/knowledge orchestration, immutable staging,
-preview, source observations and whole-run atomic projection commit. No UI/cutover/production yet.
-No new business ambiguity or permission blocker. WALD05 remains PARTIAL, not ready for dedicated QA.
+Prepared executable local `main` checkpoint `93737df1e8dae36b9d79b6b641e30b6c9af51908` is
+the canonical accepted non-Wald product line; this cleanup adds only documentation above it.
+Remote/production line `origin/main` remains
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. No additional product merge is required and no
+push/deployment occurred. Accepted unreleased WALD02–05 is now represented by one canonical local
+branch, `feature/customer-wald-next`, at `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` with
+corrected executable checkpoint `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`.
 
-Focused: 53 passes / four skips. Combined: 930 passes / 15 skips / 4,375 assertions.
-Full: 1,149 passes / 30 skips / 5,563 assertions. MySQL: 52 non-race passes / one SQLite-only skip,
-four passing scenarios / 40 groups / 80 workers; additive upgrade and safe rollback checks pass.
-Disposable MySQL 8.4.11 at 127.0.0.1:33486 was cleanly stopped. Eight inherited advisories remain;
-Pint, Composer validation and build pass. No main, push, SiteApp or deployment.
-[Current report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+Twelve annotated local tags preserve disconnected production/recovery, old scope, QA, original
+admin/sidebar integration and superseded manual-import histories. Local branches were reduced
+from 40 to four. The remaining historical branches are temporarily protected by dirty worktrees:
+`docs/customer-admin01-audit-2026-09-09` has an untracked audit document, while
+`release/sprint-3e-production-record-2026-08-27` is attached to an old temp worktree whose tracked
+files appear deleted. A second detached Sprint 3E temp worktree has the same condition. Do not
+force-remove, reset or clean any of them without a separate preservation decision.
 
-## Historical CUSTOMER-WALD05 actual-workbook audit before reader correction — 8 September 2026
+The root worktree remains on canonical Wald and retains the user's modified Sprint 3E report,
+`Copy of siteapp1.xlsx`, `local logins.docx`, `~$cal logins.docx` and `output/`. Remote publication
+of the canonical Wald branch/tags was blocked pending a more explicit remote-egress approval, so
+all 11 original remote branches remain and no remote deletion was attempted. Full classification
+and cleanup evidence is in `documentation/customerapp-git-consolidation-2026-09-11.md`.
 
-Continue on `feature/customer-wald05-import-review-integration`, audited checkpoint `b221784...`.
-The DEC-050 workbook hash still matches. DEC-051 additionally excludes Sheet1 row 32 / Call No.
-5181 (Nick TEST); source bytes remain unchanged. Current selection: 45 included, two excluded,
-20 Windows / 24 Cavity Closers / one CML; 19 complete Yes / 26 No. No actual business-data
-ambiguity found; do not revive the earlier synthetic W5-P01/P02 pause for this sample.
+Branch policy: `main` is the accepted release/production line; feature branches are short-lived;
+QA/release branches are removed after acceptance and preservation; unreleased Wald lives on one
+canonical branch; historical milestones use annotated tags. A `main` push remains a separately
+authorised production action because Forge Push to Deploy is enabled.
 
-W5-T01: the frozen XLSX reader refuses the actual workbook's extension-namespace workbookPr at
-`workbook/extLst/ext/workbookPr` with invalid_xml. Next prerequisite is a narrowly reviewed,
-versioned reader correction preserving physical-lineage/unsafe-XML safeguards. No diagnostic
-parser fallback, source rewrite or unversioned baseline change. WALD05 implementation authority
-remains valid after this technical correction; runtime/schema work is not yet implemented.
-Private row inventory is under ignored `storage/app/wald05-audit-20260908/`; do not commit it.
-Combined Wald: 865 passed / 11 skipped; full: 1,084 passed / 26 skipped. Pint/validation/build pass;
-eight inherited Composer advisories. No MySQL WALD05 evidence, dedicated-QA readiness or deployment.
-[Current report](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
+Earlier entries below are historical evidence and do not override this status.
 
-## Historical CUSTOMER-WALD05 initial projection review — 8 September 2026
+## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
 
-DEC-049 records explicit implementation authority on
-`feature/customer-wald05-import-review-integration`, created from verified governance commit
-`877bd3ff666873a0703c3b7671015ec4cfd2ee52`. Accepted WALD04 executable trees are unchanged.
-W5-P01/P02 require the business rule converting multiple distinct source visits into one Portal
-service completion/request association and one plot/product quantity. I01–I10 are still approved;
-no additional blanket implementation permission is needed after those rules are confirmed.
-[Entry review and concrete cases](documentation/wald/customer-wald05-import-review-integration-2026-09-08.md).
-Runtime/schema work has not started. No migration, SiteApp, production or deployment action.
+**PASS; READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.** Continue from the QA
+lineage beginning at corrected executable SHA `10f0a56ac1987754ab0c31b45fc08138ba25e3f8`, which is
+the frozen RC `2e58bedcb70c487dfee1ae9f01a087c7ed8117e6` plus a two-file test-harness-only ordering
+correction. The application/runtime candidate is unchanged. Dedicated scope, migration, admin,
+security, regression, browser, responsive, accessibility, performance, SQLite and MySQL 8.4.11
+evidence passed. Production dependency audits are clean; 14 locked development/build advisories
+remain a non-blocking maintenance item. No push, `main` merge, production access, migration or
+deployment occurred. A separate release decision and production recovery controls are still
+required before any deployment. See
+`documentation/customerapp-next-release-dedicated-qa-2026-09-10.md`.
 
-## CUSTOMER-WALD05 governance approved — 8 September 2026
+Earlier entries below are historical evidence and do not override this status.
 
-DEC-048 approves I01–I10 against immutable WALD04 input
-`0e83eb2896e7c5144bc38c1be9713f3d205d93b8`. The temporary V1 source order is authenticated
-Office-declared Export Date plus `MORNING`/`AFTERNOON`; one Call No. identifies one visit;
-only partial/filtered exports may commit; one reviewed bounded run is atomic; and minimal
-committed audit/provenance is retained six years. Existing and non-main import work remains
-reference/reuse evidence, never automatically approved runtime architecture.
+## CUSTOMER-NEXT-RELEASE01 — Sidebar + Admin + Synthetic Demo RC1 — 10 September 2026
 
-The exact next prerequisite is a separate explicit WALD05 implementation instruction and branch
-name based on the accepted WALD04 snapshot. This documentation approval does not authorise code,
-migrations, routes, UI, queues, storage changes, SiteApp, dependency remediation, main, push,
-production or deployment. G09's unnamed owner blocks unattended production deletion only;
-persistent workers, WALD06 pilot/cutover and security/release reconciliation remain later gates.
-[Final approval](documentation/wald/customer-wald05-final-governance-approval-2026-09-08.md)
-and [governing work package](documentation/work-packages/WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md).
+**READY_FOR_DEDICATED_QA on a non-deploying release branch.** The candidate branch is
+`release/customerapp-next-release-admin-demo-rc1`, built cleanly from exact production/main
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. It has not been merged to `main`, pushed or
+deployed, and production was not accessed.
 
-## Historical CUSTOMER-WALD04 acceptance / WALD05 scoping — 8 September 2026
+Deploying next, subject to dedicated QA and separate release approval: the accepted sidebar;
+Office-only customer/site administration; active/inactive lifecycle; immutable audit; read-only
+plot inventory and assigned-user visibility; truthful source/import unavailable states. The
+synthetic Import Studio is local/testing-only, default-off and has no production route, upload,
+write, binding, Wald invocation or commit. WALD02–05, all five WALD migrations, real import,
+multi-site import and WALD06 remain excluded and preserved on their accepted feature lineage.
 
-Management accepts corrected WALD04 output
-`0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on
-`qa/customer-wald04-2026-09-08` as the immutable WALD05 input. Executable/test correction
-`9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, generic Wald tree `30d1fc65`, semantic
-tree `9cc8df4b` and dictionary v1 fingerprint `18718ef5…f8357` are frozen. Original
-candidate `2c7d015` is not the accepted output. DEC-047 records the acceptance.
+Evidence: 64 focused PHP tests / 440 assertions; 14 browser-side unit tests; 102 queue-card and
+Sprint 3F regressions / 1,117 assertions; full SQLite 393 passed / 43 skipped / 2,784 assertions;
+full MySQL 8.4.11 430 passed / 1 intentional skip / 3,820 assertions, plus the separately guarded
+five-test admin race suite. A clean 13-migration MySQL install and 16-check production-shaped
+upgrade passed. Browser QA passed at 1920, 1440, 1366, tablet, 390 and 320px with no console
+errors. Pint, strict Composer validation, Composer audit, production build, production-only npm
+audit and whitespace checks passed. Full npm audit retains 14 locked development/build-chain
+advisories for release review.
 
-WALD05 is architecture/work-package scope only on
-`codex/docs-customer-wald05-scope-2026-09-08`. Proposed I01–I10 decisions cover Office
-permissions, source-site bindings, source revision/order, duplicate Call No. grain,
-complete-snapshot absence, neutral staging/review, atomic commit/recovery, final audit
-retention, queue/storage ownership and current/non-main importer disposition. None is
-implementation authority. [Acceptance report](documentation/wald/customer-wald04-acceptance-wald05-scope-2026-09-08.md)
-and [WALD05 work package](documentation/work-packages/WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md).
+See `documentation/customerapp-next-release-rc1-build-report-2026-09-10.md`. Dedicated QA must
+use the exact frozen branch tip stated in the task completion report. Any change after freeze
+requires explicit release handling.
 
-The existing `SourceProjectionImportService` and `SourceCallTypeMapper` cannot be wired
-directly to Wald: current code retains outdated call-type/stage meanings, source-wide absence,
-omitted-product zeroing and per-record commit behavior. The non-main manual import line remains
-reference/reuse evidence only. No WALD05 runtime, migration, route, UI, queue or storage change;
-no main, push, production, SiteApp, dependency-remediation or deployment action. Eight inherited
-advisories remain. G09 named-owner nomination still gates unattended disposal.
+Earlier entries below are historical evidence and do not override this status.
 
-## Historical CUSTOMER-WALD04 dedicated QA passed — 8 September 2026
 
-Dedicated QA corrected candidate `2c7d0154e51a35b165c7e93f7dd256e2cf0f030f` on
-`qa/customer-wald04-2026-09-08`. Executable/test correction commit:
-`9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`. The final documentation-inclusive QA SHA is
-reported in the task handoff and is recommended for freeze; management acceptance and release
-remain separate. **Feature branch only — not on main, not deployed.**
+## CUSTOMER-FIX-QUEUECARD01 — Office queue-card correction — 10 September 2026
 
-Fixed MySQL protected-field collation bypass (forward migration), bounded profile/provenance
-and retention queries, collision-free race fixtures and test-only full-suite memory allowance.
-Final checks: focused SQLite 187 passes / 11 MySQL skips / 406 assertions; combined Wald
-865 passes / 11 skips / 4,218 assertions; full application 1,084 passes / 26 skips / 5,406 assertions.
-MySQL 8.4.11: 198 tests / 862 assertions across the final non-race gate and seven race scenarios;
-20 iterations each, 140 groups / 280 workers. Clean/additive migration, empty rollback/reapply
-and populated refusal passed. Disposable server stopped.
+**READY_FOR_QA on a non-deploying patch branch.** Production/main checkpoint
+`eb149a9ab28f9131f9d26971f13bd289ff1afba6` remains untouched. The executable fix
+is `8f28cc50f513c2fae2464abdbf0e7b11ed13f7bf` on
+`fix/office-queue-card-request-values`.
 
-[Dedicated QA report](documentation/wald/customer-wald04-qa-2026-09-08.md) records commands,
-failed attempts, W4Q-01–04, exact file changes and remaining separate gates. Frozen WALD02/03
-trees and dictionary fingerprint are unchanged. Eight inherited Composer advisories remain.
-No push, main change, production action, dependency remediation merge or WALD05 implementation.
-G09 named-owner nomination still gates unattended disposal only; no disposal scheduler exists.
+The inherited queue card defect was reproduced: child requests for Windows / 5 October,
+Cavity Closers / 12 October and CML / 19 October all showed the parent batch's
+Windows / 1 October values, while their details pages were correct. Cards and the service
+filter now prefer authoritative request-level service/date values and retain the batch only
+as a legacy null-field fallback. Batch identity, status/date semantics, workflow, Sprint 3F,
+notifications, authorisation and persistence are unchanged.
 
-## Historical CUSTOMER-WALD04 implementation — 8 September 2026
+Evidence: 11 focused tests / 62 assertions; 134 related Review Requests and Sprint 3E/3F
+tests / 1,327 assertions; full suite 329 passed / 38 skipped / 2,344 assertions. A warmed
+query check stayed at 8 queries for both one and ten cards. Pint, strict Composer validation,
+clean Composer audit, production asset build and whitespace checks passed. No migration,
+main push, deployment, production access or unrelated WALD/admin/sidebar change occurred.
+Recommended release disposition: `NEXT_PATCH`, subject to dedicated QA and separate release
+approval. See the
+[correction report](documentation/office-queue-card-correction-2026-09-10.md).
 
-DEC-046 explicitly approves the bounded knowledge/profile backend on
-`feature/customer-wald04-knowledge-profiles`, created from exactly accepted WALD03
-`a80ce7d14206cf3f3a9343448d406f01ae927b88`. Dictionary v1 fingerprint
-`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` and generic core remain frozen.
+Earlier entries below are historical evidence and do not override this status.
 
-G01–G08 and G09's mechanism are approved: Office-only scoped knowledge; separate answer,
-draft and activation; same actor allowed; immutable versions/history; explicit revocation;
-12-month reapproval and 24-month history with holds/dependency protection. The named Fenster
-data owner remains pending only before unattended production disposal. No disposal scheduler.
+## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
 
-Local additive implementation and verification are recorded in
-`documentation/wald/customer-wald04-knowledge-profiles-2026-09-08.md`.
-Candidate `f0f97212b8b1be763b953414cfe65c8e3e3352e7` is ready for dedicated QA:
-MySQL 102 passes / 355 assertions; combined Wald 774 passes / 6 MySQL skips;
-full regression 993 passes / 21 environment skips. Eight inherited advisories remain separate.
-Dedicated QA and a newly accepted immutable output remain required. Source-site bindings,
-upload/import UI, review/commit and final-import audit retention remain WALD05. No main,
-push, production, deployment, SiteApp or dependency-remediation action is authorised.
-Earlier handoffs below are historical, not current phase-entry instructions.
+Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
+forward QA. RCQ-01 is `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`. Before traffic is reopened, a
+failed release may restore the fresh pre-deployment database snapshot and previous verified code
+release together. After reopening or any Sprint 3F write, old main is forbidden; recover forward
+from the exact deployed RC or a compatible descendant. A Forge code/symlink rollback does not
+restore MySQL. CUSTOMER-RELEASE03A is documentation-only and permits merge-to-main preparation,
+not a main push, deployment or production change. See
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
 
-## Historical CUSTOMER-WALD03 implementation handoff — 8 September 2026
+## CUSTOMER-RELEASE02 — reduced RC1 build (historical pre-QA status) — 9 September 2026
 
-Accepted immutable WALD03 input:
-`4aa5ffb5a00527662ddfe66673edbfb18af9f0db` from
-`qa/customer-wald02-2026-09-08`; reader `wald-0.2.1`. Do not use superseded candidate
-`9980354d28bfe1ca7986e10a529ab073d95d0b91`. Dedicated QA passed 208 focused tests /
-1,262 assertions and 427 full-suite tests / 15 existing environment skips / 2,450 assertions.
-The five QA reader corrections are frozen core behaviour.
+Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
+Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`
+merged first, security `5e7df08` second. Both are included in RC1, not newly on main
+or deployed. DEC-055 records this approval and the decision-number provenance.
 
-Explicitly approved WALD03 is implemented on `feature/customer-wald03-business-dictionary`.
-Candidate `1fee57de2830fc8a07cb0a14296e72c0ddbb2774` contains the pure dictionary/adapter and
-tests; dedicated QA is pending. Dictionary `customerapp.source-dictionary.v1` fingerprint:
-`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`.
-Focused WALD03: 344 passes / 1,707 assertions; combined Wald: 552 passes / 2,969 assertions;
-full CustomerApp: 771 passes / 15 existing environment skips / 4,157 assertions.
-Report and exact follow-on gates:
-`documentation/wald/customer-wald03-business-dictionary-2026-09-08.md`.
-No generic core, database, upload, profile, review/commit, Portal workflow, dependency, `main`
-or deployment change. WALD04 needs separate approval after dedicated QA, frozen output and
-ownership/tenancy/permission/retention/profile reconciliation decisions.
+WALD02–05 remain accepted separate feature work but are excluded from RC1, as are
+ADMIN-SITE02, old manual importer/interpreter/UI, unfinished source integration,
+WALD06 and the multi-site pilot. Do not merge their runtime or migrations to obtain docs.
+RC1 has exactly 12 migrations; no historical migration edits. Populated amendment rollback
+would lose metadata and is not an approved production recovery strategy.
 
-Eight inherited Composer advisories remain a separate combined-release concern; remediation
-commit `5e7df0862648fd9c2ac964b31a13ad17df84fd12` was not merged. Earlier handoff text below
-describes historical WALD02 stages.
+RC1-T01 was an inherited stale date fixture, not a product defect. CUSTOMER-RELEASE02A
+approved a test-only correction; focused/full SQLite, disposable MySQL 8.4.11, Composer,
+Pint and build gates passed. The commit containing this status is the frozen QA candidate;
+use the exact SHA in the release handoff and do not change it after dedicated QA begins.
+Pre-QA verification and final freeze are recorded in
+[RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md).
+Dedicated release QA must use the final frozen SHA; passing build checks is not deployment
+approval. No main push, production access, Forge change, RC push or deployment is authorised.
 
-## CUSTOMER-WALD02 implementation handoff — 4 September 2026
+Last repository-proved successful production release: Sprint 3E `9111d76`, Forge 76326195,
+11 migrations. Main `0873bac` contains later fixes; its current live deployment is not
+proved here. Fresh production verification is a later release prerequisite.
 
-CUSTOMER-WALD02's portable core and safe synthetic corpus are implemented on
-`feature/customer-wald02-portable-core` and ready for dedicated QA. The approved SiteApp
-manifest digest is `76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`.
-Commits: work package `243beb8`, core `d1c130a`, corpus/boundaries `5ddaa26`. Full evidence
-and the 57-file source ledger are in
-`documentation/wald/customer-wald02-portable-core-2026-09-04.md`.
+The entries below are historical branch evidence, including superseded deployment claims,
+old sprint numbering and pre-security advisory counts. They do not override this status or
+the current brief. Their reports and historical decisions remain preserved.
 
-The module is isolated under `App\Wald`: no business semantics, persistence, route, UI, queue,
-dependency, migration or production integration was added. The focused suite passes 122 tests
-and 1,040 assertions; the full CustomerApp suite passes 341 tests with 15 existing
-environment-gated skips and 2,228 assertions. Composer audit reports pre-existing advisories
-which remain a separate release concern. CUSTOMER-WALD03 has not begun; first obtain dedicated
-WALD02 acceptance and approve a separate scoped package.
+## Sprint 3F final product decisions — 3 September 2026
 
-## Project documentation reset — 4 September 2026
+Product integration is complete on `feature/sprint-3f-date-amendments`, following
+baseline `4773c37` and race correction `38b058f`. DEC-039 confirms all seven stable
+reason codes, required Other explanation (maximum 2,000 characters) and optional text
+for other reasons. Customer/Office history keeps reason and Additional information separate.
+On Hold — Date Change Requested feeds existing Call-Offs In Progress; completed-service
+precedence is unchanged. No new overall status or transaction/locking change was needed.
 
-The governing documentation has been consolidated on the non-deploying branch
-`docs/customerapp-project-reset-2026-09-04`.
+Verification: 91 ordinary Sprint 3F cases / 1,055 assertions; full SQLite 313 passed,
+38 MySQL-only skipped / 2,268 assertions; targeted MySQL Office race 10/10 iterations,
+292 assertions. Fresh isolated SQLite seed, Pint, Composer validation and build passed.
+Composer audit still reports eight inherited advisories; dependencies were not changed.
+After preview recovery, browser checks passed at desktop/mobile widths (1280px/390px),
+including keyboard focus, conditional Other validation, On Hold, Office review and resolution.
+No browser console errors/warnings were observed; dedicated QA is still required.
 
-Use these current entry points:
+No current Sprint 3F product decisions remain. Next: dedicated Sprint 3F QA, separate
+Composer security reconciliation and final combined release-candidate verification.
+No main change, push, deployment or Wald/import modification. See
+`documentation/sprint-3f-date-amendments-2026-09-03.md` for details and file list.
 
-- product and current delivery truth: `brief.md`;
-- safe agent/work rules: `AGENTS.md`;
-- durable reset decision: DEC-041 in `DECISIONS.md`;
-- source meanings: `documentation/siteapp-import-data-dictionary.md`;
-- preserved conflicts/open items:
-  `documentation/customerapp-documentation-contradiction-register-2026-09-04.md`;
-- fresh Wald chat:
-  `documentation/work-packages/WP-CUSTOMER-WALD-CHAT-BOOTSTRAP.md`.
+## Initial Sprint 3F implementation update — 3 September 2026 (historical)
 
-Do not resume from an older brief section or historical sprint header. Sprint 3E at
-`9111d76ff05d702d68afd884ee8e42bc8e50c8e3` / Forge `76326195` is the last explicitly
-evidenced production release. `origin/main` is `0873bac79edf578e9f4a9417e3cafae34e8aa925`,
-but its deployed state needs Forge verification. The authenticated non-destructive smoke is
-also outstanding.
+Current work is Date Amendments After Date Agreed, reusing Sprint 3E. It is isolated on
+`feature/sprint-3f-date-amendments` from local main `0873bac79edf578e9f4a9417e3cafae34e8aa925`.
+This supersedes older release-status/numbering statements below for the current task.
+Those entries remain historical evidence, not a claim about today's production state.
 
-Sprint 3F is separate at `feature/sprint-3f-date-amendments` (`60aa9e2`) and still needs
-dedicated QA/release approval. CUSTOMER-WALD02 has since been implemented as recorded in the
-new handoff above. The manual import line ending at `1e8c22b` remains non-main evidence only.
+Implementation is **blocked for sign-off**, not complete: Product must approve amendment
+reason values and confirm the preserved On Hold aggregate plot status. Reasons are empty
+and customer initiation fails closed until confirmed. Disposable MySQL 8.4, dedicated
+keyboard/mobile QA and reconciliation with the separate security dependency branch remain
+release gates. No main merge, push, deployment or Wald/import modification was performed.
 
-This reset changes documentation only. It makes no application, migration, dependency,
-SiteApp, production or deployment change.
+See `documentation/sprint-3f-date-amendments-2026-09-03.md` for the domain, files,
+command evidence, migration rehearsal, eight new MySQL race cases and handoff actions.
 
-## CUSTOMER-WALD01A reconciliation handoff — 4 September 2026
+Final local gate: 264 tests passed / 23 MySQL-only skipped, 1,378 assertions.
+Fresh SQLite seed, non-empty upgrade, Pint, Composer validation and build passed.
+Composer audit reports eight inherited advisories; security reconciliation remains separate.
 
-Completed documentation-only CUSTOMER-WALD01A. Implementation contract:
-`documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
-Version/divergence/backport register: `documentation/wald-divergence-register.md`.
-Authority: DEC-039–041, `brief.md` §§10–13 and
-`documentation/siteapp-import-data-dictionary.md`.
-
-Key handoff:
-
-- Controlled fork of generic SiteApp Wald; no SiteApp runtime dependency or source edits.
-  Reference code/tests are present but uncommitted; agree a reproducible copy manifest first.
-- The audit checkout contains the transport-independent projection importer. A committed
-  non-main feature chain ending at `feature/manual-source-import-ui` (`1e8c22b`) also
-  contains deterministic XLSX interpretation, source-site bindings, scope-aware dry-run,
-  semantic profiles and an Office import UI. It is A/B/C/D-classified in CUSTOMER-WALD01
-  §4 and is evidence, not automatically the final architecture or production work.
-- Keep Portal domain protections/tests and add Wald neutral staging/review plus an
-  authorised commit boundary; do not transplant SiteApp staging/commit/admin or merge the
-  non-main feature line wholesale.
-- Site-wide/partial uploads cannot use current source-wide missing-record reconciliation
-  unchanged. Product omission/aggregation, revision ordering and commit unit need explicit
-  contracts before live use.
-- Valid call types are PC1/CC1/CM1/CM2/CML. CM1/CM2 are CML revisits; literal `CC!` is
-  unknown/likely typo evidence and is never silently normalised. No Snagging source code is
-  invented.
-- `complete = Yes` authoritatively completes its source call-off part without inventing a
-  date. Windows/Doors roll-ups, exact positive BF five-week handling, excluded products,
-  ignored fields, PC1 operational date, transitional Site Name and filtered-export default
-  are confirmed. No semantic business question remains from this set.
-- Portal import/knowledge entitlements, source owner/revision contract, commit atomicity
-  and retention remain gated delivery/governance decisions.
-- Production Wald requires CustomerApp's own durable worker/private storage and MySQL
-  validation; current configuration or upstream test reports are not deployment proof.
-- This WALD01 handoff's next-package gate was later satisfied by the approved checksum
-  manifest. CUSTOMER-WALD02 is now implemented as recorded at the top of this file; 03–06
-  remain separately gated. No code copying, app tests, benchmark, migration, commit, push,
-  production access or deployment occurred during WALD01 itself.
-
-The user's confirmed Sprint 3E release at `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`
-(Forge `76326195`) supersedes the older blocked-release account below. This audit did not
-reverify production or start Sprint 3F. Preserve the repaired historical migrations and
-the unrelated local report/workbook/output changes.
-
-## Historical release-management status — 25 August 2026
+## Release-management status — 25 August 2026
 
 Production serves `main` commit `f801c91113bd13656c6cbffdd3d82c12d4a95846` through the
 successful controlled migration-recovery deployment. The exact evidence is retained in

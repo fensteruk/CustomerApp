@@ -11,6 +11,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Carbon;
 
 class CallOffRequest extends Model
 {
@@ -108,6 +109,11 @@ class CallOffRequest extends Model
     public function effectiveServiceIdentifier(): ?CallOffServiceType
     {
         return $this->service_identifier ?? $this->batch?->service_identifier;
+    }
+
+    public function effectiveRequestedDate(): ?Carbon
+    {
+        return $this->requested_date ?? $this->batch?->requested_date;
     }
 
     public function isLegacyDateAgreed(): bool

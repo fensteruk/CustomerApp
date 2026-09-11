@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\CallOffRequest;
+use App\Services\CallOffDateViewService;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -30,7 +31,7 @@ class CallOffRequestDetailsController extends Controller
         );
 
         $callOffRequest->load([
-            'projectedPlot:id,uuid,site_id,plot_reference',
+            'projectedPlot:id,uuid,site_id,plot_reference,is_completed',
             'projectedPlotService:id,projected_plot_id,service_identifier,source_present,source_completed_at,source_completion_observed_at',
             'batch:id,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
             'batch.site:id,customer_organisation_id,name',
@@ -51,6 +52,6 @@ class CallOffRequestDetailsController extends Controller
         return view('portal.call-offs.show', [
             'activeSite' => $activeSite,
             'callOffRequest' => $callOffRequest,
-        ]);
+        ] + app(CallOffDateViewService::class)->forRequest($callOffRequest, $user));
     }
 }

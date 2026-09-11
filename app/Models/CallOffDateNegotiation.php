@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\CallOffDateProposalStatus;
+use App\Enums\CallOffDateProposalType;
 use App\Enums\CallOffNegotiationPurpose;
 use App\Enums\CallOffNegotiationStatus;
 use App\Models\Concerns\HasUuid;
@@ -24,6 +26,16 @@ class CallOffDateNegotiation extends Model
         'internal_reason',
         'opened_at',
         'closed_at',
+        'requested_date',
+        'reason_code',
+        'reason_label',
+        'requested_by_user_id',
+        'requester_name',
+        'requester_role',
+        'is_urgent',
+        'is_early_date_exception',
+        'normal_earliest_date',
+        'resulting_agreed_date',
     ];
 
     protected function casts(): array
@@ -34,6 +46,11 @@ class CallOffDateNegotiation extends Model
             'prior_agreed_date' => 'date',
             'opened_at' => 'datetime',
             'closed_at' => 'datetime',
+            'requested_date' => 'date',
+            'is_urgent' => 'boolean',
+            'is_early_date_exception' => 'boolean',
+            'normal_earliest_date' => 'date',
+            'resulting_agreed_date' => 'date',
         ];
     }
 
@@ -47,5 +64,33 @@ class CallOffDateNegotiation extends Model
     public function proposals(): HasMany
     {
         return $this->hasMany(CallOffDateProposal::class);
+    }
+
+    public function isAmendment(): bool
+    {
+        return $this->purpose === CallOffNegotiationPurpose::Amendment;
+    }
+
+    public function progressLabel(): string
+    {
+        if ($this->status->isOpen()) {
+            $this->loadMissing('proposals');
+
+            return $this->proposals->contains(fn ($proposal) => $proposal->proposal_type === CallOffDateProposalType::FensterAlternativeDate
+                && $proposal->status === CallOffDateProposalStatus::AwaitingResponse)
+                ? 'Awaiting Site User' : 'Awaiting Fenster';
+        }
+
+        return match ($this->status) {
+            CallOffNegotiationStatus::DateAgreed => 'Date Agreed',
+            CallOffNegotiationStatus::Completed => 'Closed by source completion',
+            CallOffNegotiationStatus::Withdrawn => 'Withdrawn',
+            CallOffNegotiationStatus::Superseded => 'Superseded',
+        };
+    }
+
+    public function requestedBy(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'requested_by_user_id');
     }
 }

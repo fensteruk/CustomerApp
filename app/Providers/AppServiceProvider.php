@@ -7,6 +7,7 @@ use App\Contracts\HolidayProvider;
 use App\Events\CallOffAlternativeAccepted;
 use App\Events\CallOffAlternativeProposed;
 use App\Events\CallOffAlternativeRejected;
+use App\Events\CallOffAmendmentRequested;
 use App\Events\CallOffApproved;
 use App\Events\CallOffDateAgreed;
 use App\Events\CallOffRejected;
@@ -14,13 +15,20 @@ use App\Events\CallOffSubmitted;
 use App\Listeners\CallOffNotificationListener;
 use App\Models\CallOffBatchOperation;
 use App\Models\CallOffRequest;
+use App\Models\CustomerOrganisation;
 use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
+use App\Policies\CustomerOrganisationPolicy;
+use App\Policies\OfficeAdministrationPolicy;
+use App\Policies\SitePolicy;
 use App\Services\PortalNotificationQueryService;
 use App\Services\WeekdayHolidayProvider;
+use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Event;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\ServiceProvider;
 
@@ -39,6 +47,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        Gate::policy(CustomerOrganisation::class, CustomerOrganisationPolicy::class);
+        Gate::policy(Site::class, SitePolicy::class);
+
+        RateLimiter::for('office-administration', fn (Request $request): Limit => Limit::perMinute(120)
+            ->by('office-admin:'.($request->user()?->getAuthIdentifier() ?? $request->ip())));
+
         View::composer('layouts.portal', function ($view): void {
             $user = auth()->user();
 
@@ -48,6 +62,7 @@ class AppServiceProvider extends ServiceProvider
         });
 
         Event::listen(CallOffSubmitted::class, [CallOffNotificationListener::class, 'submitted']);
+        Event::listen(CallOffAmendmentRequested::class, [CallOffNotificationListener::class, 'amendmentRequested']);
         Event::listen(CallOffApproved::class, [CallOffNotificationListener::class, 'approved']);
         Event::listen(CallOffRejected::class, [CallOffNotificationListener::class, 'rejected']);
         Event::listen(CallOffDateAgreed::class, [CallOffNotificationListener::class, 'dateAgreed']);
@@ -64,6 +79,12 @@ class AppServiceProvider extends ServiceProvider
         Gate::define('manage-portal-accounts', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff());
 
         Gate::define('manage-site-assignments', fn (User $user): bool => $user->hasCompletePortalProfile() && $user->isFensterOfficeStaff());
+
+        Gate::define('view-office-administration', fn (User $user): bool => app(OfficeAdministrationPolicy::class)->allows($user));
+
+        Gate::define('manage-customers', fn (User $user): bool => app(OfficeAdministrationPolicy::class)->allows($user, 'customer_update'));
+
+        Gate::define('manage-sites', fn (User $user): bool => app(OfficeAdministrationPolicy::class)->allows($user, 'site_update'));
 
         Gate::define('view-projected-plot', fn (User $user, ProjectedPlot $plot): bool => app(DetermineCallOffEligibilityAction::class)->canViewProjectedPlot($user, $plot));
 

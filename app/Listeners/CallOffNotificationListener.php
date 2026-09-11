@@ -6,6 +6,7 @@ use App\Enums\PortalNotificationType;
 use App\Events\CallOffAlternativeAccepted;
 use App\Events\CallOffAlternativeProposed;
 use App\Events\CallOffAlternativeRejected;
+use App\Events\CallOffAmendmentRequested;
 use App\Events\CallOffApproved;
 use App\Events\CallOffDateAgreed;
 use App\Events\CallOffRejected;
@@ -35,7 +36,12 @@ class CallOffNotificationListener
 
     public function dateAgreed(CallOffDateAgreed $event): void
     {
-        $this->create($event->callOffRequestId, PortalNotificationType::CallOffDateAgreed, allowHistoricalDateAgreement: true);
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffDateAgreed, $event->negotiationUuid, allowHistoricalDateAgreement: true);
+    }
+
+    public function amendmentRequested(CallOffAmendmentRequested $event): void
+    {
+        $this->create($event->callOffRequestId, PortalNotificationType::CallOffAmendmentRequested, $event->negotiationUuid);
     }
 
     public function alternativeProposed(CallOffAlternativeProposed $event): void

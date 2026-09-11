@@ -18,6 +18,8 @@ class ProposeAlternativeCallOffDateRequest extends FormRequest
             'proposed_date' => ['required', 'date'],
             'customer_response' => ['nullable', 'string', 'max:2000'],
             'internal_reason' => ['nullable', 'string', 'max:2000'],
+            'negotiation_uuid' => ['nullable', 'uuid'],
+            'early_date_acknowledgement' => ['nullable', 'boolean'],
         ];
     }
 }

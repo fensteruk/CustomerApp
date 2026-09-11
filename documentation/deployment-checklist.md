@@ -231,6 +231,38 @@ Sprint 1E production scope is the in-app notification centre only.
 
 ## 8. Backup and recovery
 
+### RC1 mandatory recovery evidence
+
+For the RC1 amendment release, the release owner must record all of the following immediately
+before deployment; an older backup or historical report is not proof for the current release:
+
+- [ ] Fresh database backup/snapshot identifier, completion result and timestamp.
+- [ ] Exact source production database/environment, without recording credentials.
+- [ ] Captured current migration ledger.
+- [ ] Captured current served application SHA, Forge release path and deployment ID.
+- [ ] Named restore owner and a verified restore mechanism or dated evidence that the same
+      mechanism can restore successfully.
+
+RC1 uses a strict boundary:
+
+- **PRE-TRAFFIC ROLLBACK WINDOW:** keep maintenance mode active. If deployment or smoke fails,
+  restore the fresh pre-deployment database snapshot and previous verified application release
+  together; rebuild compatible caches, verify the migration ledger and smoke the restored state
+  before reopening.
+- **POST-TRAFFIC ROLL-FORWARD ONLY:** after maintenance mode is removed or any Sprint 3F write
+  occurs, do not place old main in front of the newer database. Recover from the exact deployed
+  RC or a compatible descendant. A full pre-deployment database restore at that stage can discard
+  legitimate writes and requires separate major-incident/business approval and reconciliation.
+
+Laravel Forge zero-downtime release activation changes the deployed code release/current symlink.
+It does not restore an external MySQL database. A previous-release code switch is therefore not
+a complete RC1 rollback after Sprint 3F writes.
+
+If Forge push-to-deploy is enabled for the production branch, a main push is a production action.
+Do not push ahead of the approved backup/maintenance run. Either perform the push inside that
+authorised sequence or separately authorise and verify a configuration change that prevents an
+automatic deployment.
+
 - [ ] Automated database backups run on the production schedule approved by the service
       owner.
 - [ ] A backup is taken before a release that changes schema or data behaviour.
@@ -333,12 +365,14 @@ Sprint 1E production scope is the in-app notification centre only.
 
 1. **Release approval:** confirm scope, migrations, security review, accessibility/device
    evidence, MySQL evidence, backup/restore evidence and named owner for every exception.
-2. **Freeze and backup:** pause unrelated changes, verify the artifact checksum and take a
-   pre-deployment database backup.
+2. **Freeze and backup:** pause unrelated changes, verify the artifact checksum, capture the
+   currently served SHA/release and migration ledger, take a fresh pre-deployment database backup,
+   and record completion/timestamp/source database/restore evidence.
 3. **Prepare infrastructure:** verify secrets, database connectivity, storage, queue,
    scheduler, monitoring and HTTPS before changing application traffic.
-4. **Enable maintenance or drain traffic:** use the hosting platform's safe mechanism and
-   preserve in-flight request/queue handling.
+4. **Enable maintenance or drain traffic:** use the hosting platform's safe mechanism, preserve
+   in-flight request/queue handling and allow no normal Office/customer workflow traffic until
+   step 10.
 5. **Deploy the immutable artifact:** install the locked production dependencies and
    verified frontend assets. Do not run package upgrades.
 6. **Apply schema changes:** run the reviewed migrations with the production-safe force
@@ -347,9 +381,11 @@ Sprint 1E production scope is the in-app notification centre only.
    approved storage-link step if the release requires it.
 8. **Restart workers:** restart queue workers and scheduler processes so they use the new
    artifact. Confirm no old workers remain.
-9. **Run smoke checks:** verify HTTPS, login, active-account enforcement, assigned-site
-   routing, Office Staff scope, notification centre, safe-open authorisation and a
-   non-destructive database query.
+9. **Run smoke checks:** verify application boot, HTTPS, Office and external-user login,
+   active-account enforcement, assigned-site dashboard/plot access, Review Requests, Date Agreed
+   filtering, Sprint 3F amendment page/action availability, notification reads, assets, migration
+   health, absence of enum/read failures and absence of 500s. Prefer read-only checks. A fictional
+   amendment write crosses the post-write compatibility boundary even while maintenance remains.
 10. **Enable traffic:** remove maintenance mode or restore traffic only after smoke checks
     pass.
 11. **Monitor:** observe application errors, queue depth, failed jobs, database health,
@@ -365,11 +401,29 @@ approved integration contract exists.
 Rollback is a controlled incident procedure, not an automatic response to a single failed
 request.
 
+For RC1, first classify the incident by the traffic/write boundary:
+
+- **Before reopening and before any Sprint 3F write:** remain in maintenance; restore both the
+  pre-deployment database snapshot and previous verified code release. Do not reopen until the
+  restored ledger, caches, application boot, logins, scoped portal pages and notifications pass.
+- **After reopening or any Sprint 3F write:** do not redeploy old main and do not use Forge's
+  previous-release code switch as a complete recovery. Keep or restore compatible RC-generation
+  code, branch a correction from the exact deployed RC (or its descendant), test it and roll
+  forward. A pre-deployment database restore now needs separate major-incident approval because
+  it can discard legitimate post-release transactions.
+
+The Sprint 3F forward migration is additive, but RC1 may persist
+`call_off_amendment_requested`, which old main cannot enum-cast. Running the populated migration
+down would remove amendment metadata and still does not make a trustworthy post-write recovery
+path.
+
 1. Declare the rollback owner and record the reason, time, release identifier and observed
    customer impact.
 2. Pause new traffic or enable maintenance mode and drain or safely stop workers.
 3. Preserve logs, failed jobs, migration output and the pre-deployment backup.
-4. Re-deploy the last known-good immutable application artifact.
+4. Deploy the recovery artifact allowed by the boundary above: the previous verified release only
+   with the matching restored pre-deployment database, otherwise the deployed RC or a compatible
+   roll-forward descendant.
 5. Restart workers and scheduler processes against the restored artifact.
 6. Do not automatically reverse migrations that may destroy data. Use a backward-compatible
    application rollback where possible. Any database restore or migration reversal needs
@@ -388,6 +442,10 @@ request.
 
 Queued notification work must be checked during rollback so an old worker cannot emit a
 duplicate or stale customer-facing notification after the application is restored.
+
+After a successful RC1 reopen, monitor the first amendment activity, amendment-requested
+notifications, Office decisions, Laravel errors, queue failures and HTTP 500s. Any post-write
+defect follows the roll-forward policy; do not reflexively revert to old main.
 
 ## 15. Production acceptance checklist
 

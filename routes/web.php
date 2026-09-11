@@ -4,18 +4,27 @@ use App\Http\Controllers\ActiveSiteController;
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
+use App\Http\Controllers\CallOffAmendmentController;
 use App\Http\Controllers\CallOffDateNegotiationController;
 use App\Http\Controllers\CallOffLifecycleController;
 use App\Http\Controllers\CallOffRequestDetailsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\Development\PreviewRoleController;
 use App\Http\Controllers\NewCallOffController;
+use App\Http\Controllers\OfficeCustomerController;
+use App\Http\Controllers\OfficeSiteController;
 use App\Http\Controllers\PlotDetailsController;
 use App\Http\Controllers\PortalNotificationController;
 use App\Http\Controllers\ResubmitRejectedCallOffController;
 use App\Http\Controllers\ReviewRequestsController;
 use App\Http\Controllers\SiteDashboardController;
 use Illuminate\Support\Facades\Route;
+
+require __DIR__.'/office-workspace.php';
+
+if (app()->environment(['local', 'testing']) && config('import-demo.enabled')) {
+    require __DIR__.'/import-demo.php';
+}
 
 Route::get('/', function () {
     if (auth()->check()) {
@@ -70,6 +79,9 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
         ->name('portal.site-dashboard');
 
     Route::middleware('active.site')->group(function (): void {
+        Route::get('/portal/call-offs/{callOffRequest:uuid}/date-change', [CallOffAmendmentController::class, 'create'])->name('portal.call-offs.amendments.create');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/date-change/review', [CallOffAmendmentController::class, 'review'])->name('portal.call-offs.amendments.review');
+        Route::post('/portal/call-offs/{callOffRequest:uuid}/date-change', [CallOffAmendmentController::class, 'store'])->name('portal.call-offs.amendments.store');
         Route::get('/portal/plots/{projectedPlot:uuid}', PlotDetailsController::class)
             ->name('portal.plots.show');
         Route::get('/portal/call-offs/new', [NewCallOffController::class, 'create'])
@@ -121,6 +133,69 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
         ->name('portal.review-requests.agree-requested-date');
     Route::post('/portal/review-requests/{callOffRequest:uuid}/alternative-date', [CallOffDateNegotiationController::class, 'propose'])
         ->name('portal.review-requests.propose-alternative-date');
+
+    Route::prefix('/portal/office')
+        ->name('portal.office.')
+        ->middleware('throttle:office-administration')
+        ->scopeBindings()
+        ->group(function (): void {
+            Route::get('/customers', [OfficeCustomerController::class, 'index'])
+                ->name('customers.index');
+            Route::post('/customers', [OfficeCustomerController::class, 'store'])
+                ->name('customers.store');
+            Route::get('/sites', [OfficeSiteController::class, 'index'])
+                ->name('sites.index');
+
+            Route::get('/customers/{customerOrganisation:uuid}', [OfficeCustomerController::class, 'show'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.show');
+            Route::patch('/customers/{customerOrganisation:uuid}', [OfficeCustomerController::class, 'update'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.update');
+            Route::post('/customers/{customerOrganisation:uuid}/deactivate', [OfficeCustomerController::class, 'deactivate'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.deactivate');
+            Route::post('/customers/{customerOrganisation:uuid}/reactivate', [OfficeCustomerController::class, 'reactivate'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.reactivate');
+            Route::get('/customers/{customerOrganisation:uuid}/audit', [OfficeCustomerController::class, 'audits'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.audit');
+
+            Route::get('/customers/{customerOrganisation:uuid}/sites', [OfficeSiteController::class, 'customerIndex'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.sites.index');
+            Route::post('/customers/{customerOrganisation:uuid}/sites', [OfficeSiteController::class, 'store'])
+                ->whereUuid('customerOrganisation')
+                ->name('customers.sites.store');
+            Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}', [OfficeSiteController::class, 'show'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.show');
+            Route::patch('/customers/{customerOrganisation:uuid}/sites/{site:uuid}', [OfficeSiteController::class, 'update'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.update');
+            Route::post('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/deactivate', [OfficeSiteController::class, 'deactivate'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.deactivate');
+            Route::post('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/reactivate', [OfficeSiteController::class, 'reactivate'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.reactivate');
+            Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/plots', [OfficeSiteController::class, 'plots'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.plots');
+            Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/users', [OfficeSiteController::class, 'users'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.users');
+            Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/source-binding', [OfficeSiteController::class, 'sourceBindings'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.source-binding');
+            Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/imports', [OfficeSiteController::class, 'importHistory'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.imports');
+            Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/audit', [OfficeSiteController::class, 'audits'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.audit');
+        });
 });
 
 /*

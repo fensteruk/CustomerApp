@@ -16,6 +16,7 @@ class AgreeRequestedCallOffDateRequest extends FormRequest
     {
         return [
             'early_date_acknowledgement' => ['nullable', 'boolean'],
+            'negotiation_uuid' => ['nullable', 'uuid'],
         ];
     }
 }

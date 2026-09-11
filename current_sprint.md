@@ -1,5 +1,60 @@
 # Current Sprint
 
+## CUSTOMER-WALD06 — Multi-site Import Studio + pilot readiness — 11 September 2026
+
+**Approved and in progress on `feature/customer-wald-next`; not released or deployed.** The
+canonical accepted Wald checkpoint `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` is being
+reconciled by normal merge with current local `main`
+`dcea43e3266c06044c498ab2540b25c233a5d847`. WALD06 owns the default-off Office Import
+Studio, one-workbook parent export, site-specific review units, local/test actual-workbook pilot
+and QA readiness. Production enablement, importer retirement, SiteApp changes, external messages,
+main push and deployment remain out of scope.
+
+The accepted selection rule remains PC1, CC1 (including observed `CC!` as the approved typo
+correction) and CM1; CM2 and the explicitly identified `NICK TEST` row are excluded. The parent
+date/slot governs ordering, while each site unit commits atomically and independently. Earlier
+WALD05 evidence remains below and continues to govern the inherited backend.
+
+## CUSTOMER-GIT-CLEANUP02 — Remote Git consolidation — 11 September 2026
+
+**REMOTE_CONSOLIDATED.** Published only `feature/customer-wald-next` at
+`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` and the 12 approved annotated preservation tags.
+After proving each exact historical remote tip was an ancestor of published `origin/main`,
+canonical Wald or a named tag, deleted the ten preserved non-main remote branches. The final
+remote heads are only `origin/main` and `origin/feature/customer-wald-next`.
+
+`origin/main` remained `e757bb651f9aa95d67b808a97433d27bc29d03c3`; local `main` was not pushed,
+Forge/production was not contacted and no deployment occurred. The two historical local branches
+and three worktrees protected by dirty user state remain a separate cleanup task. See
+`documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
+## CUSTOMER-GIT-CLEANUP01 — Local Git consolidation — 11 September 2026
+
+**PARTIAL: local product and Wald ownership are clear; remote publication requires separate
+approval.** Prepared executable local `main` checkpoint
+`93737df1e8dae36b9d79b6b641e30b6c9af51908` is the accepted non-Wald product line; this
+cleanup adds only documentation above it. `origin/main` remains production line
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. No product branch requires another merge.
+Accepted unreleased WALD02–05 now has one canonical local branch,
+`feature/customer-wald-next`, at `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` (corrected
+executable checkpoint `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`). Historical manual
+import work remains excluded from both lines and is archive-tagged.
+
+Local branches were reduced from 40 to four after 12 annotated preservation tags were created.
+Two historical refs remain only because dirty worktrees must not be force-removed. Clean stale
+worktrees were removed. The canonical Wald branch and tags were not pushed, remote branches were
+not deleted, and `main` was not pushed because the environment requires separate explicit remote
+egress approval. See `documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Branch policy: `main` is the accepted production/release line; feature branches are short-lived;
+QA/release branches are removed after acceptance and preservation; accepted unreleased Wald work
+lives on one canonical branch; historical milestones use annotated tags. Pushing `main` remains
+a separately authorised production action.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-WALD05 correction requalification — 9 September 2026
 
 **PASS — corrected bounded backend eligible to freeze.** DEC-054 authorises only W5Q-03/04

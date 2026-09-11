@@ -1,5 +1,12 @@
 # Sprint 1E — Notification Domain
 
+> **Historical baseline with later extensions.** This contract preserves the original Sprint 1E
+> and Sprint 3E notification design, including statements that amendments were then out of scope.
+> It is not the current RC1 amendment/recovery release contract. For RC1 use `brief.md`, the newest
+> applicable entries in `DECISIONS.md`, `documentation/customer-release02-rc1-build-2026-09-09.md`
+> and `documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md`. The older wording
+> below remains evidence of its historical phase and must not override newer decisions.
+
 **Status:** Implementation contract
 
 **Scope:** Version 1 in-app notifications for the Customer Portal

@@ -1,13 +1,5 @@
 # Fenster Customer Portal Decisions
 
-Current architecture additions: DEC-039 — standalone CustomerApp Wald adoption; DEC-040 —
-reconciled source dictionary, completion, products, site identity and export scope; DEC-042 —
-approved immutable CUSTOMER-WALD02 source baseline and bounded adoption rules; DEC-043–047 —
-accepted corrected phase baselines and bounded phase authority; DEC-048 — final WALD05 I01–I10
-governance approval, pending a separate implementation instruction.
-Earlier sprint headers and decisions below are retained history; DEC-035 and subsequent
-decisions supersede conflicting assumptions.
-
 Sprint 1 - Call Off Workflow
 
 Next implementation milestone:
@@ -720,52 +712,38 @@ Fenster customer record.
 
 ## DEC-039
 
-Date:
-3 September 2026
+Date: 3 September 2026
 
-Decision:
-CustomerApp will own a standalone Wald Import Engine, initially a controlled fork of the
-compatible SiteApp WALD01–07 generic engine and tests. CustomerApp rollout must not depend
-on SiteApp runtime availability or a SiteApp-hosted import/projection API.
+Decision: management confirmed the final Sprint 3F amendment reason and On Hold policy.
 
-Rules:
+Approved stable codes and customer labels:
 
-- Each application owns its deployment, source storage, queue, database, profiles,
-  clarification/answer memory, dictionaries, review, commit and audit history.
-- No cross-application database/filesystem/queue dependency or automatic knowledge/code
-  synchronisation. Generic backports require separate approval and testing.
-- Preserve deterministic rules, evidence, uncertainty/clarification, conservative
-  confidence and source lineage. No external AI, LLM, embeddings or interpretation API.
-- Generic engine parity is the aim; do not transplant SiteApp operational models, policies,
-  workflow/Trade references, Import Studio staging/commit or Filament administration.
-- Portal business definitions and data ownership stay downstream of inference. Preserve
-  requested/agreed dates, negotiations and history; apply confirmed source-completion
-  precedence only through the existing Portal domain boundary.
-- Require private source registration, neutral staging, authorised review/preview and
-  explicit controlled commit. Analysis or profile recognition is not business approval.
-- Freeze an approved reproducible upstream source baseline before copying: the inspected
-  SiteApp Wald work is uncommitted and is not contained in its HEAD alone.
-- No source code is copied by this decision/documentation task. Implementation is divided
-  into CUSTOMER-WALD02–06 under the architecture contract.
+| Code | Label |
+| --- | --- |
+| SITE_NOT_READY | Site Not Ready |
+| PROGRAMME_CHANGE | Programme Change |
+| ACCESS_ISSUE | Access Issue |
+| CUSTOMER_REQUESTED_CHANGE | Customer Requested Change |
+| MATERIALS_AVAILABILITY | Materials / Availability |
+| WEATHER | Weather |
+| OTHER | Other |
 
-Historical unresolved position at 3 September 2026:
+- OTHER requires Additional information; all other explanations are optional. Normalize
+  edge whitespace, reject blank Other text, and retain the existing 2,000-character limit.
+- Store code, label snapshot and separate customer_response. Customer/Office history shows
+  the friendly label, separate explanation, requester and exact time, never raw codes.
+- An active amendment displays On Hold — Date Change Requested for that service, with
+  the old agreement preserved as history rather than a current confirmed date.
+- The overall plot uses existing Call-Offs In Progress. Partially Completed and Fully
+  Completed retain precedence. No Amendment In Progress overall enum is introduced.
+- Agreement restores normal Date Agreed presentation with the new date. Source completion
+  closes the process without completion notifications. Legacy Approved history is not rewritten.
+- Service/request/cycle/proposal/history locking, authorization and audit boundaries remain
+  unchanged. These are Portal communication rules, not SiteApp operational workflow.
 
-This decision originally left call-type/completion details, product roll-ups,
-`complete = Yes`, BF and export coverage unresolved or dependent on earlier assumptions.
-DEC-040 now supersedes that semantic/coverage position. Source ownership/revision,
-import/knowledge permissions, retention and reviewed commit atomicity remain gates. The
-proposed Office-only import model and whole-reviewed-set atomic pilot commit are not
-formally confirmed by DEC-039 or DEC-040.
+This resolves both former Sprint 3F product blockers. Dedicated QA, Composer security
+reconciliation and final release-candidate verification remain separate gates.
 
-References:
-`brief.md` section 18;
-`documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`;
-`documentation/wald-divergence-register.md`.
-
-Reason:
-CustomerApp must be usable before SiteApp is ready for wider use. A controlled generic
-fork preserves proven design/testing investment without making the Portal an operational
-system or creating a runtime release dependency.
 
 ---
 
@@ -1418,3 +1396,157 @@ Rules:
 Reason:
 The user separates two correctable backend defects from the later multi-site pilot design.
 This narrows the next gate without weakening source atomicity or expanding the supported unit.
+
+## DEC-055
+
+Date: 9 September 2026
+
+Decision: CUSTOMER-RELEASE02 explicitly approves building only reduced RC1 on
+`release/customerapp-2026-09-09-rc1`, from main
+`0873bac79edf578e9f4a9417e3cafae34e8aa925`, merging the complete Sprint 3F line
+`60aa9e2c72074dea2f8a4812aab238ff5d2791d5` first and reviewed security remediation
+`5e7df0862648fd9c2ac964b31a13ad17df84fd12` second, with merge commits.
+
+Rules:
+
+- Include amendment lifecycle/final product decisions/current-read concurrency correction,
+  main's Office/filter fixes, exact reviewed dependency/assets changes and release-facing docs.
+- Exclude WALD02–05 despite accepted work, ADMIN-SITE02, old manual import/interpreter/UI,
+  unfinished source import, WALD06 and multi-site pilot. No runtime, migration, profile or
+  branch-wide documentation merge from these streams is approved.
+- Preserve source-completion precedence, immutable dates/history/notifications and all
+  authorisation boundaries. No new business rule or package upgrade is authorised.
+- RC has 12 migrations: 11 unchanged baseline files plus one additive Sprint 3F file.
+  Populated rollback is not recovery if it would delete amendment metadata.
+- Require pre-QA SQLite/MySQL/build/security checks before final documentation commit/freeze.
+  Dedicated release QA must run against that exact frozen SHA. No main merge/push,
+  production access, Forge change, deployment or RC push is authorised by this task.
+
+Decision-number reconciliation:
+
+This branch preserves its historical DEC-039 (Sprint 3F reasons/On Hold) byte-for-byte.
+The separate current WALD documentation line through `c9fe062` uses DEC-039 for standalone
+Wald and DEC-040–054 for its later decisions. Those records remain authoritative in their
+bounded source/work packages but their code is excluded here. They are not blindly imported
+or renumbered. DEC-055 deliberately follows the highest inspected current number and defines
+the approved cross-stream release boundary, not a reversal of accepted Wald work.
+
+Earlier status statements that Sprint 3F/security still need merging are superseded for RC1,
+not for main or production. Source semantic targets remain separately gated; the retained
+legacy importer is not newly authorised for real workbook ingestion by this release.
+
+---
+
+## DEC-056
+
+Date: 9 September 2026
+
+Decision: CUSTOMER-RELEASE02A classifies RC1-T01 as an inherited stale test fixture, not a
+Sprint 3F product defect, and approves changing only its four hard-coded requested dates to
+four distinct dynamically generated weekdays beyond the normal lead-time window.
+
+Rules and outcome:
+
+- Preserve all notification, record-count, service-context, date-distinctness and status
+  assertions; do not change application logic, lead-time/BF rules or validation behaviour.
+- Sprint 3F's fixed dates remain intentionally anchored by its controlled 3 September 2026
+  test clock. Sprint 3E's 2030 dates remain intentional weekend/holiday test values. The
+  Sprint 3D 2026-12-31 value is tampered confirmation data, not an accepted fixture date.
+- Require the isolated correction test, focused Sprint 3F, full SQLite, a fresh disposable
+  MySQL 8.4.11 clean/upgrade/concurrency gate, Composer/Pint/build and whitespace checks.
+- Those gates passed. The commit containing this decision and the RC1 build report freezes
+  CUSTOMERAPP RC1 for dedicated QA. It is not approval to push main, deploy or touch Forge/
+  production. Any later candidate change requires a newly identified QA failure and explicit
+  release handling.
+- npm audit remains a separate release-risk review item: 14 development/build dependency
+  entries (five high, nine moderate); production dependencies are clean under `--omit=dev`.
+
+---
+
+## DEC-057
+
+Date: 9 September 2026
+
+Decision: CUSTOMER-RELEASE03A approves a two-stage RC1 production recovery contract and
+classifies RCQ-01 as `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`.
+
+- RC1 can persist notification type `call_off_amendment_requested`; old main at
+  `0873bac79edf578e9f4a9417e3cafae34e8aa925` cannot cast that enum value. Old main is therefore
+  not an approved rollback target after Sprint 3F writes may exist.
+- The deployment remains in maintenance mode from the final pre-deployment evidence/backup
+  through deployment, forward migration, cache refresh and controlled smoke. No normal Office
+  or customer workflow traffic is allowed before the release owner reopens the site.
+- Before reopening and before any Sprint 3F business write, failure may be recovered by restoring
+  the fresh pre-deployment database snapshot and previous verified application release together,
+  then verifying ledger, caches and old-production smoke before reopening.
+- After reopening or any Sprint 3F write, recovery is roll-forward only from the exact deployed
+  RC or a compatible descendant. A code-release/symlink switch does not restore MySQL. Restoring
+  a pre-deployment database after traffic would discard legitimate writes and requires a separate
+  major-incident/business data-loss decision.
+- Do not use populated `migrate:rollback` as the recovery strategy: the additive Sprint 3F
+  migration's down path removes amendment metadata and cannot make old code recognise the new
+  notification value.
+- Frozen executable checkpoint
+  `ac250a8e9eef4b40591872de9275d802c76e4fba` remains unchanged. Documentation-only descendants
+  may record this decision and historical-document labels without changing the executable tree.
+- This decision permits merge-to-main preparation only. It does not authorise a main push,
+  production deployment, Forge change, migration, backup operation or production write.
+
+Reason:
+Dedicated QA proved forward behaviour but reproduced a `ValueError` when old main read a genuine
+RC1 amendment-notification row. The schema migration is additive; persisted enum/domain data is
+the compatibility boundary. A maintenance-mode cutover creates an auditable rollback window,
+while roll-forward preserves post-release writes and truth once the site has reopened.
+
+---
+
+## DEC-061
+
+Date: 10 September 2026
+
+Decision: CUSTOMER-NEXT-RELEASE01 approves a clean, non-deploying next-release candidate from
+production/main `e757bb651f9aa95d67b808a97433d27bc29d03c3`, containing the accepted sidebar,
+Office-only customer/site administration and a strictly local/testing synthetic Import Studio
+demonstration. WALD02–05 and their five migrations are deliberately excluded.
+
+Rules:
+
+- The release branch is `release/customerapp-next-release-admin-demo-rc1`. It is a candidate for
+  dedicated QA only; this decision does not authorise a main merge, push, Forge action,
+  production access or deployment.
+- Production-facing scope is the accepted responsive sidebar; customer and site list/search,
+  create, edit, deactivate, reactivate and immutable audit; read-only plot inventory; read-only
+  assigned-user visibility; and truthful source/import unavailable states.
+- Only active, currently persisted Fenster Office Staff may administer customers/sites. A null
+  customer organisation remains valid for Office Staff. Inactive, stale-role and all three site
+  roles are denied. Deactivation preserves sites, users, assignments, plots, requests and history;
+  no hard delete is introduced.
+- The production Office sidebar contains Review Requests, Customers and Notifications. No demo,
+  Wald or non-functional import destination is exposed in production navigation.
+- The synthetic Import Studio is default-off, local/testing-only and precomputed. Its production
+  routes remain absent even if its flag is set. It has no arbitrary file input, persistence,
+  binding mutation, Wald invocation, commit endpoint, job or external network/AI call, and keeps
+  DEMO ONLY, SYNTHETIC DATA and NO DATA WILL BE SAVED visible.
+- The sole database delta is additive
+  `2026_09_09_000014_add_customer_site_administration.php`: 12 production-base migrations become
+  13 candidate migrations. Existing customers/sites are backfilled active with UUIDs; dependent
+  data and relationships are preserved; no WALD migration/table/trigger is introduced.
+- WALD02–05 accepted SHAs and branch lineage remain intact for the future coherent WALD06/import
+  release after multi-site architecture is decided. Real binding, upload, analysis, staging,
+  commit, multi-site import, RedZebra API and automatic purge are not part of this release.
+- Dedicated QA must use the exact frozen branch tip reported by the build task. The 14 locked
+  npm development/build-chain advisories remain a release-review item; `npm audit --omit=dev`
+  and Composer production dependency audit are clean. No unapproved dependency upgrade is made.
+
+Decision-number reconciliation:
+
+This production-line ledger ended at DEC-057. Parallel Wald/admin documentation used later
+numbers through DEC-060 outside this branch. DEC-061 follows the highest inspected current
+number and supersedes the earlier next-release inclusion choice without importing excluded Wald
+runtime or rewriting either ledger's history.
+
+Reason:
+
+The sidebar and administration provide independently valuable, bounded functionality. Shipping
+five unused Wald migrations before the real multi-site import workflow is resolved would enlarge
+production database and runtime scope without corresponding production capability.

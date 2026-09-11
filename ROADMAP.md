@@ -1,97 +1,185 @@
 # Fenster Customer Portal ROADMAP
 
-*Last Updated: 9 September 2026*
+## CUSTOMER-WALD06 — Multi-site Import Studio and pilot readiness — 11 September 2026
 
-Latest gate: **WALD05 W5Q-03/04 fresh requalification PASS; bounded backend eligible to freeze** on local
-`qa/customer-wald05-backend-2026-09-09`, candidate `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`.
-W5Q-01/02/05 remain preserved. DEC-054 keeps durable attempt audit and bounded profile checks
-separate from the shared-slot multi-site **PILOT_BLOCKER**. Fresh concurrency passed 320 groups /
-640 workers; no bounded backend blocker remains. [Current QA report](documentation/wald/customer-wald05-backend-qa-2026-09-09.md)
-preserves the original failed gate. No main, push, deployment, full UI or real workbook import.
+**In progress on the one canonical Wald branch; not released or deployed.** The approved
+architecture treats one uploaded workbook as one parent export event with one export date/slot
+identity. It creates independently reviewable, independently atomic site units beneath that
+parent. Parent ordering must not make all sites one database transaction, and child commits for
+different sites must not collide merely because they share the parent slot.
 
-Current Wald update: management accepted corrected WALD04 output
-`0e83eb2896e7c5144bc38c1be9713f3d205d93b8` on `qa/customer-wald04-2026-09-08`
-as the immutable WALD05 input, not original candidate `2c7d015`. Corrected executable/test
-revision `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`, reader `wald-0.2.1`, dictionary
-`customerapp.source-dictionary.v1` and fingerprint
-`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357` are frozen.
-DEC-048 approves WALD05 I01–I10 governance in
-`WP-CUSTOMER-WALD05-IMPORT-REVIEW-INTEGRATION.md`. DEC-049 authorises implementation from
-governance-inclusive `877bd3ff...`. DEC-050/051 actual workbook selection contains 45 included
-records and two explicit exclusions, with no concrete business-data ambiguity. DEC-052's W5-T01
-correction is implemented at `e9e1c3a...` as reader wald-0.2.2 / XLSX adapter 3; the frozen values
-above remain historical input. DEC-053's default-off backend candidate implements private runs,
-immutable staging, pinned review and atomic projection commit, including ordering/replacement.
-The supported unit is one bound site/table and 500 nonempty rows; unsupported units refuse.
-The current correction gate is recorded above; full Office UI and actual-workbook pilot remain.
-No push, main change or deployment. G09
-named-owner nomination still gates unattended disposal. Eight inherited advisories remain.
-Evidence: `documentation/wald/customer-wald05-backend-completion-2026-09-09.md`.
+The work must preserve the accepted WALD02–05 engine, governance, binding, review, projection,
+source-completion and durable-audit contracts while adding the Office-only, default-off import
+workspace. Actual-workbook evidence is local/test only and must use the approved PC1, CC1/`CC!`
+and CM1 selection with CM2 and `NICK TEST` excluded. Production enablement, importer retirement,
+automatic purge, SiteApp modification, main push and deployment remain separate decisions.
+
+Earlier entries below are preserved evidence and do not override this status.
+
+## CUSTOMER-GIT-CLEANUP02 — Remote branch cleanup complete — 11 September 2026
+
+The remote repository now has two heads only: `origin/main` at
+`e757bb651f9aa95d67b808a97433d27bc29d03c3` and canonical unreleased Wald at
+`origin/feature/customer-wald-next` (`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec`). Twelve
+annotated milestone/archive tags preserve the removed histories. Local `main` was not pushed and
+no production deployment occurred. Remaining cleanup is limited to separately resolving the
+dirty historical worktrees without reset, clean or force removal.
+
+Earlier entries below are historical evidence and do not override this status.
+
+## CUSTOMER-GIT-CLEANUP01 — Canonical branch ownership — 11 September 2026
+
+**Local consolidation is complete except for protected dirty worktrees and remote publication.**
+Prepared executable local `main` checkpoint `93737df1e8dae36b9d79b6b641e30b6c9af51908` is
+the accepted non-Wald product line; this cleanup adds only documentation above it and no
+additional feature merge is required. Accepted unreleased WALD02–05 is
+owned by the single canonical local branch `feature/customer-wald-next` at
+`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec`. Superseded manual import/interpreter work is
+archive-only and must not be merged.
+
+Use short-lived feature branches, remove QA/release branches after accepted outcomes are
+preserved, and use annotated milestone tags instead of permanent historical branches. Remote
+cleanup is pending separate approval to publish the canonical Wald ref/tags; `origin/main`
+remains `e757bb651f9aa95d67b808a97433d27bc29d03c3`. No push to `main` or deployment occurred.
+See `documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
+## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
+
+**Current delivery milestone: READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.**
+Frozen RC `2e58bedcb70c487dfee1ae9f01a087c7ed8117e6` passed the dedicated release gate. One P3
+test-harness ordering defect was corrected without an application/runtime change at
+`10f0a56ac1987754ab0c31b45fc08138ba25e3f8`. Scope/Wald exclusion, 12-to-13 migration,
+customer/site administration, lifecycle, authorization, IDOR/mass assignment, audit, Sprint 3F,
+queue-card, filters, browser, responsive, accessibility, performance, SQLite and MySQL 8.4.11
+checks passed. Production dependency audits are clean; 14 locked development/build advisories are
+retained for maintenance and do not block this release. No push, `main` merge, production access,
+migration or deployment occurred. See
+`documentation/customerapp-next-release-dedicated-qa-2026-09-10.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
+## CUSTOMER-NEXT-RELEASE01 — Sidebar + Admin + Synthetic Demo RC1 — 10 September 2026
+
+**Current delivery milestone: READY_FOR_DEDICATED_QA on a non-deploying release branch.** The candidate branch is
+`release/customerapp-next-release-admin-demo-rc1`, built cleanly from exact production/main
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. It has not been merged to `main`, pushed or
+deployed, and production was not accessed.
+
+Deploying next, subject to dedicated QA and separate release approval: the accepted sidebar;
+Office-only customer/site administration; active/inactive lifecycle; immutable audit; read-only
+plot inventory and assigned-user visibility; truthful source/import unavailable states. The
+synthetic Import Studio is local/testing-only, default-off and has no production route, upload,
+write, binding, Wald invocation or commit. WALD02–05, all five WALD migrations, real import,
+multi-site import and WALD06 remain excluded and preserved on their accepted feature lineage.
+
+Evidence: 64 focused PHP tests / 440 assertions; 14 browser-side unit tests; 102 queue-card and
+Sprint 3F regressions / 1,117 assertions; full SQLite 393 passed / 43 skipped / 2,784 assertions;
+full MySQL 8.4.11 430 passed / 1 intentional skip / 3,820 assertions, plus the separately guarded
+five-test admin race suite. A clean 13-migration MySQL install and 16-check production-shaped
+upgrade passed. Browser QA passed at 1920, 1440, 1366, tablet, 390 and 320px with no console
+errors. Pint, strict Composer validation, Composer audit, production build, production-only npm
+audit and whitespace checks passed. Full npm audit retains 14 locked development/build-chain
+advisories for release review.
+
+See `documentation/customerapp-next-release-rc1-build-report-2026-09-10.md`. Dedicated QA must
+use the exact frozen branch tip stated in the task completion report. Any change after freeze
+requires explicit release handling.
+
+Earlier entries below are historical evidence and do not override this status.
+
+
+## CUSTOMER-FIX-QUEUECARD01 — Office queue-card correction — 10 September 2026
+
+**READY_FOR_QA on a non-deploying patch branch.** Production/main checkpoint
+`eb149a9ab28f9131f9d26971f13bd289ff1afba6` remains untouched. The executable fix
+is `8f28cc50f513c2fae2464abdbf0e7b11ed13f7bf` on
+`fix/office-queue-card-request-values`.
+
+The inherited queue card defect was reproduced: child requests for Windows / 5 October,
+Cavity Closers / 12 October and CML / 19 October all showed the parent batch's
+Windows / 1 October values, while their details pages were correct. Cards and the service
+filter now prefer authoritative request-level service/date values and retain the batch only
+as a legacy null-field fallback. Batch identity, status/date semantics, workflow, Sprint 3F,
+notifications, authorisation and persistence are unchanged.
+
+Evidence: 11 focused tests / 62 assertions; 134 related Review Requests and Sprint 3E/3F
+tests / 1,327 assertions; full suite 329 passed / 38 skipped / 2,344 assertions. A warmed
+query check stayed at 8 queries for both one and ten cards. Pint, strict Composer validation,
+clean Composer audit, production asset build and whitespace checks passed. No migration,
+main push, deployment, production access or unrelated WALD/admin/sidebar change occurred.
+Recommended release disposition: `NEXT_PATCH`, subject to dedicated QA and separate release
+approval. See the
+[correction report](documentation/office-queue-card-correction-2026-09-10.md).
+
+Earlier entries below are historical evidence and do not override this status.
+
+## CUSTOMER-RELEASE03A — RC1 recovery approved — 9 September 2026
+
+Frozen executable RC checkpoint `ac250a8e9eef4b40591872de9275d802c76e4fba` passed dedicated
+forward QA. RCQ-01 is `RESOLVED_BY_DEPLOYMENT_RECOVERY_POLICY`: pre-traffic failure may restore
+the fresh pre-deployment database snapshot plus previous verified release; post-traffic or
+post-Sprint3F-write recovery is roll-forward only from the deployed RC or compatible descendant.
+Old main is not a post-write rollback target, and a Forge code/symlink switch does not restore
+MySQL. This documentation-only approval permits merge-to-main preparation but does not authorise
+a main push, production deployment or production change. See
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
+
+## CUSTOMER-RELEASE02 — reduced RC1 build (historical pre-QA status) — 9 September 2026
+
+Current delivery work is `release/customerapp-2026-09-09-rc1`, not WALD/admin integration.
+Base `0873bac79edf578e9f4a9417e3cafae34e8aa925`; Sprint 3F through `60aa9e2`
+merged first, security `5e7df08` second. Both are included in RC1, not newly on main
+or deployed. DEC-055 records this approval and the decision-number provenance.
+
+WALD02–05 remain accepted separate feature work but are excluded from RC1, as are
+ADMIN-SITE02, old manual importer/interpreter/UI, unfinished source integration,
+WALD06 and the multi-site pilot. Do not merge their runtime or migrations to obtain docs.
+RC1 has exactly 12 migrations; no historical migration edits. Populated amendment rollback
+would lose metadata and is not an approved production recovery strategy.
+
+RC1-T01 was an inherited stale date fixture, not a product defect. CUSTOMER-RELEASE02A
+approved a test-only correction; focused/full SQLite, disposable MySQL 8.4.11, Composer,
+Pint and build gates passed. The commit containing this status is the frozen QA candidate;
+use the exact SHA in the release handoff and do not change it after dedicated QA begins.
+Pre-QA verification and final freeze are recorded in
+[RC1 build record](documentation/customer-release02-rc1-build-2026-09-09.md).
+Dedicated release QA must use the final frozen SHA; passing build checks is not deployment
+approval. No main push, production access, Forge change, RC push or deployment is authorised.
+
+Last repository-proved successful production release: Sprint 3E `9111d76`, Forge 76326195,
+11 migrations. Main `0873bac` contains later fixes; its current live deployment is not
+proved here. Fresh production verification is a later release prerequisite.
+
+The entries below are historical branch evidence, including superseded deployment claims,
+old sprint numbering and pre-security advisory counts. They do not override this status or
+the current brief. Their reports and historical decisions remain preserved.
+
+*Last Updated: 25 August 2026*
 
 # Project Overview
 
-The Customer Portal is a standalone customer-facing request and communication application.
-Initial spreadsheet ingestion will use its own Wald instance without requiring SiteApp.
-Any later read-only SiteApp integration must not duplicate its operational workflow.
+The Customer Portal is a standalone customer-facing request and communication application. It integrates with SiteApp without duplicating SiteApp's internal operational workflow.
 
-# Current Planning Milestone
+# Current Version
 
-**CUSTOMER-WALD05 corrected backend QA passed; full Office UI and multi-site pilot remain.**
-The current authority is the rebuilt `brief.md`, DEC-039–054,
-`documentation/siteapp-import-data-dictionary.md` and
-`documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`.
-The contradiction register preserves stale/historical statements without treating them as
-current work.
+**Current Milestone:** `Sprint 3F date amendments — product decisions integrated, dedicated QA next`
 
-The approved checksum manifest unblocked CUSTOMER-WALD02. Its generic reader, profiler,
-reasoning core and safe corpus passed dedicated QA after five reader corrections; corrected
-commit `4aa5ffb` is the accepted output. No Portal semantics, persistence, workflow integration
-or deployment was added in WALD02. Explicitly approved WALD03 now adds only pure dictionary
-and adapter infrastructure. All later packages require their own scoped instructions.
+3 September 2026: the current user-approved sequence calls the initial agreement
+workflow Sprint 3E and Date Amendments After Date Agreed Sprint 3F. That naming
+supersedes the original management-programme numbering retained below.
+The feature worktree starts from local main `0873bac`, which includes Sprint 3E and
+the Office-organisation correction. Older release paragraphs below are historical.
 
-The 4 September reconciliation confirms PC1/CC1/CM1/CM2/CML, rejects literal `CC!` as a
-silent alias, makes `complete = Yes` authoritative for its source call-off part, confirms
-Windows/Doors roll-ups and exact BF handling, ignores Items Ordered Status/Site Value,
-qualifies Plot To Be Installed, sets future source Site ID as durable identity and makes
-every export partial/filtered by default. No semantic business question from that set
-remains. DEC-048 has since fixed WALD05 V1 source ordering/Call No. grain, permissions,
-retention and atomicity; DEC-049 authorises implementation. The actual DEC-050/051 selection has
-no W5-P01/P02 conflict; do not revive hypothetical questions. The SiteApp copy
-baseline for WALD02 is now fixed by
-the approved manifest digest
-`76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`.
-
-A committed non-main CustomerApp line ending at `feature/manual-source-import-ui`
-(`1e8c22b`) is recognised as architecture evidence. WALD02/03 recorded the relevant generic,
-dictionary, supersession and corpus classifications; WALD04/05 must continue the downstream
-profile/integration comparison. It must not be merged wholesale or treated as production.
-
-| Order | Package | Exit |
-| --- | --- | --- |
-| 1 | CUSTOMER-WALD02 — Portable core + corpus | Accepted corrected baseline `4aa5ffb`; no domain writes or deployment. |
-| 2 | CUSTOMER-WALD03 — Business dictionary + semantic adapter | Accepted corrected snapshot `a80ce7d`; 470 focused passes; W3Q-01–03 preserved. |
-| 3 | CUSTOMER-WALD04 — Knowledge profiles and clarification governance | Accepted corrected snapshot `0e83eb2`; 198 MySQL tests covered, including 140 race groups; no automated disposal or deployment. |
-| 4 | CUSTOMER-WALD05 — Import/review integration | Corrected backend `dbd17c68...` adds durable attempt audit and batched receipt eligibility under DEC-054; fresh QA status above governs freeze. Separately scoped full Office UI remains; actual mixed-site workbook has not been imported. |
-| 5 | CUSTOMER-WALD06 — Pilot/hardening | Supervised awkward-workbook pilot, held-out corpus, MySQL/concurrency/security/device/worker/storage/backup evidence and separately approved cutover. |
-
-First usable milestone is the integrated 05 exit, not just a working profiler. It must
-work with no SiteApp API/database/filesystem/queue access. Import permissions, temporary
-manual source ordering, one-visit Call No. grain, atomic reviewed commit and six-year minimal
-audit are approved; only a separately instructed implementation may make them executable.
-Keep the existing projection importer. A non-main workbook pipeline is a parity/supersession
-candidate, but nothing is approved for retirement. Track generic backport candidates in
-`documentation/wald-divergence-register.md`.
-
-Release-history clarification: Sprint 3E is explicitly evidenced as successfully released at
-`9111d76ff05d702d68afd884ee8e42bc8e50c8e3`, Forge deployment `76326195`. Current
-`origin/main` is `0873bac79edf578e9f4a9417e3cafae34e8aa925`, but this reset found no
-repository deployment-success record for that later SHA. Verify Forge before claiming it is
-deployed. The 25 August blocked-release account below is historical. Sprint 3F remains
-feature-branch only at `60aa9e2` and is outside this documentation/Wald milestone.
-
-# Historical Release Snapshot — 25 August 2026
-
-**Milestone at that time:** `Sprint 3E release candidate (MySQL gate blocked)`
+The amendment engine and final management decisions are implemented. DEC-039 confirms
+the seven reason codes, required Other explanation and existing On Hold overall-status
+treatment. No Sprint 3F product decision remains. The Office race fix passed the full
+MySQL gate; its targeted regression remains green after product integration.
+Dedicated Sprint 3F QA, separate Composer security reconciliation and final combined
+release-candidate verification remain. This is not deployment or company-test approval.
+No deployment or main merge/push occurred.
+See `documentation/sprint-3f-date-amendments-2026-09-03.md`.
 
 Release-management update: production serves `main`
 `f801c91113bd13656c6cbffdd3d82c12d4a95846`, deployed successfully after the documented
@@ -384,10 +472,7 @@ Each release should include:
 - no SiteApp internal functionality introduced;
 - manual deployment actions recorded.
 
-# Historical Project Health Snapshot
-
-The following older table is retained for traceability, not current release or Wald
-implementation evidence. Use the current planning milestone above for this workstream.
+# Project Health
 
 | Item | Status |
 |---|---|

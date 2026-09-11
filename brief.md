@@ -1,497 +1,179 @@
-# Fenster Customer Portal — Product Brief
-
-**Version:** Current product contract
-
-**Last updated:** 9 September 2026 (WALD05 W5Q-03/04 correction and requalification)
-
-**Scope:** CustomerApp Version 1 and approved delivery direction
-
-This document replaces the previously layered brief. It states the current approved product
-truth without treating feature-branch work as released. Historical decisions and delivery
-evidence remain in `DECISIONS.md`, sprint reports and release records.
-
-**Current WALD05 gate:** W5Q-03/04 corrections are committed at
-`dbd17c68a04c028418e2d8a08fc43312aae5fe3b` on local `qa/customer-wald05-backend-2026-09-09`;
-fresh requalification **passed** and this bounded backend is eligible to freeze. Durable private
-attempt audit preserves atomic business rollback; batched profile checks retain authority/freshness
-and bounded query growth. Earlier digest/source-order fixes remain. This is feature-branch work,
-not on main or deployed.
-[QA evidence](documentation/wald/customer-wald05-backend-qa-2026-09-09.md) preserves the original
-failed gate. The one-site unit remains bounded; multi-site splitting cannot bypass the shared
-date/slot rule and remains a separate WALD06/pilot architecture blocker.
-
-## 1. Executive Summary
-
-The Fenster Customer Portal is a separate customer-facing application for authorised
-customers and Fenster Office Staff. It shows authorised developments and plots, accepts
-service date requests and amendments, supports date agreement, and presents customer-safe
-progress and history.
-
-SiteApp remains Fenster's internal operational system. CustomerApp must not reproduce its
-operational workflow, trade management, planning, verification or administration.
-
-Initial source data will be supplied through CustomerApp's own private, controlled spreadsheet
-import and review path. A separately approved read-only SiteApp integration may follow.
-CustomerApp must operate without SiteApp's API, database, filesystem, queues or runtime.
-
-## 2. Product Objectives
-
-CustomerApp should let an authorised user answer:
-
-- Which plots and services remain outstanding?
-- Which date has the customer requested?
-- Has Fenster accepted that date or proposed an alternative?
-- What date is currently agreed?
-- What changed, who changed it and when?
-- What customer action is required next?
-
-It should reduce telephone and verbal call-off coordination, give site teams clear
-plot/service information, structure customer requests, provide auditable date agreement and
-make Fenster Office review clear and consistent.
-
-The experience must be secure, mobile-first, accessible, auditable and clear to non-technical
-users.
-
-## 3. Product and System Boundary
-
-CustomerApp owns:
-
-- Portal authentication, accounts, organisations, roles and site access;
-- customer-facing plot and service projections;
-- customer date requests, negotiation, agreed dates and amendments;
-- Portal history, notifications and presentation statuses;
-- its private source upload, analysis, clarification, review and controlled commit process.
-
-Source spreadsheets and, later, SiteApp own:
-
-- stable source identifiers;
-- source product quantities;
-- operational completion evidence;
-- internal operational data that is not copied into the customer model.
-
-The supported direction is read-only:
-
-```text
-Source spreadsheet / future SiteApp feed → CustomerApp
-```
-
-CustomerApp does not write agreed dates or workflow state back to a spreadsheet or SiteApp.
-
-## 4. Users, Roles and Access
-
-CustomerApp has four distinct Portal roles:
-
-| Role | Version 1 access |
-|---|---|
-| Site Manager | Select an assigned site; view all Portal call-offs for it; submit and respond within the site-user workflow. |
-| Assistant Site Manager | Same Version 1 capability as Site Manager, retained as a distinct role. |
-| Finishing Foreman | Same Version 1 capability as Site Manager, retained as a distinct role. |
-| Fenster Office Staff | Globally review and act on Portal requests. This role may have no customer organisation. |
-
-The three external roles require an active account, a customer organisation and an assigned
-site. They may see all Portal call-offs for the active assigned site, not only requests they
-personally submitted.
-
-Fenster Office Staff global access is granted by the valid, active Office Staff role—not by a
-null organisation. Office Staff are not assigned to individual customer sites in the current
-approved model.
-
-Public registration is disabled. Password reset and secure framework authentication apply.
-Customer/account/site-assignment administration by authorised Fenster staff is a target
-capability; the current repository does not yet contain a completed Office account-management
-interface.
-
-Site users currently select an assigned site from a menu. QR-assisted site selection is a
-future option; a QR code can identify a site but can never authenticate or authorise a user.
-
-A role-preview screen may exist only in local/test development. It must not be enabled in
-production, grant real permissions or bypass authentication and server-side authorisation.
-
-## 5. Customer Services
-
-The four customer-facing services, in display order, are:
-
-1. Cavity Closers
-2. Windows
-3. Snagging
-4. CML
-
-They are independent services, not stages or dependencies. A customer may request any eligible
-service without completing an earlier one.
-
-The exact customer-facing expansion of **CML** remains unconfirmed. Use `CML` until management
-approves the wording. Do not invent a source code for Snagging.
-
-## 6. Dashboard and Plot Projection
-
-Site users land on the dashboard for their active assigned site. Fenster Office Staff land on
-Review Requests.
-
-The site dashboard is plot-centred and should support authorised pagination, search, service
-and status filters. Completed plots remain available but are hidden by default. Filters are
-browsing aids and never expand server-side access.
-
-Each plot presents four service states using accessible text in addition to colour or icons:
-
-- **Nothing Called Off**
-- **Called Off — Awaiting Date**
-- **Date Agreed** (with the agreed date)
-- **On Hold — Date Change Requested** (Sprint 3F amendment state)
-- **Completed** (with a date only when the source actually provides one)
-
-Overall plot presentation is derived from service state:
-
-| Overall status | Meaning |
-|---|---|
-| Nothing Called Off | No service has been called off. |
-| Call-Offs In Progress | One or more called-off services remain unresolved, including an amendment on hold. |
-| Dates Agreed | At least one service is Date Agreed or Completed and no called-off service remains unresolved. |
-| Partially Completed | At least one, but not all four, services are Completed; this takes presentation precedence. |
-| Fully Completed | All four services are Completed. |
-
-There is no separate overall `Amendment In Progress` label in Version 1.
-
-Plot Details shows overall status, the four services, customer-safe service history and only
-non-zero customer product totals. Operational fields and raw source evidence remain private.
-
-## 7. Eligibility, Batches and Dates
-
-Eligibility is evaluated per plot and service from authorised source projection plus Portal
-rules. Completed, already-active, ineligible or unresolved combinations remain visible but
-disabled with a clear reason; they are not silently hidden.
-
-- A plot/service can have no more than one active call-off.
-- One batch represents one user submission action for one active site.
-- A batch may contain one or many plot/service requests.
-- Each selected service may have its own requested date.
-- Each individual request owns its plot, service, requested date, state, decisions and history.
-- Later batch actions must not overwrite individual values or decisions after requests diverge.
-- Supported bulk undo/restoration is atomic: all eligible records change or none do.
-
-The confirmed normal minimum lead time is three weeks for standard products and four weeks
-when the exact plot has a positive BF/Bifold quantity. The customer-facing normal date adds a
-one-week buffer, making the earliest normal request four weeks or five weeks respectively.
-
-Normal dates are weekdays, no more than six months ahead. UK bank-holiday exclusion is the
-approved target, but the provider/dataset and operational owner remain unresolved; the last
-explicitly evidenced deployed behaviour is weekday-only. Do not claim holiday exclusion is
-live until it is implemented and verified.
-
-`Request Earlier Date` is the explicit exception route. It requires a reason, is prominently
-flagged to Fenster and retained in history. Office acceptance inside lead time requires an
-explicit acknowledgement of the exception.
-
-## 8. Date-Agreement Workflow
-
-The current approved customer workflow is:
-
-```text
-Site User submits requested date
-  → Awaiting Fenster
-  → Office accepts requested date → Date Agreed
-  → Office proposes alternative → Awaiting Site User
-       → authorised Site User accepts → Date Agreed
-       → authorised Site User rejects with reason → Awaiting Fenster
-```
-
-Alternative negotiation may repeat on the same request. Any currently authorised site user
-for the active site may respond; the original submitter remains the primary notification
-recipient. The actual actor and timestamp are recorded.
-
-Use **Date Agreed**, not **Approved**, as the final customer-facing state. Rejecting an
-alternative is not rejection of the call-off and does not create a new request.
-
-Site users may withdraw before Date Agreed, including while awaiting an alternative response.
-After Date Agreed, withdrawal, customer trash and customer cancellation are unavailable; a
-date change uses the amendment route.
-
-Eligible withdrawal/trash actions offer a five-second quick Undo. Eligible customer-facing
-Trash restoration lasts seven days. Expiry removes the item from the customer-facing Trash
-view but preserves audit-critical history. Bulk undo and restoration are atomic.
-
-Historical Submitted/Approved/Rejected records may remain for compatibility and audit, but
-that earlier direct approval lifecycle is not the current target workflow.
-
-## 9. Amendments
-
-Sprint 3F defines changes after Date Agreed. It is implemented on
-`feature/sprint-3f-date-amendments` at `60aa9e2` and is ready for dedicated QA; it is not on
-`main`, release-approved or deployed.
-
-A site user requests a new date against the existing agreed request. The existing agreed date
-is preserved and the service becomes **On Hold — Date Change Requested**. There is no fixed
-cutoff; a request within three working days of the current agreed date is flagged
-**Urgent / Late Amendment** as a warning, not a prohibition.
-
-Confirmed amendment reasons are:
-
-- Site Not Ready
-- Programme Change
-- Access Issue
-- Customer Requested Change
-- Materials / Availability
-- Weather
-- Other
-
-`Other` requires an explanation; an explanation is optional for the named reasons. Office may
-accept the new date or use the existing alternative-date negotiation. A newly agreed date
-becomes current while every prior agreed date remains in history.
-
-Source completion wins over an open amendment, closes the cycle and sends no completion
-notification. A later source reversal does not automatically reopen the amendment.
-
-Failure/cancellation handling and any explicit reinstatement of an old agreed date remain
-unconfirmed and must not be invented. Fenster-originated changes to an agreed date remain
-outside the Portal unless separately approved.
-
-## 10. Source Call Types and Completion
-
-The authoritative detailed mapping is
-`documentation/siteapp-import-data-dictionary.md`. Confirmed call types are:
-
-| Source value | Meaning | Customer service |
-|---|---|---|
-| `PC1` | Plot Install | Windows |
-| `CC1` | Cavity Closer 1 | Cavity Closers |
-| `CM1` | Revisit 1 | CML |
-| `CM2` | Revisit 2 | CML |
-| `CML` | CML Call Off | CML |
-
-CM1 and CM2 are CML revisits, not new services. Literal `CC!` is invalid/likely typo evidence:
-preserve it, optionally suggest `CC1`, require human confirmation and never silently correct it.
-
-`complete = Yes` means that specific source call-off part is complete. Sensible yes/no casing
-may be parsed case-insensitively. Do not invent a completion date when the source has none, and
-do not infer completion from Portal requested, alternative, agreed or operational dates.
-
-Source completion has precedence over open negotiation/amendment. Preserve the full Portal
-history. A later source reversal updates the current projection and records the reversal; it
-does not erase history or automatically reopen the closed process. Completion sends no in-app
-or email notification.
-
-Older speculative `Job Stage`, `Completed Date`, `CC08`, `CA02`, `CA03`, `SN05` and `CML4`
-rules are not authoritative without a later explicit decision.
-
-## 11. Product Projection
-
-Customer product information is deliberately rolled up:
-
-```text
-Total Windows = VS + TT + BAY + ALI + AOV + FI
-Total Doors   = PSU + PSG + CDF + CDU + CDG + PSP + BF
-```
-
-| Code | Meaning | Roll-up |
-|---|---|---|
-| VS | Vertical Slider | Windows |
-| TT | Tilt and Turn | Windows |
-| BAY | Bay Window | Windows |
-| ALI | Aluminium Windows | Windows |
-| AOV | Automatic Opening Vent Window | Windows |
-| FI | Fire Window | Windows |
-| PSU | PVC Door Utility | Doors |
-| PSG | PVC Door Garage | Doors |
-| CDF | Composite Door Front | Doors |
-| CDU | Composite Door Utility | Doors |
-| CDG | Composite Door Garage | Doors |
-| PSP | PVC Sliding Patio | Doors |
-| BF | Bifold | Doors |
-
-Exact positive `BF` must also remain separately identifiable internally because it changes
-the confirmed lead-time rule. `CAS`, `FLU`, `PFD`, `GLS`, `WP` and `MISC` are excluded from the
-final customer product model; their raw values may be retained privately for evidence.
-
-Product presence is explicit. An absent column is unrepresented and preserves existing data.
-A present blank/null retains the raw blank and follows the supplied-record semantic contract.
-An explicit zero is exact zero for that supplied record/column; a valid positive value is the
-exact approved fixed-point quantity. Invalid or unknown values block and are never coerced to
-zero. A filtered export cannot zero or delete values outside supplied records.
-
-`Items Ordered Status` and `Site Value` are ignored. `Plot To Be Installed` is operational
-arrival-to-install evidence for PC1 and never a customer Requested Date, alternative proposal,
-Date Agreed or completion date.
-
-## 12. Site Identity, Export Scope and Refresh
-
-A permanent source Site ID/reference is the required durable identity. Exact Site Name may be
-used only for explicit transitional mapping; it must not fuzzy-match or create a Portal site.
-
-Every workbook defaults to `PARTIAL_FILTERED_EXPORT`, because the source may have been filtered
-before export. It is the only committable WALD05 V1 scope. Absence never proves deletion or zero
-quantity. `SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` are non-committable in V1.
-
-One `Call No.` identifies one individual visit/call-off; every revisit, including CM1/CM2, has a
-new Call No. Any within-workbook duplicate blocks, even if identical. The same Call No. in a later
-permitted export is the same visit and may change only under the approved source-order contract.
-
-Until RedZebra supplies a native revision/API, active Office Staff declare Export Date plus
-`MORNING`/`AFTERNOON`, confirm the latest export for that slot and are identified automatically by
-their authenticated account. Date then slot defines order; upload time does not. Exact same-slot
-canonical replay is idempotent, different content conflicts and an older slot cannot overwrite a
-newer commit. A failed or delayed refresh preserves the last successful customer-safe projection
-and its last-updated time; it never silently hides known records.
-
-## 13. Standalone Wald Import Direction
-
-CustomerApp is adopting a controlled fork of compatible generic SiteApp WALD01–07 engine code
-and tests. CUSTOMER-WALD02's portable core and safe synthetic corpus are implemented on the
-non-deploying `feature/customer-wald02-portable-core` branch. Dedicated local QA passed on
-8 September after five reader corrections on `qa/customer-wald02-2026-09-08`; management
-acceptance froze corrected SHA `4aa5ffb5a00527662ddfe66673edbfb18af9f0db` as the immutable
-WALD03 input (see `documentation/wald/customer-wald02-qa-2026-09-08.md`). They are
-historical phase-only results, not proof of integration, main, release approval or deployment.
-The later DEC-053 backend candidate below supplies bounded workflow integration on its feature branch.
-
-The path is:
-
-```text
-private upload
-  → deterministic analysis
-  → explicit clarification and reanalysis
-  → neutral staging
-  → authorised Portal review against current state
-  → explicit controlled commit
-```
-
-Wald infers structure; the approved CustomerApp dictionary defines business meaning. It must
-remain deterministic and explainable, with no external AI/LLM, embeddings or third-party
-spreadsheet interpretation.
-
-The non-main line ending at `feature/manual-source-import-ui` (`1e8c22b`) is evidence, not
-production truth or the final architecture. Generic interpreter mechanics may be compared for
-reuse; Portal projection, tenant access, scope and reconciliation rules remain downstream;
-overlapping manual interpretation/profile/UI work is a supersession candidate, not approved
-for wholesale merge or deletion.
-
-The CUSTOMER-WALD02 source baseline is the approved 162-file manifest with digest
-`76bc079e1e48c79233242734d2597a3c8316408d4bc1d7e388238683131a002a`; its package is
-`documentation/work-packages/WP-CUSTOMER-WALD02-PORTABLE-CORE-CORPUS.md`.
-Explicitly approved CUSTOMER-WALD03 is implemented on the non-deploying
-`feature/customer-wald03-business-dictionary` branch, outside generic `App\Wald`.
-Management accepted corrected QA snapshot `a80ce7d14206cf3f3a9343448d406f01ae927b88`
-on `qa/customer-wald03-2026-09-08`, containing executable corrections `f4fda0f`, as the
-immutable WALD04 input. Original candidate `574f196` is not the accepted output.
-Dictionary `customerapp.source-dictionary.v1`, fingerprint
-`18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357`, remains unchanged.
-DEC-046 approves WALD04 knowledge/profile implementation under
-`documentation/work-packages/WP-CUSTOMER-WALD04-KNOWLEDGE-PROFILES.md`. Office-only knowledge,
-organisation/site/namespace/family containment, separate answer/draft/activation, 12-month review
-and 24-month retained history are approved. Dedicated QA passed after corrections on
-`qa/customer-wald04-2026-09-08`; management accepted documentation-inclusive SHA
-`0e83eb2896e7c5144bc38c1be9713f3d205d93b8` as the immutable WALD05 input, including
-executable/test correction `9284bf55ccd93827a5a2c1fda87e9c3e8dad17c5`.
-DEC-048 approves WALD05 governance decisions I01–I10, including Office-only same-actor import,
-immutable exact source-site bindings, temporary manual export ordering, one Call No. per visit,
-partial-only commit, complete staging, atomic commit, six-year minimal committed audit and
-queue-agnostic analysis. DEC-049 subsequently authorises implementation from governance-inclusive
-commit `877bd3ff666873a0703c3b7671015ec4cfd2ee52`. The DEC-050/051 actual workbook audit selects
-45 records and excludes CM2 plus the exact Nick TEST record. It found no concrete business-data
-ambiguity; earlier hypothetical W5-P01/P02 cases do not block this sample. DEC-052 authorises
-W5-T01's narrow reader correction, implemented as `wald-0.2.2` / XLSX adapter 3 at `e9e1c3a...`.
-The unchanged workbook now profiles successfully. DEC-053 directs backend completion, without the
-full Office UI. The default-off candidate now includes private runs, accepted analysis/knowledge,
-immutable staging, pinned review and atomic source projection commit. Supported units are one
-explicitly bound site, one visible unmerged table and at most 500 nonempty rows; unsupported units
-block entirely. DEC-054 authorises only W5Q-03/04 correction and fresh backend acceptance, whose
-current state is at the top of this brief. The actual mixed-site workbook has not been imported;
-full Office UI, pilot/cutover and release remain separate. See
-`documentation/wald/customer-wald05-backend-qa-2026-09-09.md` for exact verification.
-No global dictionary change or import fallback. G09's unnamed owner blocks unattended production
-disposal only; no deletion scheduling is enabled.
-
-## 14. Notifications, History and Customer Content
-
-Every material action records the actual actor, role, exact time, previous/current values and
-customer-safe context. Private Fenster reasons are stored and authorised separately. Source
-raw evidence and SiteApp internal audit data are never exposed.
-
-In-app notifications cover meaningful submitted, accepted, proposed, responded-to and amended
-events. They identify the plot, service, event and next action and use links that are
-re-authorised on access. Read/dismissed state never removes domain history. Completion sends no
-notification.
-
-Email/Resend, reminder cadence and push notifications are planned, not currently evidenced as
-implemented. The last explicitly evidenced production queue driver is `sync`; a persistent
-worker is a separate production-readiness item.
-
-Attachments are planned only for defined customer actions that include a reason/message. They
-belong to the related history event, not a general file library. Upload limits, malware
-controls and retention require an approved implementation contract before release.
-
-## 15. Current Delivery State
-
-Status is deliberately separated from product intent:
-
-| State | Evidence as at 4 September 2026 |
-|---|---|
-| Last explicitly evidenced production release | Sprint 3E at `9111d76ff05d702d68afd884ee8e42bc8e50c8e3`; Forge deployment `76326195`; all 11 migrations intact and nothing pending. |
-| Production follow-up | Authenticated, non-destructive production smoke test remains outstanding. Production queue was `sync`; two npm advisories were recorded at that release. |
-| Current `origin/main` | `0873bac79edf578e9f4a9417e3cafae34e8aa925`, four commits beyond the evidenced Sprint 3E SHA. It contains the Office Staff organisation model correction and Office Date Agreed filter, but repository records inspected for this reset do not prove a successful deployment of that SHA. Verify Forge before describing it as deployed. |
-| Sprint 3F | Feature branch `feature/sprint-3f-date-amendments` at `60aa9e2`; decisions integrated; dedicated QA and release approval still required. |
-| Manual source import | Non-main evidence line ending at `feature/manual-source-import-ui` (`1e8c22b`); not production and subject to Wald reconciliation. |
-| Dependency security | Separate branch `security/composer-advisories-2026-09-03` at `5e7df08`; reconciliation/release status must be verified before claiming remediation. |
-| Standalone Wald (9 September update) | Corrected backend candidate `dbd17c68...` preserves accepted Wald inputs and closes W5Q-03/04 implementation gaps under DEC-054; fresh acceptance status is recorded above and in the dedicated QA report. Feature branch only, not on main or deployed. Full Office UI and actual-workbook pilot remain. |
-
-Implemented foundation already evidenced in the repository includes authentication, customer
-organisations, four Portal roles, site assignments and active site context, server-side
-policies/gates, secure routing, development-only role preview, call-off domain/history,
-customer and Office dashboards, date negotiation, Trash/Undo and database-backed in-app
-notifications. Exact release state must still follow the table above.
-
-## 16. Planned and Future Work
-
-Approved direction, not a delivery claim:
-
-- dedicated QA and release decision for Sprint 3F;
-- freeze the fresh-QA-passed corrected CUSTOMER-WALD05 backend; separately scope
-  Office UI completion and multi-site architecture before independently gated WALD06 pilot/hardening;
-- safe source scheduling/synchronisation after manual import is proven;
-- completed Office account/organisation/site-assignment administration;
-- approved UK bank-holiday provider and operational ownership;
-- persistent production queue and worker supervision;
-- selective email, reminders and later push mapping;
-- attachments under a security/retention contract;
-- agreed-work calendar and customer-safe PDF schedules;
-- responsive/accessibility/performance hardening and production smoke coverage;
-- future QR-assisted site selection;
-- future customer-safe CML document/certificate behaviour only if explicitly approved.
-- management reporting built only from approved customer-safe Portal data.
-
-## 17. Non-Goals
-
-Version 1 does not include:
-
-- SiteApp workflow stages, trade sequencing, sign-offs or internal statuses;
-- readiness/build verification or operational availability calculation;
-- trade assignments, labour planning or manufacturing planning;
-- SiteApp administration, Filament resources, direct database queries or write-back;
-- generic CRM, free-form chat or a general file library;
-- native mobile applications, AI scheduling or speculative microservices;
-- external AI/LLM spreadsheet interpretation;
-- public self-registration, MFA or SSO;
-- automatic correction of unknown source meaning;
-- deletion inferred from absence in a filtered workbook.
-
-## 18. Open Decisions and Verification Gates
-
-Do not invent answers for:
-
-1. Exact customer-facing expansion of CML and any future certificate/document access.
-2. UK bank-holiday provider/dataset, update ownership and failure behaviour.
-3. A future RedZebra-native revision/API to replace the approved temporary Office-declared
-   Export Date/Slot ordering without rewriting history.
-4. G09 named unattended-disposal owner; WALD04 processing/knowledge periods, WALD05 six-year
-   minimal committed-audit policy and hold mechanism are approved.
-5. Any customer-safe projection of source fields beyond the approved product/status allowlist.
-6. Amendment failure/cancellation and explicit old-date reinstatement rules.
-7. Scheduled source-sync mechanism, credentials, cadence and operational alert ownership.
-8. Email provider/event mapping, reminder cadence and production queue-worker rollout.
-9. The actual currently deployed SHA beyond the last evidenced deployment; verify Forge rather
-    than infer it from `origin/main`.
-
-The confirmed per-visit semantic set in Sections 10–12 remains approved. WALD05 implementation
-authority is recorded by DEC-049. DEC-050/051 are exact-workbook exceptions, not global dictionary
-changes. The actual selected data has no W5-P01/P02 conflict; W5-T01 is corrected under DEC-052.
-The corrected bounded WALD05 backend passed fresh dedicated QA under DEC-054. Full Office UI,
-multi-site pilot architecture and independently approved pilot/release gates remain separate;
-no new blanket approval question should reopen the two corrected backend defects.
+# Fenster Customer Portal — Current Product and Integration Brief
+
+Last updated: 11 September 2026.
+Authority: CUSTOMER-NEXT-RELEASE01, CUSTOMER-WALD06, DEC-061, current management product decisions and the
+preserved decision/history records. This is one current contract, not a second brief
+appended below superseded requirements.
+
+## Release truth
+
+Current local `main` is `dcea43e3266c06044c498ab2540b25c233a5d847`. The canonical
+`feature/customer-wald-next` branch retains accepted WALD02–05 at
+`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` and is the only authorised WALD06 integration line.
+This remains unreleased feature work: it is not pushed to `main`, production is unchanged and no
+deployment is authorised.
+
+The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
+Its routes are absent in production even if the flag is set, it writes nothing and it has no
+upload, binding, Wald invocation or commit endpoint. Production navigation contains only real
+destinations: Review Requests, Customers and Notifications for authorised Office Staff.
+
+WALD02–05 are accepted feature-stream work and form the immutable implementation foundation for
+WALD06. WALD06 may add a default-off Office Import Studio, a parent export with site-specific
+review units and a supervised local/test pilot. It must not add a RedZebra API, automatic purge,
+production enablement or direct SiteApp dependency. The existing synthetic Import Studio remains
+demonstration evidence only until the real, authorised workflow replaces its route and behavior.
+
+## Product boundary
+
+CustomerApp is a separate customer-facing communication and request application. It
+shows authorised sites/plots/services, collects requested dates, supports agreement and
+amendment, and preserves customer-safe progress/history. SiteApp owns operational work.
+
+Do not reproduce SiteApp stages, dependencies, readiness, labour/manufacturing planning,
+trade management, internal statuses, administration or direct database/runtime access.
+The direction remains source → Portal only. There is no spreadsheet/SiteApp writeback.
+
+## Access
+
+Four roles remain distinct: Site Manager, Assistant Site Manager, Finishing Foreman and
+Fenster Office Staff. The three external roles have identical Version 1 capabilities,
+require active accounts, a customer organisation and assigned sites, and may see all
+authorised requests for the active site, not only their own submissions.
+
+Active Office Staff are globally scoped by role and may have a null customer organisation.
+Null organisation alone never grants access. Office may review but cannot initiate customer
+amendments. Customers cannot self-register or administer users. Normal framework login,
+CSRF and current server-side authorisation remain mandatory. Development role preview is
+local/testing only and cannot grant production access. Future QR identifies a site, not a user.
+
+## Plots and services
+
+The exact order is Cavity Closers, Windows, Snagging, CML. Services are independent,
+not operational stages. CML's full customer-facing expansion remains unconfirmed.
+
+The dashboard is plot-centric, authorised, searchable/filterable and paginated. Completed
+plots remain retained and are hidden by default with Show Completed available. Plot Details
+shows the correct site/plot, non-zero authorised products, four services and safe history.
+
+Service presentation: Nothing Called Off; Called Off — Awaiting Date; Date Agreed;
+On Hold — Date Change Requested; Completed. Completed dates are shown only when supported
+by actual source evidence. No Portal requested/agreed/proposed date manufactures completion.
+
+Overall presentation: Nothing Called Off, Call-Offs In Progress, Dates Agreed,
+Partially Completed, Fully Completed. An open amendment contributes to Call-Offs In Progress.
+Partial/full source completion retains presentation precedence. There is no separate overall
+Amendment In Progress label.
+
+## Call-offs, dates and initial agreement
+
+One submission batch belongs to one active site and may contain multiple plots/services,
+with different requested dates per service. Each request owns its date/state/history.
+Ineligible combinations remain explainable; only eligible authorised combinations persist.
+No more than one active request per plot/service. Diverged decisions cannot be overwritten
+by a later batch action.
+
+The normal customer window is four weeks, or five weeks for exact positive BF on that plot;
+the underlying three/four-week minimum includes a one-week customer buffer. Normal dates
+are future weekdays and at most six months ahead. UK holiday exclusion is an approved target,
+but no provider/dataset is approved or claimed live; current behaviour is weekday-only.
+
+Request Earlier Date requires a reason and prominent flag. Office acceptance inside normal
+lead time requires explicit acknowledgement. Date decisions revalidate current eligibility.
+
+Site request → Awaiting Fenster → Office accepts requested date → Date Agreed.
+Alternatively Office proposes → Awaiting Site User → authorised Site User accepts → Date Agreed,
+or rejects with mandatory reason → Awaiting Fenster. Negotiation may repeat. Any currently
+authorised assigned Site User may respond; actual responder attribution remains truthful.
+Use Date Agreed, not Approved. Preserve legacy Approved/Rejected records and their history.
+
+Withdrawal is available before Date Agreed, not after. Eligible withdrawal/trash/restoration
+retains the existing five-second actor-bound Undo and seven-day customer Trash window.
+Expiry hides customer Trash, not audit history. Bulk undo/restoration remains atomic.
+
+## Sprint 3F amendments included in RC1
+
+After Date Agreed, a Site User may request a new date on the existing request, using a distinct
+amendment cycle in the existing negotiation engine. The previous agreed date remains stored
+and visible as history, not a current confirmed date while On Hold. The original requested
+date is never overwritten. No fixed amendment cutoff is introduced.
+
+Approved reasons: Site Not Ready; Programme Change; Access Issue; Customer Requested Change;
+Materials / Availability; Weather; Other. Other requires Additional information; other
+explanations are optional. Maximum 2,000 characters, validated and trimmed at the domain boundary.
+Persist stable code, label and actual requester snapshots; display friendly labels, not codes.
+
+A request within three working days of the old agreed date, including late requests, is
+Urgent / Late Amendment. This is a warning, not a prohibition. The existing weekday/provider
+boundary applies. Review/confirmation is server-held, actor/site/state-bound and single-use.
+
+Office accepts the new requested date or proposes an alternative. Site response uses the
+same authorised negotiation path. A new agreement becomes current while old agreements,
+proposals, reasons and actual actors remain truthful ordered history. Early-date Office
+acknowledgement remains required. Stale cycles/proposals cannot act again.
+
+Source completion wins over an open amendment and closes it without completion notification.
+A later source reversal does not automatically reopen a closed amendment or obsolete date.
+Canonical service → request → cycle → proposal → history locking and the corrected Office
+pending-alternative current read remain mandatory.
+
+Failure/cancellation/old-date reinstatement and Fenster-originated Portal date changes remain
+deferred, not invented. No current product decision blocks the implemented Sprint 3F loop.
+
+## Source semantics and release boundary
+
+The existing transport-independent Sprint 3B importer remains unchanged in RC1 to preserve
+the approved release scope and tested concurrency paths. No upload, new binding, saved profile,
+live feed, import activation or semantic migration is included.
+
+Approved future import dictionary (not a claim that RC1's retained legacy mapper implements it):
+PC1 = Plot Install = Windows; CC1 = Cavity Closer 1 = Cavity Closers; CM1 = Revisit 1 and
+CM2 = Revisit 2 are CML revisits; CML = CML Call Off = CML. Literal CC! is invalid and never
+silently auto-corrected. Unknown meanings block the dependent import. No Snagging code is invented.
+
+Approved source completion is complete = Yes for the individual visit, without inventing a date.
+Items Ordered Status and Site Value are ignored. Plot To Be Installed is operational PC1 arrival
+evidence, never a Portal date. A permanent source Site ID is preferred; exact name is transitional
+explicit mapping only. Every export defaults partial/filtered; absence never proves deletion.
+
+Approved future customer totals: Windows = VS + TT + BAY + ALI + AOV + FI;
+Doors = PSU + PSG + CDF + CDU + CDG + PSP + BF. CAS/FLU/PFD/GLS/WP/MISC are excluded from those
+future totals; exact positive BF remains separately identifiable for lead time. Omitted
+columns/rows cannot imply deletion/zero. These source corrections belong to the excluded,
+separately approved import programme; do not silently enable the retained legacy importer
+against a real workbook or present its historical mappings as current dictionary authority.
+
+## History, notifications and non-goals
+
+Preserve UUIDs, original/current dates, exact actor/role/time and immutable before/after history.
+Private Office reasons, source metadata, conflict keys and internal errors never reach customers.
+Notifications derive from committed event-time truth, reauthorise recipients/destinations and
+remain idempotent. A later completion cannot erase a genuinely committed Date Agreed event.
+Completion sends no notification. Reading/dismissing a notification never changes domain history.
+
+This RC adds no email/Resend, persistent worker, scheduler, automatic purge, API/writeback,
+real Import Studio, real Wald runtime, calendar/PDF, attachments, reminders, SSO/MFA or
+external AI. Customer/site administration is included; plot and assigned-user views remain
+read-only. No production queue/provider is assumed.
+
+## QA and recovery
+
+The production base has 12 migrations. This RC retains them byte-for-byte and adds only
+`2026_09_09_000014_add_customer_site_administration.php`, producing 13 total migrations and
+no Wald migration. The administration migration is additive, backfills active UUID-bearing
+customer/site rows and preserves relationships and dependent records. Before traffic is reopened,
+recovery may restore both a fresh pre-deployment database snapshot and the previously verified
+application release. After traffic is reopened or any Sprint 3F write occurs, old main is not
+compatible recovery: keep RC-generation-compatible code and roll forward from the exact
+deployed RC or a descendant. A full pre-deployment database restore after reopening is a major
+incident/business data-loss decision, not routine rollback.
+
+Require focused/full SQLite, isolated MySQL 8.4 migrations/upgrade/concurrency, strict Composer
+validation/audit, Pint and build before candidate freeze. Dedicated release QA then runs against
+the exact frozen application SHA, including Office/Site User, mobile/accessibility,
+history/notifications, security and repeated source/Office races. The approved production
+sequence is backup, capture current release/schema evidence, maintenance mode, deploy exact
+approved RC, forward migrate/cache refresh, read-only smoke, then reopen. No main push or
+deployment occurs without separate approval. See the
+[next-release RC1 build record](documentation/customerapp-next-release-rc1-build-report-2026-09-10.md) and
+[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
