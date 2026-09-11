@@ -847,3 +847,56 @@ Dedicated QA proved forward behaviour but reproduced a `ValueError` when old mai
 RC1 amendment-notification row. The schema migration is additive; persisted enum/domain data is
 the compatibility boundary. A maintenance-mode cutover creates an auditable rollback window,
 while roll-forward preserves post-release writes and truth once the site has reopened.
+
+---
+
+## DEC-061
+
+Date: 10 September 2026
+
+Decision: CUSTOMER-NEXT-RELEASE01 approves a clean, non-deploying next-release candidate from
+production/main `e757bb651f9aa95d67b808a97433d27bc29d03c3`, containing the accepted sidebar,
+Office-only customer/site administration and a strictly local/testing synthetic Import Studio
+demonstration. WALD02–05 and their five migrations are deliberately excluded.
+
+Rules:
+
+- The release branch is `release/customerapp-next-release-admin-demo-rc1`. It is a candidate for
+  dedicated QA only; this decision does not authorise a main merge, push, Forge action,
+  production access or deployment.
+- Production-facing scope is the accepted responsive sidebar; customer and site list/search,
+  create, edit, deactivate, reactivate and immutable audit; read-only plot inventory; read-only
+  assigned-user visibility; and truthful source/import unavailable states.
+- Only active, currently persisted Fenster Office Staff may administer customers/sites. A null
+  customer organisation remains valid for Office Staff. Inactive, stale-role and all three site
+  roles are denied. Deactivation preserves sites, users, assignments, plots, requests and history;
+  no hard delete is introduced.
+- The production Office sidebar contains Review Requests, Customers and Notifications. No demo,
+  Wald or non-functional import destination is exposed in production navigation.
+- The synthetic Import Studio is default-off, local/testing-only and precomputed. Its production
+  routes remain absent even if its flag is set. It has no arbitrary file input, persistence,
+  binding mutation, Wald invocation, commit endpoint, job or external network/AI call, and keeps
+  DEMO ONLY, SYNTHETIC DATA and NO DATA WILL BE SAVED visible.
+- The sole database delta is additive
+  `2026_09_09_000014_add_customer_site_administration.php`: 12 production-base migrations become
+  13 candidate migrations. Existing customers/sites are backfilled active with UUIDs; dependent
+  data and relationships are preserved; no WALD migration/table/trigger is introduced.
+- WALD02–05 accepted SHAs and branch lineage remain intact for the future coherent WALD06/import
+  release after multi-site architecture is decided. Real binding, upload, analysis, staging,
+  commit, multi-site import, RedZebra API and automatic purge are not part of this release.
+- Dedicated QA must use the exact frozen branch tip reported by the build task. The 14 locked
+  npm development/build-chain advisories remain a release-review item; `npm audit --omit=dev`
+  and Composer production dependency audit are clean. No unapproved dependency upgrade is made.
+
+Decision-number reconciliation:
+
+This production-line ledger ended at DEC-057. Parallel Wald/admin documentation used later
+numbers through DEC-060 outside this branch. DEC-061 follows the highest inspected current
+number and supersedes the earlier next-release inclusion choice without importing excluded Wald
+runtime or rewriting either ledger's history.
+
+Reason:
+
+The sidebar and administration provide independently valuable, bounded functionality. Shipping
+five unused Wald migrations before the real multi-site import workflow is resolved would enlarge
+production database and runtime scope without corresponding production capability.

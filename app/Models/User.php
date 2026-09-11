@@ -116,7 +116,12 @@ class User extends Authenticatable
             return true;
         }
 
-        return $this->isSiteRole() && $this->customer_organisation_id !== null;
+        return $this->isSiteRole()
+            && $this->customer_organisation_id !== null
+            && CustomerOrganisation::query()
+                ->whereKey($this->customer_organisation_id)
+                ->where('is_active', true)
+                ->exists();
     }
 
     public function canAccessSite(Site $site): bool
@@ -127,6 +132,7 @@ class User extends Authenticatable
 
         return $this->assignedSites()
             ->whereKey($site->getKey())
+            ->effectivelyActive()
             ->exists();
     }
 

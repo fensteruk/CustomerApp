@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasUuid;
 use Database\Factories\SiteFactory;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -13,7 +14,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class Site extends Model
 {
     /** @use HasFactory<SiteFactory> */
-    use HasFactory;
+    use HasFactory, HasUuid;
 
     protected $fillable = [
         'customer_organisation_id',
@@ -22,6 +23,19 @@ class Site extends Model
         'external_source',
         'external_identifier',
     ];
+
+    protected function casts(): array
+    {
+        return [
+            'is_active' => 'boolean',
+            'lock_version' => 'integer',
+        ];
+    }
+
+    public function getRouteKeyName(): string
+    {
+        return 'uuid';
+    }
 
     /**
      * @return BelongsTo<CustomerOrganisation, $this>
@@ -72,6 +86,25 @@ class Site extends Model
     {
         return $query
             ->where('customer_organisation_id', $user->customer_organisation_id)
+            ->where('is_active', true)
+            ->whereHas('customerOrganisation', fn (Builder $organisation): Builder => $organisation->where('is_active', true))
             ->whereHas('assignedUsers', fn (Builder $assignedUsers): Builder => $assignedUsers->whereKey($user->getKey()));
+    }
+
+    /**
+     * @param  Builder<Site>  $query
+     * @return Builder<Site>
+     */
+    public function scopeEffectivelyActive(Builder $query): Builder
+    {
+        return $query
+            ->where('is_active', true)
+            ->whereHas('customerOrganisation', fn (Builder $organisation): Builder => $organisation->where('is_active', true));
+    }
+
+    public function isEffectivelyActive(): bool
+    {
+        return $this->is_active
+            && $this->customerOrganisation()->where('is_active', true)->exists();
     }
 }

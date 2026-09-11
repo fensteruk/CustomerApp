@@ -372,7 +372,10 @@ test('Sprint3F completion and proposing or rejecting an amendment serialize in b
     $worker = $operation === 'reject'
         ? ['reject', $customer->id, $request->id, $proposal->id]
         : ['amend-propose', $office->id, $request->id, mysqlGateWeekday(6), $cycle->uuid];
-    $results = mysqlGateRunWorkers([['source-complete', $service->id], $worker], $completionFirst ? [0, 300] : [300, 0]);
+    $results = mysqlGateRunWorkers(
+        [['source-complete', $service->id], $worker],
+        firstOperation: $completionFirst ? 'source-complete' : $worker[0],
+    );
     expect($results->where('operation', 'source-complete')->first()['ok'])->toBeTrue()
         ->and($results->where('ok', true)->count())->toBe($completionFirst ? 1 : 2)
         ->and($request->fresh()->status)->toBe(CallOffRequestStatus::Completed)
@@ -635,16 +638,28 @@ function mysqlGateWeekday(int $weeks): string
 /** @param array<int, array<int, int|string>> $workers
  * @param  array<int, int>  $delaysMilliseconds
  */
-function mysqlGateRunWorkers(array $workers, array $delaysMilliseconds = [], ?string $officeWinner = null): Collection
-{
+function mysqlGateRunWorkers(
+    array $workers,
+    array $delaysMilliseconds = [],
+    ?string $officeWinner = null,
+    ?string $firstOperation = null,
+): Collection {
     $barrier = storage_path('app/mysql-gate-'.Str::uuid());
-    $processes = collect($workers)->map(fn (array $worker, int $index): Process => new Process([
-        PHP_BINARY,
-        base_path('tests/Support/Sprint3eMysqlConcurrencyWorker.php'),
-        ...$worker,
-        $delaysMilliseconds[$index] ?? 0,
-        $barrier,
-    ], base_path(), $officeWinner === null ? null : ['MYSQL_GATE_OFFICE_RACE_WINNER' => $officeWinner]));
+    $environment = array_filter([
+        'MYSQL_GATE_OFFICE_RACE_WINNER' => $officeWinner,
+        'MYSQL_GATE_FIRST_OPERATION' => $firstOperation,
+    ], fn (?string $value): bool => $value !== null);
+    $processes = collect($workers)->map(fn (array $worker, int $index): Process => new Process(
+        [
+            PHP_BINARY,
+            base_path('tests/Support/Sprint3eMysqlConcurrencyWorker.php'),
+            ...$worker,
+            $delaysMilliseconds[$index] ?? 0,
+            $barrier,
+        ],
+        base_path(),
+        $environment === [] ? null : $environment,
+    ));
 
     try {
         $processes->each(fn (Process $process) => $process->start());
@@ -673,7 +688,7 @@ function mysqlGateRunWorkers(array $workers, array $delaysMilliseconds = [], ?st
                 $process->stop(2);
             }
         });
-        foreach (['', '.office-snapshot-amend-agree', '.office-snapshot-amend-propose', '.office-winner-committed'] as $suffix) {
+        foreach (['', '.office-snapshot-amend-agree', '.office-snapshot-amend-propose', '.office-winner-committed', '.first-operation-completed'] as $suffix) {
             if (file_exists($barrier.$suffix)) {
                 unlink($barrier.$suffix);
             }

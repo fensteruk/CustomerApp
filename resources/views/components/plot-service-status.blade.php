@@ -1,4 +1,4 @@
-@props(['service'])
+@props(['service', 'compact' => false])
 
 @php
     $classes = match ($service->state->tone()) {
@@ -15,7 +15,7 @@
     };
 @endphp
 
-<div {{ $attributes->merge(['class' => "rounded-lg border px-3 py-2.5 {$classes}"]) }}>
+<div {{ $attributes->merge(['class' => "rounded-lg border ".($compact ? 'px-2 py-2' : 'px-3 py-2.5')." {$classes}"]) }}>
     <div class="flex items-start gap-2">
         <span class="mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full {{ $dotClasses }}" aria-hidden="true"></span>
         <div class="min-w-0">

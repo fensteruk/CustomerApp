@@ -1,5 +1,50 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
+
+**Current delivery milestone: READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.**
+Frozen RC `2e58bedcb70c487dfee1ae9f01a087c7ed8117e6` passed the dedicated release gate. One P3
+test-harness ordering defect was corrected without an application/runtime change at
+`10f0a56ac1987754ab0c31b45fc08138ba25e3f8`. Scope/Wald exclusion, 12-to-13 migration,
+customer/site administration, lifecycle, authorization, IDOR/mass assignment, audit, Sprint 3F,
+queue-card, filters, browser, responsive, accessibility, performance, SQLite and MySQL 8.4.11
+checks passed. Production dependency audits are clean; 14 locked development/build advisories are
+retained for maintenance and do not block this release. No push, `main` merge, production access,
+migration or deployment occurred. See
+`documentation/customerapp-next-release-dedicated-qa-2026-09-10.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
+## CUSTOMER-NEXT-RELEASE01 — Sidebar + Admin + Synthetic Demo RC1 — 10 September 2026
+
+**Current delivery milestone: READY_FOR_DEDICATED_QA on a non-deploying release branch.** The candidate branch is
+`release/customerapp-next-release-admin-demo-rc1`, built cleanly from exact production/main
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. It has not been merged to `main`, pushed or
+deployed, and production was not accessed.
+
+Deploying next, subject to dedicated QA and separate release approval: the accepted sidebar;
+Office-only customer/site administration; active/inactive lifecycle; immutable audit; read-only
+plot inventory and assigned-user visibility; truthful source/import unavailable states. The
+synthetic Import Studio is local/testing-only, default-off and has no production route, upload,
+write, binding, Wald invocation or commit. WALD02–05, all five WALD migrations, real import,
+multi-site import and WALD06 remain excluded and preserved on their accepted feature lineage.
+
+Evidence: 64 focused PHP tests / 440 assertions; 14 browser-side unit tests; 102 queue-card and
+Sprint 3F regressions / 1,117 assertions; full SQLite 393 passed / 43 skipped / 2,784 assertions;
+full MySQL 8.4.11 430 passed / 1 intentional skip / 3,820 assertions, plus the separately guarded
+five-test admin race suite. A clean 13-migration MySQL install and 16-check production-shaped
+upgrade passed. Browser QA passed at 1920, 1440, 1366, tablet, 390 and 320px with no console
+errors. Pint, strict Composer validation, Composer audit, production build, production-only npm
+audit and whitespace checks passed. Full npm audit retains 14 locked development/build-chain
+advisories for release review.
+
+See `documentation/customerapp-next-release-rc1-build-report-2026-09-10.md`. Dedicated QA must
+use the exact frozen branch tip stated in the task completion report. Any change after freeze
+requires explicit release handling.
+
+Earlier entries below are historical evidence and do not override this status.
+
+
 ## CUSTOMER-FIX-QUEUECARD01 — Office queue-card correction — 10 September 2026
 
 **READY_FOR_QA on a non-deploying patch branch.** Production/main checkpoint
