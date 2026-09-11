@@ -1,5 +1,30 @@
 # Current Sprint
 
+## CUSTOMER-GIT-CLEANUP01 — Local Git consolidation — 11 September 2026
+
+**PARTIAL: local product and Wald ownership are clear; remote publication requires separate
+approval.** Prepared executable local `main` checkpoint
+`93737df1e8dae36b9d79b6b641e30b6c9af51908` is the accepted non-Wald product line; this
+cleanup adds only documentation above it. `origin/main` remains production line
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. No product branch requires another merge.
+Accepted unreleased WALD02–05 now has one canonical local branch,
+`feature/customer-wald-next`, at `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` (corrected
+executable checkpoint `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`). Historical manual
+import work remains excluded from both lines and is archive-tagged.
+
+Local branches were reduced from 40 to four after 12 annotated preservation tags were created.
+Two historical refs remain only because dirty worktrees must not be force-removed. Clean stale
+worktrees were removed. The canonical Wald branch and tags were not pushed, remote branches were
+not deleted, and `main` was not pushed because the environment requires separate explicit remote
+egress approval. See `documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Branch policy: `main` is the accepted production/release line; feature branches are short-lived;
+QA/release branches are removed after acceptance and preservation; accepted unreleased Wald work
+lives on one canonical branch; historical milestones use annotated tags. Pushing `main` remains
+a separately authorised production action.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
 
 **PASS; READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.** Frozen RC

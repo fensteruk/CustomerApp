@@ -1,5 +1,36 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-GIT-CLEANUP01 — Git ownership handover — 11 September 2026
+
+Prepared executable local `main` checkpoint `93737df1e8dae36b9d79b6b641e30b6c9af51908` is
+the canonical accepted non-Wald product line; this cleanup adds only documentation above it.
+Remote/production line `origin/main` remains
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`. No additional product merge is required and no
+push/deployment occurred. Accepted unreleased WALD02–05 is now represented by one canonical local
+branch, `feature/customer-wald-next`, at `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` with
+corrected executable checkpoint `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`.
+
+Twelve annotated local tags preserve disconnected production/recovery, old scope, QA, original
+admin/sidebar integration and superseded manual-import histories. Local branches were reduced
+from 40 to four. The remaining historical branches are temporarily protected by dirty worktrees:
+`docs/customer-admin01-audit-2026-09-09` has an untracked audit document, while
+`release/sprint-3e-production-record-2026-08-27` is attached to an old temp worktree whose tracked
+files appear deleted. A second detached Sprint 3E temp worktree has the same condition. Do not
+force-remove, reset or clean any of them without a separate preservation decision.
+
+The root worktree remains on canonical Wald and retains the user's modified Sprint 3E report,
+`Copy of siteapp1.xlsx`, `local logins.docx`, `~$cal logins.docx` and `output/`. Remote publication
+of the canonical Wald branch/tags was blocked pending a more explicit remote-egress approval, so
+all 11 original remote branches remain and no remote deletion was attempted. Full classification
+and cleanup evidence is in `documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Branch policy: `main` is the accepted release/production line; feature branches are short-lived;
+QA/release branches are removed after acceptance and preservation; unreleased Wald lives on one
+canonical branch; historical milestones use annotated tags. A `main` push remains a separately
+authorised production action because Forge Push to Deploy is enabled.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
 
 **PASS; READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.** Continue from the QA

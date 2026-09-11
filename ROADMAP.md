@@ -1,5 +1,23 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-GIT-CLEANUP01 — Canonical branch ownership — 11 September 2026
+
+**Local consolidation is complete except for protected dirty worktrees and remote publication.**
+Prepared executable local `main` checkpoint `93737df1e8dae36b9d79b6b641e30b6c9af51908` is
+the accepted non-Wald product line; this cleanup adds only documentation above it and no
+additional feature merge is required. Accepted unreleased WALD02–05 is
+owned by the single canonical local branch `feature/customer-wald-next` at
+`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec`. Superseded manual import/interpreter work is
+archive-only and must not be merged.
+
+Use short-lived feature branches, remove QA/release branches after accepted outcomes are
+preserved, and use annotated milestone tags instead of permanent historical branches. Remote
+cleanup is pending separate approval to publish the canonical Wald ref/tags; `origin/main`
+remains `e757bb651f9aa95d67b808a97433d27bc29d03c3`. No push to `main` or deployment occurred.
+See `documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-NEXT-RELEASE02 — Dedicated RC1 QA passed — 10 September 2026
 
 **Current delivery milestone: READY_FOR_MERGE_TO_MAIN_PREPARATION, not merged or deployed.**
