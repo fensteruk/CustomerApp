@@ -1,5 +1,20 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-GIT-CLEANUP02 — Remote consolidation handover — 11 September 2026
+
+Remote cleanup is complete. `origin/main` remains
+`e757bb651f9aa95d67b808a97433d27bc29d03c3`; canonical accepted unreleased Wald is published as
+`origin/feature/customer-wald-next` at `c9fe0620069a10fe07050e4ec2f30043a9a9a1ec`. All 12
+annotated preservation tags were published and verified by their peeled commit targets. Ten
+preserved non-main remote QA/feature/release branches were deleted only after per-tip ancestry
+proof. Local `main` was not pushed, Forge/production was not contacted and no deployment occurred.
+
+Do not resolve the remaining dirty worktrees as part of ordinary branch cleanup. The two attached
+historical local branch refs and the detached Sprint 3E temp worktree require a separate user-file
+preservation decision. See `documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-GIT-CLEANUP01 — Git ownership handover — 11 September 2026
 
 Prepared executable local `main` checkpoint `93737df1e8dae36b9d79b6b641e30b6c9af51908` is

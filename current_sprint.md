@@ -1,5 +1,20 @@
 # Current Sprint
 
+## CUSTOMER-GIT-CLEANUP02 — Remote Git consolidation — 11 September 2026
+
+**REMOTE_CONSOLIDATED.** Published only `feature/customer-wald-next` at
+`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` and the 12 approved annotated preservation tags.
+After proving each exact historical remote tip was an ancestor of published `origin/main`,
+canonical Wald or a named tag, deleted the ten preserved non-main remote branches. The final
+remote heads are only `origin/main` and `origin/feature/customer-wald-next`.
+
+`origin/main` remained `e757bb651f9aa95d67b808a97433d27bc29d03c3`; local `main` was not pushed,
+Forge/production was not contacted and no deployment occurred. The two historical local branches
+and three worktrees protected by dirty user state remain a separate cleanup task. See
+`documentation/customerapp-git-consolidation-2026-09-11.md`.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-GIT-CLEANUP01 — Local Git consolidation — 11 September 2026
 
 **PARTIAL: local product and Wald ownership are clear; remote publication requires separate

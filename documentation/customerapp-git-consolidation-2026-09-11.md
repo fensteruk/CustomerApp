@@ -16,10 +16,10 @@ The canonical unreleased Wald line is `feature/customer-wald-next` at
 `dbd17c6` and the accepted WALD05 QA handoff `c9fe062`. It does not contain the
 superseded manual-import lineage rooted at `04b560f`.
 
-Remote publication of the canonical Wald branch and preservation tags was not
-performed because the environment required a separate explicit approval for
-that remote egress. Consequently no remote branches were deleted. Local tags
-and the original remote branches both continue to preserve history.
+CUSTOMER-GIT-CLEANUP02 subsequently published the canonical Wald branch and all
+12 preservation tags after exact target/ancestry verification. Ten preserved
+non-main remote branches were deleted by ordinary remote branch deletion.
+`origin/main` remained unchanged throughout.
 
 ## Branch policy
 
@@ -88,22 +88,23 @@ worktree safety, not by product ambiguity.
 
 ## Remote branch disposition
 
-The initial 11 remote branches remain unchanged because preservation refs could
-not be published without additional approval. `origin/main` was not changed.
+The initial 11 remote branches were reduced to `origin/main` plus the canonical
+Wald branch. `origin/main` was not changed.
 
 | Remote branch | Tip | Class | Planned disposition after explicit remote-ref approval |
 |---|---|---|---|
-| `origin/main` | `e757bb6` | ALREADY_IN_MAIN | Retain permanently |
-| `origin/codex/qa-sprint-3e-date-negotiation` | `a38d557` | ARCHIVE_ONLY | Delete after tags are published |
-| `origin/feature/manual-source-import-backend` | `04b560f` | ARCHIVE_ONLY | Delete after tags are published |
-| `origin/hotfix/date-agreed-office-filter-2026-08-27` | `0873bac` | ALREADY_IN_MAIN | Delete after tags are published |
-| `origin/migration-000002-repair-candidate` | `064bf43` | ARCHIVE_ONLY | Delete after tags are published |
-| `origin/reconcile/main-2026-08-25` | `a43a739` | ARCHIVE_ONLY | Delete after tags are published |
-| `origin/release-candidate/sprint-3d` | `47e8ccc` | ARCHIVE_ONLY | Delete after tags are published |
-| `origin/release/office-staff-organisation-fix-2026-08-27` | `ea03fd7` | ALREADY_IN_MAIN | Delete after tags are published |
-| `origin/release/production-migration-repair-2026-08-21` | `e91161b` | ARCHIVE_ONLY | Delete after tags are published |
-| `origin/release/sprint-3e-date-negotiation-2026-08-25` | `5d3ebce` | SUPERSEDED | Delete after tags/canonical Wald are published |
-| `origin/release/sprint-3e-production-2026-08-27` | `9111d76` | ALREADY_IN_MAIN | Delete after tags are published |
+| `origin/main` | `e757bb6` | ALREADY_IN_MAIN | Retained permanently; unchanged |
+| `origin/codex/qa-sprint-3e-date-negotiation` | `a38d557` | ARCHIVE_ONLY | Deleted after exact tag-target proof |
+| `origin/feature/manual-source-import-backend` | `04b560f` | ARCHIVE_ONLY | Deleted after ancestor proof against the manual-import archive tag |
+| `origin/hotfix/date-agreed-office-filter-2026-08-27` | `0873bac` | ALREADY_IN_MAIN | Deleted after ancestor proof against `origin/main` |
+| `origin/migration-000002-repair-candidate` | `064bf43` | ARCHIVE_ONLY | Deleted after exact tag-target proof |
+| `origin/reconcile/main-2026-08-25` | `a43a739` | ARCHIVE_ONLY | Deleted after exact tag-target proof |
+| `origin/release-candidate/sprint-3d` | `47e8ccc` | ARCHIVE_ONLY | Deleted after exact tag-target proof |
+| `origin/release/office-staff-organisation-fix-2026-08-27` | `ea03fd7` | ALREADY_IN_MAIN | Deleted after ancestor proof against `origin/main` |
+| `origin/release/production-migration-repair-2026-08-21` | `e91161b` | ARCHIVE_ONLY | Deleted after exact tag-target proof |
+| `origin/release/sprint-3e-date-negotiation-2026-08-25` | `5d3ebce` | SUPERSEDED | Deleted after ancestor proof against canonical Wald |
+| `origin/release/sprint-3e-production-2026-08-27` | `9111d76` | ALREADY_IN_MAIN | Deleted after ancestor proof against `origin/main` |
+| `origin/feature/customer-wald-next` | `c9fe062` | KEEP_LONG_LIVED | Published and retained as canonical Wald |
 
 ## Worktree safety
 
@@ -130,8 +131,8 @@ manual importer/interpreter/UI, WALD06 and production deployment.
 
 - Local branches: 40 initially; four finally retained (`main`, canonical Wald
   and two dirty-worktree historical refs).
-- Remote branches: 11 initially and finally; no remote ref changed.
-- Annotated tags: zero initially; 12 created locally and not published.
+- Remote branches: 11 initially; two finally (`main` and canonical Wald).
+- Annotated tags: zero initially; 12 created and published.
 - Worktrees: 18 initially; five finally retained. Thirteen clean or already
   missing stale worktree registrations were removed/pruned without force.
 - Focused admin/sidebar, Sprint 3F and queue-card regression: 166 tests passed,
@@ -144,6 +145,11 @@ manual importer/interpreter/UI, WALD06 and production deployment.
 - `npm run build`: passed with Vite 8.1.4 after the sandbox's expected Windows
   child-process restriction required the approved unrestricted rerun.
 - `git diff --check`: passed.
+- Post-cleanup direct remote-head verification showed exactly `main` and
+  `feature/customer-wald-next`; all 12 remote annotated tags peeled to their
+  approved commit targets.
+- `origin/main` remained
+  `e757bb651f9aa95d67b808a97433d27bc29d03c3` before and after cleanup.
 - Disposable MySQL was not rerun because the executable and schema tree are
   byte-for-byte unchanged from accepted checkpoint `93737df`; this task added
   documentation and Git refs only.

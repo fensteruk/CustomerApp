@@ -1,5 +1,16 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-GIT-CLEANUP02 — Remote branch cleanup complete — 11 September 2026
+
+The remote repository now has two heads only: `origin/main` at
+`e757bb651f9aa95d67b808a97433d27bc29d03c3` and canonical unreleased Wald at
+`origin/feature/customer-wald-next` (`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec`). Twelve
+annotated milestone/archive tags preserve the removed histories. Local `main` was not pushed and
+no production deployment occurred. Remaining cleanup is limited to separately resolving the
+dirty historical worktrees without reset, clean or force removal.
+
+Earlier entries below are historical evidence and do not override this status.
+
 ## CUSTOMER-GIT-CLEANUP01 — Canonical branch ownership — 11 September 2026
 
 **Local consolidation is complete except for protected dirty worktrees and remote publication.**
