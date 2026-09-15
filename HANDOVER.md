@@ -1,5 +1,29 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-WALD-GOLIVE02 handover — 15 September 2026
+
+The narrow strict-gate correction is on `codex/wald-strict-env-gate-2026-09-15`, based directly on
+CUSTAPP2 candidate `ee00b3e3c538c514987e8986940c238afb553749`. `config/wald_import.php` now
+accepts only the exact case-insensitive word `true`, and `WaldPilotAvailability` requires a real
+boolean true. Numeric, yes/on, padded, parenthesized, missing, false-like and malformed values all
+remain off. Laravel config-cache behaviour is explicitly tested.
+
+Verification is green: focused strict-gate/availability coverage passed 22 tests / 57 assertions;
+the combined Wald pilot, CUSTAPP2 and commit-boundary regression passed 63 tests with one
+intentional MySQL-only skip / 198 assertions; and the complete application suite passed 1,550 tests
+with 79 skips / 7,977 assertions. The exact committed correction SHA is recorded in the completion
+report accompanying this handover.
+
+Do not enable or import from this handover. Production remains on
+`89768986a1a32d4258b5deebdf3012584acd6a6c` with `WALD_IMPORT_AVAILABLE=false`. Integration/DevOps
+may resume at strict-gate merge/deployment and same-release OFF verification, then separately
+deploy CUSTAPP2/migration and perform the approved fictional smoke before deliberate enablement.
+
+No schema, source semantics, application-setting, authorisation, Wald workflow, SiteApp or
+production change belongs to this correction.
+
+Earlier CUSTAPP2/pilot entries below are historical inputs and do not override this status.
+
 ## CUSTOMER-WALD-CUSTAPP2-01 handover — 15 September 2026
 
 Branch `codex/wald-custapp2-composite-2026-09-15` contains the bounded composite-workbook and

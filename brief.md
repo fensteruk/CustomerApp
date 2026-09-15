@@ -1,7 +1,8 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
 Last updated: 15 September 2026.
-Authority: CUSTOMER-WALD-PILOT01/02, CUSTOMER-WALD-CUSTAPP2-01, DEC-064, current management product decisions and the
+Authority: CUSTOMER-WALD-PILOT01/02, CUSTOMER-WALD-CUSTAPP2-01,
+CUSTOMER-WALD-GOLIVE02, DEC-065, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
@@ -9,13 +10,20 @@ appended below superseded requirements.
 
 Production serves corrected commit-boundary release
 `89768986a1a32d4258b5deebdf3012584acd6a6c`. `WALD_IMPORT_AVAILABLE=false`, so effective
-production pilot availability is OFF. The unexplained environment-gate change is under a separate
-Integration/DevOps investigation. No current source-compatibility work may alter that state.
+production pilot availability is OFF. The permissive generic boolean cast was identified as the
+environment-gate defect and is corrected only on the separate CUSTOMER-WALD-GOLIVE02 feature
+branch. No current source-compatibility work may alter production state.
 
 CUSTOMER-WALD-CUSTAPP2-01 is implemented only on a non-deploying feature branch. The approved
 private workbook's aggregate structure qualifies locally on SQLite and MySQL, except one selected
 site correctly blocks on conflicting explicit product evidence. This is PARTIAL qualification,
 not a production, release or source-data-correction claim.
+
+CUSTOMER-WALD-GOLIVE02 is a separate non-deploying strict-gate correction. The environment gate
+now accepts only the exact case-insensitive word `true`; all missing, false-like, numeric and
+malformed values fail closed. Effective availability still requires the audited application
+setting and current authorised Office identity. The correction is not deployed and does not
+change the current production-off state.
 
 The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
 Its routes are absent in production even if the flag is set, it writes nothing and it has no

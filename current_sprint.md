@@ -1,5 +1,25 @@
 # Current Sprint
 
+## CUSTOMER-WALD-GOLIVE02 — strict environment gate — 15 September 2026
+
+**Implemented and fully verified on a separate non-deploying feature branch.** The Wald
+environment kill switch now accepts only the exact case-insensitive word `true`. Missing, empty,
+false-like, numeric, parenthesized, padded and malformed values fail closed. Runtime availability
+also requires the cached config value to be the boolean `true`, the audited application setting,
+and current active non-preview Office authority.
+
+Focused strict-gate/availability tests passed 22 tests / 57 assertions. The combined Wald pilot,
+CUSTAPP2 and commit-boundary regression passed 63 tests with one intentional MySQL-only skip / 198
+assertions. The complete application suite passed 1,550 tests with 79 skips / 7,977 assertions.
+
+No migration or Wald business-rule change is included. Production remains on
+`89768986a1a32d4258b5deebdf3012584acd6a6c` with `WALD_IMPORT_AVAILABLE=false`; no enablement,
+production import, `main` push or deployment is authorised. The exact correction SHA is reported
+in the completion handoff; Integration/DevOps may resume from controlled deployment stability
+rather than restart earlier qualification.
+
+Earlier CUSTAPP2/pilot entries below are historical inputs and do not override this status.
+
 ## CUSTOMER-WALD-CUSTAPP2-01 — composite workbook compatibility — 15 September 2026
 
 **PARTIAL local qualification; feature branch only, not released or deployed.** Branch

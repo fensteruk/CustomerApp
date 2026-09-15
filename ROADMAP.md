@@ -1,5 +1,24 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-WALD-GOLIVE02 — strict environment gate — 15 September 2026
+
+**Narrow correction implemented and fully verified; controlled release handoff is next.** Only exact
+case-insensitive `true` may enable the environment half of Wald availability. All other values fail
+closed, and the application setting plus current Office authority remain mandatory.
+
+Focused strict-gate/availability coverage passed 22 tests / 57 assertions; combined Wald pilot,
+CUSTAPP2 and commit-boundary regression passed 63 tests with one intentional MySQL-only skip / 198
+assertions; and the full application suite passed 1,550 tests with 79 skips / 7,977 assertions.
+
+Next delivery order after the exact-SHA handoff: Integration/DevOps reviews and deploys the
+strict-gate commit, proves false survives the release cycle, then separately handles the CUSTAPP2
+candidate, migration and fresh fictional smoke. Deliberate enablement is last and remains outside
+this task.
+
+Production is unchanged on `89768986a1a32d4258b5deebdf3012584acd6a6c` with Wald OFF.
+
+Earlier CUSTAPP2/pilot entries below are historical inputs and do not override this status.
+
 ## CUSTOMER-WALD-CUSTAPP2-01 — composite workbook compatibility — 15 September 2026
 
 **Implemented with PARTIAL local qualification on a non-deploying feature branch.** The bounded

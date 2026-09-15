@@ -11,7 +11,7 @@ final class WaldPilotAvailability
 
     public function environmentAllows(): bool
     {
-        return (bool) config('wald_import.pilot_available', false);
+        return config('wald_import.pilot_available', false) === true;
     }
 
     public function applicationEnabled(): bool

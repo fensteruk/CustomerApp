@@ -1662,3 +1662,32 @@ Reason:
 CallNo, plot and visit are distinct business concepts in the observed source. Separating them
 allows source inventory to exist before a call-off starts without manufacturing customer workflow,
 while deterministic conflict handling preserves exact evidence and fail-closed behaviour.
+
+---
+
+## DEC-065
+
+Date: 15 September 2026
+
+Decision: CUSTOMER-WALD-GOLIVE02 requires the production Wald environment kill switch to fail
+closed. Only the exact case-insensitive word `true`, resolved while Laravel builds configuration,
+may enable `wald_import.pilot_available`.
+
+- Missing, empty, false, zero, no, off, numeric `1`, yes, on, padded, parenthesized and malformed
+  values resolve to false.
+- `WaldPilotAvailability` also requires the resolved configuration value to be the boolean `true`;
+  truthy strings cannot enable the boundary at runtime.
+- Effective availability still additionally requires the audited application setting and current
+  active non-preview Fenster Office Staff authority. Neither layer is changed or bypassed.
+- The environment is read only while configuration is built. Laravel's cached configuration stores
+  the resolved boolean, so runtime services do not call `env()` after caching.
+- This correction changes no Wald import, source, projection, authorisation, application-setting or
+  lifecycle business rule and requires no migration.
+- Production remains on `89768986a1a32d4258b5deebdf3012584acd6a6c` with
+  `WALD_IMPORT_AVAILABLE=false`. This decision does not authorise enablement, production import,
+  deployment, CUSTAPP2 deployment, `main` push or SiteApp change.
+
+Reason:
+
+A generic boolean cast treats any non-empty unrecognised string as true. A production emergency
+gate must require an explicit recognized opt-in and otherwise remain off.
