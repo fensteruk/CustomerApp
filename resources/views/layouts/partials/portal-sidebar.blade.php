@@ -1,5 +1,5 @@
-<div class="flex min-h-full flex-col">
-    <div class="flex min-h-16 items-center justify-between gap-3 border-b border-slate-700 px-4">
+<div class="flex h-full min-h-0 flex-col">
+    <div class="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-700 px-4">
         <a href="{{ route('dashboard') }}" class="rounded focus:outline-none focus:ring-2 focus:ring-sky-300">
             <span class="block text-2xl font-light tracking-tight text-white">fenster</span>
             <span class="block text-xs font-bold uppercase tracking-[0.16em] text-sky-300">Customer Portal</span>
@@ -17,7 +17,7 @@
         </button>
     </div>
 
-    <div class="flex-1 overflow-y-auto px-3 py-4">
+    <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4">
         <nav aria-label="Primary navigation">
             <p class="px-3 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
             <ul class="mt-2 space-y-1">
@@ -120,7 +120,7 @@
         @endif
     </div>
 
-    <div class="border-t border-slate-700 p-4 text-sm">
+    <div class="shrink-0 border-t border-slate-700 p-4 text-sm">
         <p class="truncate font-bold text-white">{{ auth()->user()->name }}</p>
         <p class="mt-0.5 truncate text-xs text-slate-400">{{ auth()->user()->portalRole?->name }}</p>
     </div>
