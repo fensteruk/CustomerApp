@@ -4,7 +4,9 @@
         <header class="admin-page-header">
             <div><p class="eyebrow">Site Details</p><h1 class="admin-title">{{ $site['name'] }}</h1><p class="admin-intro">{{ $site['location'] ?: 'No location added' }}</p></div>
             <div class="admin-actions">
-                @if (Route::has('development.import-studio.site'))
+                @if (app(\App\SourceImport\Integration\WaldPilotAvailability::class)->enabled() && $site['effective_is_active'])
+                    <a class="primary-button" href="{{ route('office.workspace.imports', ['site' => $site['uuid']]) }}">Import Source Data <span class="sr-only">— weekend pilot</span></a>
+                @elseif (Route::has('development.import-studio.site'))
                     <a class="primary-button" href="{{ route('development.import-studio.site', [$site['customer']['uuid'], $site['uuid']]) }}">Import Source Data <span class="sr-only">— demo only</span></a>
                 @endif
                 <a class="secondary-button" href="{{ route('office.workspace.sites.edit', [$site['customer']['uuid'], $site['uuid']]) }}">Edit Site</a>

@@ -3,6 +3,7 @@
     @if (($items['availability'] ?? '') !== 'AVAILABLE')
         <div class="empty-state mt-4"><h3 class="font-bold">No import integration has been released yet</h3><p class="mt-2">Import Studio is being prepared. No new import can be started from this page yet.</p></div>
     @else
+        <div class="mt-4"><a class="primary-button" href="{{ route('office.workspace.imports', ['site' => $site['uuid']]) }}">Import Source Data</a></div>
         <div class="admin-card-grid mt-4">
             @forelse ($items['runs'] as $run)
                 <article class="admin-card">

@@ -56,7 +56,8 @@ final class WorkbookStager
         $tableId = array_key_first($data['tables']);
         $table = $data['tables'][$tableId];
         $sheet = array_values($sheets)[0];
-        if ($table['warnings'] !== [] || $sheet->visibility !== 'visible' || $sheet->hiddenRows !== [] || $sheet->hiddenColumns !== [] || $sheet->merges !== []) {
+        $headerNeedsConfirmation = in_array('no_clear_header', $table['warnings'], true);
+        if (array_diff($table['warnings'], ['no_clear_header']) !== [] || $sheet->visibility !== 'visible' || $sheet->hiddenRows !== [] || $sheet->hiddenColumns !== [] || $sheet->merges !== []) {
             throw new ImportConflict('unsafe_or_unsupported_structure');
         }
         $reasoning = (new ReasoningEngine)->reason($profile);
@@ -95,6 +96,9 @@ final class WorkbookStager
         if (! isset($columns[$siteRole])) {
             throw new ImportConflict('required_site_column_unresolved');
         }
+        if ($headerNeedsConfirmation && count(array_filter($confirmed)) !== count($confirmed)) {
+            throw new ImportConflict('structural_clarification_required');
+        }
         $dictionary = new CustomerAppDictionary;
         $rows = [];
         $seen = [];
@@ -104,9 +108,6 @@ final class WorkbookStager
             }
             if (! array_filter($cells, fn ($c) => $c->rawValue !== null && $c->rawValue !== '')) {
                 continue;
-            }
-            if (count($rows) >= BackendStore::MAX_ROWS) {
-                throw new ImportConflict('explicit_run_row_limit_exceeded');
             }
             $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
             $call = $raw('call_reference');
@@ -131,6 +132,17 @@ final class WorkbookStager
                 if ((! is_string($value) && ! is_int($value)) || trim((string) $value) === '' || mb_strlen((string) $value) > ($name === 'plot' ? 200 : 512) || preg_match('/[\x00-\x1f\x7f<>]/', (string) $value)) {
                     $issues[] = 'INVALID_'.strtoupper($name);
                 }
+            }
+            $normalisedSite = trim((string) $site);
+            if ($run->source_site_filter_hash ?? null) {
+                $observedHash = Canonical::hash([$siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME', $normalisedSite]);
+                if (! hash_equals($run->source_site_filter_hash, $observedHash)
+                    || ! hash_equals((string) $run->source_site_filter, $normalisedSite)) {
+                    continue;
+                }
+            }
+            if (count($rows) >= BackendStore::MAX_ROWS) {
+                throw new ImportConflict('explicit_run_row_limit_exceeded');
             }
             $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call, (string) $site, is_string($callType) ? $callType : '');
             $semanticApproval = null;
@@ -190,7 +202,7 @@ final class WorkbookStager
                 }
             }
             $excluded = $selection['excluded'];
-            $facts = ['call_number' => $call, 'source_site' => (string) $site, 'site_kind' => $siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME',
+            $facts = ['call_number' => $call, 'source_site' => $normalisedSite, 'site_kind' => $siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME',
                 'plot' => (string) $plot, 'service' => $type->value, 'call_type' => $type->lookupValue, 'complete' => $complete->value, 'products' => $products];
             $rows[] = ['canonical' => $excluded ? ['excluded' => true, 'call_number' => $call] : $facts, 'facts' => $facts, 'excluded' => $excluded,
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),

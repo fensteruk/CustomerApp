@@ -42,7 +42,7 @@ final readonly class AnalysisSnapshot
                     $header = $path['label'];
                     $token = self::token($header);
                     $role = $dictionary->field($header)->value;
-                    if (in_array($token, ['plot', 'plot no.', 'plot number', 'house no.', 'sales plot'], true)) {
+                    if (in_array($token, ['plot', 'plot ref', 'plot no.', 'plot number', 'house no.', 'sales plot'], true)) {
                         $role = 'plot_reference';
                     }
                     $product = $dictionary->product($header, '0');

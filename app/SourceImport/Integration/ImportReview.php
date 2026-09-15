@@ -68,7 +68,7 @@ final class ImportReview
 
     public function commit(User $actor, KnowledgeScope $scope, string $uuid, string $previewUuid, string $hash, string $command): array
     {
-        return (new ImportStore)->run($actor, $scope, 'commit', $command, [$uuid, $previewUuid, $hash], function (User $fresh) use ($scope, $uuid, $previewUuid, $hash): array {
+        return (new ImportStore)->run($actor, $scope, 'commit', $command, [$uuid, $previewUuid, $hash], function (User $fresh) use ($scope, $uuid, $previewUuid, $hash, $command): array {
             $store = new BackendStore;
             $run = $store->run($scope, $uuid, true);
             $existing = DB::table('wald_import_receipts')->where('run_id', $run->id)->first();
@@ -104,13 +104,27 @@ final class ImportReview
                 'predecessor_receipt' => $prior?->uuid, 'revision' => $prior ? (int) $prior->revision + 1 : 1, ...$effects];
             DB::table('wald_import_receipts')->insert(['uuid' => $receiptUuid, 'run_id' => $run->id, 'preview_id' => $preview->id, 'stream_id' => $run->stream_id,
                 'export_order' => $run->export_order, 'revision' => $receipt['revision'], 'canonical_hash' => $stage->canonical_hash,
+                'unit_scope_key' => $run->pilot_selection_id === null ? str_repeat('0', 64) : Canonical::hash($scope->columns()),
                 'actor_id' => $fresh->id, 'actor_name' => $fresh->name, 'payload' => Canonical::json($receipt), 'payload_hash' => Canonical::hash($receipt),
                 'created_at' => now('UTC'), 'retain_until' => now('UTC')->addYears(6)]);
-            DB::table('wald_import_streams')->where('id', $stream->id)->update(['epoch' => $stream->epoch + 1, 'latest_order' => $run->export_order]);
+            DB::table('wald_import_streams')->where('id', $stream->id)->update([
+                'epoch' => $run->pilot_selection_id === null ? $stream->epoch + 1 : $stream->epoch,
+                'latest_order' => $run->export_order,
+            ]);
             if ($prior) {
                 DB::table('wald_import_runs')->where('id', $prior->run_id)->update(['state' => 'SUPERSEDED', 'epoch' => DB::raw('epoch + 1'), 'updated_at' => now('UTC')]);
             }
             $store->state($run, 'COMMITTED', ['epoch' => $run->epoch + 2, 'terminal_at' => now('UTC'), 'workbook_retain_until' => now('UTC')->addDays(30)]);
+            if ($run->pilot_selection_id !== null) {
+                $selection = DB::table('wald_pilot_selections')->where('id', $run->pilot_selection_id)->lockForUpdate()->firstOrFail();
+                DB::table('wald_pilot_selections')->where('id', $selection->id)->update(['state' => 'COMMITTED', 'updated_at' => now('UTC')]);
+                (new PilotImportAudit)->record($fresh, $selection->pilot_upload_id, 'pilot_site_committed', [
+                    'selection' => $selection->uuid,
+                    'run' => $run->uuid,
+                    'receipt' => $receiptUuid,
+                    'site_id' => $run->site_id,
+                ], $selection->id, $command);
+            }
 
             return [$receipt, ['state' => 'READY_TO_COMMIT'], ['state' => 'COMMITTED', 'receipt' => $receiptUuid, 'effects_hash' => Canonical::hash($effects)]];
         });
@@ -173,7 +187,14 @@ final class ImportReview
         if ($stream->latest_order !== null && $stream->latest_order > $run->export_order) {
             throw new ImportConflict('older_export_refused');
         }
-        $prior = DB::table('wald_import_receipts')->where('stream_id', $stream->id)->where('export_order', $run->export_order)->orderByDesc('revision')->first();
+        $priorQuery = DB::table('wald_import_receipts')
+            ->join('wald_import_runs as prior_runs', 'prior_runs.id', '=', 'wald_import_receipts.run_id')
+            ->where('wald_import_receipts.stream_id', $stream->id)
+            ->where('wald_import_receipts.export_order', $run->export_order);
+        if ($run->pilot_selection_id !== null) {
+            $priorQuery->where('prior_runs.site_id', $run->site_id);
+        }
+        $prior = $priorQuery->orderByDesc('wald_import_receipts.revision')->select('wald_import_receipts.*')->first();
         if ($prior) {
             $receipt = (new BackendStore)->payload($prior);
             if (Canonical::hash($receipt['scope']) !== Canonical::hash($scope->columns())) {

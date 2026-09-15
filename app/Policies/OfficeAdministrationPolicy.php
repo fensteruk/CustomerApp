@@ -20,6 +20,7 @@ final class OfficeAdministrationPolicy
         'site_update',
         'site_deactivate',
         'site_reactivate',
+        'settings_update',
     ];
 
     public function authorize(User $actor, string $ability, bool $lock = false): User

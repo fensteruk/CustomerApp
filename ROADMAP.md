@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-WALD-PILOT01/02 — supervised weekend pilot — 15 September 2026
+
+The minimal Office-only, one-selected-site import and two-layer enable control are implemented
+as a release candidate. Repository and database defaults remain off. A controlled production
+deployment may publish the dark code; backup, migration, health verification, environment
+enablement and audited Office enablement remain ordered deployment steps. Full WALD06 automatic
+multi-site orchestration remains deferred.
+
+Earlier WALD06 status below is historical and does not override this pilot.
+
 ## CUSTOMER-WALD06 — Multi-site Import Studio and pilot readiness — 11 September 2026
 
 **In progress on the one canonical Wald branch; not released or deployed.** The approved

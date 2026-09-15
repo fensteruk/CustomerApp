@@ -1,5 +1,36 @@
 # Fenster Customer Portal Decisions
 
+## DEC-062
+
+Date: 15 September 2026
+
+Decision: CUSTOMER-WALD-PILOT01/02 replaces the in-progress full WALD06 target with a bounded
+production-capable supervised pilot: one private RedZebra workbook, one explicitly selected
+source site per run, exact active binding, review/preview and one atomic site commit.
+
+- Every pilot child is PILOT_SINGLE_SITE_SELECTION and PARTIAL_FILTERED_EXPORT; absence
+  cannot delete, reconcile or zero omitted data. Automatic multi-site splitting, RedZebra API,
+  queue dependency, purge and SiteApp runtime access remain out of scope.
+- The checksum-bound PC1/CC1/CC!/CM1 and CM2/NICK TEST reviewed-artifact treatment remains
+  exact and private; it does not change the controlled dictionary or create global learning.
+- Effective availability requires WALD_IMPORT_AVAILABLE=true, durable application setting
+  wald_import_pilot_enabled=true, and a current active non-preview Fenster Office Staff actor.
+  Both layers default false; environment false is an unconditional emergency stop.
+- Only current authorised Office Staff may alter the application setting. Off-to-on requires
+  explicit confirmation and every transition requires a reason and immutable before/after audit.
+  Disable preserves history and prior commits while immediately denying new pilot actions.
+- Management has separately authorised committing, normally merging and pushing the completed
+  candidate to main. That push may trigger Forge deployment, but it does not authorise changing
+  the environment gate, application setting, production database manually or running an import.
+- All currently hosted business records are confirmed dummy data. Normal production backup,
+  migration, health, smoke and recovery controls still apply.
+
+Reason: management needs a safe weekend test path sooner than complete WALD06 orchestration.
+Two independent controls and a one-site transactional boundary provide a reversible operational
+stop without pretending the temporary pilot is automatic synchronisation.
+
+---
+
 Sprint 1 - Call Off Workflow
 
 Next implementation milestone:

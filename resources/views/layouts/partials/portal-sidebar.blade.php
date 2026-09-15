@@ -49,18 +49,28 @@
                                 <span>Customers</span>
                             </a>
                         </li>
-                        @if (Route::has('development.import-studio.show') && config('import-demo.enabled'))
+                        @if (app(\App\SourceImport\Integration\WaldPilotAvailability::class)->enabled())
                             <li>
                                 <a
                                     href="{{ route('office.workspace.imports') }}"
-                                    @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('office.workspace.imports', 'development.import-studio.*')])
-                                    @if (request()->routeIs('office.workspace.imports', 'development.import-studio.*')) aria-current="page" @endif
+                                    @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('office.workspace.imports', 'office.workspace.pilot-import.*')])
+                                    @if (request()->routeIs('office.workspace.imports', 'office.workspace.pilot-import.*')) aria-current="page" @endif
                                 >
                                     <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5" /></svg>
-                                    <span>Imports <span class="sr-only">— demo only</span></span>
+                                    <span>Imports <span class="sr-only">— weekend pilot</span></span>
                                 </a>
                             </li>
                         @endif
+                        <li>
+                            <a
+                                href="{{ route('office.workspace.settings.wald') }}"
+                                @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('office.workspace.settings.*')])
+                                @if (request()->routeIs('office.workspace.settings.*')) aria-current="page" @endif
+                            >
+                                <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15.75a3.75 3.75 0 1 0 0-7.5 3.75 3.75 0 0 0 0 7.5Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12a7.5 7.5 0 0 0-.1-1.22l2.03-1.58-2-3.46-2.5 1a7.54 7.54 0 0 0-2.1-1.22L14.45 3h-4l-.38 2.52a7.54 7.54 0 0 0-2.1 1.22l-2.5-1-2 3.46 2.03 1.58A7.5 7.5 0 0 0 5.4 12c0 .41.03.82.1 1.22L3.47 14.8l2 3.46 2.5-1a7.54 7.54 0 0 0 2.1 1.22l.38 2.52h4l.38-2.52a7.54 7.54 0 0 0 2.1-1.22l2.5 1 2-3.46-2.03-1.58c.07-.4.1-.81.1-1.22Z"/></svg>
+                                <span>Settings</span>
+                            </a>
+                        </li>
                     @endcan
                 @else
                     <li>

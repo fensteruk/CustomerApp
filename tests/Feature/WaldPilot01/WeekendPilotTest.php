@@ -1,0 +1,136 @@
+<?php
+
+use App\Models\CustomerOrganisation;
+use App\Models\PortalRole;
+use App\Models\Site;
+use App\Models\User;
+use App\SourceImport\Integration\ExportOrder;
+use App\SourceImport\Integration\ImportAnalysis;
+use App\SourceImport\Integration\ImportConflict;
+use App\SourceImport\Integration\ImportReview;
+use App\SourceImport\Integration\PilotImportWorkflow;
+use App\SourceImport\Integration\ReviewedWorkbookSelection;
+use App\SourceImport\Integration\SourceBindingService;
+use App\SourceImport\Knowledge\Actions\AnswerClarification;
+use App\SourceImport\Knowledge\KnowledgeQueries;
+use App\SourceImport\Knowledge\KnowledgeScope;
+use App\SourceImport\Knowledge\Models\KnowledgeContext;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+
+uses(RefreshDatabase::class);
+
+beforeEach(function (): void {
+    config(['wald_import.pilot_available' => true]);
+    DB::table('wald_pilot_settings')->where('key', 'wald_import_pilot_enabled')->update(['enabled' => true]);
+});
+
+function pilotOffice(): User
+{
+    return User::factory()->create([
+        'customer_organisation_id' => null,
+        'portal_role_id' => PortalRole::query()->where('identifier', 'fenster_office_staff')->value('id'),
+        'is_active' => true,
+        'is_preview_user' => false,
+    ]);
+}
+
+function pilotBind(User $office, array $source, Site $site): void
+{
+    $scope = new KnowledgeScope($site->customer_organisation_id, $site->id, 'redzebra', 'call-offs');
+    $service = new SourceBindingService;
+    $draft = $service->draft($office, $scope, $source['kind'], $source['identity'], 'Exact weekend pilot binding.', (string) Str::uuid());
+    $service->activate($office, $scope, $draft['binding'], $draft['version'], $draft['definition_hash'], $draft['epoch'], 'Reviewed weekend pilot binding.', (string) Str::uuid());
+}
+
+function pilotAnalyse(User $office, KnowledgeScope $scope, object $run): void
+{
+    try {
+        (new ImportAnalysis)->analyse($office, $scope, $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    } catch (ImportConflict $exception) {
+        if ($exception->getMessage() !== 'structural_clarification_required') {
+            throw $exception;
+        }
+        $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
+        $context = KnowledgeContext::query()->findOrFail($run->context_id);
+        foreach ((new KnowledgeQueries)->questions($office, $scope, $context->uuid) as $question) {
+            if ($question['state'] !== 'ANSWERED' && $question['evidence']['type'] === 'STRUCTURAL' && count($question['evidence']['candidates']) === 1) {
+                (new AnswerClarification)->handle($office, $scope, $context->uuid, $question['uuid'], $question['sequence'], $question['evidence']['candidates'][0]['id'], 'Reviewed deterministic pilot header.', (string) Str::uuid());
+            }
+        }
+        $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
+        (new ImportAnalysis)->analyse($office, $scope, $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    }
+}
+
+it('imports two selected sites from the actual workbook independently and leaves every other site unchanged', function (): void {
+    $path = base_path('Copy of siteapp1.xlsx');
+    if (! is_file($path)) {
+        $this->markTestSkipped('Approved local workbook is not present.');
+    }
+    expect(hash_file('sha256', $path))->toBe(ReviewedWorkbookSelection::CHECKSUM);
+    $office = pilotOffice();
+    $workflow = new PilotImportWorkflow;
+    $pilot = $workflow->upload($office, new UploadedFile($path, 'private-pilot.xlsx', null, null, true), new ExportOrder('2026-09-11', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid());
+    if ($pilot['state'] === 'NEEDS_CLARIFICATION') {
+        $pilot = $workflow->confirmStructure($office, $pilot['upload'], 'CONFIRM DETECTED HEADER AND SITE LIST', (string) Str::uuid());
+    }
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    try {
+        expect($pilot['mode'])->toBe('PILOT_SINGLE_SITE_SELECTION')
+            ->and($pilot['sources'])->toHaveCount(12)
+            ->and($pilot['manifest']['record_count'])->toBe(47)
+            ->and($pilot['manifest']['included_count'])->toBe(45)
+            ->and($pilot['manifest']['excluded_count'])->toBe(2);
+
+        $targets = [];
+        foreach (array_slice($pilot['sources'], 0, 2) as $index => $source) {
+            $customer = CustomerOrganisation::factory()->create(['name' => 'TEST PILOT Customer '.($index + 1).' '.Str::uuid()]);
+            $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'TEST PILOT Site '.($index + 1), 'is_active' => true]);
+            pilotBind($office, $source, $site);
+            $selected = $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+            $run = DB::table('wald_import_runs')->where('uuid', $selected['run'])->firstOrFail();
+            pilotAnalyse($office, $selected['scope'], $run);
+            $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
+            $preview = (new ImportReview)->preview($office, $selected['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+            expect($preview['blockers'])->toBe([]);
+            (new ImportReview)->approve($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+            (new ImportReview)->commit($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+            $targets[] = $site->id;
+        }
+
+        expect(DB::table('wald_import_receipts')->count())->toBe(2)
+            ->and(DB::table('wald_pilot_selections')->where('state', 'COMMITTED')->count())->toBe(2)
+            ->and(DB::table('projected_plots')->whereNotIn('site_id', $targets)->count())->toBe(0)
+            ->and(DB::table('wald_import_runs')->distinct()->count('storage_key'))->toBe(1)
+            ->and(DB::table('wald_pilot_events')->where('action', 'pilot_site_committed')->count())->toBe(2);
+        $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+            ->assertOk()
+            ->assertSee('WEEKEND PILOT')
+            ->assertSee('ONE SITE AT A TIME')
+            ->assertDontSee('private-pilot.xlsx');
+        $this->actingAs($office)->post(route('office.workspace.pilot-import.selections.analyse', [
+            $pilot['upload'],
+            (string) Str::uuid(),
+        ]), ['command_uuid' => (string) Str::uuid()])->assertNotFound();
+    } finally {
+        Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
+    }
+});
+
+it('keeps real actions unavailable by default and denies external and stale Office users', function (): void {
+    $office = pilotOffice();
+    config(['wald_import.pilot_available' => false]);
+    $this->actingAs($office)->get(route('office.workspace.imports'))->assertOk()->assertDontSee('WEEKEND PILOT');
+    $this->actingAs($office)->post(route('office.workspace.pilot-import.upload'))->assertNotFound();
+
+    config(['wald_import.pilot_available' => true]);
+    $siteUser = User::factory()->create(['portal_role_id' => PortalRole::query()->where('identifier', 'site_manager')->value('id'), 'is_active' => true]);
+    $this->actingAs($siteUser)->get(route('office.workspace.imports'))->assertForbidden();
+    DB::table('users')->where('id', $office->id)->update(['is_active' => false]);
+    $this->actingAs($office)->get(route('office.workspace.imports'))->assertForbidden();
+});

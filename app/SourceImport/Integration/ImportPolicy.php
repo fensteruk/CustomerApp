@@ -13,7 +13,7 @@ final class ImportPolicy
 
     public function authorize(User $actor, KnowledgeScope $scope, string $ability, bool $lock = false): User
     {
-        if (! config('wald_import.enabled', false) || ! in_array($ability, self::ABILITIES, true) || ! $actor->exists || $actor->is_preview_user) {
+        if (! (config('wald_import.enabled', false) || (new WaldPilotAvailability)->enabled()) || ! in_array($ability, self::ABILITIES, true) || ! $actor->exists || $actor->is_preview_user) {
             throw new AuthorizationException('Import access denied.');
         }
         $query = User::query()->whereKey($actor->getKey());

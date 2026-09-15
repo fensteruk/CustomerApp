@@ -1,5 +1,22 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-WALD-PILOT01/02 release handover — 15 September 2026
+
+The weekend candidate is on feature/customer-wald-weekend-pilot, based on reconciliation
+merge f13630fb3503bf1431405a965c1699e272b56372. It provides a real Office-only private upload,
+multi-site discovery, exact one-site selection/binding, review/preview and atomic commit plus an
+audited Office setting. It does not complete full WALD06.
+
+Effective availability is environment allow AND application setting AND current Office
+authority. Repository and migration defaults are false. After deployment: verify backup and
+health, migrate, explicitly configure WALD_IMPORT_AVAILABLE=true, then enable Wald in Office
+Settings with confirmation. Emergency stop is environment false plus configuration refresh;
+history and existing commits remain. No production import or enablement occurred during build.
+See [work package](documentation/work-packages/WP-CUSTOMER-WALD-PILOT01-WEEKEND-LIVE-IMPORT.md)
+and [evidence](documentation/wald/customer-wald-pilot01-weekend-live-import-2026-09-15.md).
+
+Earlier WALD06 status below is historical and does not override this pilot.
+
 ## CUSTOMER-WALD06 integration reconciliation — 11 September 2026
 
 The canonical `feature/customer-wald-next` line retains accepted WALD02–05 at

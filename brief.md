@@ -1,28 +1,28 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
-Last updated: 11 September 2026.
-Authority: CUSTOMER-NEXT-RELEASE01, CUSTOMER-WALD06, DEC-061, current management product decisions and the
+Last updated: 15 September 2026.
+Authority: CUSTOMER-WALD-PILOT01/02, DEC-062, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
 ## Release truth
 
-Current local `main` is `dcea43e3266c06044c498ab2540b25c233a5d847`. The canonical
-`feature/customer-wald-next` branch retains accepted WALD02–05 at
-`c9fe0620069a10fe07050e4ec2f30043a9a9a1ec` and is the only authorised WALD06 integration line.
-This remains unreleased feature work: it is not pushed to `main`, production is unchanged and no
-deployment is authorised.
+The accepted CustomerApp product and WALD02–05 histories are reconciled by normal merge
+`f13630fb3503bf1431405a965c1699e272b56372`. The current release candidate is the bounded
+`feature/customer-wald-weekend-pilot` line. Management has authorised its normal commit, merge
+and push to `main`; production availability remains separately controlled and off by default.
 
 The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
 Its routes are absent in production even if the flag is set, it writes nothing and it has no
 upload, binding, Wald invocation or commit endpoint. Production navigation contains only real
 destinations: Review Requests, Customers and Notifications for authorised Office Staff.
 
-WALD02–05 are accepted feature-stream work and form the immutable implementation foundation for
-WALD06. WALD06 may add a default-off Office Import Studio, a parent export with site-specific
-review units and a supervised local/test pilot. It must not add a RedZebra API, automatic purge,
-production enablement or direct SiteApp dependency. The existing synthetic Import Studio remains
-demonstration evidence only until the real, authorised workflow replaces its route and behavior.
+WALD02–05 form the accepted backend. The temporary live pilot allows authorised Office Staff to
+upload one private workbook, choose exactly one detected source site, bind it exactly, review,
+preview and atomically commit that site as partial-only. Effective access requires the
+environment kill switch and audited application setting; both default off. It has no RedZebra
+API, automatic purge/splitting, customer access, SiteApp dependency or writeback. Full WALD06
+orchestration remains paused.
 
 ## Product boundary
 

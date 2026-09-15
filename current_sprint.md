@@ -1,5 +1,21 @@
 # Current Sprint
 
+## CUSTOMER-WALD-PILOT01/02 — supervised weekend import — 15 September 2026
+
+**Release candidate implemented and authorised for normal merge/push to main; effective
+production availability remains OFF.** The bounded Office flow accepts one private RedZebra
+workbook, detects multiple source sites and requires exactly one selected, exactly bound site per
+review/atomic commit. It is partial-only, preserves Portal workflow state and retains the exact
+checksum-bound CC!/CM2/NICK TEST decisions.
+
+Availability requires both WALD_IMPORT_AVAILABLE=true and the audited Office application
+setting. Both default false. The environment switch is the emergency hard-off. No flag was
+enabled, no production import was run and full WALD06 orchestration remains paused. See
+[work package](documentation/work-packages/WP-CUSTOMER-WALD-PILOT01-WEEKEND-LIVE-IMPORT.md)
+and [release evidence](documentation/wald/customer-wald-pilot01-weekend-live-import-2026-09-15.md).
+
+Earlier WALD06 status below is historical and does not override this pilot.
+
 ## CUSTOMER-WALD06 — Multi-site Import Studio + pilot readiness — 11 September 2026
 
 **Approved and in progress on `feature/customer-wald-next`; not released or deployed.** The

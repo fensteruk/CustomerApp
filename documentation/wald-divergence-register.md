@@ -1,6 +1,6 @@
 # Wald Distribution Divergence Register
 
-Last updated: 9 September 2026. Owner: Product and Architecture.
+Last updated: 15 September 2026. Owner: Product and Architecture.
 
 Latest correction: W5Q-03/04 at `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` adds CustomerApp-only
 durable attempt audit and operation-local batch profile eligibility. Backend application identity
@@ -248,6 +248,13 @@ WD-47/48 retain their original implementation identity; the current identities b
 |---|---|---|---|
 | WD-49 | CustomerApp-specific QA correction, W5Q-01/02/05 | Canonical transient digest parity, namespace-wide visit ordering and projection ownership protection; collision-resistant synthetic race owners. | `9f5751f7a6d62b4ae989e34f3894e3b57011a0a8`; projection/digest v2, preserved by fresh correction candidate. Original QA still failed W5Q-03/04. |
 | WD-50 | CustomerApp-specific QA correction, W5Q-03/04 | Independent immutable commit intent with one terminal outcome; atomic business/savepoint boundary and bounded retry/recovery. Operation-local batched current profile/version/provenance eligibility replaces repeated per-receipt queries; existing budgets and vetoes remain. | `dbd17c68a04c028418e2d8a08fc43312aae5fe3b`; Integration classes, additive 000013 audit migration and positive CorrectionRequalification/DedicatedBackendQa/MysqlAttemptConcurrency tests. Application v3, projection/digest v2. Fresh gate in linked QA report; no generic backport, full UI, pilot or deployment. |
+
+## Weekend pilot differences — 15 September 2026
+
+| ID | Category | Implemented difference | Evidence / identity |
+|---|---|---|---|
+| WD-51 | CustomerApp-specific temporary integration | One multi-site parent workbook with manually selected, independently atomic one-site review units. Site-scoped receipt identity permits sibling units to share the parent date/slot without weakening legacy WALD05 global-slot behavior. | CUSTOMER-WALD-PILOT01; additive 000015 migration, PilotImportWorkflow/Discovery, actual-workbook SQLite/MySQL two-site isolation evidence. PILOT_SINGLE_SITE_SELECTION, partial only. |
+| WD-52 | CustomerApp-specific operational control | Durable audited wald_import_pilot_enabled setting composed with hard environment gate WALD_IMPORT_AVAILABLE and current Office authority. Both defaults are false; environment OFF wins and denies every action. | CUSTOMER-WALD-PILOT02; WaldPilotAvailability, UpdateWaldPilotSettingAction and focused SQLite/MySQL setting tests. No generic Wald or SiteApp backport candidate. |
 
 ## Backport process
 

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\OfficeAdministrationPageController as Pages;
+use App\Http\Controllers\OfficePilotImportController as PilotImport;
+use App\Http\Controllers\OfficeWaldSettingsController as WaldSettings;
 use App\Models\CustomerOrganisation;
 use Illuminate\Support\Facades\Route;
 
@@ -9,7 +11,24 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
     ->scopeBindings()->group(function (): void {
         Route::get('/customers', [Pages::class, 'customers'])->name('customers.index');
         Route::get('/customers/new', [Pages::class, 'customerForm'])->name('customers.create');
-        Route::get('/imports', [Pages::class, 'imports'])->name('imports');
+        Route::get('/imports', [PilotImport::class, 'index'])->name('imports');
+        Route::get('/settings/wald', [WaldSettings::class, 'index'])->name('settings.wald');
+        Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
+        Route::post('/imports/pilot', [PilotImport::class, 'upload'])->name('pilot-import.upload');
+        Route::prefix('/imports/pilot/{upload}')->whereUuid('upload')->group(function (): void {
+            Route::get('/', [PilotImport::class, 'show'])->name('pilot-import.show');
+            Route::post('/confirm-structure', [PilotImport::class, 'confirmStructure'])->name('pilot-import.confirm-structure');
+            Route::post('/bindings/draft', [PilotImport::class, 'draftBinding'])->name('pilot-import.bindings.draft');
+            Route::post('/bindings/activate', [PilotImport::class, 'activateBinding'])->name('pilot-import.bindings.activate');
+            Route::post('/select', [PilotImport::class, 'select'])->name('pilot-import.select');
+            Route::prefix('/selections/{selection}')->whereUuid('selection')->group(function (): void {
+                Route::post('/analyse', [PilotImport::class, 'analyse'])->name('pilot-import.selections.analyse');
+                Route::post('/clarifications', [PilotImport::class, 'answer'])->name('pilot-import.selections.clarifications');
+                Route::post('/preview', [PilotImport::class, 'preview'])->name('pilot-import.selections.preview');
+                Route::post('/approve', [PilotImport::class, 'approve'])->name('pilot-import.selections.approve');
+                Route::post('/commit', [PilotImport::class, 'commit'])->name('pilot-import.selections.commit');
+            });
+        });
         Route::prefix('/customers/{customerOrganisation:uuid}')->whereUuid('customerOrganisation')->group(function (): void {
             Route::get('/', [Pages::class, 'customer'])->name('customers.show');
             Route::get('/edit', [Pages::class, 'customerForm'])->name('customers.edit');

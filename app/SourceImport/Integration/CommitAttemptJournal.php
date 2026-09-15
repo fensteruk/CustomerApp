@@ -94,7 +94,7 @@ final class CommitAttemptJournal
             } catch (AuthorizationException $denial) {
                 // Only an existing non-preview participant can leave a linked authority-loss attempt.
                 // Unknown/external probes receive the same denial and never gain target information.
-                if (! config('wald_import.enabled') || ! $actor->exists || $actor->is_preview_user) {
+                if (! (config('wald_import.enabled') || (new WaldPilotAvailability)->enabled()) || ! $actor->exists || $actor->is_preview_user) {
                     throw $denial;
                 }
                 $fresh = User::query()->whereKey($actor->id)->lockForUpdate()->first();

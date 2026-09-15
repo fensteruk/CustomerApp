@@ -8,8 +8,10 @@ use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
 use App\Policies\OfficeAdministrationPolicy;
+use App\SourceImport\Integration\WaldPilotAvailability;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\DB;
 
 final class OfficeAdministrationQueryService
 {
@@ -203,14 +205,28 @@ final class OfficeAdministrationQueryService
         $this->policy->authorize($actor, 'view');
         $this->assertContained($customer, $site);
 
-        return [
-            'availability' => 'NOT_YET_INTEGRATED',
-            'state' => 'NOT_YET_INTEGRATED',
-            'has_active_binding' => false,
-            'active_bindings' => [],
-            'active_bindings_truncated' => false,
-            'bindings' => null,
-        ];
+        if (! (new WaldPilotAvailability)->enabled()) {
+            return [
+                'availability' => 'NOT_YET_INTEGRATED',
+                'state' => 'NOT_YET_INTEGRATED',
+                'has_active_binding' => false,
+                'active_bindings' => [],
+                'active_bindings_truncated' => false,
+                'bindings' => null,
+            ];
+        }
+        $bindings = DB::table('wald_binding_versions as versions')
+            ->join('wald_source_bindings as bindings', function ($join): void {
+                $join->on('bindings.id', '=', 'versions.binding_id')->on('bindings.active_version', '=', 'versions.version');
+            })
+            ->where('versions.customer_organisation_id', $customer->id)->where('versions.site_id', $site->id)
+            ->orderBy('bindings.source_identity')->limit($this->perPage($perPage) + 1)
+            ->get(['bindings.uuid', 'bindings.source_namespace', 'bindings.identity_kind', 'bindings.source_identity', 'bindings.epoch', 'versions.version', 'versions.actor_name', 'versions.reason', 'versions.created_at']);
+        $truncated = $bindings->count() > $this->perPage($perPage);
+        $items = $bindings->take($this->perPage($perPage))->map(fn ($binding): array => (array) $binding)->all();
+
+        return ['availability' => 'AVAILABLE', 'state' => $items === [] ? 'UNBOUND' : 'ACTIVE', 'has_active_binding' => $items !== [],
+            'active_bindings' => $items, 'active_bindings_truncated' => $truncated, 'bindings' => $items];
     }
 
     public function importHistory(User $actor, CustomerOrganisation $customer, Site $site, int $perPage = 20): array
@@ -218,11 +234,29 @@ final class OfficeAdministrationQueryService
         $this->policy->authorize($actor, 'view');
         $this->assertContained($customer, $site);
 
-        return [
-            'availability' => 'NOT_YET_INTEGRATED',
-            'empty_state' => 'No import integration has been released yet.',
-            'runs' => [],
-        ];
+        if (! (new WaldPilotAvailability)->enabled()) {
+            return [
+                'availability' => 'NOT_YET_INTEGRATED',
+                'empty_state' => 'No import integration has been released yet.',
+                'runs' => [],
+            ];
+        }
+        $runs = DB::table('wald_pilot_selections as selections')
+            ->join('wald_pilot_uploads as uploads', 'uploads.id', '=', 'selections.pilot_upload_id')
+            ->join('wald_import_runs as runs', 'runs.id', '=', 'selections.run_id')
+            ->leftJoin('wald_import_receipts as receipts', 'receipts.run_id', '=', 'runs.id')
+            ->where('selections.customer_organisation_id', $customer->id)->where('selections.site_id', $site->id)
+            ->orderByDesc('uploads.export_order')->orderByDesc('uploads.revision')
+            ->select(['selections.uuid', 'runs.state', 'uploads.export_date', 'uploads.export_slot', 'uploads.revision', 'uploads.uploader_name', 'uploads.replacement_reason', 'receipts.payload as receipt_payload'])
+            ->paginate($this->perPage($perPage))->through(function ($run): array {
+                $receipt = $run->receipt_payload ? json_decode($run->receipt_payload, true, flags: JSON_THROW_ON_ERROR) : null;
+
+                return ['uuid' => $run->uuid, 'state' => $run->state, 'export_date' => $run->export_date, 'export_slot' => $run->export_slot,
+                    'uploader_name' => $run->uploader_name, 'replacement_reason' => $run->replacement_reason, 'is_correction' => (int) $run->revision > 1,
+                    'is_superseded' => $run->state === 'SUPERSEDED', 'receipt' => $receipt];
+            });
+
+        return ['availability' => 'AVAILABLE', 'empty_state' => 'No pilot imports have been recorded for this site.', 'runs' => $runs];
     }
 
     public function audits(User $actor, string $entityType, string $entityUuid, int $perPage = 20): LengthAwarePaginator

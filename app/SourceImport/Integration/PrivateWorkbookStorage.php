@@ -7,6 +7,7 @@ use App\Wald\Services\WorkbookSourceFactory;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -76,7 +77,11 @@ final class PrivateWorkbookStorage
     /** Only compensation for a generated upload that never became a registered artifact. */
     public function discardUnregistered(string $key): void
     {
-        if (preg_match('/^[a-f0-9-]{36}\.(xlsx|csv)$/D', $key) && ! DB::table('wald_import_runs')->where('storage_key', $key)->exists()) {
+        $registeredPilot = Schema::hasTable('wald_pilot_uploads')
+            && DB::table('wald_pilot_uploads')->where('storage_key', $key)->exists();
+        if (preg_match('/^[a-f0-9-]{36}\.(xlsx|csv)$/D', $key)
+            && ! $registeredPilot
+            && ! DB::table('wald_import_runs')->where('storage_key', $key)->exists()) {
             $this->disk()->delete($key);
         }
     }
