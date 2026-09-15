@@ -1,6 +1,6 @@
 # WP-CUSTOMER-WALD-SOURCE02 — Master Export Revisions + CustomerCode
 
-Status: Implemented on a non-deploying feature branch; release approval pending.
+Status: Merged into local `main`; controlled push approved under DEC-067; deployment not yet evidenced.
 
 Date: 15 September 2026
 

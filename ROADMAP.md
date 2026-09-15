@@ -2,15 +2,16 @@
 
 ## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
 
-**Implementation and release gates complete on a non-deploying feature branch; controlled handoff is next.** The
+**Implementation and release gates are complete and the release is merged into local `main` at
+`2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9`, approved for controlled push.** The
 same RedZebra date/slot can receive retained revisions, with automatic failed-upload replacement,
 confirmation for non-failed replacement, identical-hash suppression, current/history presentation
 and stale-preview protection. Exact CustomerCode is authoritative for source-site bindings; Site
 Name is descriptive evidence and unknown/missing codes fail safely.
 
 Existing additive schema requires no migration. SQLite, private-workbook and disposable MySQL
-8.4.11 gates pass. Next order is exact-SHA handoff, controlled release review, fresh recovery point
-and fictional smoke. Wald remains OFF; enablement and production import require separate approval.
+8.4.11 gates pass. Wald remains OFF; deployment evidence, any later fictional smoke, enablement
+and production import remain separate controlled steps.
 
 Earlier entries below are historical inputs and do not override this status.
 

@@ -2,30 +2,31 @@
 
 Last updated: 15 September 2026.
 Authority: CUSTOMER-WALD-PILOT01/02, CUSTOMER-WALD-CUSTAPP2-01,
-CUSTOMER-WALD-GOLIVE02, CUSTOMER-WALD-SOURCE02, DEC-066, current management product decisions and the
+CUSTOMER-WALD-GOLIVE02, CUSTOMER-WALD-SOURCE02, DEC-067, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
 ## Release truth
 
-Production serves corrected commit-boundary release
-`89768986a1a32d4258b5deebdf3012584acd6a6c`. `WALD_IMPORT_AVAILABLE=false`, so effective
-production pilot availability is OFF. The permissive generic boolean cast was identified as the
-environment-gate defect and is corrected only on the separate CUSTOMER-WALD-GOLIVE02 feature
-branch. No current source-compatibility work may alter production state.
+SOURCE02 and its strict-gate/CUSTAPP2 prerequisites are merged into local `main` at release merge
+`2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9` and approved for controlled push.
+Production deployment is not claimed until separately evidenced. The last evidenced production
+release is `89768986a1a32d4258b5deebdf3012584acd6a6c`, with
+`WALD_IMPORT_AVAILABLE=false`, so effective production pilot availability is OFF. No source
+compatibility release enables Wald or authorises a customer import.
 
-CUSTOMER-WALD-CUSTAPP2-01 is implemented only on a non-deploying feature branch. The approved
+CUSTOMER-WALD-CUSTAPP2-01 is included in the current `main` release line. The approved
 private workbook's aggregate structure qualifies locally on SQLite and MySQL, except one selected
 site correctly blocks on conflicting explicit product evidence. This is PARTIAL qualification,
 not a production, release or source-data-correction claim.
 
-CUSTOMER-WALD-GOLIVE02 is a separate non-deploying strict-gate correction. The environment gate
+CUSTOMER-WALD-GOLIVE02 is included in the current `main` release line. The environment gate
 now accepts only the exact case-insensitive word `true`; all missing, false-like, numeric and
 malformed values fail closed. Effective availability still requires the audited application
-setting and current authorised Office identity. The correction is not deployed and does not
-change the current production-off state.
+setting and current authorised Office identity. Deployment is not yet evidenced and the release
+does not change the approved production-off state.
 
-CUSTOMER-WALD-SOURCE02 is implemented on a separate non-deploying feature branch. A RedZebra
+CUSTOMER-WALD-SOURCE02 is included in the current `main` release line. A RedZebra
 date/slot is a master-export revision family: failed predecessors are replaced without an extra
 warning, non-failed predecessors require explicit confirmation, identical bytes create no
 revision, and older audit/receipts remain. Uncommitted predecessor reviews are stale; committed

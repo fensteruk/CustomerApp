@@ -1727,3 +1727,27 @@ Reason:
 
 The source is a regenerated master export, so a slot is a revision family rather than a permanent
 one-upload key. CustomerCode is stable source identity; mutable Site Name text is not.
+
+---
+
+## DEC-067
+
+Date: 15 September 2026
+
+Decision: The fully qualified CUSTOMER-WALD-SOURCE02 release line may be merged into `main` and
+pushed to `origin/main` as the controlled release action.
+
+- The release includes the strict fail-closed Wald environment gate, CUSTAPP2 source identity and
+  composite compatibility, SOURCE02 master-export revisions and the existing sidebar correction.
+- Wald remains disabled by default and in the last evidenced production configuration.
+- This approval does not enable Wald, authorise a production or customer-data import, alter
+  SiteApp, run a migration or claim that a Forge deployment succeeded merely because Git was
+  pushed.
+- The separate uncommitted WALD06 automatic multi-site review work is excluded from this release
+  and must remain preserved for its own implementation and qualification cycle.
+
+Reason:
+
+Management explicitly approved merging and pushing the completed, tested changes before the
+planned absence. Keeping enablement and import authority separate preserves the fail-closed pilot
+boundary while allowing the qualified code release to proceed.

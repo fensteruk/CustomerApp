@@ -2,15 +2,17 @@
 
 ## Current handover — CUSTOMER-WALD-SOURCE02 — 15 September 2026
 
-The current non-deploying branch implements master-export same-slot revisions and authoritative
-CustomerCode binding under DEC-066. Existing schema already supports successor uploads and generic
+SOURCE02 is merged into local `main` at `2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9`
+and approved for push under DEC-067. It implements master-export same-slot revisions and
+authoritative CustomerCode binding under DEC-066. Existing schema already supports successor uploads and generic
 identity kinds, so there is no migration. The approved new private workbook remains local and
 uncommitted; its SHA-qualified structure is 33 records / 9 CustomerCodes / 9 source identities.
 
-Before release, review the final report and exact commit, accept disposable MySQL evidence, then
-follow the controlled deployment/recovery process. Do not enable Wald, import real customer data,
-push `main`, deploy or alter SiteApp under this handover. Production remains unchanged with Wald
-OFF.
+Merged-main qualification is green: 63 focused cases with 3 expected skips / 269 assertions and
+1,560 full-suite passes with 81 expected skips / 8,038 assertions, plus Pint, Composer validation
+and audit, Vite build and diff checks. The controlled `main` push is authorised; do not enable
+Wald, import real customer data or alter SiteApp. Record deployment separately rather than
+inferring it from the push.
 
 Earlier handovers below are historical evidence.
 
