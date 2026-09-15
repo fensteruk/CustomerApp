@@ -2,7 +2,6 @@
 
 namespace App\Http\Controllers;
 
-use App\SourceImport\Integration\CommitAttemptJournal;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
@@ -12,7 +11,6 @@ use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Integration\WaldPilotAvailability;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
-use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeConflict;
 use App\SourceImport\Knowledge\KnowledgeQueries;
 use App\SourceImport\Knowledge\KnowledgeScope;
@@ -227,14 +225,13 @@ final class OfficePilotImportController extends Controller
         ]);
         try {
             [$scope, $run] = $this->selection($request, $upload, $selection);
-            $payload = [$run->uuid, $data['preview'], $data['hash']];
-            (new CommitAttemptJournal)->execute(
+            (new ImportReview)->commit(
                 $request->user(),
                 $scope,
+                $run->uuid,
+                $data['preview'],
+                $data['hash'],
                 $data['command_uuid'],
-                Canonical::hash($payload),
-                $payload,
-                fn (): array => (new ImportReview)->commit($request->user(), $scope, $run->uuid, $data['preview'], $data['hash'], $data['command_uuid']),
             );
         } catch (ImportConflict $exception) {
             return back()->withErrors(['import' => $this->message($exception)]);

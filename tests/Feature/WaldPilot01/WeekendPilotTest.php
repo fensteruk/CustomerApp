@@ -20,6 +20,7 @@ use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Tests\Support\Wald05BackendFixtures;
 
 uses(RefreshDatabase::class);
 
@@ -117,6 +118,61 @@ it('imports two selected sites from the actual workbook independently and leaves
             $pilot['upload'],
             (string) Str::uuid(),
         ]), ['command_uuid' => (string) Str::uuid()])->assertNotFound();
+    } finally {
+        Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
+    }
+});
+
+it('commits one synthetic pilot site through the authenticated HTTP route', function (): void {
+    $office = pilotOffice();
+    $workflow = new PilotImportWorkflow;
+    $pilot = $workflow->upload(
+        $office,
+        Wald05BackendFixtures::workbook(count: 1),
+        new ExportOrder('2099-01-02', 'MORNING'),
+        ExportOrder::CONFIRMATION,
+        (string) Str::uuid(),
+    );
+    if ($pilot['state'] === 'NEEDS_CLARIFICATION') {
+        $pilot = $workflow->confirmStructure($office, $pilot['upload'], 'CONFIRM DETECTED HEADER AND SITE LIST', (string) Str::uuid());
+    }
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    try {
+        $customer = CustomerOrganisation::factory()->create(['name' => 'Synthetic Pilot HTTP Customer '.Str::uuid()]);
+        $site = Site::factory()->create([
+            'customer_organisation_id' => $customer->id,
+            'name' => 'Synthetic Pilot HTTP Site',
+            'is_active' => true,
+        ]);
+        $source = $pilot['sources'][0];
+        pilotBind($office, $source, $site);
+        $selected = $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+        $run = DB::table('wald_import_runs')->where('uuid', $selected['run'])->firstOrFail();
+        pilotAnalyse($office, $selected['scope'], $run);
+        $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
+        $preview = (new ImportReview)->preview($office, $selected['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+        expect($preview['blockers'])->toBe([]);
+        (new ImportReview)->approve($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+
+        $command = (string) Str::uuid();
+        $this->actingAs($office)->post(
+            route('office.workspace.pilot-import.selections.commit', [$pilot['upload'], $selected['selection']]),
+            [
+                'preview' => $preview['preview'],
+                'hash' => $preview['hash'],
+                'confirmation' => 'COMMIT THIS ONE SITE',
+                'command_uuid' => $command,
+            ],
+        )->assertRedirect()
+            ->assertSessionHasNoErrors()
+            ->assertSessionHas('status', 'One selected site committed atomically. No other source site was changed.');
+
+        $attempt = DB::table('wald_commit_attempts')->where('command_uuid', $command)->firstOrFail();
+        expect(DB::table('wald_import_receipts')->where('run_id', $run->id)->count())->toBe(1)
+            ->and(DB::table('wald_commit_attempts')->where('command_uuid', $command)->count())->toBe(1)
+            ->and(DB::table('wald_commit_attempt_outcomes')->where('attempt_id', $attempt->id)->value('outcome'))->toBe('SUCCEEDED')
+            ->and(DB::table('wald_pilot_selections')->where('uuid', $selected['selection'])->value('state'))->toBe('COMMITTED');
     } finally {
         Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
     }

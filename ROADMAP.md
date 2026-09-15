@@ -2,11 +2,16 @@
 
 ## CUSTOMER-WALD-PILOT01/02 — supervised weekend pilot — 15 September 2026
 
-The minimal Office-only, one-selected-site import and two-layer enable control are implemented
-as a release candidate. Repository and database defaults remain off. A controlled production
-deployment may publish the dark code; backup, migration, health verification, environment
-enablement and audited Office enablement remain ordered deployment steps. Full WALD06 automatic
-multi-site orchestration remains deferred.
+**Production is deployed but the pilot is disabled after its first fictional smoke exposed a
+duplicate commit-journal boundary.** Upload through approved preview worked; the commit guard
+refused safely with no receipt or Portal mutation. A narrow feature-branch correction now makes
+the domain import service the sole journal owner and has passed strict authenticated HTTP/MySQL,
+full application and established MySQL race requalification.
+
+Next delivery order is separate approval to merge and deploy the correction, verify the served
+SHA, establish a fresh backup, create a fresh fictional one-site preview and repeat the supervised
+commit/idempotency/isolation smoke. Keep `WALD_IMPORT_AVAILABLE=false` until that point. Full
+WALD06 automatic multi-site orchestration remains deferred.
 
 Earlier WALD06 status below is historical and does not override this pilot.
 

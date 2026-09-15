@@ -2,18 +2,22 @@
 
 ## CUSTOMER-WALD-PILOT01/02 release handover — 15 September 2026
 
-The weekend candidate is on feature/customer-wald-weekend-pilot, based on reconciliation
-merge f13630fb3503bf1431405a965c1699e272b56372. It provides a real Office-only private upload,
-multi-site discovery, exact one-site selection/binding, review/preview and atomic commit plus an
-audited Office setting. It does not complete full WALD06.
+Production serves `8a5a2384dd32c89852172c8dd99ffaba880dc698`. The first supervised fictional
+pilot passed backup, storage, access, upload, binding, analysis, preview and approval but the
+commit was refused by `commit_requires_top_level_boundary`: the controller wrapped the same
+commit journal already owned by `ImportStore`. The refusal is immutable truthful evidence; no
+receipt, projection or Portal workflow data changed. Production `WALD_IMPORT_AVAILABLE=false`
+is the final emergency-gate state. The application setting remains enabled behind that hard-off.
 
-Effective availability is environment allow AND application setting AND current Office
-authority. Repository and migration defaults are false. After deployment: verify backup and
-health, migrate, explicitly configure WALD_IMPORT_AVAILABLE=true, then enable Wald in Office
-Settings with confirmation. Emergency stop is environment false plus configuration refresh;
-history and existing commits remain. No production import or enablement occurred during build.
-See [work package](documentation/work-packages/WP-CUSTOMER-WALD-PILOT01-WEEKEND-LIVE-IMPORT.md)
-and [evidence](documentation/wald/customer-wald-pilot01-weekend-live-import-2026-09-15.md).
+The local non-deploying correction branch is
+`codex/fix-wald-pilot-commit-boundary-2026-09-15`. The controller now validates/resolves and
+delegates directly to `ImportReview::commit()`; the domain journal guard and all security,
+transaction, retry, idempotency and audit behaviour are unchanged. Strict production-like
+authenticated HTTP/MySQL, full SQLite and the established MySQL audit/concurrency gate pass.
+Do not re-enable production from this handover. First obtain separate merge/deployment approval,
+verify the served corrected SHA, take a fresh backup, use a fresh fictional preview and repeat the
+one-site commit/reload/isolation smoke. See
+[correction evidence](documentation/wald/customer-wald-pilot01-commit-boundary-correction-2026-09-15.md).
 
 Earlier WALD06 status below is historical and does not override this pilot.
 

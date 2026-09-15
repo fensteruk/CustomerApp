@@ -1,5 +1,35 @@
 # Fenster Customer Portal Decisions
 
+## DEC-063
+
+Date: 15 September 2026
+
+Decision: the first supervised CUSTOMER-WALD-PILOT01 production smoke establishes that the
+deployed pilot must remain unavailable while the production-discovered duplicate commit-journal
+boundary is corrected and released.
+
+- The immutable refused production attempt and its `commit_requires_top_level_boundary`
+  outcome remain truthful audit evidence. They must not be deleted, rewritten or converted into
+  a successful receipt.
+- The authenticated HTTP controller owns request validation and selection resolution, then
+  delegates once to `ImportReview::commit()`. `ImportStore` remains the sole owner of the
+  `CommitAttemptJournal` entry boundary for a commit command.
+- The runtime top-level transaction guard, immutable outcome rules, authorisation, transaction,
+  retry, idempotency, projection and receipt behaviour must not be weakened to fix the defect.
+- Regression evidence must include an authenticated HTTP commit on disposable MySQL 8.4 with
+  the strict runtime boundary active, not only Laravel's unit-test transaction exception.
+- Production `WALD_IMPORT_AVAILABLE` remains false until the correction is merged, deployed and
+  followed by a fresh approved backup, fresh one-site fictional preview and supervised commit
+  smoke. The audited application setting may remain enabled behind the environment hard-off.
+- This correction does not authorise a push, deployment, environment change, production import,
+  deletion of pilot evidence or wider WALD06 work.
+
+Reason: production correctly refused a nested audit boundary before any business mutation. The
+safe correction is to remove only the redundant web-layer journal wrapper while preserving the
+domain-owned journal and every existing safety control.
+
+---
+
 ## DEC-062
 
 Date: 15 September 2026

@@ -2,17 +2,21 @@
 
 ## CUSTOMER-WALD-PILOT01/02 — supervised weekend import — 15 September 2026
 
-**Release candidate implemented and authorised for normal merge/push to main; effective
-production availability remains OFF.** The bounded Office flow accepts one private RedZebra
-workbook, detects multiple source sites and requires exactly one selected, exactly bound site per
-review/atomic commit. It is partial-only, preserves Portal workflow state and retains the exact
-checksum-bound CC!/CM2/NICK TEST decisions.
+**PRODUCTION DISABLED AFTER TEST; correction requalified locally, not deployed.** Production SHA
+`8a5a2384dd32c89852172c8dd99ffaba880dc698` passed deployment, backup, access, private storage,
+fictional upload, binding, analysis, preview and approval. Commit was safely refused before any
+business mutation by `commit_requires_top_level_boundary`, exposing a duplicate controller/domain
+journal boundary. `WALD_IMPORT_AVAILABLE=false`; the audited application setting remains enabled
+but is ineffective.
 
-Availability requires both WALD_IMPORT_AVAILABLE=true and the audited Office application
-setting. Both default false. The environment switch is the emergency hard-off. No flag was
-enabled, no production import was run and full WALD06 orchestration remains paused. See
+The narrow correction removes only the controller-owned duplicate wrapper and retains the
+domain-owned journal, authorisation, transaction, retry, idempotency and projection rules. It is
+requalified on local branch `codex/fix-wald-pilot-commit-boundary-2026-09-15` with authenticated
+SQLite HTTP coverage, a strict production-like HTTP/MySQL test, full regression and the established
+MySQL race gate. Production must remain unavailable until separately approved merge/deployment,
+fresh backup, fresh fictional preview and supervised smoke. Full WALD06 remains paused. See
 [work package](documentation/work-packages/WP-CUSTOMER-WALD-PILOT01-WEEKEND-LIVE-IMPORT.md)
-and [release evidence](documentation/wald/customer-wald-pilot01-weekend-live-import-2026-09-15.md).
+and [correction evidence](documentation/wald/customer-wald-pilot01-commit-boundary-correction-2026-09-15.md).
 
 Earlier WALD06 status below is historical and does not override this pilot.
 

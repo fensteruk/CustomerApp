@@ -1,23 +1,27 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
 Last updated: 15 September 2026.
-Authority: CUSTOMER-WALD-PILOT01/02, DEC-062, current management product decisions and the
+Authority: CUSTOMER-WALD-PILOT01/02, DEC-063, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
 ## Release truth
 
-The accepted CustomerApp product and WALD02–05 histories are reconciled by normal merge
-`f13630fb3503bf1431405a965c1699e272b56372`. The current release candidate is the bounded
-`feature/customer-wald-weekend-pilot` line. Management has authorised its normal commit, merge
-and push to `main`; production availability remains separately controlled and off by default.
+The bounded pilot is deployed on production SHA
+`8a5a2384dd32c89852172c8dd99ffaba880dc698`. Its first supervised fictional one-site smoke
+passed access, upload, binding, analysis, preview and approval, then safely refused commit because
+the HTTP controller and domain service both entered the immutable commit journal. No receipt or
+business mutation occurred. `WALD_IMPORT_AVAILABLE=false`, so effective production pilot
+availability is OFF even though the audited application setting remains enabled. A locally
+requalified correction exists only on a non-deploying branch; it is not on `main` or deployed.
 
 The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
 Its routes are absent in production even if the flag is set, it writes nothing and it has no
 upload, binding, Wald invocation or commit endpoint. Production navigation contains only real
 destinations: Review Requests, Customers and Notifications for authorised Office Staff.
 
-WALD02–05 form the accepted backend. The temporary live pilot allows authorised Office Staff to
+WALD02–05 form the accepted backend. When explicitly re-enabled after an approved corrected
+release and fresh recovery point, the temporary live pilot allows authorised Office Staff to
 upload one private workbook, choose exactly one detected source site, bind it exactly, review,
 preview and atomically commit that site as partial-only. Effective access requires the
 environment kill switch and audited application setting; both default off. It has no RedZebra
