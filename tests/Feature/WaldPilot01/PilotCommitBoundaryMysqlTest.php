@@ -50,7 +50,11 @@ it('commits one pilot site through the production-like HTTP boundary on MySQL', 
     $workflow = new PilotImportWorkflow;
     $pilot = $workflow->upload(
         $office,
-        Wald05BackendFixtures::workbook(count: 1),
+        Wald05BackendFixtures::workbook(
+            overrides: [0 => ['CustomerNo' => 'SYNTHETIC-CUSTOMER-MYSQL']],
+            headers: ['CustomerNo', 'Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS', 'BF'],
+            count: 1,
+        ),
         new ExportOrder('2099-01-01', 'MORNING'),
         ExportOrder::CONFIRMATION,
         (string) Str::uuid(),

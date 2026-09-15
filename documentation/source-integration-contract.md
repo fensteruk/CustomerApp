@@ -33,6 +33,27 @@ This addendum does not authorise automatic multi-site commit. One explicitly sel
 bound site remains the atomic review/commit unit. CUSTAPP2 recognizes PC1/CC1/CM1 and does not
 inherit the earlier workbook's checksum-specific `CC!`/CM2 treatment.
 
+## CUSTOMER-WALD-SOURCE02 addendum — 15 September 2026
+
+For new RedZebra master exports, exact `CustomerNo` or `CustomerCode` is the authoritative
+`customer_code` field. The binding identity is source namespace + exact CustomerCode. Site Name
+is retained as descriptive evidence and may produce a review warning when its wording changes;
+it cannot fuzzy-match, create a Portal site, override or split the code identity. Unknown codes
+require explicit Office binding to an existing active Portal site. Missing codes block the
+dependent new-master-export intake. Historical exact Site Name/source-ID bindings remain readable;
+only exact approved historical workbook hashes use that legacy path and no codes are invented.
+
+Export Date + Slot is a logical twice-daily master-export slot, not a permanent single-upload
+limit. Different same-slot bytes create an audited successor revision. Failed current uploads may
+be superseded automatically; non-failed current uploads require exact replacement confirmation.
+Identical hashes return the existing import. Supersession retains private workbook/audit/review/
+receipt history, invalidates older uncommitted runs and presents the newest revision as current.
+Committed data is not reversed: the successor follows normal one-site review and explicit
+correction lineage. `PARTIAL_FILTERED_EXPORT` still means absence cannot delete, reverse or zero.
+
+This addendum is implemented by CUSTOMER-WALD-SOURCE02 without a schema migration. It does not
+enable automatic multi-site commit or Wald production availability.
+
 ## CUSTOMER-WALD01A reconciliation addendum — 4 September 2026
 
 The current controlled field and value definitions are in
@@ -150,12 +171,13 @@ not the WALD05 commit contract. WALD05 commits one explicitly reviewed bounded r
 transaction; any failure rolls the whole unit back. If limits require smaller work, the units are
 created and reviewed explicitly before approval, never hidden-chunked or applied per row.
 
-Within a source namespace/workbook family, at most one import may commit successfully per Export
-Date/Export Slot. The same slot and same canonical workbook/content identity is idempotent and
-returns the existing receipt. The same slot with different content is a conflict requiring an
-explicit audited correction/replacement successor. An older declared slot cannot overwrite a
-newer committed one. The same Call No. in a later allowed export is the same visit: unchanged
-canonical content has no semantic effect; changed content is an ordered update/correction.
+Within a source namespace/workbook family and selected site unit, each Export Date/Slot revision
+has one terminal commit outcome. The same canonical content is idempotent and returns the existing
+receipt. Different same-slot content follows the audited successor rules in the SOURCE02 addendum:
+the upload revision is explicit, and any changed committed facts require matching predecessor
+lineage. An older declared slot cannot overwrite a newer committed one. The same Call No. in a
+later allowed export is the same visit: unchanged canonical content has no semantic effect;
+changed content is an ordered update/correction.
 
 Only a supplied, present product column may carry an exact blank/zero/positive meaning under the
 approved supplied-record contract. An absent column is unrepresented and preserves existing

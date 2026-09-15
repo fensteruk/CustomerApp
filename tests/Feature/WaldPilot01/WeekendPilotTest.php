@@ -128,7 +128,11 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
     $workflow = new PilotImportWorkflow;
     $pilot = $workflow->upload(
         $office,
-        Wald05BackendFixtures::workbook(count: 1),
+        Wald05BackendFixtures::workbook(
+            overrides: [0 => ['CustomerNo' => 'SYNTHETIC-CUSTOMER-001']],
+            headers: ['CustomerNo', 'Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS', 'BF'],
+            count: 1,
+        ),
         new ExportOrder('2099-01-02', 'MORNING'),
         ExportOrder::CONFIRMATION,
         (string) Str::uuid(),

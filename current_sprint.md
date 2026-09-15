@@ -1,5 +1,29 @@
 # Current Sprint
 
+## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
+
+**Implemented and fully verified on a separate non-deploying feature branch.** Same
+date/slot imports now form retained successor revisions. Failed current uploads are replaced
+automatically, non-failed current uploads require exact confirmation, identical workbook hashes
+do not create noise, and current cards link to revision history. Supersession stales old
+uncommitted reviews while committed projections remain governed by correction and partial-export
+rules.
+
+Exact `CustomerNo`/`CustomerCode` headers now supply the authoritative CustomerCode binding key.
+Site Name remains visible review evidence; unknown codes require exact Office binding and missing
+codes block the new master-export path. The new private workbook qualified locally at its approved
+SHA: 33 records, nine codes and nine source identities. Existing schema is sufficient; no
+migration, deployment, `main` push, production access or Wald enablement occurred.
+
+Focused final SOURCE02 evidence: 8 passes / 66 assertions; the broader Wald integration checkpoint
+passed 747 / 25 expected skips / 3,536 assertions. Disposable MySQL 8.4.11 applied all 17 migrations
+and passed 48 replacement/binding/HTTP cases / 172 assertions with one intentional non-MySQL skip.
+Final full regression: 1,561 passes / 80 expected skips / 8,052 assertions; the private-master test
+separately passed 1 / 9 at its approved local path. Pint, Composer validation/audit, Vite build,
+production npm audit and diff checks pass.
+
+Earlier GOLIVE02/CUSTAPP2/pilot entries below are historical inputs and do not override this status.
+
 ## CUSTOMER-WALD-GOLIVE02 — strict environment gate — 15 September 2026
 
 **Implemented and fully verified on a separate non-deploying feature branch.** The Wald

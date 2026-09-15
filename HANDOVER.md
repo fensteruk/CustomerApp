@@ -1,5 +1,19 @@
 # Fenster Customer Portal Handover
 
+## Current handover — CUSTOMER-WALD-SOURCE02 — 15 September 2026
+
+The current non-deploying branch implements master-export same-slot revisions and authoritative
+CustomerCode binding under DEC-066. Existing schema already supports successor uploads and generic
+identity kinds, so there is no migration. The approved new private workbook remains local and
+uncommitted; its SHA-qualified structure is 33 records / 9 CustomerCodes / 9 source identities.
+
+Before release, review the final report and exact commit, accept disposable MySQL evidence, then
+follow the controlled deployment/recovery process. Do not enable Wald, import real customer data,
+push `main`, deploy or alter SiteApp under this handover. Production remains unchanged with Wald
+OFF.
+
+Earlier handovers below are historical evidence.
+
 ## CUSTOMER-WALD-GOLIVE02 handover — 15 September 2026
 
 The narrow strict-gate correction is on `codex/wald-strict-env-gate-2026-09-15`, based directly on

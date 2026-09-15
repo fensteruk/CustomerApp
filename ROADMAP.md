@@ -1,5 +1,19 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
+
+**Implementation and release gates complete on a non-deploying feature branch; controlled handoff is next.** The
+same RedZebra date/slot can receive retained revisions, with automatic failed-upload replacement,
+confirmation for non-failed replacement, identical-hash suppression, current/history presentation
+and stale-preview protection. Exact CustomerCode is authoritative for source-site bindings; Site
+Name is descriptive evidence and unknown/missing codes fail safely.
+
+Existing additive schema requires no migration. SQLite, private-workbook and disposable MySQL
+8.4.11 gates pass. Next order is exact-SHA handoff, controlled release review, fresh recovery point
+and fictional smoke. Wald remains OFF; enablement and production import require separate approval.
+
+Earlier entries below are historical inputs and do not override this status.
+
 ## CUSTOMER-WALD-GOLIVE02 — strict environment gate — 15 September 2026
 
 **Narrow correction implemented and fully verified; controlled release handoff is next.** Only exact

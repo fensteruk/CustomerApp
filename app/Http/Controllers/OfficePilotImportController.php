@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\SourceImport\Integration\ExportOrder;
+use App\SourceImport\Integration\IdenticalPilotImportConflict;
 use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
 use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\PilotImportPolicy;
 use App\SourceImport\Integration\PilotImportWorkflow;
+use App\SourceImport\Integration\PilotReplacementConfirmationRequired;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Integration\WaldPilotAvailability;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
@@ -30,8 +32,26 @@ final class OfficePilotImportController extends Controller
         }
         (new PilotImportPolicy)->authorize($request->user());
 
+        $current = DB::table('wald_pilot_uploads as uploads')
+            ->whereNotExists(function ($query): void {
+                $query->selectRaw('1')->from('wald_pilot_uploads as newer')
+                    ->whereColumn('newer.stream_id', 'uploads.stream_id')
+                    ->whereColumn('newer.export_order', 'uploads.export_order')
+                    ->whereColumn('newer.revision', '>', 'uploads.revision');
+            });
+        $replacementSlots = (clone $current)->orderByDesc('uploads.export_order')->limit(1000)
+            ->get(['uploads.uuid', 'uploads.export_date', 'uploads.export_slot', 'uploads.revision', 'uploads.state'])
+            ->mapWithKeys(fn (object $upload): array => [
+                $upload->export_date.':'.$upload->export_slot => [
+                    'uuid' => $upload->uuid,
+                    'revision' => (int) $upload->revision,
+                    'state' => $upload->state,
+                ],
+            ])->all();
+
         return view('office.pilot-import.index', [
-            'uploads' => DB::table('wald_pilot_uploads')->orderByDesc('export_order')->orderByDesc('revision')->paginate(20),
+            'uploads' => $current->orderByDesc('uploads.export_order')->paginate(20),
+            'replacementSlots' => $replacementSlots,
         ]);
     }
 
@@ -46,6 +66,7 @@ final class OfficePilotImportController extends Controller
             'command_uuid' => ['required', 'uuid'],
             'predecessor' => ['nullable', 'uuid'],
             'replacement_reason' => ['nullable', 'string', 'max:2000'],
+            'replacement_confirmation' => ['nullable', Rule::in([PilotImportWorkflow::REPLACEMENT_CONFIRMATION])],
         ]);
         try {
             $result = $workflow->upload(
@@ -56,7 +77,14 @@ final class OfficePilotImportController extends Controller
                 $data['command_uuid'],
                 $data['predecessor'] ?? null,
                 $data['replacement_reason'] ?? null,
+                $data['replacement_confirmation'] ?? null,
             );
+        } catch (IdenticalPilotImportConflict $exception) {
+            return back()->withInput()->with('existing_import_url', route('office.workspace.pilot-import.show', $exception->existingUploadUuid))
+                ->withErrors(['import' => 'This exact export has already been uploaded. No duplicate revision was created.']);
+        } catch (PilotReplacementConfirmationRequired $exception) {
+            return back()->withInput()->with('existing_import_url', route('office.workspace.pilot-import.show', $exception->existingUploadUuid))
+                ->withErrors(['import' => 'An import already exists for this date and slot. Review the replacement warning and confirm before continuing.']);
         } catch (ImportConflict $exception) {
             return back()->withInput()->withErrors(['import' => $this->message($exception)]);
         }
@@ -277,7 +305,9 @@ final class OfficePilotImportController extends Controller
     {
         return match ($exception->getMessage()) {
             'source_site_binding_required' => 'Activate an exact binding to the chosen active Portal site first.',
-            'pilot_slot_requires_explicit_correction' => 'That date and slot already exists. Use an explicit corrected export linked to it.',
+            'customer_code_missing' => 'CustomerCode is missing. Wald cannot safely identify this source site.',
+            'identical_pilot_import_exists' => 'This exact export has already been uploaded. No duplicate revision was created.',
+            'pilot_replacement_confirmation_required' => 'An import already exists for this date and slot. Confirm the retained-history replacement before continuing.',
             'duplicate_call_number' => 'The workbook contains a duplicate Call No. Nothing was staged.',
             'stale_preview', 'stale_preview_generation', 'stale_source_stream', 'stale_source_binding', 'stale_projection' => 'The preview is stale. Analyse and review this site again.',
             default => 'The supervised pilot stopped safely: '.Str::headline($exception->getMessage()).'.',

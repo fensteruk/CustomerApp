@@ -220,7 +220,7 @@ final readonly class AnalysisSnapshot
                 }
             }
 
-            $hasSiteIdentity = isset($roles['source_site_identity']) || isset($roles['transitional_site_clue']);
+            $hasSiteIdentity = isset($roles['source_customer_code']) || isset($roles['source_site_identity']) || isset($roles['transitional_site_clue']);
             if ($hasSiteIdentity
                 && isset($roles['call_reference'], $roles['plot_reference'], $roles['call_type'], $roles['completion'])) {
                 return true;

@@ -120,6 +120,7 @@ it('uses exact field treatments and never invents Portal dates', function ($head
     expect($result->value)->toBe($role)->and($result->classification)->toBe($classification);
 })->with([[' Items Ordered Status ', 'ignored', C::Ignored], ['SITE VALUE', 'ignored', C::Ignored],
     ['Plot To Be Installed', 'pc1_operational_install_date', C::Confirmed], ['Site Name', 'transitional_site_clue', C::Confirmed],
+    ['CustomerNo', 'source_customer_code', C::Confirmed], ['CustomerCode', 'source_customer_code', C::Confirmed],
     ['Source Site ID', 'source_site_identity', C::Confirmed], ['Source Site Reference', 'source_site_identity', C::Confirmed],
     ['Date Agreed', null, C::Unknown], ['Requested Date', null, C::Unknown], ['Completion Date', null, C::Unknown],
     ['Alternative Proposal', null, C::Unknown]]);
@@ -137,9 +138,9 @@ it('defaults partial and requires downstream confirmation of stronger assertions
 it('has canonical stable immutable versioned identity', function () {
     $definition = Dictionary::definition();
     $identity = (new Dictionary)->identity();
-    expect($identity->version)->toBe('customerapp.source-dictionary.v2')
-        // v2 is frozen: a definition edit must introduce a new version, not update this pair.
-        ->and($identity->fingerprint)->toBe('ac4fb1ac419aa86aba32c6b8f47e76b014fe2af93d11e1558b15bdf31ca8bc0d')
+    expect($identity->version)->toBe('customerapp.source-dictionary.v3')
+        // v3 is frozen: a definition edit must introduce a new version, not update this pair.
+        ->and($identity->fingerprint)->toBe('5afdf1aead95644378f885d8d2b77d6063901e50978af8ab0fcef103d573bd88')
         ->and(DictionaryIdentity::fromDefinition(Dictionary::VERSION, array_reverse($definition, true))->fingerprint)->toBe($identity->fingerprint)
         ->and((new Dictionary)->callType('PC1')->jsonSerialize()['wald_core']['commit'])->toBe(CoreIdentity::SHA);
     $definition['calls']['PC1']['service'] = 'changed';
@@ -152,6 +153,6 @@ it('requires a version and fingerprint change for labels meanings and mappings',
     $old = (new Dictionary)->identity();
     $definition['calls']['PC1'][$field] = $value;
     expect(fn () => DictionaryIdentity::fromDefinition(Dictionary::VERSION, $definition, $old))->toThrow(InvalidArgumentException::class);
-    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v3', $definition, $old);
+    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v4', $definition, $old);
     expect($new->fingerprint)->not->toBe($old->fingerprint)->and($new->version)->not->toBe($old->version);
 })->with([['description', 'New label'], ['service', 'cml'], ['revisit', true]]);

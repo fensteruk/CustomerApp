@@ -88,6 +88,21 @@ it('requires exact names and keeps namespace identity separate from workbook fam
     expect(fn () => $service->resolve($actor, $family, 'SOURCE_SITE_ID', 'Synthetic Site'))->toThrow(ImportConflict::class);
 });
 
+it('binds CustomerCode exactly without Site Name fallback or cross-owner rebinding', function () {
+    [$actor, $scope] = F::owner();
+    [, $other] = F::owner();
+    $service = new SourceBindingService;
+    $draft = $service->draft($actor, $scope, 'CUSTOMER_CODE', 'FNA2664', 'Reviewed exact CustomerCode.', F::command());
+    $active = $service->activate($actor, $scope, $draft['binding'], $draft['version'], $draft['definition_hash'], $draft['epoch'], 'Activated exact CustomerCode.', F::command());
+
+    expect($service->resolve($actor, $scope, 'CUSTOMER_CODE', 'FNA2664'))->toBe($active);
+    foreach ([['CUSTOMER_CODE', 'fna2664'], ['CUSTOMER_CODE', 'FNA2664 '], ['EXACT_SITE_NAME', 'FNA2664']] as [$kind, $identity]) {
+        expect(fn () => $service->resolve($actor, $scope, $kind, $identity))->toThrow(ImportConflict::class);
+    }
+    expect(fn () => $service->draft($actor, $other, 'CUSTOMER_CODE', 'FNA2664', 'Attempted cross-owner move.', F::command(), $active['epoch']))
+        ->toThrow(ImportConflict::class);
+});
+
 it('rejects cross-owner binding moves and mismatched site ownership', function () {
     [$actor, $scope] = F::owner();
     [, $other] = F::owner();
