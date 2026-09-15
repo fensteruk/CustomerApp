@@ -1,5 +1,24 @@
 # Fenster Customer Portal ROADMAP
 
+## CUSTOMER-WALD-CUSTAPP2-01 — composite workbook compatibility — 15 September 2026
+
+**Implemented with PARTIAL local qualification on a non-deploying feature branch.** The bounded
+backend now supports the approved composite table, deterministic CallNo headers, blank Call Type
+without a manufactured visit, separate Plot/Source Row/Visit identity, exact physical provenance
+and fail-closed product consolidation. One explicitly selected, exactly bound site remains the
+atomic review/commit unit.
+
+Eight of nine private-workbook site units qualify on both SQLite and MySQL. The ninth correctly
+blocks due to conflicting explicit product evidence for one plot. Next: resolve that source
+evidence through an authorised data correction/decision, re-run exact-SHA qualification, then use
+a separate dedicated QA/release gate. Full WALD06 orchestration remains later work.
+
+Production remains on `89768986a1a32d4258b5deebdf3012584acd6a6c`; Wald is effectively OFF via
+`WALD_IMPORT_AVAILABLE=false`, and gate-drift investigation is separate. This work does not
+authorise `main`, push, migration, production activation or deployment.
+
+Earlier pilot/WALD06 entries below are historical and do not override this status.
+
 ## CUSTOMER-WALD-PILOT01/02 — supervised weekend pilot — 15 September 2026
 
 **Production is deployed but the pilot is disabled after its first fictional smoke exposed a

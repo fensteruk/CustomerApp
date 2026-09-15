@@ -1,5 +1,26 @@
 # Current Sprint
 
+## CUSTOMER-WALD-CUSTAPP2-01 — composite workbook compatibility — 15 September 2026
+
+**PARTIAL local qualification; feature branch only, not released or deployed.** Branch
+`codex/wald-custapp2-composite-2026-09-15` implements deterministic composite structure,
+CallNo header normalization, valid blank Call Type, distinct Plot/Source Row/Visit identities,
+compatible product consolidation, exact provenance and one-site atomic review/commit.
+
+The approved private workbook SHA and aggregate structure matched: 33 source rows, nine source
+sites, 23 plot identities, 33 unique CallNos, 8 PC1, 10 CC1, 2 CM1 and 13 blanks. Eight selected
+sites committed to disposable SQLite/MySQL databases. One seven-row site correctly blocks because
+one plot has conflicting explicit evidence for two products. Do not pick a value or amend private
+source data; obtain corrected source evidence or an authorised resolution, then requalify.
+
+Production serves `89768986a1a32d4258b5deebdf3012584acd6a6c` and Wald remains effectively OFF
+with `WALD_IMPORT_AVAILABLE=false`. The gate-drift investigation is separate. No production,
+Forge, SiteApp, `main`, gate or customer-data change is part of this sprint. See the
+[implementation report](documentation/wald/customer-wald-custapp2-composite-import-2026-09-15.md)
+and [work package](documentation/work-packages/WP-CUSTOMER-WALD-CUSTAPP2-COMPOSITE.md).
+
+Earlier pilot/WALD06 entries below are historical and do not override this status.
+
 ## CUSTOMER-WALD-PILOT01/02 — supervised weekend import — 15 September 2026
 
 **PRODUCTION DISABLED AFTER TEST; correction requalified locally, not deployed.** Production SHA

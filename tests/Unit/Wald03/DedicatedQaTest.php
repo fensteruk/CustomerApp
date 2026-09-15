@@ -105,14 +105,14 @@ it('independently canonicalises nested dictionaries and identity bearing mutatio
         return is_array($value) ? array_map($reverse, array_is_list($value) ? $value : array_reverse($value, true)) : $value;
     };
     $definition = D::definition();
-    $expected = '18718ef55f73046d7982129dd5addf0485808d7820c369e4f7023caecdbf8357';
+    $expected = 'ac4fb1ac419aa86aba32c6b8f47e76b014fe2af93d11e1558b15bdf31ca8bc0d';
     expect(hash('sha256', json_encode($canonical($definition), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)))->toBe($expected)
         ->and(DictionaryIdentity::fromDefinition(D::VERSION, $reverse($definition))->fingerprint)->toBe($expected);
     foreach (array_keys($definition) as $section) {
         $changed = $definition;
         $changed[$section] = ['QA_SEMANTIC_MUTATION'];
         expect(fn () => DictionaryIdentity::fromDefinition(D::VERSION, $changed, (new D)->identity()))->toThrow(InvalidArgumentException::class)
-            ->and(DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v2', $changed)->fingerprint)->not->toBe($expected);
+            ->and(DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v3', $changed)->fingerprint)->not->toBe($expected);
     }
 });
 
@@ -126,7 +126,17 @@ it('keeps unknown and literal invalid calls uncompleted despite confident column
     } else {
         expect($result->callType->classification)->toBe(C::Unknown);
     }
-})->with(['cc!', 'Cc!', ' CC! ', 'ZZ9', 'ABC', 'PC2', '', '   ', '001', 'ＰＣ１', "\u{00a0}PC1", 'PC 1']);
+})->with(['cc!', 'Cc!', ' CC! ', 'ZZ9', 'ABC', 'PC2', '001', 'ＰＣ１', "\u{00a0}PC1", 'PC 1']);
+
+it('keeps a blank call type visit-free despite a confident completion column', function (string $raw) {
+    $result = (new SemanticAdapter)->interpretCall(F::cell($raw), 'candidate-1', F::cell('Yes', 2), 'candidate-2', F::reasoning());
+
+    expect($result->service)->toBeNull()
+        ->and($result->completed)->toBeNull()
+        ->and($result->resolution)->toBe(R::Blocked)
+        ->and($result->callType->classification)->toBe(C::Confirmed)
+        ->and($result->callType->isResolved())->toBeTrue();
+})->with(['', '   ']);
 
 it('never widens approved completion meanings', function ($raw) {
     $result = (new D)->completion($raw);

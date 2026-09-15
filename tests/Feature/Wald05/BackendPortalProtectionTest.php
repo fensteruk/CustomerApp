@@ -76,6 +76,6 @@ it('preserves entirely omitted plots and rejects identity reassignment', functio
     $before = DB::table('projected_plot_services')->where('source_call_number', '1007')->first();
     B::commit($actor, $scope, B::reviewed($actor, $scope, slot: 'AFTERNOON', count: 6));
     expect((array) DB::table('projected_plot_services')->where('source_call_number', '1007')->first())->toBe((array) $before);
-    expect(fn () => B::reviewed($actor, $scope, [0 => ['Plot' => 'other']], date: '2026-09-10'))->toThrow(ImportConflict::class, 'call_identity_changed');
-    expect(fn () => B::reviewed($actor, $scope, [0 => ['Call Type' => 'CC1']], date: '2026-09-10'))->toThrow(ImportConflict::class, 'call_identity_changed');
+    expect(fn () => B::reviewed($actor, $scope, [0 => ['Plot' => 'other']], date: '2026-09-10'))->toThrow(ImportConflict::class, 'source_row_identity_changed');
+    expect(fn () => B::reviewed($actor, $scope, [0 => ['Call Type' => 'CC1']], date: '2026-09-10'))->toThrow(ImportConflict::class, 'source_row_visit_identity_conflict');
 });

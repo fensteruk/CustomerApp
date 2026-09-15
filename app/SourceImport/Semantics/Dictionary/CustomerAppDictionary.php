@@ -13,7 +13,9 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v1';
+    public const VERSION = 'customerapp.source-dictionary.v2';
+
+    public const COMPOSITE_PROFILE = 'custapp2_composite';
 
     private const CALLS = [
         'PC1' => ['description' => 'Plot Install', 'service' => 'windows', 'revisit' => false],
@@ -40,8 +42,10 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         'source site id' => ['description' => 'Durable source identity when supplied', 'role' => 'source_site_identity'],
         'source site reference' => ['description' => 'Durable source identity when supplied', 'role' => 'source_site_identity'],
         'call no.' => ['description' => 'Source call-off reference', 'role' => 'call_reference'],
+        'plot ref' => ['description' => 'Source plot reference', 'role' => 'plot_reference'],
         'call type' => ['description' => 'Source call type', 'role' => 'call_type'],
         'complete' => ['description' => 'Source call-off part completion flag', 'role' => 'completion'],
+        'completed' => ['description' => 'Source call-off part completion flag', 'role' => 'completion'],
     ];
 
     private DictionaryIdentity $identity;
@@ -57,8 +61,8 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
             'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded' => self::EXCLUDED,
             'fields' => self::FIELDS, 'completion' => ['yes' => true, 'no' => false],
             'normalization' => ['codes' => 'ASCII uppercase and surrounding whitespace trim; punctuation preserved',
-                'headers' => 'ASCII lowercase and surrounding whitespace trim only',
-                'quantity' => 'plain nonnegative decimal, at most 3 fractional digits; blank/null=0; no exponent/grouping/bool',
+                'headers' => 'Exact field labels, except CallNo semantic token pairs ignore case, spacing and punctuation',
+                'quantity' => 'plain nonnegative decimal, at most 3 fractional digits; unrepresented values make no assertion; no exponent/grouping/bool',
                 'quantity_max_units' => Quantity::MAX_UNITS, 'scale' => 1000,
                 'duplicates' => 'reject normalized duplicate codes', 'overflow' => 'null totals and blocked',
                 'absence' => 'zero within supplied input only; no projection authority'],
@@ -75,9 +79,16 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         return $this->identity;
     }
 
-    public function callType(string $raw): SemanticResult
+    public function callType(string $raw, ?string $profile = null): SemanticResult
     {
         $key = strtoupper(trim($raw));
+        if ($key === '') {
+            return $this->result('call_type', $raw, null, C::Confirmed, ['description' => 'No call-off started'], null,
+                ['BLANK_CALL_TYPE_NO_VISIT']);
+        }
+        if ($profile === self::COMPOSITE_PROFILE && ! in_array($key, ['PC1', 'CC1', 'CM1'], true)) {
+            return $this->result('call_type', $raw, $key, C::Unknown, null, null, ['UNKNOWN_CALL_TYPE']);
+        }
         if ($key === 'CC!') {
             return $this->result('call_type', $raw, $key, C::Invalid, null, null,
                 ['LIKELY_TYPO'], [['code' => 'CC1', 'reason' => 'LIKELY_TYPO']]);
@@ -122,7 +133,9 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
     public function field(string $raw): SemanticResult
     {
         $key = strtolower(trim($raw));
-        $entry = self::FIELDS[$key] ?? null;
+        $entry = CallReferenceHeader::matches($raw)
+            ? ['description' => 'Source call-off reference', 'role' => 'call_reference']
+            : (self::FIELDS[$key] ?? null);
 
         return $this->result('field', $raw, $key, $entry === null ? C::Unknown
             : ($entry['role'] === 'ignored' ? C::Ignored : C::Confirmed),

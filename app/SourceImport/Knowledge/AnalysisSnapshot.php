@@ -2,6 +2,7 @@
 
 namespace App\SourceImport\Knowledge;
 
+use App\SourceImport\Integration\CompositeTableDetector;
 use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
@@ -16,7 +17,7 @@ final readonly class AnalysisSnapshot
     private function __construct(public array $data) {}
 
     /** Observations must come from the same privately registered reader source. */
-    public static function fromProfile(WorkbookProfile $profile, array $observations = []): self
+    public static function fromProfile(WorkbookProfile $profile, array $observations = [], array $sheetObservations = []): self
     {
         $p = $profile->toArray();
         if (($p['schema'] ?? null) !== 'wald.workbook-profile.v1' || ($p['complete'] ?? null) !== true
@@ -28,7 +29,65 @@ final readonly class AnalysisSnapshot
         $r = $reasoning->toArray();
         $tables = $questions = [];
         $dictionary = new CustomerAppDictionary;
+        $observedSheets = [];
+        foreach ($sheetObservations as $sheetObservation) {
+            $observedSheets[$sheetObservation->id] = $sheetObservation;
+        }
+        $compositeCount = 0;
         foreach ($p['sheets'] ?? [] as $sheet) {
+            $composites = isset($observedSheets[$sheet['id']])
+                ? (new CompositeTableDetector)->detect($observedSheets[$sheet['id']])
+                : [];
+            if ($composites !== [] && self::hasCompletePhysicalTable($sheet, $dictionary)) {
+                $composites = [];
+            }
+            if ($composites !== []) {
+                $compositeCount += count($composites);
+                foreach ($composites as $composite) {
+                    $id = $composite['id'];
+                    $columns = [];
+                    foreach ($composite['columns'] as $column) {
+                        $header = $column['header'];
+                        $token = self::token($header);
+                        $role = $column['role'];
+                        $columns[] = ['header' => $token, 'parts' => [$token], 'role' => $role];
+                        if ($role !== null) {
+                            $candidate = ['id' => Canonical::hash([$id, $column['column'], $role]), 'table' => $id,
+                                'column' => $column['column'], 'header' => $header, 'selector' => $token, 'role' => $role];
+                            $questions['structure:'.$role]['type'] = 'STRUCTURAL';
+                            $questions['structure:'.$role]['candidates'][] = $candidate;
+                        }
+                    }
+                    $tables[$id] = [
+                        'descriptor' => [
+                            'sheet' => self::token($sheet['name']),
+                            'visibility' => $sheet['visibility'],
+                            'format' => $p['reader']['format'] ?? null,
+                            'orientation' => 'vertical_records',
+                            'depth' => 1,
+                            'merges' => [],
+                            'columns' => $columns,
+                            'hidden_columns' => false,
+                            'hidden_rows' => false,
+                            'composition' => 'horizontal_fragments',
+                        ],
+                        'range' => $composite['range'],
+                        'header_range' => $composite['header_range'],
+                        'sheet_id' => $sheet['id'],
+                        'region_id' => $id,
+                        'column_safety' => [],
+                        'warnings' => [],
+                        'canonical_reference' => $composite['canonical_reference'],
+                        'data_reference' => $composite['data_reference'],
+                        'data_start_row' => $composite['data_start_row'],
+                        'data_end_row' => $composite['data_end_row'],
+                        'fragments' => $composite['fragments'],
+                        'composite' => true,
+                    ];
+                }
+
+                continue;
+            }
             foreach ($sheet['regions'] ?? [] as $region) {
                 if (($region['hypothesis'] ?? null) !== 'table' || ($region['headers']['range'] ?? null) === null) {
                     continue;
@@ -77,7 +136,9 @@ final readonly class AnalysisSnapshot
                     'hidden_columns' => $sheet['hidden_column_count'] > 0, 'hidden_rows' => $sheet['hidden_row_count'] > 0];
                 $tables[$id] = ['descriptor' => $descriptor, 'range' => $region['range'], 'header_range' => $hr,
                     'sheet_id' => $sheet['id'], 'region_id' => $region['id'], 'column_safety' => $safety,
-                    'warnings' => array_values(array_unique([...$sheet['warnings'], ...($region['headers']['warnings'] ?? [])]))];
+                    'warnings' => array_values(array_unique([...$sheet['warnings'], ...($region['headers']['warnings'] ?? [])])),
+                    'data_start_row' => $hr['end_row'] + 1,
+                    'data_end_row' => self::physicalDataEnd($sheet, $region)];
             }
         }
         foreach ($observations as $observation) {
@@ -131,7 +192,7 @@ final readonly class AnalysisSnapshot
         unset($clarification);
         $data = ['source_checksum' => $p['source_checksum'], 'analysis_hash' => Canonical::evidenceHash($p),
             'reasoning_hash' => Canonical::evidenceHash($r), 'pins' => (new KnowledgeIdentity)->current(),
-            'tables' => $tables, 'questions' => $questions,
+            'tables' => $tables, 'questions' => $questions, 'composite_candidate_count' => $compositeCount,
             'fresh' => ['complete' => $r['complete'] ?? false, 'clarifications' => $clarifications,
                 'targets' => $r['targets'] ?? [], 'warnings' => $r['warnings'] ?? []]];
         Canonical::json($data);
@@ -142,5 +203,54 @@ final readonly class AnalysisSnapshot
     public static function token(string $header): string
     {
         return strtr(preg_replace('/\s+/u', ' ', trim($header)), 'ABCDEFGHIJKLMNOPQRSTUVWXYZ', 'abcdefghijklmnopqrstuvwxyz');
+    }
+
+    private static function hasCompletePhysicalTable(array $sheet, CustomerAppDictionary $dictionary): bool
+    {
+        foreach ($sheet['regions'] ?? [] as $region) {
+            if (($region['hypothesis'] ?? null) !== 'table' || ($region['headers']['range'] ?? null) === null) {
+                continue;
+            }
+
+            $roles = [];
+            foreach ($region['headers']['paths'] ?? [] as $path) {
+                $role = $dictionary->field($path['label'] ?? '')->value;
+                if ($role !== null) {
+                    $roles[$role] = true;
+                }
+            }
+
+            $hasSiteIdentity = isset($roles['source_site_identity']) || isset($roles['transitional_site_clue']);
+            if ($hasSiteIdentity
+                && isset($roles['call_reference'], $roles['plot_reference'], $roles['call_type'], $roles['completion'])) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static function physicalDataEnd(array $sheet, array $table): int
+    {
+        $range = $table['range'];
+        $endRow = (int) $range['end_row'];
+        $regions = $sheet['regions'] ?? [];
+        usort($regions, fn (array $left, array $right): int => $left['range']['start_row'] <=> $right['range']['start_row']);
+
+        foreach ($regions as $region) {
+            $candidate = $region['range'];
+            if ($candidate['start_row'] <= $endRow) {
+                continue;
+            }
+            if ($candidate['start_row'] > $endRow + 2
+                || $candidate['start_column'] !== $range['start_column']
+                || $candidate['end_column'] !== $range['end_column']
+                || ($region['headers']['range'] ?? null) !== null) {
+                break;
+            }
+            $endRow = (int) $candidate['end_row'];
+        }
+
+        return $endRow;
     }
 }

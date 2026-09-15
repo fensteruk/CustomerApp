@@ -1,5 +1,28 @@
 # Fenster Customer Portal Handover
 
+## CUSTOMER-WALD-CUSTAPP2-01 handover — 15 September 2026
+
+Branch `codex/wald-custapp2-composite-2026-09-15` contains the bounded composite-workbook and
+Plot/Source Row/Visit identity implementation. It is feature-branch work only. The private
+workbook stayed outside the repository and its approved SHA matched.
+
+Aggregate local qualification is PARTIAL: eight site units commit independently on SQLite and
+MySQL; one seven-row site unit blocks because one plot contains conflicting explicit quantities
+for two products. Preserve this refusal. Do not select a winner, edit private evidence or bypass
+the site-unit blocker. Obtain corrected source evidence or an explicit authorised resolution and
+repeat exact-SHA local qualification before dedicated QA.
+
+The additive migration creates durable source-row identity/history, attaches visits to recognized
+types and enforces unique exact site/plot identity. No prior migration was edited or deployed.
+Production serves corrected release `89768986a1a32d4258b5deebdf3012584acd6a6c`; Wald remains
+effectively OFF because `WALD_IMPORT_AVAILABLE=false`. Integration/DevOps owns the separate gate-
+drift investigation. Do not re-enable, push `main`, migrate or deploy from this handover.
+
+See [implementation evidence](documentation/wald/customer-wald-custapp2-composite-import-2026-09-15.md)
+and [work package](documentation/work-packages/WP-CUSTOMER-WALD-CUSTAPP2-COMPOSITE.md).
+
+Earlier pilot/WALD06 entries below are historical and do not override this status.
+
 ## CUSTOMER-WALD-PILOT01/02 release handover — 15 September 2026
 
 Production serves `8a5a2384dd32c89852172c8dd99ffaba880dc698`. The first supervised fictional

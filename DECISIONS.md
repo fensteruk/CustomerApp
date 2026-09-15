@@ -1611,3 +1611,54 @@ Reason:
 The sidebar and administration provide independently valuable, bounded functionality. Shipping
 five unused Wald migrations before the real multi-site import workflow is resolved would enlarge
 production database and runtime scope without corresponding production capability.
+
+---
+
+## DEC-064
+
+Date: 15 September 2026
+
+Decision: CUSTOMER-WALD-CUSTAPP2-01 approves bounded composite-workbook compatibility and the
+three-identity projection model. This is a controlled refinement of earlier physical-table,
+exact-header and non-null Call Type assumptions; it does not weaken unrelated Wald ambiguity,
+review, scope or production controls.
+
+- Plot identity is the exact active source-site binding plus normalized Plot Ref.
+- Source Row identity is source namespace plus CallNo. It is private traceability and does not by
+  itself establish a call-off visit.
+- Visit identity is Source Row plus a recognized non-null Call Type.
+- A genuinely blank Call Type is valid null. It may establish/update the resolved plot and valid
+  source product facts, but never creates a visit/service/request, mutates completion or maps an
+  operational date into Portal-owned dates.
+- Under `PARTIAL_FILTERED_EXPORT`, a later blank does not erase or reverse an established visit.
+  A recognized type change for the same Source Row blocks as an identity conflict.
+- Product evidence consolidates per plot: unrepresented is no assertion; explicit zero is exact;
+  matching explicit facts agree; unrepresented plus explicit uses the explicit fact; conflicting
+  explicit quantities block the complete selected-site unit. No winner is inferred.
+- Compatible non-contiguous horizontal fragments may form one logical table only when worksheet,
+  row alignment/bounds, spacer and complementary-role evidence agree and no stronger independent
+  interpretation exists. Ambiguous compositions require clarification. Physical cell coordinates,
+  raw values, logical-row and fragment provenance remain private and immutable.
+- Call-reference headers use deterministic exact semantic tokens `call` + `no` or `call` +
+  `number`, in either order after structural punctuation/spacing/case normalization. No fuzzy
+  matching is authorised.
+- CUSTAPP2's composite profile recognizes PC1, CC1 and CM1. It does not inherit the earlier
+  artifact's checksum-scoped `CC!` correction or CM2 treatment.
+- One explicitly selected, exactly bound source site remains the unit of review/commit. No
+  automatic nine-site commit or full WALD06 orchestration is authorised.
+- Additive schema evolution may represent Source Row and Visit separately and enforce unique
+  site/plot identity; deployed migrations must not be edited or run by this task.
+
+Qualification outcome: the approved private workbook SHA matched and aggregate structure matched.
+Eight site units committed to disposable SQLite/MySQL databases. One seven-row site unit correctly
+blocked because multiple rows for one plot supplied conflicting explicit quantities for two
+products. That source-data conflict blocks full workbook qualification but is not a code defect and
+must not be silently resolved. Production remains on
+`89768986a1a32d4258b5deebdf3012584acd6a6c` with Wald effectively OFF through
+`WALD_IMPORT_AVAILABLE=false`; production gate drift is a separate Integration/DevOps task.
+
+Reason:
+
+CallNo, plot and visit are distinct business concepts in the observed source. Separating them
+allows source inventory to exist before a call-off starts without manufacturing customer workflow,
+while deterministic conflict handling preserves exact evidence and fail-closed behaviour.

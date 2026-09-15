@@ -7,6 +7,7 @@ use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
+use App\Wald\Contracts\SourceRange;
 use App\Wald\Services\AnalysisBudget;
 use App\Wald\Services\Reasoning\ReasoningEngine;
 use App\Wald\Services\ValueProfiler;
@@ -38,7 +39,7 @@ final class WorkbookStager
                 }
             }
         }
-        $snapshot = AnalysisSnapshot::fromProfile($profile, $observations);
+        $snapshot = AnalysisSnapshot::fromProfile($profile, $observations, $sheets);
 
         return [$profile, $sheets, $snapshot];
     }
@@ -50,12 +51,18 @@ final class WorkbookStager
             throw new ImportConflict('analysis_changed');
         }
         $data = $snapshot->data;
+        if (($data['composite_candidate_count'] ?? 0) > 1) {
+            throw new ImportConflict('ambiguous_composite_table');
+        }
         if (count($data['tables']) !== 1 || count($sheets) !== 1) {
             throw new ImportConflict('bounded_single_table_required');
         }
         $tableId = array_key_first($data['tables']);
         $table = $data['tables'][$tableId];
-        $sheet = array_values($sheets)[0];
+        $sheet = collect($sheets)->firstWhere('id', $table['sheet_id']);
+        if ($sheet === null) {
+            throw new ImportConflict('source_sheet_changed');
+        }
         $headerNeedsConfirmation = in_array('no_clear_header', $table['warnings'], true);
         if (array_diff($table['warnings'], ['no_clear_header']) !== [] || $sheet->visibility !== 'visible' || $sheet->hiddenRows !== [] || $sheet->hiddenColumns !== [] || $sheet->merges !== []) {
             throw new ImportConflict('unsafe_or_unsupported_structure');
@@ -102,11 +109,20 @@ final class WorkbookStager
         $dictionary = new CustomerAppDictionary;
         $rows = [];
         $seen = [];
+        $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
+        $dataEnd = (int) ($table['data_end_row'] ?? $table['range']['end_row']);
+        $fragmentByColumn = [];
+        foreach ($table['fragments'] ?? [['id' => 1, 'data_range' => $table['range']]] as $fragment) {
+            for ($column = $fragment['data_range']['start_column']; $column <= $fragment['data_range']['end_column']; $column++) {
+                $fragmentByColumn[$column] = $fragment['id'];
+            }
+        }
+        $roleByColumn = array_flip($columns);
         foreach ($sheet->cells as $rowNumber => $cells) {
-            if ($rowNumber <= $table['header_range']['end_row']) {
+            if ($rowNumber < $dataStart || $rowNumber > $dataEnd) {
                 continue;
             }
-            if (! array_filter($cells, fn ($c) => $c->rawValue !== null && $c->rawValue !== '')) {
+            if (! array_filter($cells, fn ($c) => isset($fragmentByColumn[$c->column]) && $c->hasContent())) {
                 continue;
             }
             $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
@@ -133,6 +149,7 @@ final class WorkbookStager
                     $issues[] = 'INVALID_'.strtoupper($name);
                 }
             }
+            $plot = SourceIdentity::plotReference((string) $plot);
             $normalisedSite = trim((string) $site);
             if ($run->source_site_filter_hash ?? null) {
                 $observedHash = Canonical::hash([$siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME', $normalisedSite]);
@@ -152,12 +169,16 @@ final class WorkbookStager
                 $semanticApproval = $knowledge['selections'][$key] ?? null;
             }
             $effectiveType = $selection['canonical_override'] ?? $semanticApproval['canonical'] ?? $callType;
-            $type = $dictionary->callType(is_string($effectiveType) ? $effectiveType : '');
-            $complete = $dictionary->completion($raw('completion'));
+            $type = $dictionary->callType(
+                is_scalar($effectiveType) ? (string) $effectiveType : '',
+                ($table['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null,
+            );
+            $hasVisit = is_scalar($effectiveType) && trim((string) $effectiveType) !== '';
+            $complete = $hasVisit ? $dictionary->completion($raw('completion')) : null;
             if (! $type->isResolved()) {
                 $issues[] = 'UNRESOLVED_CALL_TYPE';
             }
-            if (! $complete->isResolved()) {
+            if ($complete !== null && ! $complete->isResolved()) {
                 $issues[] = 'UNRESOLVED_COMPLETION';
             }
             $products = [];
@@ -168,12 +189,16 @@ final class WorkbookStager
                 }
                 $code = substr($role, 9);
                 $value = $raw($role);
+                $sourceCell = $cells[$column] ?? null;
+                $represented = $sourceCell !== null && ! (is_string($value) && trim($value) === '');
+                $rawProducts[$code] = ['presence' => $represented ? 'PRESENT_VALUE' : 'UNREPRESENTED', 'raw' => $value];
+                if (! $represented) {
+                    continue;
+                }
                 $product = $dictionary->product($code, $value);
-                $rawProducts[$code] = ['presence' => $value === null || $value === '' ? 'PRESENT_BLANK' : 'PRESENT_VALUE', 'raw' => $value];
                 if (($product->match['group'] ?? null) === 'EXCLUDED') {
                     continue;
                 }
-                $sourceCell = $cells[$column] ?? null;
                 if ($sourceCell && in_array((new ValueProfiler)->type($sourceCell), ['date_like', 'percentage_like', 'boolean_like', 'formula', 'error'], true)) {
                     $issues[] = 'INVALID_PRODUCT_CELL_TYPE';
 
@@ -190,7 +215,7 @@ final class WorkbookStager
             }
             // Compose WALD03 evidence without altering the accepted reasoning or its decisions.
             $semanticEvidence = [];
-            foreach (['call_type', 'completion'] as $role) {
+            foreach ($hasVisit ? ['call_type', 'completion'] : [] as $role) {
                 $cell = $cells[$columns[$role]] ?? null;
                 $hypothesis = collect($reason['hypotheses'])->first(fn ($h) => ($h['hypothesis']['target']['column'] ?? null) === $columns[$role] && ($h['hypothesis']['target']['sheet_id'] ?? null) === $sheet->id);
                 if ($cell && $hypothesis) {
@@ -203,14 +228,46 @@ final class WorkbookStager
             }
             $excluded = $selection['excluded'];
             $facts = ['call_number' => $call, 'source_site' => $normalisedSite, 'site_kind' => $siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME',
-                'plot' => (string) $plot, 'service' => $type->value, 'call_type' => $type->lookupValue, 'complete' => $complete->value, 'products' => $products];
+                'plot' => $plot, 'service' => $hasVisit && $type->isResolved() ? $type->value : null,
+                'call_type' => $hasVisit && $type->isResolved() ? $type->lookupValue : null,
+                'complete' => $complete?->isResolved() ? $complete->value : null, 'products' => $products];
+            $valueProvenance = [];
+            foreach ($columns as $role => $column) {
+                $cell = $cells[$column] ?? null;
+                $valueProvenance[$role] = ['sheet' => $sheet->id,
+                    'cell' => SourceRange::columnLetters($column).$rowNumber,
+                    'raw' => $cell?->rawValue,
+                    'logical_row' => $rowNumber - $dataStart + 1,
+                    'fragment' => $fragmentByColumn[$column] ?? null];
+            }
+            $unmapped = [];
+            foreach ($cells as $column => $cell) {
+                if (isset($fragmentByColumn[$column]) && ! isset($roleByColumn[$column]) && $cell->hasContent()) {
+                    $unmapped[] = ['sheet' => $sheet->id, 'cell' => SourceRange::columnLetters($column).$rowNumber,
+                        'raw' => $cell->rawValue, 'logical_row' => $rowNumber - $dataStart + 1,
+                        'fragment' => $fragmentByColumn[$column]];
+                }
+            }
             $rows[] = ['canonical' => $excluded ? ['excluded' => true, 'call_number' => $call] : $facts, 'facts' => $facts, 'excluded' => $excluded,
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),
                 'provenance' => ['sheet' => $sheet->id, 'row' => $rowNumber, 'raw_call_type' => $callType, 'raw_complete' => $raw('completion'),
+                    'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
+                    'values' => $valueProvenance, 'unmapped_private_evidence' => $unmapped,
                     'raw_products' => $rawProducts, 'operational_date' => $raw('pc1_operational_install_date'), 'selection' => $selection, 'semantic_answer' => $semanticApproval, 'semantic_evidence' => $semanticEvidence]];
         }
         if ($rows === []) {
             throw new ImportConflict('no_source_records');
+        }
+
+        $consolidated = (new ProductConsolidator)->consolidate($rows);
+        if ($consolidated['conflicts'] !== []) {
+            foreach ($rows as &$row) {
+                if (isset($consolidated['conflicts'][$row['facts']['plot']])) {
+                    $row['issues'][] = 'PRODUCT_QUANTITY_CONFLICT';
+                    $row['issues'] = array_values(array_unique($row['issues']));
+                }
+            }
+            unset($row);
         }
 
         return $rows;

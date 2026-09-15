@@ -256,6 +256,14 @@ WD-47/48 retain their original implementation identity; the current identities b
 | WD-51 | CustomerApp-specific temporary integration | One multi-site parent workbook with manually selected, independently atomic one-site review units. Site-scoped receipt identity permits sibling units to share the parent date/slot without weakening legacy WALD05 global-slot behavior. | CUSTOMER-WALD-PILOT01; additive 000015 migration, PilotImportWorkflow/Discovery, actual-workbook SQLite/MySQL two-site isolation evidence. PILOT_SINGLE_SITE_SELECTION, partial only. |
 | WD-52 | CustomerApp-specific operational control | Durable audited wald_import_pilot_enabled setting composed with hard environment gate WALD_IMPORT_AVAILABLE and current Office authority. Both defaults are false; environment OFF wins and denies every action. | CUSTOMER-WALD-PILOT02; WaldPilotAvailability, UpdateWaldPilotSettingAction and focused SQLite/MySQL setting tests. No generic Wald or SiteApp backport candidate. |
 
+## CUSTAPP2 composite/identity differences — 15 September 2026
+
+| ID | Category | Implemented difference | Evidence / identity |
+|---|---|---|---|
+| WD-53 | Generic improvement candidate for both | Deterministic composition of compatible horizontal table fragments, with physical cell/fragment provenance, genuine-table precedence and ambiguity refusal. Exact CallNo semantic-token recognition replaces punctuation/case-sensitive header matching. | CustomerApp `CompositeTableDetector`, `CallReferenceHeader` and synthetic structure/header tests. Potential SiteApp applicability requires separate review/backport approval; no upstream change occurred. |
+| WD-54 | CustomerApp-specific integration | Plot = bound site + normalized Plot Ref; Source Row = namespace + CallNo; Visit = Source Row + recognized non-null Call Type. Blank type may project compatible plot/products without a visit; partial exports never reverse an established visit merely through blank/absence. | DEC-064; additive 000016 migration; identity/transition/security/SQLite/MySQL tests. Backend application/projection and dictionary identities advance; no historical receipt is rewritten. |
+| WD-55 | CustomerApp-specific semantics | Per-plot product consolidation treats unrepresented as no assertion, explicit zero exactly, equal facts as agreement and conflicting explicit facts as a blocking site-unit conflict. CUSTAPP2 profile recognizes PC1/CC1/CM1 only and does not inherit checksum-scoped CC!/CM2 behaviour. | Private exact-SHA qualification: eight site units pass, one site unit blocks on genuine conflicting source evidence. PARTIAL; no source repair, production import or customer exposure. |
+
 ## Backport process
 
 1. For each nontrivial fork change, add/update a ledger entry with reason, category, source

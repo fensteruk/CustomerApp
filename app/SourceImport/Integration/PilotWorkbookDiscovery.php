@@ -13,6 +13,9 @@ final class PilotWorkbookDiscovery
     {
         [, $sheets, $snapshot] = (new WorkbookStager)->inspect($upload);
         $data = $snapshot->data;
+        if (($data['composite_candidate_count'] ?? 0) > 1) {
+            throw new ImportConflict('ambiguous_composite_table');
+        }
         if (count($data['tables']) !== 1 || count($sheets) !== 1) {
             throw new ImportConflict('bounded_single_table_required');
         }
@@ -43,8 +46,10 @@ final class PilotWorkbookDiscovery
         $sources = [];
         $included = 0;
         $excluded = 0;
+        $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
+        $dataEnd = (int) ($table['data_end_row'] ?? $table['range']['end_row']);
         foreach ($sheet->cells as $rowNumber => $cells) {
-            if ($rowNumber <= $table['header_range']['end_row']
+            if ($rowNumber < $dataStart || $rowNumber > $dataEnd
                 || ! array_filter($cells, fn ($cell): bool => $cell->rawValue !== null && $cell->rawValue !== '')) {
                 continue;
             }
@@ -93,11 +98,12 @@ final class PilotWorkbookDiscovery
         ksort($sources, SORT_STRING);
 
         return [
-            'schema' => 'customerapp.wald-pilot-discovery.v1',
+            'schema' => 'customerapp.wald-pilot-discovery.v2',
             'analysis_hash' => $data['analysis_hash'],
             'requires_confirmation' => in_array('no_clear_header', $table['warnings'], true),
             'sheet' => $sheet->id,
             'header' => [$table['header_range']['start_row'], $table['header_range']['end_row']],
+            'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
             'sources' => array_values($sources),
             'source_count' => count($sources),
             'record_count' => count($seen),

@@ -1,6 +1,37 @@
 # Customer Portal — Source Integration Contract
 
-_Sprint 3B — 20 August 2026; WALD05 attempt-audit correction updated 9 September 2026_
+_Sprint 3B — 20 August 2026; CUSTAPP2 identity/composite refinement updated 15 September 2026_
+
+## CUSTOMER-WALD-CUSTAPP2-01 addendum — 15 September 2026
+
+DEC-064 supersedes three narrow assumptions below wherever they conflict: the source record need
+not be one physically contiguous table; CallNo headers need not equal only `Call No.`; and CallNo
+does not by itself prove that a visit exists.
+
+The current identities are:
+
+- Plot = exact active source-site binding + normalized Plot Ref;
+- Source Row = source namespace + CallNo;
+- Visit = Source Row + recognized non-null Call Type.
+
+A blank Call Type is valid null. It may create/update the resolved plot and compatible product
+facts, but cannot create a visit/service/request, affect completion or map any operational date to
+a Portal-owned date. A recognized type becoming blank in a later `PARTIAL_FILTERED_EXPORT` does
+not reverse the visit. A recognized type change for the same Source Row blocks.
+
+Product evidence consolidates per plot: missing/unrepresented is no assertion; explicit zero is
+exact; equal explicit values agree; unrepresented plus explicit uses the explicit value; conflicting
+explicit values block the complete site review unit. No row-order or calculated winner is allowed.
+
+Compatible horizontal fragments may compose one logical table only with aligned worksheet/bounds,
+spacer and complementary-role evidence and no stronger independent-table interpretation. Preserve
+physical worksheet/cell/raw/logical-row/fragment provenance. Competing compositions require
+clarification. Call-reference headers use exact normalized semantic tokens `call` + `no` or
+`call` + `number` in either order; no fuzzy matching is allowed.
+
+This addendum does not authorise automatic multi-site commit. One explicitly selected, exactly
+bound site remains the atomic review/commit unit. CUSTAPP2 recognizes PC1/CC1/CM1 and does not
+inherit the earlier workbook's checksum-specific `CC!`/CM2 treatment.
 
 ## CUSTOMER-WALD01A reconciliation addendum — 4 September 2026
 
@@ -72,10 +103,10 @@ Each transport adapter must convert its input into one `SourceRecord` containing
 
 | Field | Contract |
 |---|---|
-| Call No. | Required permanent source identity for exactly one individual visit/call-off. Every revisit, including each CM1/CM2 visit, receives a new Call No. |
+| Call No. | Required Source Row identity within the source namespace. A Visit exists only when the row has a recognized non-null Call Type. |
 | Site identity | Required source-specific identity. Use the future permanent source Site ID/reference when available; exact Site Name is a transitional explicit binding key only. |
 | Plot reference | Required customer-safe source plot reference. |
-| Call Type | Required operational code: PC1, CC1, CM1, CM2 or CML. Literal CC! remains unknown/likely typo evidence pending human confirmation. |
+| Call Type | Recognized operational code when a Visit exists. Genuine blank is valid null/no Visit; nonblank unknown remains blocking. Literal CC! remains unknown/likely typo evidence except under an explicit checksum-scoped rule. |
 | Complete | Optional Yes/No source flag. Case-insensitive sensible Yes/No variants are accepted; Yes completes this specific source call-off part without inventing a date. |
 | Job Stage / Completed Date | Not required by the confirmed spreadsheet contract. Retain as private evidence if later supplied, but do not give older speculative stages/dates completion authority without a separate decision. |
 | Plot To Be Installed | Optional operational/source date for Fenster arrival to install PC1 only; never a customer Requested Date, Date Agreed or alternative date. |

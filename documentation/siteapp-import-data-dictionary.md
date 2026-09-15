@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 8 September 2026 (WALD05 source-owner confirmation)
+**Last updated:** 15 September 2026 (CUSTAPP2 identity/composite refinement)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -35,6 +35,13 @@ is still unconfirmed. No Snagging source call-type code has been confirmed.
 
 An unknown call type remains unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.
+
+For the CUSTAPP2 composite profile, only PC1, CC1 and CM1 are recognized. That workbook does not
+inherit checksum-scoped `CC!` correction or CM2 handling from an earlier approved artifact.
+
+A genuinely blank Call Type is valid null and means no Visit has been established. It may support
+plot/product facts under the rules below, but cannot create a customer service/request, mutate
+completion or manufacture a Portal-owned date. A nonblank unknown remains blocking.
 
 ## 3. Completion
 
@@ -89,13 +96,19 @@ to five weeks.
 product model. Raw values may be retained privately for evidence but must not be exposed as
 customer product types or added to either roll-up.
 
-Product presence is explicit:
+Product presence and multi-row plot consolidation are explicit:
 
 - absent column: unrepresented; preserve existing data;
-- present blank/null: preserve the raw blank and apply the supplied-record semantic contract;
+- missing/unrepresented value: no assertion; preserve existing data;
 - explicit zero: exact zero for that supplied record/column;
 - valid positive value: exact approved fixed-point quantity;
 - invalid or unknown value: block; never coerce to zero.
+- equal explicit values for the same plot/product agree;
+- unrepresented plus explicit uses the explicit fact;
+- conflicting explicit values for the same plot/product block the complete selected-site unit.
+
+Never choose first, last, minimum, maximum or average. Blank-Call-Type rows may contribute valid
+product facts to the resolved plot without establishing a Visit.
 
 A filtered export cannot zero or delete values outside supplied records.
 
@@ -103,7 +116,7 @@ A filtered export cannot zero or delete values outside supplied records.
 
 | Field | Treatment |
 |---|---|
-| `Call No.` | Permanent source reference for exactly one individual visit/call-off. A revisit receives a new Call No.; each CM1/CM2 visit therefore has its own Call No. Every within-workbook duplicate blocks, even if canonically identical; never merge or select first/last. |
+| `Call No.` | Permanent Source Row reference within the source namespace. A recognized non-null Call Type establishes a Visit; CallNo alone does not. Every within-workbook duplicate still blocks; never merge or select first/last. |
 | `Site Name` | Transitional exact-match input only. It must map to an existing Portal site explicitly and must not fuzzy-match or create one. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |
 | `Plot To Be Installed` | Operational arrival-to-install date for PC1. Never map to Requested Date, alternative date, Date Agreed or completion date. |
@@ -111,6 +124,10 @@ A filtered export cannot zero or delete values outside supplied records.
 | `Site Value` | Exclude from the final Portal model and customer output. |
 
 No other source field receives customer meaning without an explicit dictionary decision.
+
+Header recognition for CallNo is deterministic: after removing structural punctuation/spacing and
+normalizing case, accept exactly the semantic tokens `call` + `no` or `call` + `number` in either
+order. Concatenation is allowed; fuzzy/edit-distance matching is not.
 
 ## 6. Export Scope
 

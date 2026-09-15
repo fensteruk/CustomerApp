@@ -27,14 +27,15 @@ it('privately uploads stages reviews and atomically commits an exact synthetic w
     expect(B::commit($actor, $scope, $preview))->toBe($receipt);
 });
 
-it('preserves absent products and applies explicit blank and zero under newer ordering', function () {
+it('preserves absent and blank products while applying an explicit zero under newer ordering', function () {
     [$actor, $scope] = F::owner();
     B::binding($actor, $scope);
     B::commit($actor, $scope, B::reviewed($actor, $scope));
     $next = B::reviewed($actor, $scope, [0 => ['VS' => ''], 1 => ['VS' => '0']], slot: 'AFTERNOON', headers: ['Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS']);
     B::commit($actor, $scope, $next);
     expect(ProjectedPlotProduct::query()->where('product_code', 'BF')->where('quantity', '1.000')->count())->toBe(7)
-        ->and(ProjectedPlotProduct::query()->where('product_code', 'VS')->where('quantity', 0)->count())->toBe(2);
+        ->and(ProjectedPlotProduct::query()->where('product_code', 'VS')->where('quantity', 0)->count())->toBe(1)
+        ->and(ProjectedPlotProduct::query()->where('product_code', 'VS')->where('quantity', '2.125')->count())->toBe(6);
 });
 
 it('blocks duplicates and unknown source meanings without projection effects', function (array $change) {

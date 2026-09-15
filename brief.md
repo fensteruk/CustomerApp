@@ -1,19 +1,21 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
 Last updated: 15 September 2026.
-Authority: CUSTOMER-WALD-PILOT01/02, DEC-063, current management product decisions and the
+Authority: CUSTOMER-WALD-PILOT01/02, CUSTOMER-WALD-CUSTAPP2-01, DEC-064, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
 ## Release truth
 
-The bounded pilot is deployed on production SHA
-`8a5a2384dd32c89852172c8dd99ffaba880dc698`. Its first supervised fictional one-site smoke
-passed access, upload, binding, analysis, preview and approval, then safely refused commit because
-the HTTP controller and domain service both entered the immutable commit journal. No receipt or
-business mutation occurred. `WALD_IMPORT_AVAILABLE=false`, so effective production pilot
-availability is OFF even though the audited application setting remains enabled. A locally
-requalified correction exists only on a non-deploying branch; it is not on `main` or deployed.
+Production serves corrected commit-boundary release
+`89768986a1a32d4258b5deebdf3012584acd6a6c`. `WALD_IMPORT_AVAILABLE=false`, so effective
+production pilot availability is OFF. The unexplained environment-gate change is under a separate
+Integration/DevOps investigation. No current source-compatibility work may alter that state.
+
+CUSTOMER-WALD-CUSTAPP2-01 is implemented only on a non-deploying feature branch. The approved
+private workbook's aggregate structure qualifies locally on SQLite and MySQL, except one selected
+site correctly blocks on conflicting explicit product evidence. This is PARTIAL qualification,
+not a production, release or source-data-correction claim.
 
 The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
 Its routes are absent in production even if the flag is set, it writes nothing and it has no
@@ -125,6 +127,24 @@ Failure/cancellation/old-date reinstatement and Fenster-originated Portal date c
 deferred, not invented. No current product decision blocks the implemented Sprint 3F loop.
 
 ## Source semantics and release boundary
+
+The approved current identity model separates Plot, Source Row and Visit. Plot is exact active
+source-site binding plus normalized Plot Ref; Source Row is source namespace plus CallNo; Visit is
+Source Row plus a recognized non-null Call Type. A blank Call Type is valid null and may contribute
+valid plot/product facts, but it cannot create a visit/service/request, mutate completion or map an
+operational date into Portal-owned dates. A later blank in a partial export cannot erase an
+established visit. A recognized type change for the same Source Row blocks.
+
+Product facts consolidate per plot only when compatible. Unrepresented makes no assertion,
+explicit zero is exact, equal explicit values agree and conflicting explicit values block the
+complete selected-site unit. Logical composite tables may join compatible horizontal fragments,
+but must retain original cell/fragment provenance and require clarification when competing
+compositions remain. CallNo headers use exact normalized `call` + `no` or `call` + `number` tokens,
+never fuzzy matching.
+
+The CUSTAPP2 profile recognizes PC1, CC1 and CM1 only. It does not inherit checksum-scoped
+corrections from the earlier pilot workbook. One explicitly selected, exactly bound site remains
+the review/commit unit; automatic multi-site orchestration remains WALD06 work.
 
 The existing transport-independent Sprint 3B importer remains unchanged in RC1 to preserve
 the approved release scope and tested concurrency paths. No upload, new binding, saved profile,

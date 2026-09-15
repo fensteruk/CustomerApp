@@ -34,5 +34,5 @@ it('keeps semantic runtime free of application infrastructure and external I O',
             expect($content)->not->toContain($term);
         }
     }
-    expect($count)->toBe(13);
+    expect($count)->toBe(14);
 });

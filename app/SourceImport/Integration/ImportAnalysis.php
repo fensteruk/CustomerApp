@@ -63,7 +63,7 @@ final class ImportAnalysis
             $rows = (new WorkbookStager)->rows($run, $inspection, $knowledge);
             $manifest = ['workbook_hash' => $run->workbook_hash, 'pins' => (new KnowledgeIdentity)->current(), 'knowledge' => $knowledge,
                 'selection_version' => ReviewedWorkbookSelection::VERSION, 'scope' => $scope->columns(), 'export_order' => $run->export_order, 'coverage' => $run->coverage,
-                'schema' => 'customerapp.wald-staging.v1', 'integration' => BackendStore::IDENTITY];
+                'schema' => 'customerapp.wald-staging.v2', 'integration' => BackendStore::IDENTITY];
 
             return (new ImportStore)->run($actor, $scope, 'analyse', (string) Str::uuid(), [$uuid, $token, 'stage'], function (User $fresh) use ($scope, $uuid, $token, $rows, $manifest, $contextId): array {
                 (new ImportKnowledge)->assertCurrent($fresh, $scope, $contextId, $manifest['knowledge']);
@@ -98,7 +98,7 @@ final class ImportAnalysis
             });
         } catch (\Throwable $exception) {
             $code = $exception instanceof ImportConflict ? $exception->getMessage() : 'analysis_failed';
-            $clarification = in_array($code, ['structural_clarification_required', 'required_column_unresolved', 'required_site_column_unresolved', 'source_site_binding_required'], true);
+            $clarification = in_array($code, ['ambiguous_composite_table', 'structural_clarification_required', 'required_column_unresolved', 'required_site_column_unresolved', 'source_site_binding_required'], true);
             (new ImportStore)->run($actor, $scope, 'analyse', (string) Str::uuid(), [$uuid, $token, 'failure'], function () use ($scope, $uuid, $token, $code, $clarification): array {
                 $run = (new BackendStore)->run($scope, $uuid, true);
                 $this->fence($run, $token);

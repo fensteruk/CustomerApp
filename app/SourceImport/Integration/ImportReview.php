@@ -162,7 +162,7 @@ final class ImportReview
     private function dependencies(User $actor, KnowledgeScope $scope, object $run, array $manifest, array $rows): void
     {
         if (Canonical::hash((new KnowledgeIdentity)->current()) !== Canonical::hash($manifest['pins']) || $manifest['selection_version'] !== ReviewedWorkbookSelection::VERSION
-            || ($manifest['schema'] ?? null) !== 'customerapp.wald-staging.v1' || Canonical::hash($manifest['integration'] ?? []) !== Canonical::hash(BackendStore::IDENTITY)
+            || ($manifest['schema'] ?? null) !== 'customerapp.wald-staging.v2' || Canonical::hash($manifest['integration'] ?? []) !== Canonical::hash(BackendStore::IDENTITY)
             || Canonical::hash($manifest['scope']) !== Canonical::hash($scope->columns())
             || $manifest['workbook_hash'] !== $run->workbook_hash || $manifest['export_order'] !== $run->export_order || $manifest['coverage'] !== $run->coverage) {
             throw new ImportConflict('stale_component_or_scope');
