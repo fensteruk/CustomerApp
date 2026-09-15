@@ -67,6 +67,28 @@ function pilotAnalyse(User $office, KnowledgeScope $scope, object $run): void
     }
 }
 
+it('renders the upload controls without leaking Alpine source into visible content', function (): void {
+    $response = $this->actingAs(pilotOffice())
+        ->get(route('office.workspace.imports'))
+        ->assertOk();
+
+    $document = new DOMDocument;
+    $previous = libxml_use_internal_errors(true);
+    $document->loadHTML($response->getContent());
+    libxml_clear_errors();
+    libxml_use_internal_errors($previous);
+
+    $xpath = new DOMXPath($document);
+    $form = $xpath->query('//form[@x-ref="importForm"]')->item(0);
+    $submit = $xpath->query('//button[@x-text]')->item(0);
+
+    expect($form)->not->toBeNull()
+        ->and($form->getAttribute('x-data'))->toContain('confirmReplacement()', 'requestSubmit()')
+        ->and($submit)->not->toBeNull()
+        ->and(trim($submit->textContent))->toBe('Upload and inspect privately')
+        ->and($document->textContent)->not->toContain('this.$refs.importForm.requestSubmit())');
+});
+
 it('imports two selected sites from the actual workbook independently and leaves every other site unchanged', function (): void {
     $path = base_path('Copy of siteapp1.xlsx');
     if (! is_file($path)) {
