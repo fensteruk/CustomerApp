@@ -10,7 +10,7 @@ final class BackendStore
 {
     public const MAX_ROWS = 500;
 
-    public const IDENTITY = ['application' => 'customerapp.wald-import-backend.pilot-v2', 'projection' => 'customerapp.wald-source-projection.v3',
+    public const IDENTITY = ['application' => 'customerapp.wald-import-backend.pilot-v3', 'projection' => 'customerapp.wald-source-projection.v4',
         'hashing' => 'customerapp.wald-transient-evidence-digest.v3', 'max_rows' => self::MAX_ROWS];
 
     public function run(KnowledgeScope $scope, string $uuid, bool $lock = false): object

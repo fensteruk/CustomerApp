@@ -99,10 +99,11 @@ final class WorkbookStager
                 throw new ImportConflict('required_column_unresolved');
             }
         }
-        $siteRole = isset($columns['source_site_identity']) ? 'source_site_identity' : 'transitional_site_clue';
-        if (! isset($columns[$siteRole])) {
-            throw new ImportConflict('required_site_column_unresolved');
+        $roleCandidates = [];
+        foreach ($columns as $role => $column) {
+            $roleCandidates[$role][(int) $column] = true;
         }
+        $sourceIdentity = (new MasterExportSiteIdentity)->columns($roleCandidates, $run->workbook_hash, isset($run->pilot_upload_id));
         if ($headerNeedsConfirmation && count(array_filter($confirmed)) !== count($confirmed)) {
             throw new ImportConflict('structural_clarification_required');
         }
@@ -128,7 +129,10 @@ final class WorkbookStager
             $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
             $call = $raw('call_reference');
             $plot = $raw('plot_reference');
-            $site = $raw($siteRole);
+            $sourceIdentityValue = $cells[$sourceIdentity['identity_column']]->rawValue ?? null;
+            $siteName = (new MasterExportSiteIdentity)->siteName(
+                $sourceIdentity['site_name_column'] === null ? null : ($cells[$sourceIdentity['site_name_column']]->rawValue ?? null),
+            );
             $callType = $raw('call_type');
             $issues = [];
             foreach ($cells as $cell) {
@@ -144,15 +148,18 @@ final class WorkbookStager
                 $issues[] = 'DUPLICATE_CALL_NUMBER';
             }
             $seen[$call] = true;
-            foreach (['plot' => $plot, 'site' => $site] as $name => $value) {
-                if ((! is_string($value) && ! is_int($value)) || trim((string) $value) === '' || mb_strlen((string) $value) > ($name === 'plot' ? 200 : 512) || preg_match('/[\x00-\x1f\x7f<>]/', (string) $value)) {
-                    $issues[] = 'INVALID_'.strtoupper($name);
-                }
+            if ((! is_string($plot) && ! is_int($plot)) || trim((string) $plot) === '' || mb_strlen((string) $plot) > 200 || preg_match('/[\x00-\x1f\x7f<>]/', (string) $plot)) {
+                $issues[] = 'INVALID_PLOT';
             }
             $plot = SourceIdentity::plotReference((string) $plot);
-            $normalisedSite = trim((string) $site);
+            $normalisedSite = $sourceIdentity['kind'] === MasterExportSiteIdentity::KIND
+                ? (new MasterExportSiteIdentity)->customerCode($sourceIdentityValue)
+                : trim((string) $sourceIdentityValue);
+            if ($normalisedSite === '' || mb_strlen($normalisedSite) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $normalisedSite)) {
+                $issues[] = 'INVALID_SITE';
+            }
             if ($run->source_site_filter_hash ?? null) {
-                $observedHash = Canonical::hash([$siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME', $normalisedSite]);
+                $observedHash = Canonical::hash([$sourceIdentity['kind'], $normalisedSite]);
                 if (! hash_equals($run->source_site_filter_hash, $observedHash)
                     || ! hash_equals((string) $run->source_site_filter, $normalisedSite)) {
                     continue;
@@ -161,7 +168,7 @@ final class WorkbookStager
             if (count($rows) >= BackendStore::MAX_ROWS) {
                 throw new ImportConflict('explicit_run_row_limit_exceeded');
             }
-            $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call, (string) $site, is_string($callType) ? $callType : '');
+            $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call, $siteName ?? $normalisedSite, is_string($callType) ? $callType : '');
             $semanticApproval = null;
             $cell = $cells[$columns['call_type']] ?? null;
             if ($cell && $selection['canonical_override'] === null && $callType === 'CC!') {
@@ -227,7 +234,7 @@ final class WorkbookStager
                 }
             }
             $excluded = $selection['excluded'];
-            $facts = ['call_number' => $call, 'source_site' => $normalisedSite, 'site_kind' => $siteRole === 'source_site_identity' ? 'SOURCE_SITE_ID' : 'EXACT_SITE_NAME',
+            $facts = ['call_number' => $call, 'source_site' => $normalisedSite, 'site_kind' => $sourceIdentity['kind'],
                 'plot' => $plot, 'service' => $hasVisit && $type->isResolved() ? $type->value : null,
                 'call_type' => $hasVisit && $type->isResolved() ? $type->lookupValue : null,
                 'complete' => $complete?->isResolved() ? $complete->value : null, 'products' => $products];
@@ -251,6 +258,7 @@ final class WorkbookStager
             $rows[] = ['canonical' => $excluded ? ['excluded' => true, 'call_number' => $call] : $facts, 'facts' => $facts, 'excluded' => $excluded,
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),
                 'provenance' => ['sheet' => $sheet->id, 'row' => $rowNumber, 'raw_call_type' => $callType, 'raw_complete' => $raw('completion'),
+                    'source_site_name' => $siteName,
                     'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
                     'values' => $valueProvenance, 'unmapped_private_evidence' => $unmapped,
                     'raw_products' => $rawProducts, 'operational_date' => $raw('pc1_operational_install_date'), 'selection' => $selection, 'semantic_answer' => $semanticApproval, 'semantic_evidence' => $semanticEvidence]];

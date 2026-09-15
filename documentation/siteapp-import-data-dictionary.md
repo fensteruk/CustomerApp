@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 15 September 2026 (CUSTAPP2 identity/composite refinement)
+**Last updated:** 15 September 2026 (master-export CustomerCode identity refinement)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -116,8 +116,9 @@ A filtered export cannot zero or delete values outside supplied records.
 
 | Field | Treatment |
 |---|---|
+| `CustomerNo` / `CustomerCode` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
 | `Call No.` | Permanent Source Row reference within the source namespace. A recognized non-null Call Type establishes a Visit; CallNo alone does not. Every within-workbook duplicate still blocks; never merge or select first/last. |
-| `Site Name` | Transitional exact-match input only. It must map to an existing Portal site explicitly and must not fuzzy-match or create one. |
+| `Site Name` | Descriptive source evidence under the new master-export contract. Retain changed/variant names for review, but do not use them to identify, create, split or rebind a CustomerCode. Exact Site Name remains only for explicitly bounded historical workbook compatibility. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |
 | `Plot To Be Installed` | Operational arrival-to-install date for PC1. Never map to Requested Date, alternative date, Date Agreed or completion date. |
 | `Items Ordered Status` | Ignore. It must not drive eligibility, status, completion, lead time or workflow. |
@@ -157,10 +158,12 @@ entered as free text. Before review, the uploader confirms exactly: “I confirm
 RedZebra export available for this slot.” This is an attributed staff assertion, not a claim of a
 RedZebra-native revision.
 
-Within a source namespace/workbook family, only one import may commit successfully for each date
-and slot. The same canonical workbook/content identity for that slot is an idempotent replay. A
-different identity in the same slot is a conflict requiring an explicit correction/replacement
-successor. An older slot cannot overwrite a newer committed slot.
+Within a source namespace/workbook family, each date/slot is a logical master-export revision
+family. The same workbook hash returns the existing current import without a new revision. A
+different upload creates an audited successor: failed current revisions need no extra replacement
+confirmation; non-failed current revisions require the exact confirmation. The predecessor and
+receipts remain, older uncommitted previews become stale, and committed facts change only through
+the normal reviewed correction path. An older slot cannot overwrite a newer committed slot.
 
 The same Call No. in a later permitted export denotes the same visit. Unchanged canonical content
 has no semantic effect; changed content is an update/correction only under these ordering and

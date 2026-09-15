@@ -11,35 +11,52 @@ use Illuminate\Support\Str;
 
 final class PilotImportWorkflow
 {
-    public function upload(User $actor, UploadedFile $file, ExportOrder $order, string $confirmation, string $command, ?string $predecessor = null, ?string $reason = null): array
+    public const REPLACEMENT_CONFIRMATION = 'REPLACE EXISTING MASTER EXPORT';
+
+    public function upload(User $actor, UploadedFile $file, ExportOrder $order, string $confirmation, string $command, ?string $predecessor = null, ?string $reason = null, ?string $replacementConfirmation = null): array
     {
         $fresh = (new PilotImportPolicy)->authorize($actor);
         $this->command($command);
         if ($confirmation !== ExportOrder::CONFIRMATION) {
             throw new ImportConflict('export_confirmation_required');
         }
-        if ($predecessor !== null && (trim($reason ?? '') === '' || mb_strlen((string) $reason) > 2000)) {
-            throw new ImportConflict('replacement_reason_required');
+        if ($reason !== null && mb_strlen($reason) > 2000) {
+            throw new ImportConflict('replacement_reason_too_long');
         }
         $storage = new PrivateWorkbookStorage;
         $artifact = $storage->store($file);
         try {
-            $uuid = DB::transaction(function () use ($fresh, $artifact, $order, $confirmation, $command, $predecessor, $reason): string {
+            $uuid = DB::transaction(function () use ($fresh, $artifact, $order, $confirmation, $command, $predecessor, $reason, $replacementConfirmation): string {
                 (new PilotImportPolicy)->authorize($fresh, true);
                 $namespace = 'redzebra';
                 $family = 'call-offs';
                 $streamKey = Canonical::hash([$namespace, $family]);
                 DB::table('wald_import_streams')->insertOrIgnore(['identity_hash' => $streamKey, 'source_namespace' => $namespace, 'workbook_family' => $family]);
                 $stream = DB::table('wald_import_streams')->where('identity_hash', $streamKey)->lockForUpdate()->firstOrFail();
-                $prior = $predecessor ? DB::table('wald_pilot_uploads')->where('uuid', $predecessor)->where('stream_id', $stream->id)->lockForUpdate()->first() : null;
-                if ($predecessor !== null && (! $prior || $prior->export_order !== $order->key())) {
+                $latest = DB::table('wald_pilot_uploads')->where('stream_id', $stream->id)->where('export_order', $order->key())->orderByDesc('revision')->lockForUpdate()->first();
+                if ($latest && hash_equals($latest->workbook_hash, $artifact['workbook_hash'])) {
+                    throw new IdenticalPilotImportConflict($latest->uuid);
+                }
+
+                $prior = $latest;
+                $confirmationRequired = $prior !== null && $prior->state !== 'FAILED';
+                if ($prior !== null && $predecessor !== null && ! hash_equals($prior->uuid, $predecessor)) {
                     throw new ImportConflict('invalid_pilot_predecessor');
                 }
-                $latest = DB::table('wald_pilot_uploads')->where('stream_id', $stream->id)->where('export_order', $order->key())->orderByDesc('revision')->lockForUpdate()->first();
-                if ($latest && (! $prior || (int) $latest->id !== (int) $prior->id)) {
-                    throw new ImportConflict('pilot_slot_requires_explicit_correction');
+                if ($confirmationRequired && $predecessor === null) {
+                    throw new PilotReplacementConfirmationRequired($prior->uuid);
                 }
+                if ($confirmationRequired && $replacementConfirmation !== self::REPLACEMENT_CONFIRMATION) {
+                    throw new PilotReplacementConfirmationRequired($prior->uuid);
+                }
+                if ($prior === null && $predecessor !== null) {
+                    throw new ImportConflict('invalid_pilot_predecessor');
+                }
+                $replacementReason = $prior === null ? null : (trim((string) $reason) !== ''
+                    ? trim((string) $reason)
+                    : ($confirmationRequired ? 'Confirmed replacement of the current master export revision.' : 'Replaced a failed master export revision.'));
                 $uuid = (string) Str::uuid();
+                $successorRevision = $prior ? (int) $prior->revision + 1 : 1;
                 $id = DB::table('wald_pilot_uploads')->insertGetId([
                     ...$artifact,
                     'uuid' => $uuid,
@@ -50,19 +67,45 @@ final class PilotImportWorkflow
                     'export_slot' => $order->slot,
                     'export_order' => $order->key(),
                     'confirmation' => $confirmation,
-                    'revision' => $prior ? (int) $prior->revision + 1 : 1,
+                    'revision' => $successorRevision,
                     'predecessor_upload_id' => $prior?->id,
-                    'replacement_reason' => $reason,
+                    'replacement_reason' => $replacementReason,
                     'workbook_retain_until' => now('UTC')->addDays(30),
                     'created_at' => now('UTC'),
                     'updated_at' => now('UTC'),
                 ]);
+                if ($prior !== null) {
+                    DB::table('wald_pilot_uploads')->where('id', $prior->id)->update([
+                        'state' => 'SUPERSEDED',
+                        'epoch' => DB::raw('epoch + 1'),
+                        'terminal_at' => now('UTC'),
+                        'updated_at' => now('UTC'),
+                    ]);
+                    $selectionIds = DB::table('wald_pilot_selections')->where('pilot_upload_id', $prior->id)->where('state', '!=', 'COMMITTED')->pluck('id');
+                    if ($selectionIds->isNotEmpty()) {
+                        DB::table('wald_pilot_selections')->whereIn('id', $selectionIds)->update(['state' => 'SUPERSEDED', 'updated_at' => now('UTC')]);
+                        DB::table('wald_import_runs')->whereIn('pilot_selection_id', $selectionIds)
+                            ->whereNotIn('state', ['COMMITTED', 'SUPERSEDED'])
+                            ->update(['state' => 'SUPERSEDED', 'epoch' => DB::raw('epoch + 1'), 'terminal_at' => now('UTC'), 'updated_at' => now('UTC')]);
+                    }
+                    (new PilotImportAudit)->record($fresh, $prior->id, 'pilot_upload_superseded', [
+                        'predecessor_revision' => (int) $prior->revision,
+                        'successor' => $uuid,
+                        'successor_revision' => $successorRevision,
+                    ]);
+                }
                 DB::table('wald_import_streams')->where('id', $stream->id)->update(['epoch' => (int) $stream->epoch + 1]);
                 (new PilotImportAudit)->record($fresh, $id, 'pilot_upload_created', [
                     'upload' => $uuid,
                     'workbook_hash' => $artifact['workbook_hash'],
                     'export_order' => $order->key(),
-                    'predecessor' => $predecessor,
+                    'predecessor' => $prior?->uuid,
+                    'predecessor_revision' => $prior ? (int) $prior->revision : null,
+                    'predecessor_state' => $prior?->state,
+                    'successor_revision' => $successorRevision,
+                    'replacement_reason' => $replacementReason,
+                    'confirmation_required' => $confirmationRequired,
+                    'confirmation_received' => $confirmationRequired && $replacementConfirmation === self::REPLACEMENT_CONFIRMATION,
                 ], command: $command);
 
                 return $uuid;
@@ -137,6 +180,13 @@ final class PilotImportWorkflow
                 'created_at' => now('UTC'),
                 'updated_at' => now('UTC'),
             ]);
+            $predecessorRunId = null;
+            if ($upload->predecessor_upload_id) {
+                $predecessorRunId = DB::table('wald_pilot_selections')
+                    ->where('pilot_upload_id', $upload->predecessor_upload_id)
+                    ->where('site_id', $site->id)
+                    ->value('run_id');
+            }
             $runUuid = (string) Str::uuid();
             $runId = DB::table('wald_import_runs')->insertGetId([
                 'uuid' => $runUuid,
@@ -159,6 +209,8 @@ final class PilotImportWorkflow
                 'confirmation' => $upload->confirmation,
                 'provenance' => ExportOrder::PROVENANCE,
                 'coverage' => 'PARTIAL_FILTERED_EXPORT',
+                'predecessor_id' => $predecessorRunId,
+                'replacement_reason' => $predecessorRunId ? $upload->replacement_reason : null,
                 'pilot_upload_id' => $upload->id,
                 'pilot_selection_id' => $selectionId,
                 'source_site_filter_hash' => $source['hash'],
@@ -192,6 +244,20 @@ final class PilotImportWorkflow
             ->where('selections.pilot_upload_id', $upload->id)
             ->get(['selections.*', 'runs.uuid as run_uuid', 'runs.state as run_state', 'runs.epoch as run_epoch', 'runs.context_id', 'runs.stage_id', 'runs.preview_id', 'sites.name as site_name'])
             ->map(fn ($item) => (array) $item)->all();
+        $latestRevision = (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)->where('export_order', $upload->export_order)->max('revision');
+        $revisions = DB::table('wald_pilot_uploads')
+            ->where('stream_id', $upload->stream_id)
+            ->where('export_order', $upload->export_order)
+            ->orderByDesc('revision')
+            ->get(['uuid', 'revision', 'state', 'failure_code', 'created_at'])
+            ->map(fn (object $revision): array => [
+                'uuid' => $revision->uuid,
+                'revision' => (int) $revision->revision,
+                'state' => $revision->state,
+                'failure_code' => $revision->failure_code,
+                'created_at' => $revision->created_at,
+                'current' => (int) $revision->revision === $latestRevision,
+            ])->all();
 
         return [
             'upload' => $uuid,
@@ -205,6 +271,7 @@ final class PilotImportWorkflow
             'manifest' => $manifest,
             'sources' => array_map(fn (array $source): array => [...$source, ...$this->binding($stream->source_namespace, $source)], $manifest['sources'] ?? []),
             'selections' => $selections,
+            'revisions' => $revisions,
         ];
     }
 
@@ -223,9 +290,6 @@ final class PilotImportWorkflow
                     'epoch' => (int) $locked->epoch + 1,
                     'updated_at' => now('UTC'),
                 ]);
-                if ($locked->predecessor_upload_id) {
-                    DB::table('wald_pilot_uploads')->where('id', $locked->predecessor_upload_id)->update(['state' => 'SUPERSEDED', 'terminal_at' => now('UTC'), 'updated_at' => now('UTC')]);
-                }
                 (new PilotImportAudit)->record($actor, $locked->id, 'pilot_workbook_discovered', [
                     'source_count' => $manifest['source_count'],
                     'record_count' => $manifest['record_count'],

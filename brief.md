@@ -2,7 +2,7 @@
 
 Last updated: 15 September 2026.
 Authority: CUSTOMER-WALD-PILOT01/02, CUSTOMER-WALD-CUSTAPP2-01,
-CUSTOMER-WALD-GOLIVE02, DEC-065, current management product decisions and the
+CUSTOMER-WALD-GOLIVE02, CUSTOMER-WALD-SOURCE02, DEC-066, current management product decisions and the
 preserved decision/history records. This is one current contract, not a second brief
 appended below superseded requirements.
 
@@ -24,6 +24,15 @@ now accepts only the exact case-insensitive word `true`; all missing, false-like
 malformed values fail closed. Effective availability still requires the audited application
 setting and current authorised Office identity. The correction is not deployed and does not
 change the current production-off state.
+
+CUSTOMER-WALD-SOURCE02 is implemented on a separate non-deploying feature branch. A RedZebra
+date/slot is a master-export revision family: failed predecessors are replaced without an extra
+warning, non-failed predecessors require explicit confirmation, identical bytes create no
+revision, and older audit/receipts remain. Uncommitted predecessor reviews are stale; committed
+facts change only through reviewed correction and partial absence changes nothing. `CustomerNo`
+and `CustomerCode` are exact CustomerCode headers. Source namespace + exact CustomerCode is the
+site-binding key; Site Name is descriptive evidence only. Missing codes block new master exports
+and unknown codes require explicit Office binding.
 
 The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
 Its routes are absent in production even if the flag is set, it writes nothing and it has no

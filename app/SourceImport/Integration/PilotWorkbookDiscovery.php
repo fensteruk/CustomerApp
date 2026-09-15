@@ -40,7 +40,7 @@ final class PilotWorkbookDiscovery
         }
         $callColumn = $this->single($roles, 'call_reference', 'required_call_column_unresolved');
         $callTypeColumn = $this->single($roles, 'call_type', 'required_call_type_column_unresolved');
-        [$siteKind, $siteColumn] = $this->site($roles);
+        $identity = (new MasterExportSiteIdentity)->columns($roles, $upload->workbook_hash);
 
         $seen = [];
         $sources = [];
@@ -69,17 +69,22 @@ final class PilotWorkbookDiscovery
                 throw new ImportConflict('duplicate_call_number');
             }
             $seen[$call] = true;
-            $site = trim((string) ($cells[$siteColumn]->rawValue ?? ''));
-            if ($site === '' || mb_strlen($site) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $site)) {
+            $identityValue = $identity['kind'] === MasterExportSiteIdentity::KIND
+                ? (new MasterExportSiteIdentity)->customerCode($cells[$identity['identity_column']]->rawValue ?? null)
+                : trim((string) ($cells[$identity['identity_column']]->rawValue ?? ''));
+            if ($identityValue === '' || mb_strlen($identityValue) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $identityValue)) {
                 throw new ImportConflict('invalid_source_site');
             }
+            $siteName = (new MasterExportSiteIdentity)->siteName(
+                $identity['site_name_column'] === null ? null : ($cells[$identity['site_name_column']]->rawValue ?? null),
+            );
             $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
             $selection = (new ReviewedWorkbookSelection)->treatment(
                 $upload->workbook_hash,
                 $sheet->id,
                 (int) $rowNumber,
                 $call,
-                $site,
+                $siteName ?? $identityValue,
                 is_string($rawCallType) ? $rawCallType : '',
             );
             if ($selection['excluded']) {
@@ -87,8 +92,20 @@ final class PilotWorkbookDiscovery
 
                 continue;
             }
-            $hash = Canonical::hash([$siteKind, $site]);
-            $sources[$hash] ??= ['kind' => $siteKind, 'identity' => $site, 'hash' => $hash, 'rows' => 0];
+            $hash = Canonical::hash([$identity['kind'], $identityValue]);
+            $sources[$hash] ??= [
+                'kind' => $identity['kind'],
+                'identity' => $identityValue,
+                'customer_code' => $identity['legacy'] ? null : $identityValue,
+                'site_name' => $siteName,
+                'observed_site_names' => [],
+                'warnings' => $identity['legacy'] ? ['LEGACY_SOURCE_IDENTITY'] : [],
+                'hash' => $hash,
+                'rows' => 0,
+            ];
+            if ($siteName !== null) {
+                $sources[$hash]['observed_site_names'][$siteName] = true;
+            }
             $sources[$hash]['rows']++;
             $included++;
         }
@@ -96,9 +113,18 @@ final class PilotWorkbookDiscovery
             throw new ImportConflict('no_source_records');
         }
         ksort($sources, SORT_STRING);
+        foreach ($sources as &$source) {
+            $source['observed_site_names'] = array_keys($source['observed_site_names']);
+            sort($source['observed_site_names'], SORT_NATURAL | SORT_FLAG_CASE);
+            $source['site_name'] = $source['observed_site_names'][0] ?? $source['site_name'];
+            if (count($source['observed_site_names']) > 1) {
+                $source['warnings'][] = 'SOURCE_SITE_NAME_VARIATION';
+            }
+        }
+        unset($source);
 
         return [
-            'schema' => 'customerapp.wald-pilot-discovery.v2',
+            'schema' => 'customerapp.wald-pilot-discovery.v3',
             'analysis_hash' => $data['analysis_hash'],
             'requires_confirmation' => in_array('no_clear_header', $table['warnings'], true),
             'sheet' => $sheet->id,
@@ -120,20 +146,5 @@ final class PilotWorkbookDiscovery
         }
 
         return (int) $columns[0];
-    }
-
-    private function site(array $roles): array
-    {
-        foreach (['source_site_identity' => 'SOURCE_SITE_ID', 'transitional_site_clue' => 'EXACT_SITE_NAME'] as $role => $kind) {
-            $columns = array_keys($roles[$role] ?? []);
-            if (count($columns) === 1) {
-                return [$kind, (int) $columns[0]];
-            }
-            if (count($columns) > 1) {
-                throw new ImportConflict('required_site_column_ambiguous');
-            }
-        }
-
-        throw new ImportConflict('required_site_column_unresolved');
     }
 }

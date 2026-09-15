@@ -1691,3 +1691,39 @@ Reason:
 
 A generic boolean cast treats any non-empty unrecognised string as true. A production emergency
 gate must require an explicit recognized opt-in and otherwise remain off.
+
+---
+
+## DEC-066
+
+Date: 15 September 2026
+
+Decision: CUSTOMER-WALD-SOURCE02 replaces permanent same-date/slot upload blocking with audited
+master-export revisions and makes RedZebra CustomerCode the authoritative source-site identity.
+
+- Export Date plus `MORNING` or `AFTERNOON` identifies a logical master-export slot; a different
+  later upload for that slot is revision `n+1`.
+- A failed current revision may be replaced automatically. Replacing any non-failed current
+  revision requires the exact attributed confirmation `REPLACE EXISTING MASTER EXPORT`. The
+  server locks and resolves the current predecessor. An identical workbook hash creates no
+  revision.
+- Replacement retains predecessor workbook, audit, reviews and receipts, marks the old upload
+  superseded, invalidates uncommitted runs/previews and makes the successor current. Committed
+  projections are not reversed automatically; reviewed correction and partial-export rules apply.
+- Exact headers `CustomerNo` and `CustomerCode` map to `source_customer_code`. The durable key is
+  source namespace + exact CustomerCode. Site Name is descriptive evidence only: variations are
+  retained and surfaced, never fuzzy-matched, auto-created or used to rebind a code.
+- Unknown codes require explicit Office binding to an existing active Portal site. Missing codes
+  block the new master-export contract. Exact approved historical workbook hashes retain their
+  previous identity interpretation; no CustomerCode is invented.
+- Different codes with the same name remain distinct. One code with several names remains one
+  identity with a review warning; separate evidence that distinct sites share a code must block.
+- Existing additive upload/binding schema is sufficient; no migration is required. Dictionary
+  identity advances to v3 and pilot/backend projection identities advance.
+- This does not enable Wald, automate processing, implement full WALD06, modify SiteApp, push
+  `main` or authorise deployment/production import.
+
+Reason:
+
+The source is a regenerated master export, so a slot is a revision family rather than a permanent
+one-upload key. CustomerCode is stable source identity; mutable Site Name text is not.

@@ -148,7 +148,7 @@ final class SourceBindingService
 
     private function validateIdentity(string $kind, string $identity): void
     {
-        if (! in_array($kind, ['SOURCE_SITE_ID', 'EXACT_SITE_NAME'], true) || trim($identity) === '' || mb_strlen($identity) > 512 || preg_match('/[\x00-\x1f\x7f]/', $identity)) {
+        if (! in_array($kind, ['CUSTOMER_CODE', 'SOURCE_SITE_ID', 'EXACT_SITE_NAME'], true) || trim($identity) === '' || mb_strlen($identity) > 512 || preg_match('/[\x00-\x1f\x7f]/', $identity)) {
             throw new \InvalidArgumentException('invalid_source_site_identity');
         }
     }

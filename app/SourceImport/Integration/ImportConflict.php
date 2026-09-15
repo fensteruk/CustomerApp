@@ -2,4 +2,4 @@
 
 namespace App\SourceImport\Integration;
 
-final class ImportConflict extends \RuntimeException {}
+class ImportConflict extends \RuntimeException {}

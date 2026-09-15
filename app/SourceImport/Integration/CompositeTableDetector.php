@@ -40,7 +40,7 @@ final class CompositeTableDetector
             }
 
             $allRoles = array_fill_keys(array_filter(array_values($rolesByColumn)), true);
-            $hasSite = isset($allRoles['source_site_identity']) || isset($allRoles['transitional_site_clue']);
+            $hasSite = isset($allRoles['source_customer_code']) || isset($allRoles['source_site_identity']) || isset($allRoles['transitional_site_clue']);
             if (! $hasSite || array_diff(self::REQUIRED_ROLES, array_keys($allRoles)) !== []) {
                 continue;
             }
@@ -192,9 +192,9 @@ final class CompositeTableDetector
                 ARRAY_FILTER_USE_BOTH,
             ))), true);
             $identityLeft = isset($leftRoles['call_reference'], $leftRoles['plot_reference'])
-                && (isset($leftRoles['source_site_identity']) || isset($leftRoles['transitional_site_clue']));
+                && (isset($leftRoles['source_customer_code']) || isset($leftRoles['source_site_identity']) || isset($leftRoles['transitional_site_clue']));
             $identityRight = isset($rightRoles['call_reference'], $rightRoles['plot_reference'])
-                && (isset($rightRoles['source_site_identity']) || isset($rightRoles['transitional_site_clue']));
+                && (isset($rightRoles['source_customer_code']) || isset($rightRoles['source_site_identity']) || isset($rightRoles['transitional_site_clue']));
             $visitLeft = isset($leftRoles['call_type'], $leftRoles['completion']);
             $visitRight = isset($rightRoles['call_type'], $rightRoles['completion']);
             if (($identityLeft && $visitRight && ! $visitLeft && ! $identityRight)

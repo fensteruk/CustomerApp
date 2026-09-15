@@ -27,6 +27,11 @@ function custapp2PrivatePath(): string
     return (string) getenv('CUSTAPP2_WORKBOOK');
 }
 
+function custapp2MasterPrivatePath(): string
+{
+    return (string) getenv('CUSTAPP2_MASTER_WORKBOOK');
+}
+
 function custapp2Office(): User
 {
     return User::factory()->create([
@@ -147,6 +152,42 @@ it('qualifies the private CUSTAPP2 workbook through nine explicit local site com
             ->and(DB::table('call_off_requests')->count())->toBe(0)
             ->and(DB::table('portal_notifications')->count())->toBe(0)
             ->and(collect($receipts)->sum(fn (array $receipt): int => $receipt['counts']['seen']))->toBe(26);
+    } finally {
+        Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
+    }
+});
+
+it('qualifies the new master export CustomerNo identities without changing the private workbook', function (): void {
+    $path = custapp2MasterPrivatePath();
+    if ($path === '' || ! is_file($path)) {
+        $this->markTestSkipped('Set CUSTAPP2_MASTER_WORKBOOK to the approved private master export path.');
+    }
+
+    expect(hash_file('sha256', $path))->toBe('c0a0ea2e21954099e6c15e063ca35a17d0992ceda9aaaf73f4e2a22473403f2e');
+    config(['wald_import.pilot_available' => true]);
+    DB::table('wald_pilot_settings')->where('key', 'wald_import_pilot_enabled')->update(['enabled' => true]);
+
+    $office = custapp2Office();
+    $pilot = (new PilotImportWorkflow)->upload(
+        $office,
+        new UploadedFile($path, 'private-master-export.xlsx', null, null, true),
+        new ExportOrder('2026-09-15', 'AFTERNOON'),
+        ExportOrder::CONFIRMATION,
+        (string) Str::uuid(),
+    );
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    try {
+        expect($pilot['state'])->toBe('READY')
+            ->and($pilot['manifest']['logical_table'])->toBe('B2:E2+I2:AJ2')
+            ->and($pilot['manifest']['record_count'])->toBe(33)
+            ->and($pilot['manifest']['included_count'])->toBe(33)
+            ->and($pilot['manifest']['excluded_count'])->toBe(0)
+            ->and($pilot['sources'])->toHaveCount(9)
+            ->and(collect($pilot['sources'])->pluck('customer_code')->filter()->unique()->count())->toBe(9)
+            ->and(collect($pilot['sources'])->every(fn (array $source): bool => $source['kind'] === 'CUSTOMER_CODE'
+                && count($source['observed_site_names']) === 1
+                && $source['site_name'] !== null))->toBeTrue();
     } finally {
         Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
     }
