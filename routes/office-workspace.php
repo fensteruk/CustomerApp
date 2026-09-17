@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\OfficeAdministrationPageController as Pages;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
+use App\Http\Controllers\OfficeUserPageController as UserPages;
 use App\Http\Controllers\OfficeWaldSettingsController as WaldSettings;
 use App\Models\CustomerOrganisation;
 use Illuminate\Support\Facades\Route;
@@ -10,6 +11,13 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
     ->middleware(['auth', 'active.portal', 'can:viewAny,'.CustomerOrganisation::class])
     ->scopeBindings()->group(function (): void {
         Route::get('/customers', [Pages::class, 'customers'])->name('customers.index');
+        Route::get('/users', [UserPages::class, 'index'])->name('users.index');
+        Route::get('/users/new', [UserPages::class, 'create'])->name('users.create');
+        Route::prefix('/users/{user:uuid}')->whereUuid('user')->group(function (): void {
+            Route::get('/', [UserPages::class, 'show'])->name('users.show');
+            Route::get('/edit', [UserPages::class, 'edit'])->name('users.edit');
+            Route::get('/change-status', [UserPages::class, 'lifecycle'])->name('users.lifecycle');
+        });
         Route::get('/customers/new', [Pages::class, 'customerForm'])->name('customers.create');
         Route::get('/imports', [PilotImport::class, 'index'])->name('imports');
         Route::get('/settings/wald', [WaldSettings::class, 'index'])->name('settings.wald');
@@ -39,6 +47,7 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
                 Route::get('/', [Pages::class, 'site'])->name('sites.show');
                 Route::get('/edit', [Pages::class, 'siteForm'])->name('sites.edit');
                 Route::get('/change-status', [Pages::class, 'siteLifecycle'])->name('sites.lifecycle');
+                Route::get('/assign-user', [UserPages::class, 'assignToSite'])->name('sites.assign-user');
             });
         });
     });

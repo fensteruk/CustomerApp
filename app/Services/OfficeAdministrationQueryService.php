@@ -182,7 +182,7 @@ final class OfficeAdministrationQueryService
         $this->assertContained($customer, $site);
 
         return User::query()
-            ->select(['users.id', 'users.name', 'users.email', 'users.portal_role_id', 'users.is_active'])
+            ->select(['users.id', 'users.uuid', 'users.name', 'users.email', 'users.portal_role_id', 'users.is_active'])
             ->join('site_user_assignments', 'site_user_assignments.user_id', '=', 'users.id')
             ->where('site_user_assignments.site_id', $site->getKey())
             ->where('users.customer_organisation_id', $customer->getKey())
@@ -196,7 +196,8 @@ final class OfficeAdministrationQueryService
                 'role' => $user->portalRole?->identifier,
                 'role_label' => $user->portalRole?->name,
                 'is_active' => (bool) $user->is_active,
-                'management_identity_available' => false,
+                'uuid' => $user->uuid,
+                'management_identity_available' => true,
             ]);
     }
 

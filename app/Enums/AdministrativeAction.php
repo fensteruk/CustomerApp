@@ -9,4 +9,8 @@ enum AdministrativeAction: string
     case Updated = 'updated';
     case Deactivated = 'deactivated';
     case Reactivated = 'reactivated';
+    case RoleChanged = 'role_changed';
+    case CustomerChanged = 'customer_changed';
+    case SiteAssigned = 'site_assigned';
+    case SiteRemoved = 'site_removed';
 }

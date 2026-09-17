@@ -6,6 +6,7 @@ use App\Enums\AdministrativeEntityType;
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
 use App\Services\OfficeAdministrationQueryService;
+use App\Services\OfficeUserAdministrationQueryService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\View\View;
@@ -23,7 +24,7 @@ class OfficeAdministrationPageController extends Controller
         ]);
     }
 
-    public function customer(Request $request, CustomerOrganisation $customerOrganisation, OfficeAdministrationQueryService $queries): View
+    public function customer(Request $request, CustomerOrganisation $customerOrganisation, OfficeAdministrationQueryService $queries, OfficeUserAdministrationQueryService $userQueries): View
     {
         $filters = $this->filters($request);
 
@@ -31,6 +32,7 @@ class OfficeAdministrationPageController extends Controller
             'customer' => $queries->customer($request->user(), $customerOrganisation->uuid),
             'sites' => $queries->sites($request->user(), $customerOrganisation, $filters['search'], $filters['active'])->withQueryString(),
             'filters' => $filters,
+            'customerUsers' => $userQueries->customerUsers($request->user(), $customerOrganisation),
         ]);
     }
 
