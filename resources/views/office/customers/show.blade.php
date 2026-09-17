@@ -36,5 +36,11 @@
             @endforelse
         </div>
         {{ $sites->links() }}
+        @isset($customerUsers)<section class="border-t border-slate-200 pt-5" aria-labelledby="customer-users-title">
+            <div class="flex flex-wrap items-center justify-between gap-3"><div><h2 id="customer-users-title" class="section-title">Customer Users <span class="text-base font-normal text-slate-500">({{ $customerUsers->total() }})</span></h2><p class="mt-1 text-sm text-slate-600">Accounts belonging to this customer and their current site access.</p></div><a class="primary-button" href="{{ route('office.workspace.users.create', ['customer' => $customer['uuid']]) }}">Add User</a></div>
+            <div class="admin-card-grid mt-4">
+                @forelse($customerUsers as $user)<article class="admin-card"><div class="flex items-start justify-between gap-3"><h3 class="admin-card-title"><a class="admin-text-link" href="{{ route('office.workspace.users.show', $user) }}">{{ $user->name }}</a></h3>@include('office.partials.status', ['active' => $user->is_active])</div><p class="mt-2 text-sm text-slate-600 [overflow-wrap:anywhere]">{{ $user->email }}</p><p class="mt-2 font-semibold">{{ $user->portalRole?->name }}</p><p class="mt-1 text-sm text-slate-600">{{ $user->assigned_sites_count }} assigned {{ Str::plural('site', $user->assigned_sites_count) }}</p><a class="admin-link-button mt-2" href="{{ route('office.workspace.users.edit', $user) }}">View / Edit User</a></article>@empty<div class="empty-state"><p>No users belong to this customer yet.</p></div>@endforelse
+            </div>{{ $customerUsers->links() }}
+        </section>@endisset
     </div>
 </x-layouts.portal>

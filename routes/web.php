@@ -13,11 +13,14 @@ use App\Http\Controllers\Development\PreviewRoleController;
 use App\Http\Controllers\NewCallOffController;
 use App\Http\Controllers\OfficeCustomerController;
 use App\Http\Controllers\OfficeSiteController;
+use App\Http\Controllers\OfficeSiteUserAssignmentController;
+use App\Http\Controllers\OfficeUserController;
 use App\Http\Controllers\PlotDetailsController;
 use App\Http\Controllers\PortalNotificationController;
 use App\Http\Controllers\ResubmitRejectedCallOffController;
 use App\Http\Controllers\ReviewRequestsController;
 use App\Http\Controllers\SiteDashboardController;
+use App\Models\CustomerOrganisation;
 use Illuminate\Support\Facades\Route;
 
 require __DIR__.'/office-workspace.php';
@@ -136,9 +139,13 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
 
     Route::prefix('/portal/office')
         ->name('portal.office.')
-        ->middleware('throttle:office-administration')
+        ->middleware(['can:viewAny,'.CustomerOrganisation::class, 'throttle:office-administration'])
         ->scopeBindings()
         ->group(function (): void {
+            Route::post('/users', [OfficeUserController::class, 'store'])->name('users.store');
+            Route::patch('/users/{user:uuid}', [OfficeUserController::class, 'update'])->whereUuid('user')->name('users.update');
+            Route::post('/users/{user:uuid}/deactivate', [OfficeUserController::class, 'deactivate'])->whereUuid('user')->name('users.deactivate');
+            Route::post('/users/{user:uuid}/reactivate', [OfficeUserController::class, 'reactivate'])->whereUuid('user')->name('users.reactivate');
             Route::get('/customers', [OfficeCustomerController::class, 'index'])
                 ->name('customers.index');
             Route::post('/customers', [OfficeCustomerController::class, 'store'])
@@ -186,6 +193,13 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
             Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/users', [OfficeSiteController::class, 'users'])
                 ->whereUuid(['customerOrganisation', 'site'])
                 ->name('sites.users');
+            Route::post('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/users', [OfficeSiteUserAssignmentController::class, 'store'])
+                ->whereUuid(['customerOrganisation', 'site'])
+                ->name('sites.users.store');
+            Route::delete('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/users/{user:uuid}', [OfficeSiteUserAssignmentController::class, 'destroy'])
+                ->whereUuid(['customerOrganisation', 'site', 'user'])
+                ->withoutScopedBindings()
+                ->name('sites.users.destroy');
             Route::get('/customers/{customerOrganisation:uuid}/sites/{site:uuid}/source-binding', [OfficeSiteController::class, 'sourceBindings'])
                 ->whereUuid(['customerOrganisation', 'site'])
                 ->name('sites.source-binding');

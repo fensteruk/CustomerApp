@@ -57,17 +57,18 @@ class DatabaseSeeder extends Seeder
         foreach (PortalRoleIdentifier::cases() as $roleIdentifier) {
             $role = PortalRole::query()->where('identifier', $roleIdentifier->value)->firstOrFail();
 
-            $user = User::query()->updateOrCreate(
-                ['email' => 'preview.'.$roleIdentifier->value.'@example.test'],
-                [
-                    'customer_organisation_id' => $organisation->id,
-                    'portal_role_id' => $role->id,
-                    'name' => $roleIdentifier->label().' Preview',
-                    'password' => Hash::make('password'),
-                    'is_active' => true,
-                    'is_preview_user' => true,
-                ],
-            );
+            $user = User::query()->firstOrNew([
+                'email' => 'preview.'.$roleIdentifier->value.'@example.test',
+            ]);
+            $user->forceFill([
+                'uuid' => $user->uuid ?? (string) Str::uuid(),
+                'customer_organisation_id' => $organisation->id,
+                'portal_role_id' => $role->id,
+                'name' => $roleIdentifier->label().' Preview',
+                'password' => Hash::make('password'),
+                'is_active' => true,
+                'is_preview_user' => true,
+            ])->save();
 
             $user->assignedSites()->syncWithoutDetaching($sites->pluck('id')->all());
         }

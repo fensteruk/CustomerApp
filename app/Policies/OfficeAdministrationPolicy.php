@@ -20,6 +20,11 @@ final class OfficeAdministrationPolicy
         'site_update',
         'site_deactivate',
         'site_reactivate',
+        'user_create',
+        'user_update',
+        'user_deactivate',
+        'user_reactivate',
+        'user_assign_sites',
         'settings_update',
     ];
 
