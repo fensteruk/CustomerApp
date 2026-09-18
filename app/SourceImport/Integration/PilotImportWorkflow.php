@@ -241,8 +241,14 @@ final class PilotImportWorkflow
         $selections = DB::table('wald_pilot_selections as selections')
             ->join('wald_import_runs as runs', 'runs.id', '=', 'selections.run_id')
             ->join('sites', 'sites.id', '=', 'selections.site_id')
+            ->join('customer_organisations', 'customer_organisations.id', '=', 'selections.customer_organisation_id')
             ->where('selections.pilot_upload_id', $upload->id)
-            ->get(['selections.*', 'runs.uuid as run_uuid', 'runs.state as run_state', 'runs.epoch as run_epoch', 'runs.context_id', 'runs.stage_id', 'runs.preview_id', 'sites.name as site_name'])
+            ->get([
+                'selections.*', 'runs.uuid as run_uuid', 'runs.state as run_state', 'runs.epoch as run_epoch',
+                'runs.context_id', 'runs.stage_id', 'runs.preview_id', 'sites.uuid as site_uuid',
+                'sites.name as site_name', 'customer_organisations.uuid as customer_uuid',
+                'customer_organisations.name as customer_name',
+            ])
             ->map(fn ($item) => (array) $item)->all();
         $latestRevision = (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)->where('export_order', $upload->export_order)->max('revision');
         $revisions = DB::table('wald_pilot_uploads')

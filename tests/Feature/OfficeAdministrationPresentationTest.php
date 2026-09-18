@@ -132,7 +132,7 @@ it('renders paginated source plots without turning source data into editing cont
     $reference = str_repeat('LONG-PLOT-', 28).'<script>';
     $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => 'plots', 'search' => 'LONG',
         'items' => adminPageItems([[
-            'plot_reference' => $reference, 'source_identity' => ['identifier' => 'SOURCE-42'],
+            'plot_reference' => $reference, 'source_identity' => ['source' => 'redzebra', 'identifier' => 'SOURCE-42'],
             'overall_status' => ['value' => 'available', 'label' => 'Available'],
             'product_totals' => ['windows' => '12', 'doors' => '2', 'bifold' => '1'],
             'is_completed' => false, 'synchronised_at' => '2026-09-10T11:00:00+01:00',
@@ -141,8 +141,8 @@ it('renders paginated source plots without turning source data into editing cont
                 'source_completed_at' => null, 'source_completion_observed_at' => null]],
         ]], 500)])->render();
     expect($html)->toContain('500 plots', 'page=2', 'name="section" value="plots"', 'value="LONG"',
-        'SOURCE-42', 'Available', 'Windows 12', 'Doors 2', 'Bifold 1', 'Outstanding',
-        '10 Sep 2026, 10:00 UTC', '&lt;script&gt;', 'Read-only source information')
+        'Source-managed', 'CustomerApp site', 'Synthetic Meadow', 'Redzebra', 'SOURCE-42', 'Available', 'Windows 12', 'Doors 2', 'Bifold 1', 'Outstanding',
+        '10 Sep 2026, 10:00 UTC', '&lt;script&gt;', 'source-managed, read-only')
         ->not->toContain($reference, 'Add Plot', 'Edit Plot', 'Delete Plot');
 });
 

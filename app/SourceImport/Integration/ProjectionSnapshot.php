@@ -20,6 +20,19 @@ final class ProjectionSnapshot
         $visitHashes = array_map(fn (array $fact): string => SourceIdentity::visit($scope->namespace, $fact['call_number'], $fact['call_type']), $visitable);
 
         $plots = DB::table('projected_plots')->where('site_id', $scope->siteId)->whereIn('plot_reference', $references)->orderBy('id')->limit(10001)->lockForUpdate()->get();
+        $target = DB::table('sites')
+            ->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
+            ->where('sites.id', $scope->siteId)
+            ->where('sites.customer_organisation_id', $scope->organisationId)
+            ->first([
+                'sites.uuid as site_uuid',
+                'sites.name as site_name',
+                'customer_organisations.uuid as customer_uuid',
+                'customer_organisations.name as customer_name',
+            ]);
+        if ($target === null) {
+            throw new ImportConflict('projection_scope_target_missing');
+        }
         $services = DB::table('projected_plot_services')->whereIn('projected_plot_id', $plots->pluck('id'))->orderBy('id')->limit(10001)->lockForUpdate()->get();
         $products = DB::table('projected_plot_products')->whereIn('projected_plot_id', $plots->pluck('id'))->orderBy('id')->limit(10001)->lockForUpdate()->get();
         $requests = DB::table('call_off_requests')->whereIn('projected_plot_id', $plots->pluck('id'))->orderBy('id')->limit(10001)->lockForUpdate()->get();
@@ -161,6 +174,21 @@ final class ProjectionSnapshot
         }
 
         return [
+            'target' => [
+                'source' => [
+                    'kind' => $rows[0]['facts']['site_kind'],
+                    'identity' => $rows[0]['facts']['source_site'],
+                    'site_names' => array_values(array_unique(array_values(array_filter(array_map(
+                        fn (array $row): ?string => $row['provenance']['source_site_name'] ?? null,
+                        $included,
+                    ))))),
+                ],
+                'customer' => ['uuid' => $target->customer_uuid, 'name' => $target->customer_name],
+                'site' => ['uuid' => $target->site_uuid, 'name' => $target->site_name],
+                'plots' => collect($references)->mapWithKeys(fn (string $reference): array => [
+                    $reference => $plots->firstWhere('plot_reference', $reference) === null ? 'CREATE' : 'REUSE',
+                ])->all(),
+            ],
             'digests' => $digests,
             'changes' => $diff,
             'plot_products' => $consolidated['products'],

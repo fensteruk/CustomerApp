@@ -158,6 +158,79 @@ it('blocks a new master export when CustomerCode is missing instead of falling b
         ->and(DB::table('wald_source_bindings')->count())->toBe(0);
 });
 
+it('requires one exact site binding and permits the same Plot Ref on different sites', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'TEST — Acme Developments']);
+    $willow = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'TEST — Willow Park', 'is_active' => true]);
+    $meadow = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'TEST — Meadow View', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'ACME-WILLOW', 'call' => '8101', 'site' => 'Willow Park Source', 'plot' => '101'],
+        ['code' => 'ACME-MEADOW', 'call' => '8201', 'site' => 'Meadow View Source', 'plot' => '101'],
+    ], '2099-03-01');
+    $workflow = new PilotImportWorkflow;
+    $review = new ImportReview;
+    $willowSource = collect($pilot['sources'])->firstWhere('identity', 'ACME-WILLOW');
+    $meadowSource = collect($pilot['sources'])->firstWhere('identity', 'ACME-MEADOW');
+
+    expect(fn () => $workflow->select($office, $pilot['upload'], $willowSource['hash'], $willow->uuid, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'source_site_binding_required');
+
+    foreach ([[$willowSource, $willow], [$meadowSource, $meadow]] as [$source, $site]) {
+        source02Bind($office, $source, $site);
+        $selection = $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+        $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+        $preview = $review->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+        $payload = json_decode(DB::table('wald_import_previews')->where('uuid', $preview['preview'])->value('payload'), true, flags: JSON_THROW_ON_ERROR);
+        expect($preview['blockers'])->toBe([])
+            ->and($payload['projection']['target']['plots'])->toHaveCount(1)
+            ->and($payload['projection']['target']['site']['uuid'])->toBe($site->uuid)
+            ->and($payload['projection']['target']['plots'])->toBe([101 => 'CREATE']);
+        $review->approve($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+        $review->commit($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    }
+
+    expect(DB::table('projected_plots')->where('plot_reference', '101')->count())->toBe(2)
+        ->and(DB::table('projected_plots')->where('site_id', $willow->id)->where('plot_reference', '101')->exists())->toBeTrue()
+        ->and(DB::table('projected_plots')->where('site_id', $meadow->id)->where('plot_reference', '101')->exists())->toBeTrue();
+
+    $later = source02Upload($office, [
+        ['code' => 'ACME-WILLOW', 'call' => '8102', 'site' => 'Willow Park Source', 'plot' => '101', 'type' => ''],
+    ], '2099-03-02');
+    $selection = $workflow->select($office, $later['upload'], $later['sources'][0]['hash'], $willow->uuid, (string) Str::uuid());
+    $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+    $preview = $review->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    $payload = json_decode(DB::table('wald_import_previews')->where('uuid', $preview['preview'])->value('payload'), true, flags: JSON_THROW_ON_ERROR);
+    expect($payload['projection']['target']['plots'])->toBe([101 => 'REUSE'])
+        ->and(DB::table('projected_plots')->where('site_id', $willow->id)->where('plot_reference', '101')->count())->toBe(1);
+});
+
+it('blocks a CallNo from moving its plot history to another site', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create();
+    $firstSite = Site::factory()->create(['customer_organisation_id' => $customer->id, 'is_active' => true]);
+    $otherSite = Site::factory()->create(['customer_organisation_id' => $customer->id, 'is_active' => true]);
+    $workflow = new PilotImportWorkflow;
+    $review = new ImportReview;
+
+    $first = source02Upload($office, [['code' => 'FIRST-SITE', 'call' => '8301', 'site' => 'First', 'plot' => '101']], '2099-03-02');
+    source02Bind($office, $first['sources'][0], $firstSite);
+    $selection = $workflow->select($office, $first['upload'], $first['sources'][0]['hash'], $firstSite->uuid, (string) Str::uuid());
+    $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+    $preview = $review->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    $review->approve($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $review->commit($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+
+    $second = source02Upload($office, [['code' => 'OTHER-SITE', 'call' => '8301', 'site' => 'Other', 'plot' => '101']], '2099-03-03');
+    source02Bind($office, $second['sources'][0], $otherSite);
+    $selection = $workflow->select($office, $second['upload'], $second['sources'][0]['hash'], $otherSite->uuid, (string) Str::uuid());
+    $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+    $blocked = $review->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+
+    expect($blocked['blockers'])->toBe(['source_row_identity_changed'])
+        ->and(DB::table('projected_plots')->where('site_id', $otherSite->id)->count())->toBe(0)
+        ->and(DB::table('wald_source_rows')->where('call_number', '8301')->value('site_id'))->toBe($firstSite->id);
+});
+
 it('deduplicates identical exports and requires confirmation for a non-failed same-slot revision', function (): void {
     $office = source02Office();
     $rows = [['code' => 'FNA2664', 'call' => '1001', 'site' => 'Site A', 'plot' => '1']];
