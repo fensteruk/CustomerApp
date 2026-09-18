@@ -1,6 +1,6 @@
 <section aria-labelledby="plots-title">
     <h2 id="plots-title" class="section-title">Plot inventory</h2>
-    <p class="mt-2 text-sm text-slate-600">Read-only source information. Plots are added and updated through source imports.</p>
+    <p class="mt-2 text-sm text-slate-600">Every plot shown here belongs to <strong>{{ $site['customer']['name'] }} · {{ $site['name'] }}</strong>. Plots are source-managed, read-only, and added or updated through imports after the source CustomerCode is bound to this site.</p>
     <form method="GET" action="{{ route('office.workspace.sites.show', [$site['customer']['uuid'], $site['uuid']]) }}" class="my-4 flex max-w-xl flex-wrap items-end gap-3" aria-label="Search plots">
         <input type="hidden" name="section" value="plots">
         <div class="min-w-0 flex-1 basis-48"><label class="form-label" for="plot-search">Plot reference</label><input class="form-input" id="plot-search" type="search" name="search" maxlength="100" value="{{ $search }}"></div>
@@ -11,8 +11,10 @@
     <div class="admin-card-grid">
         @forelse ($items as $plot)
             <article class="admin-card">
-                <h3 class="admin-card-title">{{ $plot['plot_reference'] }}</h3>
+                <div class="flex items-start justify-between gap-3"><h3 class="admin-card-title">{{ $plot['plot_reference'] }}</h3><span class="status status-slate">Source-managed</span></div>
                 <dl class="mt-3 space-y-3 text-sm">
+                    <div><dt class="admin-term">CustomerApp site</dt><dd class="admin-value">{{ $site['name'] }}</dd></div>
+                    <div><dt class="admin-term">Source system</dt><dd class="admin-value">{{ str($plot['source_identity']['source'])->headline() }}</dd></div>
                     <div><dt class="admin-term">Source reference</dt><dd class="admin-value">{{ $plot['source_identity']['identifier'] }}</dd></div>
                     <div><dt class="admin-term">Portal status</dt><dd class="admin-value">{{ $plot['overall_status']['label'] }}</dd></div>
                     <div><dt class="admin-term">Products</dt><dd class="admin-value">Windows {{ $plot['product_totals']['windows'] }} · Doors {{ $plot['product_totals']['doors'] }} · Bifold {{ $plot['product_totals']['bifold'] }}</dd></div>

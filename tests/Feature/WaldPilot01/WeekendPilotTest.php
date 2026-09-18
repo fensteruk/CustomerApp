@@ -1,5 +1,6 @@
 <?php
 
+use App\Enums\PortalRoleIdentifier;
 use App\Models\CustomerOrganisation;
 use App\Models\PortalRole;
 use App\Models\Site;
@@ -151,9 +152,13 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
     $pilot = $workflow->upload(
         $office,
         Wald05BackendFixtures::workbook(
-            overrides: [0 => ['CustomerNo' => 'SYNTHETIC-CUSTOMER-001']],
+            overrides: [
+                0 => ['CustomerNo' => 'SYNTHETIC-CUSTOMER-001', 'Plot' => '101'],
+                1 => ['CustomerNo' => 'SYNTHETIC-CUSTOMER-001', 'Plot' => '102'],
+                2 => ['CustomerNo' => 'SYNTHETIC-CUSTOMER-001', 'Plot' => '103'],
+            ],
             headers: ['CustomerNo', 'Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS', 'BF'],
-            count: 1,
+            count: 3,
         ),
         new ExportOrder('2099-01-02', 'MORNING'),
         ExportOrder::CONFIRMATION,
@@ -165,10 +170,10 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
     $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
 
     try {
-        $customer = CustomerOrganisation::factory()->create(['name' => 'Synthetic Pilot HTTP Customer '.Str::uuid()]);
+        $customer = CustomerOrganisation::factory()->create(['name' => 'TEST — Acme Developments']);
         $site = Site::factory()->create([
             'customer_organisation_id' => $customer->id,
-            'name' => 'Synthetic Pilot HTTP Site',
+            'name' => 'TEST — Willow Park',
             'is_active' => true,
         ]);
         $source = $pilot['sources'][0];
@@ -179,6 +184,20 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
         $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
         $preview = (new ImportReview)->preview($office, $selected['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
         expect($preview['blockers'])->toBe([]);
+        $previewPayload = json_decode(DB::table('wald_import_previews')->where('uuid', $preview['preview'])->value('payload'), true, flags: JSON_THROW_ON_ERROR);
+        expect($previewPayload['projection']['target']['source']['identity'])->toBe('SYNTHETIC-CUSTOMER-001')
+            ->and($previewPayload['projection']['target']['source']['site_names'])->toBe(['Synthetic Site'])
+            ->and($previewPayload['projection']['target']['customer']['name'])->toBe('TEST — Acme Developments')
+            ->and($previewPayload['projection']['target']['site']['name'])->toBe('TEST — Willow Park')
+            ->and(array_keys($previewPayload['projection']['target']['plots']))->toBe([101, 102, 103])
+            ->and(array_unique(array_values($previewPayload['projection']['target']['plots'])))->toBe(['CREATE']);
+
+        $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+            ->assertOk()
+            ->assertSee('Source CustomerCode:')
+            ->assertSee('TEST — Acme Developments · TEST — Willow Park')
+            ->assertSee('Create under this site')
+            ->assertSeeInOrder(['101', '102', '103']);
         (new ImportReview)->approve($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
 
         $command = (string) Str::uuid();
@@ -198,7 +217,22 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
         expect(DB::table('wald_import_receipts')->where('run_id', $run->id)->count())->toBe(1)
             ->and(DB::table('wald_commit_attempts')->where('command_uuid', $command)->count())->toBe(1)
             ->and(DB::table('wald_commit_attempt_outcomes')->where('attempt_id', $attempt->id)->value('outcome'))->toBe('SUCCEEDED')
-            ->and(DB::table('wald_pilot_selections')->where('uuid', $selected['selection'])->value('state'))->toBe('COMMITTED');
+            ->and(DB::table('wald_pilot_selections')->where('uuid', $selected['selection'])->value('state'))->toBe('COMMITTED')
+            ->and(DB::table('projected_plots')->where('site_id', $site->id)->orderBy('plot_reference')->pluck('plot_reference')->all())->toBe(['101', '102', '103']);
+
+        $unrelated = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'TEST — Hidden Site']);
+        $manager = User::factory()->role(PortalRoleIdentifier::SiteManager)->create([
+            'customer_organisation_id' => $customer->id,
+            'name' => 'Fictional Site Manager',
+            'is_active' => true,
+        ]);
+        $this->actingAs($office)->post(route('portal.office.sites.users.store', [$customer, $site]), ['user_uuid' => $manager->uuid])->assertRedirect();
+        $this->actingAs($manager)->get('/sites/select')->assertOk()
+            ->assertSee('TEST — Willow Park')
+            ->assertSee('3 outstanding projected plots')
+            ->assertDontSee($unrelated->name);
+        $this->actingAs($office)->delete(route('portal.office.sites.users.destroy', [$customer, $site, $manager]))->assertRedirect();
+        $this->actingAs($manager->fresh())->get('/sites/select')->assertOk()->assertSee('No assigned sites');
     } finally {
         Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
     }
