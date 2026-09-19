@@ -238,6 +238,14 @@ final class PilotImportWorkflow
         $upload = DB::table('wald_pilot_uploads')->where('uuid', $uuid)->firstOrFail();
         $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
         $manifest = $upload->source_manifest ? json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR) : ['sources' => []];
+        $sources = array_map(
+            fn (array $source): array => $this->presentSource($stream->source_namespace, $source),
+            $manifest['sources'] ?? [],
+        );
+        $legacySourceHashes = array_fill_keys(array_column(array_filter(
+            $sources,
+            fn (array $source): bool => $source['legacy_pre_customer_code'],
+        ), 'hash'), true);
         $selections = DB::table('wald_pilot_selections as selections')
             ->join('wald_import_runs as runs', 'runs.id', '=', 'selections.run_id')
             ->join('sites', 'sites.id', '=', 'selections.site_id')
@@ -249,7 +257,10 @@ final class PilotImportWorkflow
                 'sites.name as site_name', 'customer_organisations.uuid as customer_uuid',
                 'customer_organisations.name as customer_name',
             ])
-            ->map(fn ($item) => (array) $item)->all();
+            ->map(fn ($item): array => $this->presentSelection(
+                (array) $item,
+                isset($legacySourceHashes[$item->source_identity_hash]),
+            ))->all();
         $latestRevision = (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)->where('export_order', $upload->export_order)->max('revision');
         $revisions = DB::table('wald_pilot_uploads')
             ->where('stream_id', $upload->stream_id)
@@ -275,9 +286,53 @@ final class PilotImportWorkflow
             'mode' => $upload->mode,
             'failure_code' => $upload->failure_code,
             'manifest' => $manifest,
-            'sources' => array_map(fn (array $source): array => [...$source, ...$this->binding($stream->source_namespace, $source)], $manifest['sources'] ?? []),
+            'sources' => $sources,
             'selections' => $selections,
             'revisions' => $revisions,
+        ];
+    }
+
+    private function presentSource(string $namespace, array $source): array
+    {
+        $customerCode = is_string($source['customer_code'] ?? null) && trim($source['customer_code']) !== ''
+            ? $source['customer_code']
+            : null;
+        $siteName = is_string($source['site_name'] ?? null) && trim($source['site_name']) !== ''
+            ? $source['site_name']
+            : null;
+        $observedSiteNames = array_values(array_filter(
+            is_array($source['observed_site_names'] ?? null) ? $source['observed_site_names'] : [],
+            fn ($name): bool => is_string($name) && trim($name) !== '',
+        ));
+        $warnings = array_values(array_filter(
+            is_array($source['warnings'] ?? null) ? $source['warnings'] : [],
+            fn ($warning): bool => is_string($warning) && trim($warning) !== '',
+        ));
+        $legacy = $customerCode === null;
+
+        return [
+            'hash' => (string) ($source['hash'] ?? ''),
+            'kind' => (string) ($source['kind'] ?? ''),
+            'identity' => (string) ($source['identity'] ?? ''),
+            'rows' => (int) ($source['rows'] ?? 0),
+            'customer_code' => $customerCode,
+            'site_name' => $siteName,
+            'observed_site_names' => $observedSiteNames,
+            'warnings' => $warnings,
+            'legacy_pre_customer_code' => $legacy,
+            'identity_label' => $legacy ? 'Legacy source identity' : 'CustomerCode',
+            ...$this->binding($namespace, $source),
+        ];
+    }
+
+    private function presentSelection(array $selection, bool $legacyManifestSource): array
+    {
+        $customerCode = ! $legacyManifestSource && ($selection['source_identity_kind'] ?? null) === 'CUSTOMER_CODE';
+
+        return [
+            ...$selection,
+            'source_identity_label' => $customerCode ? 'Source CustomerCode' : 'Legacy source identity',
+            'legacy_pre_customer_code' => ! $customerCode,
         ];
     }
 

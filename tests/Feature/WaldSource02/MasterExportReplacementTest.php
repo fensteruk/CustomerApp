@@ -202,6 +202,11 @@ it('requires one exact site binding and permits the same Plot Ref on different s
     $payload = json_decode(DB::table('wald_import_previews')->where('uuid', $preview['preview'])->value('payload'), true, flags: JSON_THROW_ON_ERROR);
     expect($payload['projection']['target']['plots'])->toBe([101 => 'REUSE'])
         ->and(DB::table('projected_plots')->where('site_id', $willow->id)->where('plot_reference', '101')->count())->toBe(1);
+    $review->approve($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $review->commit($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+
+    expect(DB::table('projected_plots')->where('site_id', $willow->id)->where('plot_reference', '101')->count())->toBe(1)
+        ->and(DB::table('wald_import_receipts')->where('run_id', $run->id)->exists())->toBeTrue();
 });
 
 it('blocks a CallNo from moving its plot history to another site', function (): void {

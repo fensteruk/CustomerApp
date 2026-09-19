@@ -222,9 +222,22 @@ final class OfficeAdministrationQueryService
             })
             ->where('versions.customer_organisation_id', $customer->id)->where('versions.site_id', $site->id)
             ->orderBy('bindings.source_identity')->limit($this->perPage($perPage) + 1)
-            ->get(['bindings.uuid', 'bindings.source_namespace', 'bindings.identity_kind', 'bindings.source_identity', 'bindings.epoch', 'versions.version', 'versions.actor_name', 'versions.reason', 'versions.created_at']);
+            ->get([
+                'bindings.uuid', 'bindings.source_namespace', 'bindings.identity_kind', 'bindings.source_identity',
+                'versions.version', 'versions.actor_name', 'versions.reason', 'bindings.updated_at as binding_updated_at',
+            ]);
         $truncated = $bindings->count() > $this->perPage($perPage);
-        $items = $bindings->take($this->perPage($perPage))->map(fn ($binding): array => (array) $binding)->all();
+        $items = $bindings->take($this->perPage($perPage))->map(fn ($binding): array => [
+            'uuid' => $binding->uuid,
+            'state' => 'ACTIVE',
+            'source_namespace' => $binding->source_namespace,
+            'identity_kind' => $binding->identity_kind,
+            'source_identity' => $binding->source_identity,
+            'version' => (int) $binding->version,
+            'created_by' => filled($binding->actor_name) ? $binding->actor_name : null,
+            'reason' => filled($binding->reason) ? $binding->reason : null,
+            'last_changed_at' => $binding->binding_updated_at,
+        ])->all();
 
         return ['availability' => 'AVAILABLE', 'state' => $items === [] ? 'UNBOUND' : 'ACTIVE', 'has_active_binding' => $items !== [],
             'active_bindings' => $items, 'active_bindings_truncated' => $truncated, 'bindings' => $items];

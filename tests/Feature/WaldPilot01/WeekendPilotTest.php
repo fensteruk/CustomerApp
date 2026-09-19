@@ -13,6 +13,7 @@ use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\ReviewedWorkbookSelection;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
+use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeQueries;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use App\SourceImport\Knowledge\Models\KnowledgeContext;
@@ -197,6 +198,7 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
             ->assertSee('Source CustomerCode:')
             ->assertSee('TEST — Acme Developments · TEST — Willow Park')
             ->assertSee('Create under this site')
+            ->assertDontSee('Retained pre-CustomerCode')
             ->assertSeeInOrder(['101', '102', '103']);
         (new ImportReview)->approve($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
 
@@ -237,6 +239,95 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
         Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
     }
 });
+
+it('renders an exact minimal legacy manifest at review and committed states without inventing a CustomerCode', function (bool $commit): void {
+    $office = pilotOffice();
+    $workflow = new PilotImportWorkflow;
+    $pilot = $workflow->upload(
+        $office,
+        Wald05BackendFixtures::workbook(
+            overrides: [0 => ['CustomerNo' => 'LEGACY-SOURCE-001', 'Plot' => '41']],
+            headers: ['CustomerNo', 'Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS', 'BF'],
+            count: 1,
+        ),
+        new ExportOrder('2099-01-03', 'MORNING'),
+        ExportOrder::CONFIRMATION,
+        (string) Str::uuid(),
+    );
+    if ($pilot['state'] === 'NEEDS_CLARIFICATION') {
+        $pilot = $workflow->confirmStructure($office, $pilot['upload'], 'CONFIRM DETECTED HEADER AND SITE LIST', (string) Str::uuid());
+    }
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    try {
+        $customer = CustomerOrganisation::factory()->create(['name' => 'Legacy Customer']);
+        $site = Site::factory()->create([
+            'customer_organisation_id' => $customer->id,
+            'name' => 'Legacy Site',
+            'is_active' => true,
+        ]);
+        $source = $pilot['sources'][0];
+        pilotBind($office, $source, $site);
+        $selected = $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+        $run = DB::table('wald_import_runs')->where('uuid', $selected['run'])->firstOrFail();
+        pilotAnalyse($office, $selected['scope'], $run);
+        $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
+        $preview = (new ImportReview)->preview($office, $selected['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+        expect($preview['blockers'])->toBe([]);
+        (new ImportReview)->approve($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+        if ($commit) {
+            (new ImportReview)->commit($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+        }
+
+        $storedManifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
+        $legacySource = array_intersect_key($storedManifest['sources'][0], array_flip(['hash', 'kind', 'rows', 'identity']));
+        expect(array_keys($legacySource))->toBe(['hash', 'identity', 'kind', 'rows']);
+        $legacyManifest = [...$storedManifest, 'sources' => [$legacySource]];
+        DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
+            'source_manifest' => Canonical::json($legacyManifest),
+            'source_manifest_hash' => Canonical::hash($legacyManifest),
+            'updated_at' => now('UTC'),
+        ]);
+
+        $summary = $workflow->summary($office, $pilot['upload']);
+        expect(array_keys($summary['sources'][0]))->toBe([
+            'hash', 'kind', 'identity', 'rows', 'customer_code', 'site_name', 'observed_site_names',
+            'warnings', 'legacy_pre_customer_code', 'identity_label', 'binding', 'draft',
+        ])
+            ->and($summary['sources'][0]['customer_code'])->toBeNull()
+            ->and($summary['sources'][0]['identity'])->toBe('LEGACY-SOURCE-001')
+            ->and($summary['sources'][0]['identity_label'])->toBe('Legacy source identity')
+            ->and($summary['selections'][0]['source_identity_label'])->toBe('Legacy source identity');
+
+        $response = $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+            ->assertOk()
+            ->assertSee('Legacy source identity LEGACY-SOURCE-001')
+            ->assertSee('Retained pre-CustomerCode record')
+            ->assertSee('Retained pre-CustomerCode selection')
+            ->assertDontSee('Source CustomerCode:')
+            ->assertDontSee('Undefined array key');
+
+        if ($commit) {
+            expect(DB::table('wald_import_receipts')->where('run_id', $run->id)->exists())->toBeTrue();
+            $response->assertSee('Committed atomically');
+        } else {
+            $response->assertSee('Commit this one site');
+            DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
+                'state' => 'SUPERSEDED',
+                'updated_at' => now('UTC'),
+            ]);
+            $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+                ->assertOk()
+                ->assertSee('Legacy source identity LEGACY-SOURCE-001')
+                ->assertSee('Retained pre-CustomerCode record');
+        }
+    } finally {
+        Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($upload->storage_key);
+    }
+})->with([
+    'READY_TO_COMMIT' => false,
+    'COMMITTED with receipt' => true,
+]);
 
 it('keeps real actions unavailable by default and denies external and stale Office users', function (): void {
     $office = pilotOffice();

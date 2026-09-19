@@ -4,10 +4,15 @@ use App\Enums\PortalRoleIdentifier;
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\OfficeAdministrationQueryService;
+use App\SourceImport\Integration\SourceBindingService;
+use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
+use Illuminate\Support\Str;
 use Illuminate\Support\ViewErrorBag;
 
 uses(RefreshDatabase::class);
@@ -175,6 +180,72 @@ it('displays source binding summaries without raw private metadata', function ()
         ]])]])->render();
     expect($html)->toContain('SOURCE-42', 'Active', 'Synthetic Office', 'Version', 'Approved mapping')
         ->not->toContain('PRIVATE-HASH', 'PRIVATE-WORKBOOK', 'Revoke', 'Activate Binding');
+});
+
+it('presents unbound and multiple active source bindings through the secured site route', function (): void {
+    config(['wald_import.pilot_available' => true]);
+    DB::table('wald_pilot_settings')->where('key', 'wald_import_pilot_enabled')->update(['enabled' => true]);
+
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create([
+        'customer_organisation_id' => null,
+        'name' => 'Binding Reviewer',
+    ]);
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Binding Customer']);
+    $site = Site::factory()->create([
+        'customer_organisation_id' => $customer->id,
+        'name' => 'Binding Site',
+        'is_active' => true,
+    ]);
+
+    $this->actingAs($office)->get(route('office.workspace.sites.show', [$customer, $site, 'section' => 'source']))
+        ->assertOk()
+        ->assertSee('Not linked');
+
+    $scope = new KnowledgeScope($customer->id, $site->id, 'redzebra', 'call-offs');
+    $bindings = new SourceBindingService;
+    foreach ([['CUSTOMER_CODE', 'CUSTOMER-42'], ['SOURCE_SITE_ID', 'SOURCE-84']] as [$kind, $identity]) {
+        $draft = $bindings->draft($office, $scope, $kind, $identity, 'Reviewed exact source mapping.', (string) Str::uuid());
+        $bindings->activate(
+            $office,
+            $scope,
+            $draft['binding'],
+            $draft['version'],
+            $draft['definition_hash'],
+            $draft['epoch'],
+            'Approved source mapping.',
+            (string) Str::uuid(),
+        );
+    }
+
+    $presented = app(OfficeAdministrationQueryService::class)->sourceBindings($office, $customer, $site);
+    expect($presented['bindings'])->toHaveCount(2)
+        ->and(array_keys($presented['bindings'][0]))->toBe([
+            'uuid', 'state', 'source_namespace', 'identity_kind', 'source_identity', 'version',
+            'created_by', 'reason', 'last_changed_at',
+        ])
+        ->and(collect($presented['bindings'])->pluck('state')->unique()->all())->toBe(['ACTIVE']);
+
+    $this->actingAs($office)->get(route('office.workspace.sites.show', [$customer, $site, 'section' => 'source']))
+        ->assertOk()
+        ->assertSee('CUSTOMER-42')
+        ->assertSee('SOURCE-84')
+        ->assertSee('CustomerCode')
+        ->assertSee('Source site reference')
+        ->assertSee('Binding Reviewer')
+        ->assertSee('Reviewed exact source mapping.')
+        ->assertDontSee('Undefined array key');
+});
+
+it('renders missing optional source binding attribution defensively', function (): void {
+    $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => 'source', 'search' => '',
+        'items' => ['availability' => 'AVAILABLE', 'active_bindings' => [], 'bindings' => [[
+            'state' => 'ACTIVE', 'source_identity' => 'LEGACY-IDENTITY', 'identity_kind' => 'EXACT_SITE_NAME',
+            'source_namespace' => 'redzebra', 'version' => 1, 'reason' => null,
+            'created_by' => null, 'last_changed_at' => null,
+        ]]]])->render();
+
+    expect($html)->toContain('LEGACY-IDENTITY', 'Exact source site name', 'Not recorded')
+        ->not->toContain('Undefined array key');
 });
 
 it('does not claim a reviewed import is committed or expose failure internals', function (): void {
