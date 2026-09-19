@@ -268,6 +268,32 @@ it('deduplicates identical exports and requires confirmation for a non-failed sa
         ->and($second['revisions'][0]['current'])->toBeTrue();
 });
 
+it('fails closed when a master-export replacement names a missing or unrelated predecessor', function (): void {
+    $office = source02Office();
+    $first = source02Upload($office, [['code' => 'FNA2664', 'call' => '1001', 'site' => 'Site A', 'plot' => '1']], '2099-02-10');
+    $unrelated = source02Upload($office, [['code' => 'OTHER-CODE', 'call' => '2001', 'site' => 'Site B', 'plot' => '2']], '2099-02-11');
+    $changed = [['code' => 'FNA2664', 'call' => '1002', 'site' => 'Site A', 'plot' => '3']];
+
+    expect(fn () => source02Upload(
+        $office,
+        $changed,
+        '2099-02-10',
+        predecessor: (string) Str::uuid(),
+        replacementConfirmation: PilotImportWorkflow::REPLACEMENT_CONFIRMATION,
+    ))->toThrow(ImportConflict::class, 'invalid_pilot_predecessor');
+    expect(fn () => source02Upload(
+        $office,
+        $changed,
+        '2099-02-10',
+        predecessor: $unrelated['upload'],
+        replacementConfirmation: PilotImportWorkflow::REPLACEMENT_CONFIRMATION,
+    ))->toThrow(ImportConflict::class, 'invalid_pilot_predecessor');
+
+    expect(DB::table('wald_pilot_uploads')->count())->toBe(2)
+        ->and(DB::table('wald_pilot_uploads')->where('uuid', $first['upload'])->value('state'))->toBe('READY')
+        ->and(DB::table('wald_import_receipts')->count())->toBe(0);
+});
+
 it('automatically creates a retained successor revision after a failed upload', function (): void {
     $office = source02Office();
     expect(fn () => source02Upload($office, [['call' => '1001', 'site' => 'Site A', 'plot' => '1']], '2099-02-04', withCustomerCode: false))
@@ -277,15 +303,79 @@ it('automatically creates a retained successor revision after a failed upload', 
     $successor = source02Upload($office, [['code' => 'FNA2664', 'call' => '1001', 'site' => 'Site A', 'plot' => '1']], '2099-02-04');
     $failed = DB::table('wald_pilot_uploads')->where('id', $failed->id)->firstOrFail();
     $current = DB::table('wald_pilot_uploads')->where('uuid', $successor['upload'])->firstOrFail();
+    $customer = CustomerOrganisation::factory()->create();
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'is_active' => true]);
+    source02Bind($office, $successor['sources'][0], $site);
+    $selection = (new PilotImportWorkflow)->select($office, $successor['upload'], $successor['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
+    $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+    $review = new ImportReview;
+    $preview = $review->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    $review->approve($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $receipt = $review->commit($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
 
     expect($failed->state)->toBe('SUPERSEDED')
         ->and($current->revision)->toBe(2)
         ->and($current->predecessor_upload_id)->toBe($failed->id)
         ->and($current->state)->toBe('READY')
+        ->and($run->predecessor_id)->toBeNull()
+        ->and($preview['blockers'])->toBe([])
+        ->and($receipt['run'])->toBe($run->uuid)
+        ->and($receipt['predecessor_receipt'])->toBeNull()
+        ->and(DB::table('wald_import_receipts')->count())->toBe(1)
         ->and(DB::table('wald_pilot_uploads')->count())->toBe(2);
     $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $successor['upload']))
         ->assertOk()
         ->assertSee('Revision 1 · Failed / Superseded');
+});
+
+it('previews and commits a corrected successor after an uncommitted predecessor without fabricating a receipt', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'TEST — Acme Developments']);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'TEST — Willow Park', 'is_active' => true]);
+    $workflow = new PilotImportWorkflow;
+    $review = new ImportReview;
+    $rows = [
+        ['code' => 'ACME-WILLOW-E2E', 'call' => '9101', 'site' => 'Willow Park', 'plot' => 'WALD-E2E-01', 'type' => 'CC1'],
+        ['code' => 'ACME-WILLOW-E2E', 'call' => '9102', 'site' => 'Willow Park', 'plot' => 'WALD-E2E-02', 'type' => 'CM1'],
+    ];
+
+    $first = source02Upload($office, $rows, '2099-02-09');
+    source02Bind($office, $first['sources'][0], $site);
+    $selection1 = $workflow->select($office, $first['upload'], $first['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
+    $run1 = source02Analyse($office, $selection1['scope'], DB::table('wald_import_runs')->where('uuid', $selection1['run'])->firstOrFail());
+    $preview1 = $review->preview($office, $selection1['scope'], $run1->uuid, (int) $run1->epoch, (string) Str::uuid());
+
+    $rows[0]['site'] = 'Willow Park corrected';
+    $second = source02Upload(
+        $office,
+        $rows,
+        '2099-02-09',
+        predecessor: $first['upload'],
+        replacementConfirmation: PilotImportWorkflow::REPLACEMENT_CONFIRMATION,
+    );
+    $selection2 = $workflow->select($office, $second['upload'], $second['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
+    $run2 = source02Analyse($office, $selection2['scope'], DB::table('wald_import_runs')->where('uuid', $selection2['run'])->firstOrFail());
+    $preview2 = $review->preview($office, $selection2['scope'], $run2->uuid, (int) $run2->epoch, (string) Str::uuid());
+
+    expect(DB::table('wald_import_runs')->where('id', $run1->id)->value('state'))->toBe('SUPERSEDED')
+        ->and($run2->predecessor_id)->toBe($run1->id)
+        ->and($preview2['blockers'])->toBe([]);
+    expect(fn () => $review->approve($office, $selection1['scope'], $run1->uuid, $preview1['preview'], $preview1['hash'], (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'review_approval_state_conflict');
+
+    $review->approve($office, $selection2['scope'], $run2->uuid, $preview2['preview'], $preview2['hash'], (string) Str::uuid());
+    $receipt = $review->commit($office, $selection2['scope'], $run2->uuid, $preview2['preview'], $preview2['hash'], (string) Str::uuid());
+    $retry = $review->commit($office, $selection2['scope'], $run2->uuid, $preview2['preview'], $preview2['hash'], (string) Str::uuid());
+
+    expect($receipt['run'])->toBe($run2->uuid)
+        ->and($receipt['receipt'])->toBe($retry['receipt'])
+        ->and($receipt['predecessor_receipt'])->toBeNull()
+        ->and(DB::table('wald_import_receipts')->where('run_id', $run1->id)->exists())->toBeFalse()
+        ->and(DB::table('wald_import_receipts')->where('run_id', $run2->id)->count())->toBe(1)
+        ->and(DB::table('wald_pilot_uploads')->where('id', $second['id'])->value('revision'))->toBe(2)
+        ->and(DB::table('projected_plots')->where('site_id', $site->id)->orderBy('plot_reference')->pluck('plot_reference')->all())
+        ->toBe(['WALD-E2E-01', 'WALD-E2E-02'])
+        ->and(DB::table('projected_plots')->where('site_id', '!=', $site->id)->count())->toBe(0);
 });
 
 it('stales an older uncommitted preview and preserves committed partial projections', function (): void {
@@ -307,7 +397,7 @@ it('stales an older uncommitted preview and preserves committed partial projecti
     );
     expect(DB::table('wald_import_runs')->where('id', $run->id)->value('state'))->toBe('SUPERSEDED');
     expect(fn () => (new ImportReview)->approve($office, $selected['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid()))
-        ->toThrow(ImportConflict::class);
+        ->toThrow(ImportConflict::class, 'review_approval_state_conflict');
 
     $newSelection = (new PilotImportWorkflow)->select($office, $second['upload'], $second['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
     $newRun = DB::table('wald_import_runs')->where('uuid', $newSelection['run'])->firstOrFail();
@@ -327,7 +417,8 @@ it('retains committed predecessor data when a partial replacement omits it', fun
     $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
     $preview = $review->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
     $review->approve($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
-    $review->commit($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $firstReceipt = $review->commit($office, $selection['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $firstReceiptRow = DB::table('wald_import_receipts')->where('run_id', $run->id)->firstOrFail();
 
     $second = source02Upload(
         $office,
@@ -342,10 +433,15 @@ it('retains committed predecessor data when a partial replacement omits it', fun
     expect($run2->predecessor_id)->toBe($run->id);
     $preview2 = $review->preview($office, $selection2['scope'], $run2->uuid, (int) $run2->epoch, (string) Str::uuid());
     $review->approve($office, $selection2['scope'], $run2->uuid, $preview2['preview'], $preview2['hash'], (string) Str::uuid());
-    $review->commit($office, $selection2['scope'], $run2->uuid, $preview2['preview'], $preview2['hash'], (string) Str::uuid());
+    $secondReceipt = $review->commit($office, $selection2['scope'], $run2->uuid, $preview2['preview'], $preview2['hash'], (string) Str::uuid());
+    $retainedReceiptRow = DB::table('wald_import_receipts')->where('run_id', $run->id)->firstOrFail();
 
     expect(DB::table('projected_plots')->where('site_id', $site->id)->orderBy('plot_reference')->pluck('plot_reference')->all())->toBe(['1', '2'])
         ->and(DB::table('wald_import_receipts')->count())->toBe(2)
+        ->and($secondReceipt['predecessor_receipt'])->toBe($firstReceipt['receipt'])
+        ->and($retainedReceiptRow->uuid)->toBe($firstReceiptRow->uuid)
+        ->and($retainedReceiptRow->payload_hash)->toBe($firstReceiptRow->payload_hash)
+        ->and($retainedReceiptRow->payload)->toBe($firstReceiptRow->payload)
         ->and(DB::table('wald_import_runs')->where('id', $run->id)->value('state'))->toBe('SUPERSEDED');
 });
 
