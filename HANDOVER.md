@@ -1,5 +1,19 @@
 # Fenster Customer Portal Handover
 
+## Current handover — Logout privacy candidate — 20 September 2026
+
+`codex/fix-logout-cache-privacy` starts at production/main
+`76cabfcb3a906476e6a47b63b797db1025590e10` (Forge deployment `78135685`). A small web
+response middleware adds no-store/private for authenticated responses, including POST
+confirmation HTML, without changing logout/session, authorisation, Wald or assignments.
+READY FOR RELEASE REVIEW: local Office and Site Manager Back/Forward checks pass;
+7 focused / 103 grouped tests pass. Full regression has 1,586 passes / 81 skips and
+the single known date-sensitive baseline error. Build, Pint, syntax and Composer pass;
+the four existing development npm advisories are unchanged.
+No main merge, push, production change or deployment has occurred. The
+[privacy hotfix report](documentation/logout-browser-back-privacy-hotfix-2026-09-20.md)
+records scope, evidence and release limitations. Earlier handovers are historical.
+
 ## Current handover — CUSTOMER-WALD-SOURCE02 — 15 September 2026
 
 SOURCE02 is merged into local `main` at `2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9`

@@ -2,6 +2,7 @@
 
 use App\Http\Middleware\EnsureActivePortalAccount;
 use App\Http\Middleware\EnsureActiveSiteIsAssigned;
+use App\Http\Middleware\PreventAuthenticatedResponseCaching;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -14,6 +15,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->web(append: [PreventAuthenticatedResponseCaching::class]);
+
         $middleware->alias([
             'active.portal' => EnsureActivePortalAccount::class,
             'active.site' => EnsureActiveSiteIsAssigned::class,

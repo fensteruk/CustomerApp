@@ -1,5 +1,16 @@
 # Fenster Customer Portal ROADMAP
 
+## Logout privacy release candidate — 20 September 2026
+
+The isolated no-store/private hotfix is READY FOR RELEASE REVIEW after local browser,
+focused/access and broader verification. Next: obtain separate release approval, then
+repeat Office and Site Manager logout/Back acceptance
+on freshly loaded production pages. Production baseline is
+`76cabfcb3a906476e6a47b63b797db1025590e10`; this task does not deploy. Wald is already
+production-verified and is not changed; P2 presentation work remains separate. See the
+[privacy hotfix report](documentation/logout-browser-back-privacy-hotfix-2026-09-20.md).
+Earlier release-status entries below are historical, not current deployment truth.
+
 ## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
 
 **Implementation and release gates are complete and the release is merged into local `main` at

@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Logout / browser-Back privacy hotfix — 20 September 2026
+
+Current task: bounded release-candidate verification on `codex/fix-logout-cache-privacy`,
+from production/main `76cabfcb3a906476e6a47b63b797db1025590e10`. Protected responses
+receive a central no-store/private policy; logout/auth and Wald business behaviour are
+unchanged. Local Office and Site Manager Back/Forward checks pass. READY FOR RELEASE
+REVIEW: 7 focused and 103 grouped passes; full suite 1,586 passes / 81 skips with the
+one known date-sensitive baseline error. No merge, push or deployment is authorised. See the
+[privacy hotfix report](documentation/logout-browser-back-privacy-hotfix-2026-09-20.md).
+Earlier release-status entries below are historical and do not override this baseline.
+
 ## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
 
 **Merged into local `main` at `2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9` and approved for push; deployment is not yet evidenced.** Same
