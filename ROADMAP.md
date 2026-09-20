@@ -1,5 +1,18 @@
 # Fenster Customer Portal ROADMAP
 
+## Bounded Overview consistency repair — 21 September 2026
+
+The user accepts the current production workflow; freshly fetched `origin/main` is
+`0ac7082141156fdff29d296881bbb7d3299e20b5`. Prior release-candidate entries below are
+historical, not the current production acceptance state.
+The separate `codex/fix-site-overview-source-binding` candidate corrects only the
+Overview linked/unlinked presentation using the established Source Binding result.
+READY FOR RELEASE REVIEW with the separately recorded known baseline test/audit findings.
+See the [Overview repair report](documentation/site-overview-source-binding-fix-2026-09-21.md)
+for verification and release limitations. No deployment in this task.
+Next, after separate release approval: deploy and verify this correction, then address
+customer product labels as a new bounded UX task. Other UX findings stay out of scope.
+
 ## Logout privacy release candidate — 20 September 2026
 
 The isolated no-store/private hotfix is READY FOR RELEASE REVIEW after local browser,

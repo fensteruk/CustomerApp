@@ -1,5 +1,19 @@
 # Current Sprint
 
+## Site Overview binding consistency candidate — 21 September 2026
+
+Current task: presentation-only repair on `codex/fix-site-overview-source-binding`,
+based on freshly fetched `origin/main` at `0ac7082141156fdff29d296881bbb7d3299e20b5`.
+The latest user-approved production walkthrough accepts the core Wald workflow and
+logout privacy release. The older candidate statuses below are historical.
+Overview now consumes the existing Source Binding read result instead of the stale
+site-summary placeholder. Local linked/unbound browser checks and focused regressions
+pass. READY FOR RELEASE REVIEW: 9 focused / 108 grouped passes; full suite 1,595 passes,
+81 skips and the one known date-sensitive error. Release verification is recorded in the
+[Overview repair report](documentation/site-overview-source-binding-fix-2026-09-21.md).
+This repair is feature-branch only; no merge, push, production mutation or deployment.
+Product labels, import wording, navigation/Filters, User UI and terminology remain separate.
+
 ## Logout / browser-Back privacy hotfix — 20 September 2026
 
 Current task: bounded release-candidate verification on `codex/fix-logout-cache-privacy`,

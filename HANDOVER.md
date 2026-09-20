@@ -1,5 +1,23 @@
 # Fenster Customer Portal Handover
 
+## Current handover — Overview binding consistency — 21 September 2026
+
+Feature-branch candidate: `codex/fix-site-overview-source-binding`, parent/base
+`0ac7082141156fdff29d296881bbb7d3299e20b5` (fresh `origin/main`). The latest user
+request confirms production acceptance of the core workflow; the privacy candidate
+status below is historical.
+Only the Office Overview view changes at runtime. It now uses the existing
+`sourceBindings()` availability and `has_active_binding` result already supplied by
+the controller, not the hard-coded site-summary placeholder. Source detail, queries,
+binding writes, imports, projection and policies are untouched. Local linked/unbound
+browser checks pass. READY FOR RELEASE REVIEW: 9 focused / 108 grouped passes;
+full suite 1,595 passes, 81 skips and the one known date-sensitive error. Build, Pint,
+syntax and Composer pass; four existing development npm advisories remain unchanged.
+See the [Overview repair report](documentation/site-overview-source-binding-fix-2026-09-21.md)
+for exact tests, known baseline findings and release instructions.
+No migrations, data rewrite, dependency changes, merge, push or deployment.
+Require separate release approval; customer product labels are the next proposed UX task.
+
 ## Current handover — Logout privacy candidate — 20 September 2026
 
 `codex/fix-logout-cache-privacy` starts at production/main
