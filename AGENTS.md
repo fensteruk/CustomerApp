@@ -1,8 +1,17 @@
-# Fenster Customer Portal — Agent Instructions
+# Fenster CustomerApp — Agent Instructions
+
+Last updated: 19 September 2026.
+
+This file defines how coding, QA, documentation and release agents must work on
+CustomerApp.
+
+It is a working contract, not a historical report.
+
+---
 
 ## 1. Read Before Every Task
 
-Read these files in order before acting:
+Before changing CustomerApp, read these files in order:
 
 1. `AGENTS.md`
 2. `brief.md`
@@ -10,254 +19,1143 @@ Read these files in order before acting:
 4. `current_sprint.md`
 5. `ROADMAP.md`
 6. `HANDOVER.md`, when present
-7. the task-specific contract, schema, integration or work-package documents
+7. the task-specific work package, contract, schema or integration document
 
-For spreadsheet/source work, also read:
+For source-import or Wald work, also read:
 
 - `documentation/source-integration-contract.md`
 - `documentation/siteapp-import-data-dictionary.md`
-
-For standalone Wald work, also read:
-
-- `documentation/work-packages/WP-CUSTOMER-WALD01-STANDALONE-WALD-ADOPTION.md`
 - `documentation/wald-divergence-register.md`
-- the approved work package for the current Wald phase
+- the approved work package for the current Wald task
 
-If a newer user instruction, the repository and the documents disagree, stop before any
-destructive, production or wide-ranging change. Record the conflict and use the newest
-explicitly approved decision. Historical documents are evidence, not current instructions.
+For release or production work, also read the latest applicable:
+
+- release report;
+- recovery strategy;
+- deployment evidence;
+- production handover.
+
+Historical reports are evidence of what happened at the time. They are not
+automatically current instructions.
+
+If a current user/management instruction conflicts with an older document,
+do not silently choose one. Apply the newest explicitly approved decision and
+record the superseded assumption where necessary.
+
+---
 
 ## 2. Sources of Truth
 
-Resolve conflicts in this order:
+Resolve contradictions in this order:
 
-1. the latest explicit approved user/management decision;
-2. the newest applicable authoritative entry in `DECISIONS.md`;
-3. the current `brief.md` product and scope contract;
-4. successfully QA/release-approved behaviour and verified deployment evidence;
-5. current code, tests and migration evidence;
-6. older briefs, roadmaps, handovers and reports.
+1. latest explicit management/user decision;
+2. newest applicable authoritative entry in `DECISIONS.md`;
+3. current `brief.md`;
+4. successfully QA/release-approved behaviour with verified deployment evidence;
+5. current code, migrations and tests;
+6. `current_sprint.md`, `HANDOVER.md` and `ROADMAP.md`;
+7. older reports, work packages and historical briefs.
 
-`DECISIONS.md` is append-only: newer numbered decisions supersede contradictory older entries,
-but the historical record is not rewritten. `current_sprint.md` identifies the active delivery
-milestone, while `ROADMAP.md` records delivery order rather than proof of implementation or
-deployment. Task-specific contracts define only their bounded domain.
+`DECISIONS.md` is append-only.
 
-Always distinguish these states in reports and documentation:
+Newer numbered decisions may supersede older decisions, but do not rewrite the
+historical decision ledger.
 
-- **Deployed:** explicitly evidenced as successfully released to production.
-- **On `main`:** merged to the production branch, but not proof that deployment succeeded.
-- **Feature branch only:** committed outside `main`; not deployed or release-approved.
-- **Planned:** approved intent with no implementation claim.
+Always distinguish:
 
-Do not promote a branch report, release candidate or roadmap checkbox into production truth.
+- **Deployed** — verified as successfully running in production.
+- **On `main`** — merged/pushed to the production branch, but deployment still
+  needs evidence.
+- **Feature branch only** — implemented/committed but not merged or deployed.
+- **Approved / planned** — agreed requirement without implementation proof.
+- **Historical** — true for an earlier release or task, not automatically now.
 
-## 3. Product Boundary
+Never turn a feature-branch report into production truth.
 
-CustomerApp is a separate customer-facing communication and request application. SiteApp
-remains Fenster's internal operational system.
+---
 
-CustomerApp may display authorised source information, show outstanding plots, collect
-date requests and amendments, receive decisions and show customer-facing progress. It
-must never become an operational management system.
+## 3. Workspace Portability
 
-Do not introduce or recreate SiteApp:
+CustomerApp may be worked on from more than one computer.
 
-- workflow stages, trade sequencing, dependencies or sign-offs;
-- readiness/build verification, labour or manufacturing planning;
-- roles, policies, administration or Filament resources;
-- internal notes, queries, templates, issues or operational statuses;
-- database models, tables, services or direct database access.
+Do not hard-code one developer-machine path as an architectural requirement.
 
-The approved controlled fork of generic SiteApp Wald engine code is the sole narrow reuse
-exception. It does not authorise copying SiteApp operational domain code.
+The current working checkout must be established from Git before work begins.
 
-## 4. Workspace and Git Safety
+For the temporary home-machine checkout, the known path is:
 
-- Work only inside `C:\Users\JoshO\Documents\CustomerApp` unless the user explicitly
-  authorises a separate SiteApp task.
-- Inspect `git status`, current branch and relevant diffs before and after work.
-- Preserve user changes and avoid unrelated refactors.
-- Use a named, non-deploying feature/documentation branch for work unless the user gives a
-  different instruction.
-- Never merge or push to `main`, create a production tag or deploy without explicit approval.
-- A push to `main` can trigger Laravel Forge Quick Deploy. Treat it as a production action.
-- Never force-push, reset, clean, discard changes or rewrite shared history without explicit
-  approval.
-- Stage and commit only task-related files. Never commit `.env`, secrets, customer data,
-  source workbooks, generated output or local database files.
-- Do not upgrade packages or alter lockfiles unless that is the approved task.
+`C:\Users\madas\Documents\customerapp\CustomerApp`
 
-Production is `https://fenstercustomer.on-forge.com`. Do not use production accounts,
-queues, storage, database or customer records for experiments. Production smoke tests must
-use an approved safe account and remain non-destructive unless separately authorised.
+The historical office checkout has been:
 
-- Never run seeders, destructive DDL, `migrate:fresh`, database resets or ad-hoc repair
-  statements against production.
-- Do not test real customer workflows without an explicitly approved account, record scope
-  and cleanup/recovery plan.
-- Require an approved backup/recovery point before a production database deployment.
-- Never bypass authentication or expose credentials, environment values or provider output.
+`C:\Users\JoshO\Documents\CustomerApp`
 
-## 5. Local Environment
+GitHub / `origin/main` is the source of truth when moving between machines.
 
-Development uses Windows and Laravel Herd. Before application work, verify these commands
-are available:
+Before changing code:
 
-```text
-php -v
-composer --version
-node -v
-npm -v
-git --version
-```
+- inspect the repository path;
+- run/fetch current Git state;
+- inspect the active branch;
+- inspect `git status`;
+- pull the intended base branch where appropriate;
+- record the baseline SHA for substantial work.
 
-Use versions locked by `composer.lock` and `package-lock.json`. The documented foundation is
-Laravel 13, PHP 8.4 locally, Blade, Livewire 4, Tailwind 3, Alpine, Vite 8, Pest 4 and
-Filament 5 installed without an assumed panel. SQLite is used locally; production is
-MySQL-compatible. Do not assume a package or panel is required merely because it is installed.
+Do not copy an old project directory over a fresh checkout to "sync" machines.
 
-If a required command is missing, resolve the environment before changing application code.
+Use Git.
 
-## 6. Architecture and Implementation Rules
+---
 
-- Keep controllers thin: authorise, validate, dispatch and return a response.
-- Put business transitions in focused Actions, services or domain classes.
-- Authorise immediately before persistence; hidden controls are never security.
-- Enforce organisation and site boundaries on every protected query and action.
-- Do not trust client-mutated organisation, site, plot, request or source identifiers.
-- Use transactions for multi-record actions and locking where concurrency can change an
-  outcome.
-- Preserve the canonical aggregate lock order where applicable: service → request →
-  negotiation/amendment → proposal → history.
-- Preserve bounded retry for transient MySQL concurrency failures and do not weaken race
-  assertions merely to make tests pass.
-- Preserve immutable history, attribution, timestamps and before/after values.
-- Separate customer-visible messages from private Fenster reasons.
-- Use structured validation, deliberate foreign keys/delete behaviour and appropriate indexes.
-- Remain compatible with SQLite for ordinary development and MySQL 8.4 for production
-  semantics. Concurrency and lock-sensitive work needs disposable MySQL evidence.
-- Never edit a migration that may have run outside a disposable local database; add a new
-  forward migration.
-- Use Blade and Tailwind first, Livewire for useful server interaction and Alpine for light
-  client behaviour. Do not add a large frontend framework without approval.
-- Use mobile-first layouts, accessible names/states, large touch targets and more than colour
-  alone to communicate status.
-- Avoid N+1 queries and paginate potentially large result sets.
+## 4. Git and Production Safety
 
-## 7. Authentication and Authorisation
+Preserve user work and shared history.
 
-The four CustomerApp roles are Site Manager, Assistant Site Manager, Finishing Foreman and
-Fenster Office Staff. They are portal roles, never SiteApp roles.
+Do not:
 
-- The three site roles have identical Version 1 permissions but remain distinct labels.
-- External site users require an active account, customer organisation and assigned-site
-  scope.
-- Active Fenster Office Staff are globally scoped in the current approved model and may
-  have no customer organisation. Global access comes from the valid Office Staff role,
-  never merely from a null organisation.
-- Public registration is disabled unless expressly approved.
-- Development role preview is local/test only. It must not exist in production, create
-  durable access or bypass normal authentication/authorisation.
-- QR codes may identify a site in future but must never authenticate or authorise a user.
+- force-push;
+- `git reset --hard`;
+- `git clean -fd`;
+- discard unreviewed changes;
+- rewrite shared history;
+- delete unknown files;
+- remove worktrees containing unreviewed changes.
 
-Use framework password hashing, password reset, CSRF, secure session and rate-limit
-conventions. Never store plaintext credentials.
+unless explicitly authorised.
 
-## 8. Request and Workflow Rules
+Use a bounded feature branch for implementation unless instructed otherwise.
 
-Do not restate or infer workflow from historical code. Use `brief.md` for the current
-customer lifecycle. In particular:
+Stage and commit only task-related files.
 
-- services are Cavity Closers, Windows, Snagging and CML;
-- eligibility is per plot and service;
-- prevent more than one active request for the same plot and service;
-- each request owns its status, requested/agreed dates, decisions and history;
-- customer-owned date negotiation uses Requested Date, alternative proposals and Date Agreed;
-- source completion has precedence and cannot be manufactured from Portal dates;
-- amendments preserve the old agreed date and history; they never silently overwrite it;
-- batch operations must not overwrite individually diverged request decisions;
-- portal status must not mirror SiteApp workflow status.
+Never commit:
 
-Do not invent lead times, holidays, transition rules, CML wording or source mappings. Follow
-the current brief and decision ledger, and record unresolved questions.
+- `.env`;
+- passwords;
+- credentials;
+- private source workbooks;
+- customer exports;
+- local database files;
+- generated output;
+- local login documents;
+- unrelated user files.
 
-## 9. Source Import and Wald Safety
+Do not change package lockfiles or broadly upgrade dependencies unless that is
+the approved task.
 
-- CustomerApp's initial source route is private workbook upload and controlled review.
-- CustomerApp must function without SiteApp API, database, filesystem, queue or runtime access.
-- There is no Portal write-back to spreadsheets or SiteApp.
-- Wald is deterministic, explainable and rules-based. Do not add external AI, LLMs,
-  embeddings or third-party spreadsheet interpretation.
-- Structural inference does not define business meaning. Only the approved data dictionary
-  and human-confirmed mappings do.
-- Use private source → analysis/clarification → neutral staging → authorised Portal review →
-  explicit controlled commit. Inference must not write directly into final Portal models.
-- Default every export to partial/filtered scope. Absence never proves deletion without an
-  explicitly authorised complete snapshot.
-- Preserve raw evidence privately and never expose filenames, worksheets, source rows,
-  private metadata or internal errors to customers.
-- Use stable external identifiers separately from local keys and make imports idempotent.
-- Unknown required meanings, unresolved site identity or ambiguous call types block the
-  dependent commit.
-- Do not begin a Wald phase without its approved baseline manifest and scoped work package.
+### `main` is production-sensitive
 
-## 10. Notifications and Queues
+Laravel Forge push-to-deploy may be enabled.
 
-- Dispatch workflow notifications from committed domain events, preferably after commit.
-- Authorise notification lists and destinations; safe links do not replace route checks.
-- Reading or dismissing a notification must not alter domain history.
-- Completion currently sends no notification.
-- Do not claim email/Resend or a persistent production queue worker exists without evidence.
-- Queue-dependent work must document retry, idempotency and failure behaviour and be tested
-  with the intended production queue model before release.
+Therefore:
 
-## 11. Required Verification
+**pushing `main` is a production action.**
 
-Run checks proportionate to the change and report the exact commands and results. Ordinary
-application changes normally require:
+Do not merge/push `main` merely as Git housekeeping.
+
+Before an authorised production push:
+
+- identify exact candidate SHA;
+- review exact diff;
+- pass required tests;
+- understand migration delta;
+- establish required backup/recovery evidence;
+- know what Forge will deploy.
+
+After a production push:
+
+- verify Forge deployment;
+- verify served SHA;
+- verify migrations;
+- verify configuration;
+- smoke-test application health;
+- inspect logs/failed jobs.
+
+---
+
+## 5. Production
+
+Production site:
+
+`https://fenstercustomer.on-forge.com`
+
+Do not use production as a development environment.
+
+Production experiments must not use real customer data unless separately
+authorised with a defined scope and recovery plan.
+
+Never run against production:
+
+- seeders;
+- `migrate:fresh`;
+- destructive database resets;
+- destructive DDL;
+- ad-hoc bulk repair statements;
+- unsafe fixture creation.
+
+Require an approved recovery point before production database/schema changes.
+
+Do not expose:
+
+- credentials;
+- `.env` contents;
+- session/cookie material;
+- private source rows;
+- internal provider output;
+- workbook storage paths unnecessarily.
+
+Use fictional/test records for production smoke testing wherever practical.
+
+---
+
+## 6. Product Boundary
+
+CustomerApp is a customer-facing Portal and communication application.
+
+SiteApp / RedZebra remains Fenster's operational source system.
+
+CustomerApp may:
+
+- show authorised customers/sites/plots;
+- show customer-safe source facts;
+- show customer-facing service progress;
+- collect date requests;
+- support date negotiation;
+- support customer date amendments;
+- manage customer/site/user access;
+- review and import controlled source data;
+- preserve customer-safe history and notifications.
+
+CustomerApp must not become a duplicate SiteApp.
+
+Do not recreate SiteApp:
+
+- operational trade stages;
+- trade sequencing;
+- dependency management;
+- readiness/sign-off workflows;
+- labour planning;
+- manufacturing planning;
+- internal notes/issues;
+- SiteApp administration;
+- SiteApp roles/policies;
+- direct SiteApp database access.
+
+The approved controlled reuse of generic Wald engine concepts/code is a narrow
+exception and does not authorise copying SiteApp operational domain code.
+
+The integration direction remains:
+
+**source → CustomerApp**
+
+There is no spreadsheet or SiteApp write-back unless a future decision
+explicitly approves it.
+
+---
+
+## 7. Architecture and Coding Rules
+
+Prefer simple, explicit, auditable implementation.
+
+- Keep controllers thin.
+- Authorise, validate, dispatch to domain/application services, return response.
+- Put business transitions in Actions/services/domain classes.
+- Re-authorise immediately before persistence.
+- Hidden buttons are never security.
+- Never trust client-supplied organisation/site/plot/request/source IDs.
+- Enforce customer and site boundaries server-side.
+- Use transactions for multi-record business actions.
+- Use locks where concurrent changes can alter an outcome.
+- Preserve immutable history and attribution.
+- Preserve before/after evidence where required.
+- Separate customer-visible explanations from private Fenster/internal reasons.
+- Use appropriate foreign keys, indexes and deliberate delete behaviour.
+- Avoid N+1 queries.
+- Paginate potentially large datasets.
+
+For Portal request/date workflows preserve the canonical locking order where
+applicable:
+
+service
+→ request
+→ negotiation/amendment
+→ proposal
+→ history
+
+Preserve bounded retry behaviour for recognised transient MySQL concurrency
+errors.
+
+Never weaken race/concurrency assertions simply to make tests pass.
+
+---
+
+## 8. Database and Migration Rules
+
+CustomerApp must remain testable on SQLite for normal development and qualified
+on MySQL 8.4 for MySQL-specific behaviour.
+
+Use disposable MySQL evidence for:
+
+- locking;
+- concurrency;
+- trigger behaviour;
+- uniqueness races;
+- production-like import transactions;
+- database-specific constraints.
+
+Never edit a migration that may already have run outside a disposable local
+database.
+
+Use a new forward/additive migration.
+
+Do not infer current production migration count from an old report. Inspect the
+current repository and production ledger when it matters.
+
+---
+
+## 9. Frontend and UX
+
+Use:
+
+- Blade;
+- Tailwind;
+- Livewire where server interaction benefits;
+- Alpine for small client behaviour.
+
+Do not add a large frontend framework without approval.
+
+Design mobile-first.
+
+Requirements:
+
+- accessible names;
+- visible keyboard focus;
+- large enough touch targets;
+- status communicated by text as well as colour;
+- responsive tables/overflow;
+- usable navigation at short viewport heights.
+
+The left application sidebar must remain usable when role-specific navigation
+exceeds viewport height. Scroll the appropriate navigation region rather than
+making controls unreachable.
+
+Do not redesign unrelated screens during a targeted fix.
+
+---
+
+## 10. Authentication and Roles
+
+CustomerApp roles:
+
+- Fenster Office Staff
+- Site Manager
+- Assistant Site Manager
+- Finishing Foreman
+
+These are CustomerApp roles, not SiteApp roles.
+
+The three external roles remain distinct labels but currently share the same
+Version 1 Site User permission model unless a newer approved decision changes
+that.
+
+### Office Staff
+
+Active Fenster Office Staff:
+
+- are globally scoped in the approved model;
+- may have `customer_organisation_id = NULL`;
+- receive global access from a valid Office role, not from the null value.
+
+### External Site Users
+
+An external user requires:
+
+- active account;
+- valid external Portal role;
+- customer organisation;
+- authorised site assignments.
+
+External users may access only their assigned scope.
+
+Public self-registration remains disabled unless explicitly approved.
+
+Development role-preview tooling is local/test only and must never grant
+production access.
+
+QR codes may identify a site in future but must never authenticate a person.
+
+Use framework-standard:
+
+- password hashing;
+- password reset;
+- CSRF;
+- secure sessions;
+- rate limiting.
+
+Never store plaintext passwords.
+
+---
+
+## 11. User / Customer / Site Administration
+
+Office Staff must be able to manage the practical access hierarchy without
+developer/database intervention.
+
+Required relationship:
+
+**User → Customer Organisation → Assigned Site(s)**
+
+Office administration should support, as implemented/approved:
+
+- list/search users;
+- create user;
+- edit user;
+- choose Portal role;
+- assign customer organisation;
+- assign one or more sites under that customer;
+- remove site access;
+- deactivate/reactivate account.
+
+Reverse administration should also be understandable:
+
+**Customer → Users**
+
+and:
+
+**Site → Assigned Users**
+
+A Customer A user must never be assignable to a Customer B site.
+
+Changing an external user's customer must not leave stale cross-customer site
+assignments.
+
+Wald source binding and user assignment are separate concerns:
+
+- Wald binding answers: "Which CustomerApp site does this source site belong to?"
+- User assignment answers: "Which Portal users may see this CustomerApp site?"
+
+Wald must not automatically assign users.
+
+---
+
+## 12. Customer → Site → Plot Hierarchy
+
+The product hierarchy is:
+
+**Customer → Site → Plot → Services / Call-offs**
+
+Every projected plot belongs to exactly one CustomerApp site.
+
+Plot source identity is scoped by site.
+
+The same Plot Ref may legitimately exist at multiple different sites.
+
+Never resolve Plot Ref globally across every site.
+
+When Wald has an exact source-site binding, all source plot rows for that
+source identity inherit the resolved CustomerApp site.
+
+Office must not have to manually link every imported plot one-by-one.
+
+If the source site is not safely resolved, plot projection blocks.
+
+Site Details should make the relationship obvious by showing the plots that
+belong to that site and their appropriate source-managed information.
+
+---
+
+## 13. Customer Services
+
+Customer-facing services are exactly:
+
+1. Cavity Closers
+2. Windows
+3. Snagging
+4. CML
+
+These are independent services, not SiteApp operational stages.
+
+Do not infer dependencies from display order.
+
+Typical customer-facing service presentation includes:
+
+- Nothing / Not Called Off
+- Called Off — Awaiting Date
+- Date Agreed
+- On Hold — Date Change Requested
+- Completed
+
+Overall plot presentation may include:
+
+- Nothing Called Off
+- Call-Offs In Progress
+- Dates Agreed
+- Partially Completed
+- Fully Completed
+
+Completed plots remain retained and may be hidden by default with a Show
+Completed option.
+
+Do not manufacture completion from Portal-requested/agreed dates.
+
+---
+
+## 14. Initial Date Agreement
+
+One customer submission may include multiple plot/service requests.
+
+Each request owns:
+
+- its service;
+- requested date;
+- agreed date;
+- negotiation state;
+- decisions;
+- history.
+
+Do not allow more than one active request for the same plot/service.
+
+Typical flow:
+
+Site User submits
+→ Awaiting Fenster
+
+Office accepts requested date
+→ Date Agreed
+
+or:
+
+Office proposes alternative
+→ Awaiting Site User
+
+Assigned authorised Site User accepts
+→ Date Agreed
+
+or rejects with reason
+→ Awaiting Fenster
+
+Negotiation may repeat.
+
+Use **Date Agreed**, not "Approved", for current customer-facing state.
+
+Preserve historic records truthfully.
+
+Withdrawal is allowed only under the currently approved pre-agreement rules.
+
+Do not invent new lead-time, holiday or transition rules.
+
+---
+
+## 15. Amendments
+
+After Date Agreed, an authorised Site User may request a new date under the
+current amendment workflow.
+
+The previous agreed date is history, not silently overwritten.
+
+Approved amendment reasons and validation come from `brief.md` /
+`DECISIONS.md`.
+
+Office may:
+
+- accept the new requested date;
+- propose an alternative.
+
+Assigned Site Users may respond according to current authorisation rules.
+
+Source completion wins over an open amendment.
+
+A later source reversal must not automatically reopen an obsolete negotiation.
+
+Do not invent:
+
+- automatic old-date reinstatement;
+- Office-originated amendment behaviour;
+- new cutoff rules.
+
+---
+
+## 16. Source Import and Wald Principles
+
+Wald is deterministic spreadsheet intelligence.
+
+Core principle:
+
+**Wald infers structure; the controlled business dictionary defines meaning.**
+
+Do not add:
+
+- external AI/LLM interpretation;
+- embeddings;
+- third-party semantic spreadsheet services;
+- fuzzy business inference.
+
+CustomerApp must remain able to operate without:
+
+- SiteApp API;
+- SiteApp database;
+- SiteApp filesystem;
+- SiteApp runtime;
+- SiteApp queue.
+
+The controlled flow is:
+
+private source
+→ structural analysis
+→ clarification
+→ neutral staging
+→ exact binding
+→ authorised preview
+→ explicit commit
+
+Inference must not write directly into final Portal state.
+
+---
+
+## 17. Master Export and Revision Model
+
+RedZebra operates from one master source sheet/export.
+
+The operational expectation is approximately two exports per day:
+
+- MORNING
+- AFTERNOON
+
+Date + slot identifies a logical export family, not a permanent "may only ever
+upload once" record.
+
+A later upload for the same date + slot is a revision/replacement.
+
+### Failed predecessor
+
+If the previous revision failed:
+
+- allow a replacement without the old hard duplicate error;
+- preserve failed history/audit;
+- continue with a new revision.
+
+### Non-failed predecessor
+
+If an existing non-failed revision exists:
+
+- warn the Office user;
+- require explicit replacement confirmation;
+- preserve the old revision/history;
+- create a successor/current revision.
+
+### Identical reupload
+
+Avoid creating meaningless identical revisions where the exact same content is
+already known. Prefer navigating to the existing import/history where supported.
+
+Replacing an import does not erase committed Portal/source facts.
+
+All normal partial-export/correction rules still apply.
+
+Older uncommitted reviews/previews must become stale when their source revision
+is superseded.
+
+---
+
+## 18. CustomerCode Source Identity
+
+Current source identity uses a stable external CustomerCode.
+
+Source workbooks may expose the field as:
+
+- `CustomerCode`
+- `CustomerNo`
+
+when explicitly approved by the current dictionary.
+
+CustomerCode is the first source identity key.
+
+Site Name is descriptive evidence, not the durable primary identity.
+
+Required behaviour:
+
+- known CustomerCode → use its exact active binding;
+- changed/mistyped Site Name with same code → do not create a duplicate site;
+- unknown CustomerCode → require explicit Office binding;
+- missing required CustomerCode → block the dependent source unit;
+- different codes with same Site Name → do not silently merge;
+- one code with evidence of genuinely different sites → block/review.
+
+Do not fuzzy-match Site Name.
+
+---
+
+## 19. Source Site Binding and Plot Identity
+
+A durable source-site binding resolves:
+
+source namespace
++
+CustomerCode
+
+to the intended CustomerApp customer/site.
+
+After exact binding:
+
+all plot rows for that source identity inherit the target site.
+
+Plot identity is:
+
+resolved exact site binding
++
+normalized Plot Ref
+
+Do not require plot-by-plot manual site linking.
+
+A new Plot Ref may be source-projected beneath the bound site according to the
+approved projection rules.
+
+An existing same-site Plot Ref is reused.
+
+A source identity attempting to move established site/plot history to another
+site must block rather than silently reassign.
+
+The import preview should make target site and create/reuse behaviour obvious.
+
+---
+
+## 20. Source Row and Visit Identity
+
+Keep three concepts separate:
+
+### Plot
+
+Resolved site binding + normalized Plot Ref.
+
+### Source Row
+
+Source namespace + CallNo.
+
+### Visit
+
+Source Row + recognised non-null Call Type.
+
+CallNo alone does not establish a visit.
+
+A recognised non-null Call Type establishes the source visit/service meaning.
+
+---
+
+## 21. Blank Call Type
+
+A genuinely blank Call Type is valid `null`.
+
+Meaning:
+
+**The plot exists, but no call-off has started.**
+
+A blank type may contribute approved:
+
+- plot facts;
+- product facts.
+
+It must not:
+
+- create a visit;
+- create a customer-facing service request;
+- create/reverse completion;
+- create Requested Date;
+- create Date Agreed;
+- create a proposal/amendment date;
+- invent a completion date.
+
+A nonblank unrecognised Call Type remains unknown and blocks its dependent
+projection.
+
+In a partial export, a later blank value does not automatically erase an
+already established visit.
+
+---
+
+## 22. Call Type and Header Semantics
+
+Use the current approved dictionary.
+
+Known mappings include:
+
+- PC1 → Windows
+- CC1 → Cavity Closers
+- CM1 → CML-related visit
+
+Do not invent a Snagging mapping.
+
+Workbook-specific exceptions must remain workbook/context/checksum scoped.
+
+Do not turn one workbook correction into global dictionary truth.
+
+Call-reference headers use deterministic normalisation around the exact
+semantic token combinations:
+
+- `call` + `no`
+- `call` + `number`
+
+Case, punctuation, spacing, underscore, hyphen, concatenation and order may be
+normalised where approved.
+
+Do not use fuzzy matching.
+
+Extra semantic words must prevent automatic recognition.
+
+---
+
+## 23. Composite Workbook Structure
+
+Wald may compose one logical table from physically separated compatible
+fragments when evidence clearly supports that interpretation.
+
+Examples may include:
+
+`C2:E2+I2:AJ2`
+
+for a logical composite header.
+
+Composition requires compatible evidence such as:
+
+- same worksheet;
+- aligned row boundaries;
+- blank/formatting-only spacer regions;
+- complementary header/data roles;
+- no stronger evidence of two separate tables.
+
+If more than one plausible composition remains:
+
+ask for clarification.
+
+Never silently join unrelated tables.
+
+Always preserve original:
+
+- worksheet;
+- cell coordinate;
+- raw value;
+- fragment identity;
+- logical row association.
+
+Unlabelled populated columns remain private unmapped evidence.
+
+---
+
+## 24. Product Facts
+
+Source product facts are exact evidence.
+
+Rules:
+
+- unrepresented/missing → no assertion;
+- explicit zero → exact zero;
+- explicit positive valid quantity → exact quantity;
+- invalid value → block dependent projection;
+- matching explicit values across rows → agreement;
+- unrepresented + explicit → retain explicit fact;
+- conflicting explicit quantities → block selected site unit.
+
+Never use:
+
+- first-row-wins;
+- last-row-wins;
+- minimum;
+- maximum;
+- averaging.
+
+Do not infer product quantities from Call Type.
+
+Keep BF separately identifiable for approved lead-time behaviour.
+
+Do not invent new customer product totals or labels without an approved
+decision.
+
+---
+
+## 25. Partial Export Safety
+
+Default source scope is:
+
+`PARTIAL_FILTERED_EXPORT`
+
+Therefore:
+
+**absence is not evidence of deletion.**
+
+Missing rows do not imply deletion.
+
+Missing product values do not imply zero.
+
+Missing visits do not imply reversal.
+
+Missing sites do not imply removal.
+
+A stronger complete-snapshot contract must be explicitly approved before
+absence-based reconciliation is allowed.
+
+---
+
+## 26. Supervised Wald Pilot
+
+Current Wald work is intentionally bounded unless a later decision supersedes
+it.
+
+Expected safe pilot model:
+
+- Office-only;
+- private upload;
+- manual review;
+- exactly bound source site;
+- one selected site per review/commit;
+- non-mutating preview;
+- explicit approval;
+- atomic commit;
+- idempotent receipt/history;
+- no customer access to source evidence.
+
+Do not introduce automatically:
+
+- all-site commits;
+- unattended sync;
+- scheduled imports;
+- fuzzy matching;
+- automatic conflict repair;
+- spreadsheet writeback;
+- source API dependency;
+- automatic purge.
+
+Full multi-site orchestration remains separate work unless explicitly approved.
+
+---
+
+## 27. Wald Environment Gate
+
+The production emergency gate is:
+
+`WALD_IMPORT_AVAILABLE`
+
+This is security-sensitive.
+
+It must fail closed.
+
+Only the exact case-insensitive word:
+
+`true`
+
+is approved to enable the environment layer.
+
+Do not reintroduce generic truthy boolean casting.
+
+Malformed values, numeric values, `yes`, `on`, padded text and arbitrary
+non-empty strings must not enable Wald.
+
+Effective pilot access also requires:
+
+- audited application setting enabled;
+- current valid Office Staff authority.
+
+Navigation visibility alone is not security.
+
+---
+
+## 28. Wald Commit Safety
+
+One reviewed selected-site unit is one atomic commit.
+
+Preserve:
+
+- top-level commit journal ownership;
+- transaction boundary;
+- stale-preview checks;
+- exact binding;
+- source ordering;
+- idempotency;
+- immutable attempts/outcomes;
+- receipts;
+- bounded concurrency retry;
+- Portal-state protection.
+
+Do not recreate the historical double-journal defect.
+
+There must be one authoritative top-level journal/transaction ownership path.
+
+Never disable a safety guard just to make a smoke test pass.
+
+---
+
+## 29. Portal-Owned State Protection
+
+Source import must not overwrite customer-owned workflow such as:
+
+- Requested Date;
+- Date Agreed;
+- alternatives;
+- customer responses;
+- amendments;
+- Portal history.
+
+Operational source dates are not automatically customer dates.
+
+Source completion may update approved source-completion facts according to the
+current dictionary, but completion dates must not be invented.
+
+---
+
+## 30. Notifications and Queues
+
+Notifications derive from committed domain truth.
+
+Prefer dispatch after successful commit.
+
+Re-authorise recipients and destinations.
+
+Reading/dismissing a notification must not alter business history.
+
+Completion currently sends no notification unless a newer approved decision
+changes that.
+
+Do not claim a persistent queue worker, provider or scheduled Wald process
+exists without evidence.
+
+Queue-dependent work must document:
+
+- retries;
+- idempotency;
+- failures;
+- intended production worker model.
+
+---
+
+## 31. Required Verification
+
+Run focused tests first.
+
+Ordinary executable changes normally require:
 
 ```text
 php artisan test
 vendor\bin\pint --test
 composer validate --strict
-npm run build
 composer audit
+npm run build
+npm audit --omit=dev
 git diff --check
 ```
 
-Also run focused tests first. Security, tenant boundaries, workflows, source imports,
-notifications and integration failures require both successful and unauthorised/failure-path
-tests. Locking, upsert or database-specific work requires disposable MySQL 8.4 verification.
+Use tests proportionate to the task.
 
-Documentation-only work does not require the full application suite unless it changes an
-executable artefact. It does require link/path checks, contradiction review, diff review and
-whitespace validation.
+Security/authorisation work requires both allowed and denied paths.
 
-Never weaken tests to make a result pass. Never claim a check, migration, build or deployment
-succeeded unless it actually ran successfully.
+Tenant work requires cross-customer/site denial tests.
 
-## 12. Documentation Discipline
+Import work requires success, blocker, stale-preview and rollback paths.
 
-- Keep `brief.md` concise and current; do not append a second truth below stale text.
-- Append durable decisions to `DECISIONS.md` and identify what they supersede.
-- Keep current status at the top of `current_sprint.md`, `ROADMAP.md` and `HANDOVER.md`.
-- Leave historical reports intact, but label them historical or superseded where ambiguity
-  would otherwise affect current work.
-- Use absolute dates and exact branch/SHA/deployment identifiers when known.
-- Do not describe feature-branch work as released.
-- Record unresolved business rules explicitly rather than inventing answers.
+Concurrency/locking/database-specific work requires disposable MySQL 8.4
+evidence.
 
-## 13. Completion Report
+Do not weaken tests merely to produce green output.
 
-Every task report must include:
+Never report a command as passing unless it actually ran successfully.
 
-- **Completed** — outcome and scope;
-- **Files changed** — exact task files;
-- **Tests/checks** — commands and results;
-- **Migrations/deployment** — what did or did not occur;
-- **Notes** — blockers, unresolved decisions, unrelated changes preserved and manual actions.
+Documentation-only work does not require the full application suite unless it
+changes executable artefacts, but it still requires contradiction/diff/path
+review and whitespace validation.
 
-Prefer simple, secure, auditable, maintainable and understandable changes. CustomerApp must
-answer what is outstanding, what date was requested or agreed, what changed and what the
-customer should do next—without drifting into SiteApp's operational domain.
+---
+
+## 32. Documentation Discipline
+
+Keep `brief.md` as the current product contract.
+
+Do not turn it into a deployment log.
+
+Use:
+
+- `DECISIONS.md` for durable decisions;
+- `current_sprint.md` for current delivery work;
+- `HANDOVER.md` for current operational handover;
+- `ROADMAP.md` for delivery order;
+- release/QA reports for historical evidence.
+
+Do not duplicate stale truth beneath newer truth.
+
+Use absolute dates and exact SHAs/deployment identifiers in reports where
+known.
+
+Record unresolved business rules explicitly.
+
+Do not invent answers.
+
+---
+
+## 33. Task Heartbeat
+
+For substantial tasks, provide concise progress updates at meaningful
+checkpoints, for example:
+
+- baseline inspected;
+- root cause identified;
+- implementation complete;
+- focused tests running;
+- full regression running;
+- commit created;
+- push/deployment starting;
+- deployment verified.
+
+Do not send repetitive updates that add no information.
+
+---
+
+## 34. Completion Reports
+
+Every substantial task report should state:
+
+### Completed
+
+What was actually achieved.
+
+### Files changed
+
+Exact task-related files.
+
+### Tests / checks
+
+Commands and exact results.
+
+### Migration / database impact
+
+What changed or explicitly did not.
+
+### Git state
+
+Branch, commit SHA and whether anything was pushed.
+
+### Production impact
+
+Deployed / not deployed, with evidence where relevant.
+
+### Notes / blockers
+
+Unresolved decisions, preserved unrelated changes, manual actions and next
+step.
+
+Never use "done" to mean merely "implemented locally" when deployment was part
+of the user's goal.
+
+---
+
+## 35. Final Engineering Principle
+
+Prefer changes that are:
+
+- simple;
+- secure;
+- deterministic;
+- auditable;
+- maintainable;
+- understandable to Fenster staff.
+
+CustomerApp should make the real business relationship obvious:
+
+**CustomerCode → CustomerApp Site → Plots → Assigned Users → Customer-safe
+services/history**
+
+without drifting into SiteApp's operational domain.

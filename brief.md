@@ -1,221 +1,1279 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
-Last updated: 15 September 2026.
-Authority: CUSTOMER-WALD-PILOT01/02, CUSTOMER-WALD-CUSTAPP2-01,
-CUSTOMER-WALD-GOLIVE02, CUSTOMER-WALD-SOURCE02, DEC-067, current management product decisions and the
-preserved decision/history records. This is one current contract, not a second brief
-appended below superseded requirements.
+Last updated: 19 September 2026.
 
-## Release truth
+This document is the current product and integration contract for CustomerApp.
 
-SOURCE02 and its strict-gate/CUSTAPP2 prerequisites are merged into local `main` at release merge
-`2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9` and approved for controlled push.
-Production deployment is not claimed until separately evidenced. The last evidenced production
-release is `89768986a1a32d4258b5deebdf3012584acd6a6c`, with
-`WALD_IMPORT_AVAILABLE=false`, so effective production pilot availability is OFF. No source
-compatibility release enables Wald or authorises a customer import.
+It defines what the application is intended to do.
 
-CUSTOMER-WALD-CUSTAPP2-01 is included in the current `main` release line. The approved
-private workbook's aggregate structure qualifies locally on SQLite and MySQL, except one selected
-site correctly blocks on conflicting explicit product evidence. This is PARTIAL qualification,
-not a production, release or source-data-correction claim.
+It is deliberately not a deployment ledger.
 
-CUSTOMER-WALD-GOLIVE02 is included in the current `main` release line. The environment gate
-now accepts only the exact case-insensitive word `true`; all missing, false-like, numeric and
-malformed values fail closed. Effective availability still requires the audited application
-setting and current authorised Office identity. Deployment is not yet evidenced and the release
-does not change the approved production-off state.
+Current implementation/release/deployment truth must be verified from:
 
-CUSTOMER-WALD-SOURCE02 is included in the current `main` release line. A RedZebra
-date/slot is a master-export revision family: failed predecessors are replaced without an extra
-warning, non-failed predecessors require explicit confirmation, identical bytes create no
-revision, and older audit/receipts remain. Uncommitted predecessor reviews are stale; committed
-facts change only through reviewed correction and partial absence changes nothing. `CustomerNo`
-and `CustomerCode` are exact CustomerCode headers. Source namespace + exact CustomerCode is the
-site-binding key; Site Name is descriptive evidence only. Missing codes block new master exports
-and unknown codes require explicit Office binding.
+- `current_sprint.md`
+- `HANDOVER.md`
+- current Git
+- applicable QA/release reports
+- Laravel Forge / production evidence
 
-The synthetic Import Studio is a local/testing-only, default-off, precomputed demonstration.
-Its routes are absent in production even if the flag is set, it writes nothing and it has no
-upload, binding, Wald invocation or commit endpoint. Production navigation contains only real
-destinations: Review Requests, Customers and Notifications for authorised Office Staff.
+A feature described as required here is not automatically proof that it is
+already deployed.
 
-WALD02–05 form the accepted backend. When explicitly re-enabled after an approved corrected
-release and fresh recovery point, the temporary live pilot allows authorised Office Staff to
-upload one private workbook, choose exactly one detected source site, bind it exactly, review,
-preview and atomically commit that site as partial-only. Effective access requires the
-environment kill switch and audited application setting; both default off. It has no RedZebra
-API, automatic purge/splitting, customer access, SiteApp dependency or writeback. Full WALD06
-orchestration remains paused.
+---
 
-## Product boundary
+## 1. Product Purpose
 
-CustomerApp is a separate customer-facing communication and request application. It
-shows authorised sites/plots/services, collects requested dates, supports agreement and
-amendment, and preserves customer-safe progress/history. SiteApp owns operational work.
+CustomerApp is Fenster's customer-facing Portal for new-build site call-offs,
+date communication and customer-safe progress.
 
-Do not reproduce SiteApp stages, dependencies, readiness, labour/manufacturing planning,
-trade management, internal statuses, administration or direct database/runtime access.
-The direction remains source → Portal only. There is no spreadsheet/SiteApp writeback.
+Its job is to make it easy for authorised customer/site users and Fenster
+Office Staff to answer:
 
-## Access
+- Which sites can I access?
+- Which plots belong to this site?
+- Which services have been called off?
+- What date has been requested?
+- What date has been agreed?
+- Is a date change being requested?
+- What has been completed?
+- What changed?
+- What action is required next?
 
-Four roles remain distinct: Site Manager, Assistant Site Manager, Finishing Foreman and
-Fenster Office Staff. The three external roles have identical Version 1 capabilities,
-require active accounts, a customer organisation and assigned sites, and may see all
-authorised requests for the active site, not only their own submissions.
+The Portal must be simple enough for non-technical site users and Office Staff
+to use without developer intervention.
 
-Active Office Staff are globally scoped by role and may have a null customer organisation.
-Null organisation alone never grants access. Office may review but cannot initiate customer
-amendments. Customers cannot self-register or administer users. Normal framework login,
-CSRF and current server-side authorisation remain mandatory. Development role preview is
-local/testing only and cannot grant production access. Future QR identifies a site, not a user.
+---
 
-## Plots and services
+## 2. Product Boundary
 
-The exact order is Cavity Closers, Windows, Snagging, CML. Services are independent,
-not operational stages. CML's full customer-facing expansion remains unconfirmed.
+CustomerApp is separate from SiteApp / RedZebra.
 
-The dashboard is plot-centric, authorised, searchable/filterable and paginated. Completed
-plots remain retained and are hidden by default with Show Completed available. Plot Details
-shows the correct site/plot, non-zero authorised products, four services and safe history.
+SiteApp / RedZebra remains Fenster's operational source.
 
-Service presentation: Nothing Called Off; Called Off — Awaiting Date; Date Agreed;
-On Hold — Date Change Requested; Completed. Completed dates are shown only when supported
-by actual source evidence. No Portal requested/agreed/proposed date manufactures completion.
+CustomerApp owns the customer-facing Portal workflow.
 
-Overall presentation: Nothing Called Off, Call-Offs In Progress, Dates Agreed,
-Partially Completed, Fully Completed. An open amendment contributes to Call-Offs In Progress.
-Partial/full source completion retains presentation precedence. There is no separate overall
-Amendment In Progress label.
+CustomerApp may:
 
-## Call-offs, dates and initial agreement
+- display authorised source-derived plot/service information;
+- show customer-safe product facts;
+- collect date requests;
+- support Fenster/customer date negotiation;
+- support customer date amendments;
+- show customer-safe progress/history;
+- manage customers/sites/users and site access;
+- review and commit controlled source imports.
 
-One submission batch belongs to one active site and may contain multiple plots/services,
-with different requested dates per service. Each request owns its date/state/history.
-Ineligible combinations remain explainable; only eligible authorised combinations persist.
-No more than one active request per plot/service. Diverged decisions cannot be overwritten
-by a later batch action.
+CustomerApp must not become a duplicate operational management system.
 
-The normal customer window is four weeks, or five weeks for exact positive BF on that plot;
-the underlying three/four-week minimum includes a one-week customer buffer. Normal dates
-are future weekdays and at most six months ahead. UK holiday exclusion is an approved target,
-but no provider/dataset is approved or claimed live; current behaviour is weekday-only.
+Do not recreate:
 
-Request Earlier Date requires a reason and prominent flag. Office acceptance inside normal
-lead time requires explicit acknowledgement. Date decisions revalidate current eligibility.
+- trade sequencing;
+- operational stages;
+- readiness checks;
+- internal approvals/sign-offs;
+- labour planning;
+- manufacturing planning;
+- SiteApp administration;
+- internal SiteApp notes/issues/statuses;
+- direct SiteApp database/runtime dependencies.
 
-Site request → Awaiting Fenster → Office accepts requested date → Date Agreed.
-Alternatively Office proposes → Awaiting Site User → authorised Site User accepts → Date Agreed,
-or rejects with mandatory reason → Awaiting Fenster. Negotiation may repeat. Any currently
-authorised assigned Site User may respond; actual responder attribution remains truthful.
-Use Date Agreed, not Approved. Preserve legacy Approved/Rejected records and their history.
+Integration is one way:
 
-Withdrawal is available before Date Agreed, not after. Eligible withdrawal/trash/restoration
-retains the existing five-second actor-bound Undo and seven-day customer Trash window.
-Expiry hides customer Trash, not audit history. Bulk undo/restoration remains atomic.
+**RedZebra / source → CustomerApp**
 
-## Sprint 3F amendments included in RC1
+No spreadsheet or SiteApp write-back is currently part of the product.
 
-After Date Agreed, a Site User may request a new date on the existing request, using a distinct
-amendment cycle in the existing negotiation engine. The previous agreed date remains stored
-and visible as history, not a current confirmed date while On Hold. The original requested
-date is never overwritten. No fixed amendment cutoff is introduced.
+---
 
-Approved reasons: Site Not Ready; Programme Change; Access Issue; Customer Requested Change;
-Materials / Availability; Weather; Other. Other requires Additional information; other
-explanations are optional. Maximum 2,000 characters, validated and trimmed at the domain boundary.
-Persist stable code, label and actual requester snapshots; display friendly labels, not codes.
+## 3. Users and Roles
 
-A request within three working days of the old agreed date, including late requests, is
-Urgent / Late Amendment. This is a warning, not a prohibition. The existing weekday/provider
-boundary applies. Review/confirmation is server-held, actor/site/state-bound and single-use.
+CustomerApp has four Portal roles:
 
-Office accepts the new requested date or proposes an alternative. Site response uses the
-same authorised negotiation path. A new agreement becomes current while old agreements,
-proposals, reasons and actual actors remain truthful ordered history. Early-date Office
-acknowledgement remains required. Stale cycles/proposals cannot act again.
+1. Fenster Office Staff
+2. Site Manager
+3. Assistant Site Manager
+4. Finishing Foreman
 
-Source completion wins over an open amendment and closes it without completion notification.
-A later source reversal does not automatically reopen a closed amendment or obsolete date.
-Canonical service → request → cycle → proposal → history locking and the corrected Office
-pending-alternative current read remain mandatory.
+The three external roles remain distinct labels but currently use the same
+Version 1 Site User permission model unless a later decision explicitly
+changes that.
 
-Failure/cancellation/old-date reinstatement and Fenster-originated Portal date changes remain
-deferred, not invented. No current product decision blocks the implemented Sprint 3F loop.
+### Fenster Office Staff
 
-## Source semantics and release boundary
+Active Office Staff:
 
-The approved current identity model separates Plot, Source Row and Visit. Plot is exact active
-source-site binding plus normalized Plot Ref; Source Row is source namespace plus CallNo; Visit is
-Source Row plus a recognized non-null Call Type. A blank Call Type is valid null and may contribute
-valid plot/product facts, but it cannot create a visit/service/request, mutate completion or map an
-operational date into Portal-owned dates. A later blank in a partial export cannot erase an
-established visit. A recognized type change for the same Source Row blocks.
+- have global Portal administrative scope;
+- may have no customer organisation;
+- may manage customers/sites/users according to authorised admin functions;
+- may review customer requests;
+- may operate supervised Wald imports.
 
-Product facts consolidate per plot only when compatible. Unrepresented makes no assertion,
-explicit zero is exact, equal explicit values agree and conflicting explicit values block the
-complete selected-site unit. Logical composite tables may join compatible horizontal fragments,
-but must retain original cell/fragment provenance and require clarification when competing
-compositions remain. CallNo headers use exact normalized `call` + `no` or `call` + `number` tokens,
-never fuzzy matching.
+Global access comes from the valid Office role, not from a null organisation.
 
-The CUSTAPP2 profile recognizes PC1, CC1 and CM1 only. It does not inherit checksum-scoped
-corrections from the earlier pilot workbook. One explicitly selected, exactly bound site remains
-the review/commit unit; automatic multi-site orchestration remains WALD06 work.
+### External Site Users
 
-The existing transport-independent Sprint 3B importer remains unchanged in RC1 to preserve
-the approved release scope and tested concurrency paths. No upload, new binding, saved profile,
-live feed, import activation or semantic migration is included.
+External users:
 
-Approved future import dictionary (not a claim that RC1's retained legacy mapper implements it):
-PC1 = Plot Install = Windows; CC1 = Cavity Closer 1 = Cavity Closers; CM1 = Revisit 1 and
-CM2 = Revisit 2 are CML revisits; CML = CML Call Off = CML. Literal CC! is invalid and never
-silently auto-corrected. Unknown meanings block the dependent import. No Snagging code is invented.
+- require an active account;
+- belong to one customer organisation;
+- may be assigned to one or more sites under that customer;
+- may access only authorised site/plot/customer workflow data.
 
-Approved source completion is complete = Yes for the individual visit, without inventing a date.
-Items Ordered Status and Site Value are ignored. Plot To Be Installed is operational PC1 arrival
-evidence, never a Portal date. A permanent source Site ID is preferred; exact name is transitional
-explicit mapping only. Every export defaults partial/filtered; absence never proves deletion.
+They may not administer:
 
-Approved future customer totals: Windows = VS + TT + BAY + ALI + AOV + FI;
-Doors = PSU + PSG + CDF + CDU + CDG + PSP + BF. CAS/FLU/PFD/GLS/WP/MISC are excluded from those
-future totals; exact positive BF remains separately identifiable for lead time. Omitted
-columns/rows cannot imply deletion/zero. These source corrections belong to the excluded,
-separately approved import programme; do not silently enable the retained legacy importer
-against a real workbook or present its historical mappings as current dictionary authority.
+- other users;
+- customers;
+- sites;
+- Wald;
+- source bindings;
+- private import evidence.
 
-## History, notifications and non-goals
+No public self-registration is provided.
 
-Preserve UUIDs, original/current dates, exact actor/role/time and immutable before/after history.
-Private Office reasons, source metadata, conflict keys and internal errors never reach customers.
-Notifications derive from committed event-time truth, reauthorise recipients/destinations and
-remain idempotent. A later completion cannot erase a genuinely committed Date Agreed event.
-Completion sends no notification. Reading/dismissing a notification never changes domain history.
+Development role preview is local/test only.
 
-This RC adds no email/Resend, persistent worker, scheduler, automatic purge, API/writeback,
-real Import Studio, real Wald runtime, calendar/PDF, attachments, reminders, SSO/MFA or
-external AI. Customer/site administration is included; plot and assigned-user views remain
-read-only. No production queue/provider is assumed.
+---
 
-## QA and recovery
+## 4. Administration Model
 
-The production base has 12 migrations. This RC retains them byte-for-byte and adds only
-`2026_09_09_000014_add_customer_site_administration.php`, producing 13 total migrations and
-no Wald migration. The administration migration is additive, backfills active UUID-bearing
-customer/site rows and preserves relationships and dependent records. Before traffic is reopened,
-recovery may restore both a fresh pre-deployment database snapshot and the previously verified
-application release. After traffic is reopened or any Sprint 3F write occurs, old main is not
-compatible recovery: keep RC-generation-compatible code and roll forward from the exact
-deployed RC or a descendant. A full pre-deployment database restore after reopening is a major
-incident/business data-loss decision, not routine rollback.
+Fenster Office Staff must be able to administer CustomerApp without developer
+or database intervention.
 
-Require focused/full SQLite, isolated MySQL 8.4 migrations/upgrade/concurrency, strict Composer
-validation/audit, Pint and build before candidate freeze. Dedicated release QA then runs against
-the exact frozen application SHA, including Office/Site User, mobile/accessibility,
-history/notifications, security and repeated source/Office races. The approved production
-sequence is backup, capture current release/schema evidence, maintenance mode, deploy exact
-approved RC, forward migrate/cache refresh, read-only smoke, then reopen. No main push or
-deployment occurs without separate approval. See the
-[next-release RC1 build record](documentation/customerapp-next-release-rc1-build-report-2026-09-10.md) and
-[RC1 recovery strategy](documentation/customer-release03a-rc1-recovery-strategy-2026-09-09.md).
+The application must support the practical relationships:
+
+**User → Customer → Site(s)**
+
+and:
+
+**Customer → Sites → Plots**
+
+### Customer administration
+
+Office should be able to:
+
+- list/search customers;
+- create customer;
+- edit customer;
+- deactivate customer;
+- reactivate customer;
+- inspect associated sites/users/history.
+
+Customers are not hard-deleted merely for normal lifecycle changes.
+
+### Site administration
+
+Office should be able to:
+
+- list/search sites;
+- create/edit approved site administration fields;
+- deactivate/reactivate;
+- inspect plots;
+- inspect assigned users;
+- inspect source binding/import information where authorised.
+
+### User administration
+
+Office should be able to:
+
+- list/search users;
+- create user;
+- edit user;
+- choose Portal role;
+- set customer organisation for external users;
+- assign one or multiple sites under that customer;
+- remove site access;
+- deactivate/reactivate accounts.
+
+Reverse administration should also be available so Office can understand:
+
+- which users belong to a customer;
+- which users are assigned to a site;
+- which sites are assigned to a user.
+
+A user belonging to Customer A must never be assignable to Customer B's site.
+
+Changing a user's customer must not leave invalid old site assignments.
+
+Wald never assigns users automatically.
+
+---
+
+## 5. Customer → Site → Plot
+
+The core hierarchy is:
+
+**Customer → Site → Plot → Services**
+
+Every CustomerApp plot belongs to one site.
+
+A site belongs to one customer organisation according to the current domain
+model.
+
+Plot identity is site-scoped.
+
+The same Plot Ref may therefore legitimately exist on more than one site.
+
+Example:
+
+Site A / Plot 1
+
+and:
+
+Site B / Plot 1
+
+are different plots.
+
+Never resolve Plot Ref globally across all customers/sites.
+
+Plots are source-managed/read-only unless a later approved product decision
+changes that.
+
+Office should be able to see clearly which plots belong to a site.
+
+---
+
+## 6. Site User Scope
+
+A Site User may have access to multiple sites under their customer.
+
+The active site context controls which plots/call-offs are visible.
+
+Expected behaviour:
+
+assign user to Site A
+→ Site A visible
+
+assign user to Site B
+→ Site A and Site B visible
+
+remove Site A
+→ Site A no longer visible
+
+unrelated Customer/Site
+→ never visible
+
+Deactivated:
+
+- user;
+- customer;
+- site
+
+must not continue granting normal external access.
+
+Office may retain appropriate administrative/historical visibility.
+
+---
+
+## 7. Customer-Facing Services
+
+There are exactly four customer-facing services:
+
+1. Cavity Closers
+2. Windows
+3. Snagging
+4. CML
+
+These are independent customer services.
+
+Their display order is not an operational dependency graph.
+
+CML's expanded customer-facing wording remains subject to explicit product
+decision if not already confirmed in `DECISIONS.md`.
+
+Do not invent a source mapping for Snagging.
+
+---
+
+## 8. Service Presentation
+
+Customer-facing service presentation includes the concepts:
+
+- Nothing / Not Called Off
+- Called Off — Awaiting Date
+- Date Agreed
+- On Hold — Date Change Requested
+- Completed
+
+Overall plot presentation may include:
+
+- Nothing Called Off
+- Call-Offs In Progress
+- Dates Agreed
+- Partially Completed
+- Fully Completed
+
+An open date-change request contributes to the in-progress state rather than
+creating an invented overall operational stage.
+
+Source completion retains appropriate precedence.
+
+Completed plots remain in the system and may be hidden by default using a
+Show Completed control.
+
+---
+
+## 9. Plot Details
+
+Plot Details should show customer-safe information including:
+
+- correct customer/site context;
+- Plot Ref;
+- approved non-zero product information;
+- four customer services;
+- current customer-facing service state;
+- requested/agreed dates where applicable;
+- safe ordered history.
+
+Private source evidence must not leak to external users.
+
+This includes:
+
+- raw workbook rows;
+- workbook filenames;
+- worksheet names;
+- source conflict keys;
+- internal parse errors;
+- private Office reasons.
+
+---
+
+## 10. Initial Call-Off Request
+
+A Site User may submit one or more eligible plot/service call-offs.
+
+One submission may include multiple plots/services.
+
+Each request owns its own:
+
+- service;
+- requested date;
+- agreed date;
+- negotiation;
+- status;
+- decisions;
+- history.
+
+Different services may have different requested dates.
+
+Do not allow more than one active request for the same plot/service.
+
+Batch operations must not overwrite individually diverged decisions.
+
+---
+
+## 11. Lead-Time Rules
+
+The current customer lead-time model includes:
+
+- normal customer window: four weeks;
+- five weeks where exact positive BF applies to the relevant plot.
+
+The underlying minimum includes the approved one-week customer buffer.
+
+Dates are normally future weekdays and bounded by the current approved maximum
+window.
+
+UK holiday exclusion is an approved direction only when a concrete provider or
+dataset is explicitly approved and implemented.
+
+Do not claim holiday support merely because weekday logic exists.
+
+Requesting an earlier date requires the current approved reason/warning flow.
+
+Office acceptance inside the normal lead time requires the appropriate
+acknowledgement.
+
+Eligibility must be revalidated when a date decision is made.
+
+---
+
+## 12. Initial Date Agreement Workflow
+
+Normal flow:
+
+Site User submits requested date
+→ Awaiting Fenster
+
+Office may accept
+→ Date Agreed
+
+or:
+
+Office proposes alternative
+→ Awaiting Site User
+
+An authorised assigned Site User may:
+
+accept
+→ Date Agreed
+
+or:
+
+reject with mandatory reason
+→ Awaiting Fenster
+
+Negotiation may repeat.
+
+The actual responding user must be recorded truthfully.
+
+Use the customer-facing term:
+
+**Date Agreed**
+
+Do not replace it with "Approved" for new/current state.
+
+Historical legacy states remain historical evidence.
+
+---
+
+## 13. Withdrawal / Trash
+
+Withdrawal is permitted only under the currently approved pre-Date-Agreed
+rules.
+
+Existing actor-bound Undo / Trash behaviour should remain consistent with the
+current implementation and decision ledger.
+
+Expiry may remove an item from ordinary customer Trash presentation but must
+not erase audit history.
+
+Do not invent new deletion semantics.
+
+---
+
+## 14. Date Amendments
+
+After Date Agreed, an authorised Site User may request a new date using the
+existing request/negotiation model.
+
+The prior agreed date remains preserved as history.
+
+It is not silently overwritten.
+
+Approved reasons include:
+
+- Site Not Ready
+- Programme Change
+- Access Issue
+- Customer Requested Change
+- Materials / Availability
+- Weather
+- Other
+
+Other requires additional information.
+
+The maximum explanation length is 2,000 characters at the domain boundary.
+
+Actual requester/responder attribution must be preserved.
+
+A request inside the currently approved three-working-day warning period is
+Urgent / Late Amendment.
+
+That is a warning rather than an automatic prohibition.
+
+Office may:
+
+- accept the new requested date;
+- propose an alternative.
+
+Assigned Site Users respond through the same authorised negotiation path.
+
+Source completion closes/overrides an open amendment according to the current
+approved completion precedence.
+
+A later source reversal must not automatically reopen an obsolete amendment
+or reinstate an old agreed date.
+
+Fenster-originated Portal amendment initiation remains outside the current V1
+model unless a newer decision explicitly changes it.
+
+---
+
+## 15. Portal-Owned State
+
+The Portal owns customer communication state including:
+
+- Requested Date;
+- Date Agreed;
+- alternative proposals;
+- customer responses;
+- amendment history;
+- customer-visible request history.
+
+Source imports must not overwrite that state.
+
+Operational source dates are not automatically:
+
+- Requested Date;
+- Date Agreed;
+- proposed date;
+- amendment date;
+- completion date.
+
+No Portal requested/agreed/proposed date may manufacture source completion.
+
+---
+
+# SOURCE IMPORT / WALD
+
+## 16. Wald Purpose
+
+Wald is CustomerApp's deterministic spreadsheet interpretation and controlled
+source-import system.
+
+Core rule:
+
+**Wald infers structure; the controlled business dictionary defines meaning.**
+
+Wald is not an AI assistant.
+
+It must not use:
+
+- external LLMs;
+- embeddings;
+- cloud spreadsheet interpretation;
+- fuzzy semantic guessing.
+
+CustomerApp must not depend on live SiteApp runtime/API/database access to run
+the import workflow.
+
+---
+
+## 17. Supervised Import Workflow
+
+The bounded import flow is:
+
+private workbook upload
+→ structural analysis
+→ clarification
+→ source-site detection
+→ exact binding
+→ selected-site review
+→ non-mutating preview
+→ explicit approval
+→ atomic commit
+→ receipt/history
+
+The current controlled model is Office-only.
+
+A workbook may contain multiple sites, but the bounded pilot processes:
+
+**one explicitly selected site per review/commit**
+
+unless a later approved architecture replaces that model.
+
+No automatic all-site commit is implied.
+
+---
+
+## 18. Master RedZebra Export
+
+Management has confirmed that RedZebra operates from one master source sheet.
+
+It is expected to be exported approximately twice per day:
+
+- MORNING
+- AFTERNOON
+
+Therefore:
+
+**Export Date + Slot**
+
+identifies a logical revision family.
+
+It must not behave as a permanent "this date/slot can only ever be uploaded
+once" uniqueness rule.
+
+Human corrections in RedZebra may require the same logical export to be
+uploaded again.
+
+---
+
+## 19. Same-Slot Replacement
+
+### Failed predecessor
+
+If the previous same-date/slot revision failed:
+
+- a new upload should be allowed easily;
+- the old failed attempt remains historical evidence;
+- a successor revision becomes current;
+- the previous hard duplicate-upload error must not prevent normal recovery.
+
+### Non-failed predecessor
+
+If the current revision has not failed:
+
+show explicit confirmation that the new upload will replace/supersede the
+current revision.
+
+The previous revision/history must remain available.
+
+### Identical reupload
+
+Where the exact same workbook/content is already known, avoid generating
+pointless duplicate revisions.
+
+Prefer showing/navigating to the existing import where supported.
+
+### Replacement safety
+
+Replacing the source revision does not automatically reverse earlier committed
+facts.
+
+Partial-export and correction rules still apply.
+
+Older uncommitted previews/reviews must become stale when superseded.
+
+---
+
+## 20. CustomerCode as Source Identity
+
+Management has confirmed that future RedZebra exports will contain a stable
+CustomerCode to reduce the risk of Site Name typing errors.
+
+The source workbook may currently expose this field as:
+
+- `CustomerNo`
+- `CustomerCode`
+
+where explicitly approved in the dictionary.
+
+The identity priority is:
+
+**CustomerCode first**
+
+not Site Name.
+
+The durable source binding is based on:
+
+source namespace
++
+CustomerCode
+
+Site Name is descriptive/supporting evidence.
+
+---
+
+## 21. CustomerCode Behaviour
+
+### Known CustomerCode
+
+If an exact active binding exists:
+
+use it.
+
+A changed/mistyped Site Name must not create a second site merely because the
+text changed.
+
+### Unknown CustomerCode
+
+Require explicit Office binding to an existing CustomerApp customer/site.
+
+Do not:
+
+- fuzzy-match;
+- create a site automatically;
+- guess based on similar Site Name.
+
+### Missing CustomerCode
+
+Under the current master-export contract, missing required CustomerCode blocks
+the dependent source-site unit.
+
+Do not silently fall back to Site Name.
+
+Historical imports may require bounded compatibility handling, but that must
+not weaken the current production identity contract.
+
+### Same code / inconsistent names
+
+Treat the CustomerCode as the identity, but surface materially inconsistent
+Site Name evidence where review is required.
+
+If evidence suggests the same code genuinely represents different sites,
+block.
+
+### Different codes / same name
+
+Do not automatically merge them.
+
+---
+
+## 22. Source Site Binding
+
+Office explicitly binds:
+
+**source CustomerCode → CustomerApp Customer / Site**
+
+One valid source-site binding controls all plot rows for that source identity.
+
+Office should not have to bind every Plot Ref individually.
+
+The UI should clearly show:
+
+- CustomerCode;
+- Source Site Name;
+- bound CustomerApp customer;
+- bound CustomerApp site.
+
+If no safe binding exists:
+
+the dependent plot/service projection blocks.
+
+---
+
+## 23. Plot Projection
+
+Once a source identity is safely bound:
+
+all its Plot Ref rows inherit the target CustomerApp site.
+
+Plot identity is:
+
+**resolved site + normalized Plot Ref**
+
+If the plot does not exist under that site:
+
+Wald may create the source-managed plot according to the approved projection
+rules.
+
+If the plot already exists under that site:
+
+reuse it.
+
+Do not create duplicate plots.
+
+A historical/source identity that would move an existing plot/source row to a
+different site must block for review.
+
+No free-floating plot should be created.
+
+The import preview should visibly show for each plot:
+
+- Plot Ref;
+- target CustomerApp site;
+- Create / Reuse outcome.
+
+---
+
+## 24. Site Details → Plots
+
+Office Site Details should make source linkage understandable.
+
+It should show:
+
+- owning customer/site;
+- Plot Ref;
+- source-managed/read-only status;
+- appropriate source reference/system;
+- customer-safe product/service/completion information.
+
+This presentation is important because automatic site-scoped linking should
+not look as though manual plot-by-plot linking is missing.
+
+---
+
+## 25. Plot, Source Row and Visit Identity
+
+The source model separates three identities.
+
+### Plot
+
+Exact resolved source-site binding + normalized Plot Ref.
+
+### Source Row
+
+Source namespace + CallNo.
+
+### Visit
+
+Source Row + recognised non-null Call Type.
+
+CallNo does not by itself prove a call-off visit exists.
+
+---
+
+## 26. Blank Call Type
+
+A genuinely blank Call Type is valid `null`.
+
+Meaning:
+
+**the plot exists, but no call-off has started.**
+
+A null Call Type may contribute:
+
+- plot identity;
+- approved product facts.
+
+It must not:
+
+- create a visit;
+- select/create a customer service;
+- create a Portal request;
+- create/reverse completion;
+- map Arrival Date into Portal dates;
+- manufacture workflow state.
+
+A later blank in a partial export does not erase an already committed visit.
+
+A nonblank unrecognised Call Type remains a blocking unknown.
+
+---
+
+## 27. Recognised Call Types
+
+Current confirmed mappings include:
+
+- `PC1` → Windows
+- `CC1` → Cavity Closers
+- `CM1` → CML-related visit
+
+Do not invent a Snagging code.
+
+Workbook-specific corrections remain scoped to their explicitly approved
+workbook/context.
+
+Do not convert one workbook's typo handling into global dictionary truth.
+
+---
+
+## 28. Call Number Recognition
+
+Call-reference headers are recognised using deterministic structural token
+normalisation.
+
+Approved meaning is exact:
+
+- `call` + `no`
+- or `call` + `number`
+
+Structural differences may include:
+
+- case;
+- punctuation;
+- spaces;
+- underscore;
+- hyphen;
+- concatenation;
+- word order.
+
+Examples may include:
+
+- Call No.
+- CallNo
+- CAllNo
+- CALL-NUMBER
+- call_number
+- No Call
+- NumberCall
+
+Do not use fuzzy matching.
+
+Do not automatically recognise headers with extra semantic words such as:
+
+- Call Date Number
+- Phone Number
+- Number of Calls
+
+---
+
+## 29. Composite Spreadsheet Structure
+
+The RedZebra export may represent one logical table across physically separated
+cell regions.
+
+Wald may compose compatible fragments where deterministic evidence supports one
+logical table.
+
+Example logical reference:
+
+`C2:E2+I2:AJ2`
+
+Composition must preserve the physical workbook provenance of every interpreted
+cell.
+
+Wald must retain:
+
+- worksheet;
+- raw coordinate;
+- raw value;
+- logical row;
+- fragment identity.
+
+Spacer rows/columns may be structural rather than separate tables.
+
+If two plausible compositions remain:
+
+ask for clarification.
+
+Do not silently join unrelated side-by-side tables.
+
+Unlabelled populated columns remain private unmapped evidence.
+
+---
+
+## 30. Product Semantics
+
+Approved product facts are exact source evidence.
+
+### Windows
+
+Known approved source product codes include:
+
+- VS — Vertical Slider
+- TT — Tilt and Turn
+- BAY — Bay Window
+- ALI — Aluminium Windows
+- AOV — Automatic Opening Vent Window
+- FI — Fire Window
+
+### Doors
+
+Known approved source product codes include:
+
+- PSU
+- PSG
+- CDF
+- CDU
+- CDG
+- PSP
+- BF
+
+Certain other source codes are excluded from customer totals according to the
+current dictionary.
+
+BF remains individually significant for approved lead-time behaviour.
+
+### Product evidence rules
+
+- unrepresented/missing → no assertion;
+- explicit zero → exact zero;
+- explicit positive quantity → exact fact;
+- invalid quantity → block dependent projection;
+- repeated agreeing values → agreement;
+- unrepresented + explicit → use explicit evidence;
+- conflicting explicit values → block the complete selected-site unit.
+
+Never choose:
+
+- first row;
+- last row;
+- highest;
+- lowest;
+- average
+
+as an automatic winner.
+
+---
+
+## 31. Partial Export Contract
+
+Every ordinary source workbook defaults to:
+
+`PARTIAL_FILTERED_EXPORT`
+
+Therefore:
+
+**absence never proves deletion.**
+
+Missing:
+
+- row;
+- plot;
+- visit;
+- product value;
+- site
+
+does not imply deletion, reversal or zero.
+
+Do not introduce absence-based reconciliation without a separately approved
+complete-snapshot contract.
+
+---
+
+## 32. Source Completion
+
+Approved source completion is based on explicit source evidence such as
+`complete = Yes` under the current dictionary.
+
+Completion applies to the relevant source visit/service.
+
+Do not invent a completion date if the source does not provide one.
+
+Source completion may close relevant Portal negotiation/amendment state
+according to the current approved precedence.
+
+A later source reversal does not automatically reopen an obsolete negotiation.
+
+---
+
+## 33. Operational Dates
+
+Source operational dates such as arrival/install dates remain operational
+evidence.
+
+They must not automatically become:
+
+- Requested Date;
+- Date Agreed;
+- proposed alternative;
+- amendment date;
+- completion date.
+
+Portal-owned customer communication state remains separate.
+
+---
+
+## 34. Preview
+
+Preview is non-mutating.
+
+Before commit, Office should be able to understand at minimum:
+
+- source export/revision;
+- CustomerCode;
+- Source Site Name;
+- bound CustomerApp customer/site;
+- selected source site;
+- Plot Ref;
+- target site;
+- create/reuse plot outcome;
+- recognised service/call type;
+- product facts;
+- completion facts;
+- warnings;
+- blockers;
+- proposed changes.
+
+If the target site cannot be resolved safely:
+
+block before commit.
+
+If product/source evidence genuinely conflicts:
+
+block rather than guess.
+
+---
+
+## 35. Commit
+
+One reviewed selected-site unit is committed atomically.
+
+Commit requires:
+
+- active authorised Office identity;
+- current source revision;
+- current exact site binding;
+- current approved preview;
+- no unresolved blockers;
+- explicit confirmation.
+
+A failed business mutation must not leave partial projection state.
+
+Successful commit creates durable audit/receipt evidence.
+
+Idempotent retry must not duplicate:
+
+- plot;
+- Source Row;
+- Visit;
+- product facts;
+- receipt/business effects.
+
+---
+
+## 36. Wald Environment Safety
+
+Production Wald availability has three controls:
+
+1. `WALD_IMPORT_AVAILABLE`
+2. audited application setting
+3. valid current Office Staff authority
+
+The environment gate fails closed.
+
+Only the exact case-insensitive word:
+
+`true`
+
+enables the environment layer.
+
+Do not accept generic truthy strings/numbers.
+
+The environment gate is the emergency hard-off.
+
+Disabling it must stop new Wald actions without deleting prior history or
+reversing committed imports.
+
+---
+
+## 37. Wald Access
+
+Real Wald import functionality is Office-only.
+
+External roles must never access:
+
+- uploads;
+- source bindings;
+- structural clarifications;
+- private previews;
+- commit controls;
+- private import history;
+- Wald settings;
+- raw workbook/source evidence.
+
+Server-side authorisation is mandatory.
+
+Navigation hiding is not sufficient.
+
+---
+
+## 38. Audit and Provenance
+
+Preserve immutable evidence for important source/import actions, including as
+applicable:
+
+- uploader;
+- export date/slot;
+- revision/predecessor;
+- workbook hash;
+- selected source identity;
+- binding;
+- clarification;
+- reviewer;
+- preview;
+- commit actor/time;
+- attempt/outcome;
+- receipt;
+- replacement/supersession.
+
+Replacement never means deleting historical evidence.
+
+Private technical evidence remains private.
+
+---
+
+## 39. User Assignment After Import
+
+Wald source binding does not grant Portal access to people.
+
+The end-to-end business process is:
+
+1. import/review source workbook;
+2. bind CustomerCode to CustomerApp site;
+3. source-managed plots appear under that site;
+4. Office assigns appropriate Site User(s);
+5. Site User logs in;
+6. assigned site and plots become visible;
+7. unrelated sites remain hidden.
+
+This end-to-end experience is an important product acceptance criterion.
+
+---
+
+## 40. Notifications
+
+Notifications derive from committed Portal/domain truth.
+
+They must be authorised and idempotent.
+
+Notification reading/dismissal does not modify request history.
+
+Source completion currently does not generate a completion notification unless
+a later explicit decision changes this.
+
+Do not expose private source/import reasons to customers.
+
+---
+
+## 41. Current Non-Goals
+
+Unless explicitly approved by a newer decision, CustomerApp does not provide:
+
+- automatic RedZebra synchronisation;
+- unattended imports;
+- automatic all-site workbook commit;
+- fuzzy customer/site matching;
+- automatic source-conflict repair;
+- spreadsheet writeback;
+- SiteApp API/runtime dependency;
+- automatic data purge;
+- public registration;
+- Site User administration by customers;
+- SiteApp trade workflow;
+- manufacturing/labour planning;
+- external AI spreadsheet interpretation.
+
+Full Wald multi-site orchestration remains separate future work.
+
+---
+
+## 42. Known / Explicitly Unresolved Areas
+
+Do not invent answers for these areas if they remain unresolved in
+`DECISIONS.md`:
+
+- Snagging source mapping;
+- expanded customer-facing CML wording;
+- holiday provider/dataset;
+- any future complete-snapshot reconciliation contract;
+- unattended retention/purge ownership;
+- automatic multi-site Wald orchestration.
+
+A genuine source-data conflict should remain blocked until the source is
+corrected or management explicitly approves a deterministic resolution.
+
+---
+
+## 43. Current Practical Product Goal
+
+The immediate success criterion for CustomerApp/Wald is not merely:
+
+"the spreadsheet parser ran."
+
+The practical chain must work:
+
+**CustomerCode
+→ exact source-site binding
+→ CustomerApp site
+→ plots
+→ assigned users
+→ Site Manager visibility
+→ customer-safe services/history**
+
+Office Staff must be able to understand and manage this chain through the UI.
+
+No developer/database intervention should be required for ordinary account,
+site-assignment or supervised import operation.
+
+---
+
+## 44. Release Truth
+
+This brief intentionally avoids pinning itself to one production SHA.
+
+A release/feature may be:
+
+- required by this product contract;
+- implemented on a feature branch;
+- merged to `main`;
+- deployed;
+- or still pending operational verification.
+
+Those are different states.
+
+Before claiming any particular item is live, verify:
+
+- current `origin/main`;
+- relevant task/release report;
+- Forge deployment;
+- served SHA;
+- migration state;
+- production configuration where relevant.
+
+`current_sprint.md` and `HANDOVER.md` should carry the current short-lived
+release truth.
+
+The brief should remain the durable product contract.
