@@ -1,5 +1,17 @@
 # Fenster Customer Portal ROADMAP
 
+## Customer product labels — release review — 21 September 2026
+
+The bounded dictionary-backed customer label correction is **feature-branch only, READY FOR
+RELEASE REVIEW**, on `codex/customer-product-labels`. It preserves the deployed Overview fix
+and the unpushed `12d765c` deployment documentation. Plot Details and existing call-off product
+summaries now use approved names without changing canonical source/review facts or workflow.
+Full local tests and synthetic Site Manager/Office checks pass. See the
+[candidate report](documentation/customer-product-labels-ux-fix-2026-09-21.md).
+Next: obtain release approval, deploy/verify labels, then separately address import completion
+wording. Filters/navigation, User UI and Projected plots terminology remain out of scope.
+Production remains `590503b6c80ea186bc6001e43a11ab528298961a`; no deployment in this task.
+
 ## Overview correction delivered — 21 September 2026
 
 **Deployed:** `590503b6c80ea186bc6001e43a11ab528298961a`, Forge `78155443`.

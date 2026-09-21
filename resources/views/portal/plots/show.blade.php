@@ -16,7 +16,7 @@
             @if ($products->isNotEmpty())
                 <dl class="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     @foreach ($products as $product)
-                        <div class="rounded-lg bg-slate-50 p-4"><dt class="text-sm font-bold text-slate-700">{{ $product->product_code }}</dt><dd class="mt-1 text-2xl font-bold text-slate-950">{{ rtrim(rtrim(number_format((float) $product->quantity, 3, '.', ''), '0'), '.') }}</dd></div>
+                        <div class="rounded-lg bg-slate-50 p-4"><dt class="text-sm font-bold text-slate-700">{{ $product['label'] }}</dt><dd class="mt-1 text-2xl font-bold text-slate-950">{{ $product['quantity'] }}</dd></div>
                     @endforeach
                 </dl>
             @else

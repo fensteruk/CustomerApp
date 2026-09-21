@@ -1,5 +1,21 @@
 # Current Sprint
 
+## Customer product labels candidate — 21 September 2026
+
+**READY FOR RELEASE REVIEW, feature branch only:** `codex/customer-product-labels`.
+Based on `12d765ccec90b05973365f7845a54c184fb2325d`, preserving the local deployment
+documentation above deployed `590503b6c80ea186bc6001e43a11ab528298961a`.
+One shared dictionary-backed presenter supplies friendly product names to Plot Details
+and the two call-off review displays. Canonical review/source facts, quantities, projection,
+lead times, permissions and Office totals are unchanged. Approved excluded codes remain
+private; unknown legacy facts use a truthful escaped `Product (code)` fallback.
+24 focused tests / 119 assertions and 89 grouped / 538 pass. Full suite: 1,620 passed,
+81 skipped, 8,465 assertions; the known weekday-sensitive test passes on this run's date.
+Local Site Manager/Office walkthrough and independent Frontend/UX review pass.
+See the [product-label candidate report](documentation/customer-product-labels-ux-fix-2026-09-21.md).
+No push, deployment, migration, import replay or production data change. Import wording is next,
+only after separate release approval and verification of this candidate.
+
 ## Deployed Overview correction — 21 September 2026
 
 **Deployed and verified live:** `590503b6c80ea186bc6001e43a11ab528298961a`,

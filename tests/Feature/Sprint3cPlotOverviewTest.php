@@ -213,9 +213,9 @@ it('renders customer-safe Plot Details with only positive product quantities', f
         ->assertOk()
         ->assertSee('Plot Product Detail')
         ->assertSeeInOrder(['Cavity Closers', 'Windows', 'Snagging', 'CML'])
-        ->assertSee('CAS')
-        ->assertSee('PFD')
-        ->assertSee('BF')
+        ->assertDontSee('CAS')
+        ->assertDontSee('PFD')
+        ->assertSee('Bifold')
         ->assertDontSee('ZERO')
         ->assertDontSee('projected_plot_id', false)
         ->assertDontSee($plot->external_identifier);

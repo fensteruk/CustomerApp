@@ -1,5 +1,22 @@
 # Fenster Customer Portal Handover
 
+## Current handover — customer product labels candidate — 21 September 2026
+
+`codex/customer-product-labels` preserves local documentation commit
+`12d765ccec90b05973365f7845a54c184fb2325d` on deployed baseline
+`590503b6c80ea186bc6001e43a11ab528298961a`. **READY FOR RELEASE REVIEW; not deployed.**
+Shared `CustomerProductPresenter` consumes the unchanged approved dictionary. Plot Details
+and call-off matrix/confirmation display friendly names; canonical review rows and every
+business action remain unchanged. Office totals/source evidence are preserved.
+24 focused / 119 assertions; 89 grouped / 538; Wald group 687 passed / 25 skipped / 3,359;
+full suite 1,620 passed / 81 skipped / 8,465. Build, repository Pint, syntax, Composer and
+production npm audit pass; four known development npm advisories remain. Local normal-login
+Site Manager/Office walkthrough and read-only Frontend/UX review pass.
+See [exact scope, commands and limitations](documentation/customer-product-labels-ux-fix-2026-09-21.md).
+Do not push main, deploy, replay imports or modify production without separate approval.
+Unknown legacy labels are a business-data gap; existing substring-based BF detection is a
+separate pre-existing semantic concern, explicitly not changed by this presentation task.
+
 ## Current handover — Overview deployed and verified — 21 September 2026
 
 Production and remote main are `590503b6c80ea186bc6001e43a11ab528298961a`.

@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ProjectedPlot;
+use App\Presenters\CustomerProductPresenter;
 use App\Services\PlotOverviewQueryService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -10,7 +11,7 @@ use Illuminate\View\View;
 
 class PlotDetailsController extends Controller
 {
-    public function __invoke(Request $request, ProjectedPlot $projectedPlot, PlotOverviewQueryService $overview): View
+    public function __invoke(Request $request, ProjectedPlot $projectedPlot, PlotOverviewQueryService $overview, CustomerProductPresenter $products): View
     {
         $activeSite = $request->attributes->get('activeSite');
 
@@ -36,10 +37,7 @@ class PlotDetailsController extends Controller
         return view('portal.plots.show', [
             'overview' => $overview->present($projectedPlot),
             'activeSite' => $activeSite,
-            'products' => $projectedPlot->products
-                ->filter->hasPositiveQuantity()
-                ->sortBy('product_code')
-                ->values(),
+            'products' => $products->present($projectedPlot->products->sortBy('product_code')),
         ]);
     }
 }
