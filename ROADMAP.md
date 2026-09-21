@@ -1,5 +1,51 @@
 # Fenster Customer Portal ROADMAP
 
+## Customer product labels — release review — 21 September 2026
+
+The bounded dictionary-backed customer label correction is **feature-branch only, READY FOR
+RELEASE REVIEW**, on `codex/customer-product-labels`. It preserves the deployed Overview fix
+and the unpushed `12d765c` deployment documentation. Plot Details and existing call-off product
+summaries now use approved names without changing canonical source/review facts or workflow.
+Full local tests and synthetic Site Manager/Office checks pass. See the
+[candidate report](documentation/customer-product-labels-ux-fix-2026-09-21.md).
+Next: obtain release approval, deploy/verify labels, then separately address import completion
+wording. Filters/navigation, User UI and Projected plots terminology remain out of scope.
+Production remains `590503b6c80ea186bc6001e43a11ab528298961a`; no deployment in this task.
+
+## Overview correction delivered — 21 September 2026
+
+**Deployed:** `590503b6c80ea186bc6001e43a11ab528298961a`, Forge `78155443`.
+Live linked/unbound agreement, existing legacy/multiple binding presentation, Site Manager
+access/plot visibility and Office/Site Manager logout privacy pass. No migration or data rewrite.
+See [deployment evidence](documentation/site-overview-source-binding-deployment-2026-09-21.md).
+Next recommended work is a separately approved customer product-label task. Import wording,
+Filters/navigation, User UI and terminology remain separate. Earlier candidate entries below
+are historical and do not override this verified release state.
+
+## Bounded Overview consistency repair — 21 September 2026
+
+The user accepts the current production workflow; freshly fetched `origin/main` is
+`0ac7082141156fdff29d296881bbb7d3299e20b5`. Prior release-candidate entries below are
+historical, not the current production acceptance state.
+The separate `codex/fix-site-overview-source-binding` candidate corrects only the
+Overview linked/unlinked presentation using the established Source Binding result.
+READY FOR RELEASE REVIEW with the separately recorded known baseline test/audit findings.
+See the [Overview repair report](documentation/site-overview-source-binding-fix-2026-09-21.md)
+for verification and release limitations. No deployment in this task.
+Next, after separate release approval: deploy and verify this correction, then address
+customer product labels as a new bounded UX task. Other UX findings stay out of scope.
+
+## Logout privacy release candidate — 20 September 2026
+
+The isolated no-store/private hotfix is READY FOR RELEASE REVIEW after local browser,
+focused/access and broader verification. Next: obtain separate release approval, then
+repeat Office and Site Manager logout/Back acceptance
+on freshly loaded production pages. Production baseline is
+`76cabfcb3a906476e6a47b63b797db1025590e10`; this task does not deploy. Wald is already
+production-verified and is not changed; P2 presentation work remains separate. See the
+[privacy hotfix report](documentation/logout-browser-back-privacy-hotfix-2026-09-20.md).
+Earlier release-status entries below are historical, not current deployment truth.
+
 ## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
 
 **Implementation and release gates are complete and the release is merged into local `main` at

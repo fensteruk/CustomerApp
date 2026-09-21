@@ -38,6 +38,43 @@ it('requires correction for changed same-slot content and preserves immutable pr
         ->and(DB::table('wald_import_receipts')->count())->toBe(2)->and(B::commit($actor, $scope, $first))->toBe($receipt);
 });
 
+it('keeps non-pilot replacements gated by a committed predecessor receipt', function () {
+    [$actor, $scope] = F::owner();
+    B::binding($actor, $scope);
+    $uncommitted = B::staged($actor, $scope);
+
+    expect(fn () => B::staged($actor, $scope, [0 => ['VS' => '3.000']], predecessor: $uncommitted['run']))
+        ->toThrow(ImportConflict::class, 'invalid_replacement_predecessor');
+    expect(DB::table('wald_import_receipts')->count())->toBe(0);
+});
+
+it('keeps the ordering gate fail closed when a claimed predecessor cannot be resolved', function () {
+    [, $scope] = F::owner();
+    $streamId = DB::table('wald_import_streams')->insertGetId([
+        'identity_hash' => Canonical::hash([$scope->namespace, $scope->family]),
+        'source_namespace' => $scope->namespace,
+        'workbook_family' => $scope->family,
+    ]);
+    $stream = DB::table('wald_import_streams')->where('id', $streamId)->firstOrFail();
+    $run = (object) [
+        'id' => PHP_INT_MAX - 1,
+        'predecessor_id' => PHP_INT_MAX,
+        'stream_id' => $streamId,
+        'export_order' => '20990101AM',
+        'customer_organisation_id' => $scope->organisationId,
+        'site_id' => $scope->siteId,
+        'source_namespace' => $scope->namespace,
+        'workbook_family' => $scope->family,
+        'pilot_upload_id' => null,
+        'pilot_selection_id' => null,
+    ];
+    $stage = (object) ['canonical_hash' => str_repeat('0', 64)];
+    $ordering = new ReflectionMethod(ImportReview::class, 'ordering');
+
+    expect(fn () => $ordering->invoke(new ImportReview, $run, $stage, $scope, $stream))
+        ->toThrow(ImportConflict::class, 'replacement_predecessor_missing');
+});
+
 it('refuses earlier declared exports irrespective of upload time', function (string $date, string $slot) {
     [$actor, $scope] = F::owner();
     B::binding($actor, $scope);

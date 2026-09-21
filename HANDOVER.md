@@ -1,5 +1,68 @@
 # Fenster Customer Portal Handover
 
+## Current handover — customer product labels candidate — 21 September 2026
+
+`codex/customer-product-labels` preserves local documentation commit
+`12d765ccec90b05973365f7845a54c184fb2325d` on deployed baseline
+`590503b6c80ea186bc6001e43a11ab528298961a`. **READY FOR RELEASE REVIEW; not deployed.**
+Shared `CustomerProductPresenter` consumes the unchanged approved dictionary. Plot Details
+and call-off matrix/confirmation display friendly names; canonical review rows and every
+business action remain unchanged. Office totals/source evidence are preserved.
+24 focused / 119 assertions; 89 grouped / 538; Wald group 687 passed / 25 skipped / 3,359;
+full suite 1,620 passed / 81 skipped / 8,465. Build, repository Pint, syntax, Composer and
+production npm audit pass; four known development npm advisories remain. Local normal-login
+Site Manager/Office walkthrough and read-only Frontend/UX review pass.
+See [exact scope, commands and limitations](documentation/customer-product-labels-ux-fix-2026-09-21.md).
+Do not push main, deploy, replay imports or modify production without separate approval.
+Unknown legacy labels are a business-data gap; existing substring-based BF detection is a
+separate pre-existing semantic concern, explicitly not changed by this presentation task.
+
+## Current handover — Overview deployed and verified — 21 September 2026
+
+Production and remote main are `590503b6c80ea186bc6001e43a11ab528298961a`.
+Forge deployment `78155443` succeeded in 38 seconds; Nothing to migrate. Final served-SHA
+check at 01:02:54 UTC confirms 21 applied migrations, none pending and zero failed/queued
+jobs. Linked/unbound screens agree, existing Willow bindings and E2E plots are unchanged,
+customer access boundaries and both-role logout Back/Forward checks pass.
+See [complete release evidence](documentation/site-overview-source-binding-deployment-2026-09-21.md).
+The Site Manager's reported 403 was an Office-only URL; normal site selection/dashboard
+worked and showed the correct signed-in identity. No access or application fix was required.
+Documentation is on a separate local non-deploying branch; do not push another production
+revision from this handover. No call-off/import/binding/assignment changes were made.
+Earlier handovers below are historical. Proposed next task: customer-facing product labels.
+
+## Current handover — Overview binding consistency — 21 September 2026
+
+Feature-branch candidate: `codex/fix-site-overview-source-binding`, parent/base
+`0ac7082141156fdff29d296881bbb7d3299e20b5` (fresh `origin/main`). The latest user
+request confirms production acceptance of the core workflow; the privacy candidate
+status below is historical.
+Only the Office Overview view changes at runtime. It now uses the existing
+`sourceBindings()` availability and `has_active_binding` result already supplied by
+the controller, not the hard-coded site-summary placeholder. Source detail, queries,
+binding writes, imports, projection and policies are untouched. Local linked/unbound
+browser checks pass. READY FOR RELEASE REVIEW: 9 focused / 108 grouped passes;
+full suite 1,595 passes, 81 skips and the one known date-sensitive error. Build, Pint,
+syntax and Composer pass; four existing development npm advisories remain unchanged.
+See the [Overview repair report](documentation/site-overview-source-binding-fix-2026-09-21.md)
+for exact tests, known baseline findings and release instructions.
+No migrations, data rewrite, dependency changes, merge, push or deployment.
+Require separate release approval; customer product labels are the next proposed UX task.
+
+## Current handover — Logout privacy candidate — 20 September 2026
+
+`codex/fix-logout-cache-privacy` starts at production/main
+`76cabfcb3a906476e6a47b63b797db1025590e10` (Forge deployment `78135685`). A small web
+response middleware adds no-store/private for authenticated responses, including POST
+confirmation HTML, without changing logout/session, authorisation, Wald or assignments.
+READY FOR RELEASE REVIEW: local Office and Site Manager Back/Forward checks pass;
+7 focused / 103 grouped tests pass. Full regression has 1,586 passes / 81 skips and
+the single known date-sensitive baseline error. Build, Pint, syntax and Composer pass;
+the four existing development npm advisories are unchanged.
+No main merge, push, production change or deployment has occurred. The
+[privacy hotfix report](documentation/logout-browser-back-privacy-hotfix-2026-09-20.md)
+records scope, evidence and release limitations. Earlier handovers are historical.
+
 ## Current handover — CUSTOMER-WALD-SOURCE02 — 15 September 2026
 
 SOURCE02 is merged into local `main` at `2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9`

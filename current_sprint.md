@@ -1,5 +1,58 @@
 # Current Sprint
 
+## Customer product labels candidate — 21 September 2026
+
+**READY FOR RELEASE REVIEW, feature branch only:** `codex/customer-product-labels`.
+Based on `12d765ccec90b05973365f7845a54c184fb2325d`, preserving the local deployment
+documentation above deployed `590503b6c80ea186bc6001e43a11ab528298961a`.
+One shared dictionary-backed presenter supplies friendly product names to Plot Details
+and the two call-off review displays. Canonical review/source facts, quantities, projection,
+lead times, permissions and Office totals are unchanged. Approved excluded codes remain
+private; unknown legacy facts use a truthful escaped `Product (code)` fallback.
+24 focused tests / 119 assertions and 89 grouped / 538 pass. Full suite: 1,620 passed,
+81 skipped, 8,465 assertions; the known weekday-sensitive test passes on this run's date.
+Local Site Manager/Office walkthrough and independent Frontend/UX review pass.
+See the [product-label candidate report](documentation/customer-product-labels-ux-fix-2026-09-21.md).
+No push, deployment, migration, import replay or production data change. Import wording is next,
+only after separate release approval and verification of this candidate.
+
+## Deployed Overview correction — 21 September 2026
+
+**Deployed and verified live:** `590503b6c80ea186bc6001e43a11ab528298961a`,
+Forge deployment `78155443` (38 seconds). Linked and genuinely unbound Overview/Source
+Binding screens agree. Existing legacy/multiple bindings are unchanged; the approved
+Site Manager sees both E2E plots, cannot access Office/Imports, and passes logout
+Back/Forward privacy. Final health: 21 migrations applied, none pending, zero failed or
+queued jobs and no matching new application errors. No schema or business-data changes.
+See the [deployment evidence](documentation/site-overview-source-binding-deployment-2026-09-21.md).
+Entries below are historical candidate evidence, not current deployment status.
+Next proposed bounded task: customer-facing product labels; not implemented here.
+
+## Site Overview binding consistency candidate — 21 September 2026
+
+Current task: presentation-only repair on `codex/fix-site-overview-source-binding`,
+based on freshly fetched `origin/main` at `0ac7082141156fdff29d296881bbb7d3299e20b5`.
+The latest user-approved production walkthrough accepts the core Wald workflow and
+logout privacy release. The older candidate statuses below are historical.
+Overview now consumes the existing Source Binding read result instead of the stale
+site-summary placeholder. Local linked/unbound browser checks and focused regressions
+pass. READY FOR RELEASE REVIEW: 9 focused / 108 grouped passes; full suite 1,595 passes,
+81 skips and the one known date-sensitive error. Release verification is recorded in the
+[Overview repair report](documentation/site-overview-source-binding-fix-2026-09-21.md).
+This repair is feature-branch only; no merge, push, production mutation or deployment.
+Product labels, import wording, navigation/Filters, User UI and terminology remain separate.
+
+## Logout / browser-Back privacy hotfix — 20 September 2026
+
+Current task: bounded release-candidate verification on `codex/fix-logout-cache-privacy`,
+from production/main `76cabfcb3a906476e6a47b63b797db1025590e10`. Protected responses
+receive a central no-store/private policy; logout/auth and Wald business behaviour are
+unchanged. Local Office and Site Manager Back/Forward checks pass. READY FOR RELEASE
+REVIEW: 7 focused and 103 grouped passes; full suite 1,586 passes / 81 skips with the
+one known date-sensitive baseline error. No merge, push or deployment is authorised. See the
+[privacy hotfix report](documentation/logout-browser-back-privacy-hotfix-2026-09-20.md).
+Earlier release-status entries below are historical and do not override this baseline.
+
 ## CUSTOMER-WALD-SOURCE02 — master-export revisions + CustomerCode — 15 September 2026
 
 **Merged into local `main` at `2c5fa6d3888bcb9c6a46457c0ad3bbbb35972fa9` and approved for push; deployment is not yet evidenced.** Same

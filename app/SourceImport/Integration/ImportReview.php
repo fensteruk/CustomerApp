@@ -187,6 +187,7 @@ final class ImportReview
         if ($stream->latest_order !== null && $stream->latest_order > $run->export_order) {
             throw new ImportConflict('older_export_refused');
         }
+        [$predecessor, $allowsMissingReceipt] = $this->replacementPredecessor($run, $stream);
         $priorQuery = DB::table('wald_import_receipts')
             ->join('wald_import_runs as prior_runs', 'prior_runs.id', '=', 'wald_import_receipts.run_id')
             ->where('wald_import_receipts.stream_id', $stream->id)
@@ -206,11 +207,60 @@ final class ImportReview
             if ($run->predecessor_id !== null && (int) $run->predecessor_id !== (int) $prior->run_id) {
                 throw new ImportConflict('replacement_predecessor_stale');
             }
-        } elseif ($run->predecessor_id !== null) {
+        } elseif ($predecessor !== null && ! $allowsMissingReceipt) {
             throw new ImportConflict('replacement_predecessor_missing');
         }
 
         return $prior;
+    }
+
+    private function replacementPredecessor(object $run, object $stream): array
+    {
+        if ($run->predecessor_id === null) {
+            return [null, false];
+        }
+
+        $predecessor = DB::table('wald_import_runs')
+            ->where('id', $run->predecessor_id)
+            ->where('stream_id', $stream->id)
+            ->where('export_order', $run->export_order)
+            ->where('customer_organisation_id', $run->customer_organisation_id)
+            ->where('site_id', $run->site_id)
+            ->where('source_namespace', $run->source_namespace)
+            ->where('workbook_family', $run->workbook_family)
+            ->first();
+        if ($predecessor === null) {
+            throw new ImportConflict('replacement_predecessor_missing');
+        }
+
+        if ($run->pilot_upload_id === null && $run->pilot_selection_id === null
+            && $predecessor->pilot_upload_id === null && $predecessor->pilot_selection_id === null) {
+            return [$predecessor, false];
+        }
+        if ($run->pilot_upload_id === null || $run->pilot_selection_id === null
+            || $predecessor->pilot_upload_id === null || $predecessor->pilot_selection_id === null) {
+            throw new ImportConflict('replacement_predecessor_missing');
+        }
+
+        $upload = DB::table('wald_pilot_uploads')->where('id', $run->pilot_upload_id)
+            ->where('stream_id', $stream->id)->where('export_order', $run->export_order)->first();
+        $predecessorUpload = DB::table('wald_pilot_uploads')->where('id', $predecessor->pilot_upload_id)
+            ->where('stream_id', $stream->id)->where('export_order', $run->export_order)->first();
+        $selection = DB::table('wald_pilot_selections')->where('id', $run->pilot_selection_id)
+            ->where('pilot_upload_id', $run->pilot_upload_id)->where('run_id', $run->id)->where('site_id', $run->site_id)->first();
+        $predecessorSelection = DB::table('wald_pilot_selections')->where('id', $predecessor->pilot_selection_id)
+            ->where('pilot_upload_id', $predecessor->pilot_upload_id)->where('run_id', $predecessor->id)->where('site_id', $run->site_id)->first();
+        if ($upload === null || $predecessorUpload === null || $selection === null || $predecessorSelection === null
+            || (int) $upload->predecessor_upload_id !== (int) $predecessorUpload->id
+            || (int) $upload->revision !== (int) $predecessorUpload->revision + 1
+            || $predecessorUpload->state !== 'SUPERSEDED'
+            || $selection->source_identity_kind !== $predecessorSelection->source_identity_kind
+            || $selection->source_identity !== $predecessorSelection->source_identity
+            || $selection->binding_id !== $predecessorSelection->binding_id) {
+            throw new ImportConflict('replacement_predecessor_missing');
+        }
+
+        return [$predecessor, $predecessor->state === 'SUPERSEDED' && $predecessorSelection->state === 'SUPERSEDED'];
     }
 
     public function details(User $actor, KnowledgeScope $scope, string $uuid, int $after = -1, int $limit = 50): array
