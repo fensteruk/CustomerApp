@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## Overview correction delivered — 21 September 2026
+
+**Deployed:** `590503b6c80ea186bc6001e43a11ab528298961a`, Forge `78155443`.
+Live linked/unbound agreement, existing legacy/multiple binding presentation, Site Manager
+access/plot visibility and Office/Site Manager logout privacy pass. No migration or data rewrite.
+See [deployment evidence](documentation/site-overview-source-binding-deployment-2026-09-21.md).
+Next recommended work is a separately approved customer product-label task. Import wording,
+Filters/navigation, User UI and terminology remain separate. Earlier candidate entries below
+are historical and do not override this verified release state.
+
 ## Bounded Overview consistency repair — 21 September 2026
 
 The user accepts the current production workflow; freshly fetched `origin/main` is

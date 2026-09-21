@@ -1,5 +1,17 @@
 # Current Sprint
 
+## Deployed Overview correction — 21 September 2026
+
+**Deployed and verified live:** `590503b6c80ea186bc6001e43a11ab528298961a`,
+Forge deployment `78155443` (38 seconds). Linked and genuinely unbound Overview/Source
+Binding screens agree. Existing legacy/multiple bindings are unchanged; the approved
+Site Manager sees both E2E plots, cannot access Office/Imports, and passes logout
+Back/Forward privacy. Final health: 21 migrations applied, none pending, zero failed or
+queued jobs and no matching new application errors. No schema or business-data changes.
+See the [deployment evidence](documentation/site-overview-source-binding-deployment-2026-09-21.md).
+Entries below are historical candidate evidence, not current deployment status.
+Next proposed bounded task: customer-facing product labels; not implemented here.
+
 ## Site Overview binding consistency candidate — 21 September 2026
 
 Current task: presentation-only repair on `codex/fix-site-overview-source-binding`,

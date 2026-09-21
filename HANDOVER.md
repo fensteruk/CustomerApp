@@ -1,5 +1,19 @@
 # Fenster Customer Portal Handover
 
+## Current handover — Overview deployed and verified — 21 September 2026
+
+Production and remote main are `590503b6c80ea186bc6001e43a11ab528298961a`.
+Forge deployment `78155443` succeeded in 38 seconds; Nothing to migrate. Final served-SHA
+check at 01:02:54 UTC confirms 21 applied migrations, none pending and zero failed/queued
+jobs. Linked/unbound screens agree, existing Willow bindings and E2E plots are unchanged,
+customer access boundaries and both-role logout Back/Forward checks pass.
+See [complete release evidence](documentation/site-overview-source-binding-deployment-2026-09-21.md).
+The Site Manager's reported 403 was an Office-only URL; normal site selection/dashboard
+worked and showed the correct signed-in identity. No access or application fix was required.
+Documentation is on a separate local non-deploying branch; do not push another production
+revision from this handover. No call-off/import/binding/assignment changes were made.
+Earlier handovers below are historical. Proposed next task: customer-facing product labels.
+
 ## Current handover — Overview binding consistency — 21 September 2026
 
 Feature-branch candidate: `codex/fix-site-overview-source-binding`, parent/base
