@@ -160,6 +160,17 @@ Office should be able to:
 
 Customers are not hard-deleted merely for normal lifecycle changes.
 
+Normal permanent deletion of an unused customer or site remains guarded by
+business and Wald history. A separate Office-only **Purge demo/test data**
+action may remove an explicitly certified disposable customer or site and its
+site-owned Wald/import evidence. Office must review exact impact and blockers,
+confirm that the records and related import data are demo/test, and type `PURGE`.
+The server re-authorises and rejects a stale review. Shared master uploads and
+unrelated site units remain; user accounts and the minimal purge audit remain.
+Customer purge blocks while users still belong to that customer. Portal request,
+batch, date and notification history is shown and blocks purge until separately
+handled. No record is classified as demo by its name.
+
 ### Site administration
 
 Office should be able to:

@@ -39,6 +39,6 @@ class CustomerOrganisationPolicy
 
     public function delete(User $user, CustomerOrganisation $customerOrganisation): bool
     {
-        return false;
+        return app(OfficeAdministrationPolicy::class)->allows($user, 'customer_delete');
     }
 }

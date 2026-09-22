@@ -1908,3 +1908,28 @@ without a new explicit preview, approval and one-site commit.
 Reason: An uncommitted real import retained a manual Plot Ref clarification
 after the approved Plot number rule changed. Re-uploading identical bytes is
 correctly blocked, so Office needs an audited continuation on the same revision.
+
+---
+
+## DEC-074
+
+Date: 22 September 2026
+
+Decision: Preserve the guarded normal permanent-delete policy. Add a distinct
+Office-only purge for a customer or site whose records and related import data
+an authorised Office user explicitly certifies as disposable demo/test data.
+Require an exact impact review, checkbox certification, typed `PURGE`, current
+Office authority, a fresh locked impact check and one atomic database operation.
+The exception may remove site-owned Wald binding, import, source and projection
+history, including committed demo receipts, while retaining unrelated site units,
+shared master uploads and user accounts. Keep a minimal attributed purge audit.
+Block customer purge while users belong to it; show and block Portal workflow
+and notification history pending separate handling. Do not infer demo status from
+names. Private workbook deletion is allowed only after commit and only when no
+retained upload or import references it.
+
+This decision does not authorise a production purge, push or deployment.
+
+Reason: Management certified the current unwanted import-development records as
+disposable and requested an explicit cleanup path without weakening normal data
+protection.
