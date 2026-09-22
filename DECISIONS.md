@@ -1832,3 +1832,35 @@ projection regardless of workbook checksum:
 
 Reason: Management explicitly confirmed these exact source codes have no CustomerApp
 relevance. The decision is about source meaning; it has no display dependency.
+
+---
+
+## DEC-071
+
+Date: 22 September 2026
+
+Decision: For the current CustomerApp scope, exact normalized RedZebra Call Type
+codes `CU0`, `CU1`, `CU3`, `P04` and `zzz` are ignored. Exclude their entire rows
+from CustomerApp discovery and projection with private source evidence and
+attributed exclusion provenance. They make no plot, product, visit, service,
+completion, Portal date/workflow or notification assertion and do not block an
+otherwise valid selected-site review merely by existing.
+
+- `CU0`, `CU1` and `CU3` are Customer Care-related and use the same exclusion
+  mechanism as DEC-069's `CU4` without creating Customer Care projection logic.
+- `P04` currently denotes **Plot Installation - 2nd Visit (use TEAM)**. Its
+  exclusion is **temporary** for the current CustomerApp scope. Management may
+  later approve a meaning; do not map it to Windows now or describe it as
+  permanently irrelevant.
+- `zzz` needs no CustomerApp meaning at present and is ignored. Preserve its
+  exact raw spelling privately; the existing code normalizer uses uppercase
+  `ZZZ` for matching.
+- Existing approved service mappings and the DEC-069/070 exclusions remain.
+  A genuinely unapproved nonblank code still blocks. Preserve source safety
+  guards and partial-export non-reversal. Advance dictionary identity so older
+  unknown interpretations and reviews become stale.
+- This decision does not authorise Wald enablement, production upload/import,
+  merge, push or deployment. DEC-068/current release review still applies.
+
+Reason: Management decided these remaining observed codes have no current
+CustomerApp projection. P04's future treatment remains open.

@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v6';
+    public const VERSION = 'customerapp.source-dictionary.v7';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -27,6 +27,11 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 
     private const EXCLUDED_CALLS = [
         'CU4' => 'Customer care; no CustomerApp projection',
+        'CU0' => 'Customer care; no current CustomerApp projection',
+        'CU1' => 'Customer care; no current CustomerApp projection',
+        'CU3' => 'Customer care; no current CustomerApp projection',
+        'P04' => 'Plot Installation - 2nd Visit (use TEAM); temporarily excluded from CustomerApp',
+        'ZZZ' => 'No current CustomerApp meaning; ignored by management decision',
         'CM8' => 'Irrelevant to CustomerApp', 'P02' => 'Irrelevant to CustomerApp',
         'P06' => 'Irrelevant to CustomerApp', 'P08' => 'Irrelevant to CustomerApp',
         'Q01' => 'Irrelevant to CustomerApp', 'QU5' => 'Irrelevant to CustomerApp',

@@ -1,5 +1,18 @@
 # Fenster Customer Portal Handover
 
+## Current handover — DEC-071 real-source semantics — 22 September 2026
+
+The local feature branch now excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz`
+under DEC-071, with P04 explicitly temporary. Both real files passed local
+pilot upload and representative non-mutating previews. The small file remains
+16 total/15 included/one CU4 excluded. The genuine XLS has 4,358 total,
+2,567 included, 1,791 excluded and zero unresolved Call Types. Of 145 source
+units, 59 contain supported rows, 86 contain excluded rows only, and zero
+have a Call Type semantic blocker. No real import was committed. See the
+[qualification report](documentation/wald-final-call-type-qualification-2026-09-22.md).
+Production runtime/advisory checks and controlled release review remain; no
+push or deployment. Earlier code-count snapshots below are historical.
+
 ## Current handover — DEC-070 source exclusions — 22 September 2026
 
 The feature branch adds 25 exact global irrelevant Call Types under DEC-070,

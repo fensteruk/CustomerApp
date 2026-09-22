@@ -1,5 +1,7 @@
 <?php
 
+use App\SourceImport\Knowledge\Compatibility;
+use App\SourceImport\Knowledge\KnowledgeIdentity;
 use App\SourceImport\Semantics\Data\CoreIdentity;
 use App\SourceImport\Semantics\Data\DictionaryIdentity;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary as Dictionary;
@@ -37,8 +39,8 @@ it('preserves the existing CU4 Customer Care exclusion', function () {
         ->and($excluded->value)->toBeNull()
         ->and($excluded->reasons)->toBe(['IRRELEVANT_TO_CUSTOMERAPP'])
         ->and(Dictionary::excludesCallType(' cu4 '))->toBeTrue()
-        ->and(Dictionary::excludesCallType('CU0'))->toBeFalse()
-        ->and($dictionary->callType('CU0')->classification)->toBe(C::Unknown);
+        ->and(Dictionary::excludesCallType('CU2'))->toBeFalse()
+        ->and($dictionary->callType('CU2')->classification)->toBe(C::Unknown);
 });
 
 it('classifies every newly approved irrelevant Call Type without inferring neighbouring codes', function ($code) {
@@ -52,6 +54,28 @@ it('classifies every newly approved irrelevant Call Type without inferring neigh
         ->and($result->reasons)->toBe(['IRRELEVANT_TO_CUSTOMERAPP'])
         ->and(Dictionary::excludesCallType($raw))->toBeTrue();
 })->with(['CM8', 'P02', 'P06', 'P08', 'Q01', 'QU5', 'SS1', 'T03', 'T05', 'T07', 'T09', 'T11', 'T13', 'T15', 'VC1', 'X10', 'X14', 'X16', 'X50', 'X99', 'XR1', 'XR2', 'XX1', 'Z05', 'Z09']);
+
+it('classifies the five current-scope exclusions and leaves P04 deferred', function ($raw, $code) {
+    $result = (new Dictionary)->callType($raw);
+    expect($result->rawValue)->toBe($raw)
+        ->and($result->lookupValue)->toBe($code)
+        ->and($result->classification)->toBe(C::Ignored)
+        ->and($result->resolution)->toBe(R::Resolved)
+        ->and($result->value)->toBeNull()
+        ->and($result->reasons)->toBe(['IRRELEVANT_TO_CUSTOMERAPP'])
+        ->and(Dictionary::excludesCallType($raw))->toBeTrue();
+    if ($code === 'P04') {
+        expect($result->match['description'])->toContain('temporarily excluded');
+    }
+})->with([[' cu0 ', 'CU0'], ['cu1', 'CU1'], ['CU3', 'CU3'], ['P04', 'P04'], ['zzz', 'ZZZ']]);
+
+it('stales dictionary v6 knowledge instead of reusing old unknown interpretations', function () {
+    $identity = new KnowledgeIdentity;
+    $old = $identity->current();
+    $old['dictionary'] = 'customerapp.source-dictionary.v6';
+    $old['fingerprint'] = '033f9d259007db173970150d1b103428f0d5b2b46998ed57f5d1324b1f4f5308';
+    expect($identity->compatible($old))->toBe(Compatibility::Stale);
+});
 
 it('does not invent unknown or historical calls', function ($code) {
     $result = (new Dictionary)->callType($code);
@@ -165,9 +189,9 @@ it('defaults partial and requires downstream confirmation of stronger assertions
 it('has canonical stable immutable versioned identity', function () {
     $definition = Dictionary::definition();
     $identity = (new Dictionary)->identity();
-    expect($identity->version)->toBe('customerapp.source-dictionary.v6')
-        // v6 is frozen: a definition edit must introduce a new version, not update this pair.
-        ->and($identity->fingerprint)->toBe('033f9d259007db173970150d1b103428f0d5b2b46998ed57f5d1324b1f4f5308')
+    expect($identity->version)->toBe('customerapp.source-dictionary.v7')
+        // v7 is frozen: a definition edit must introduce a new version, not update this pair.
+        ->and($identity->fingerprint)->toBe('9e7b43078e7c8adb6a57ce516cd8ae67752466ee55491d96ee174cccf3328dbf')
         ->and(DictionaryIdentity::fromDefinition(Dictionary::VERSION, array_reverse($definition, true))->fingerprint)->toBe($identity->fingerprint)
         ->and((new Dictionary)->callType('PC1')->jsonSerialize()['wald_core']['commit'])->toBe(CoreIdentity::SHA);
     $definition['calls']['PC1']['service'] = 'changed';
@@ -180,6 +204,6 @@ it('requires a version and fingerprint change for labels meanings and mappings',
     $old = (new Dictionary)->identity();
     $definition['calls']['PC1'][$field] = $value;
     expect(fn () => DictionaryIdentity::fromDefinition(Dictionary::VERSION, $definition, $old))->toThrow(InvalidArgumentException::class);
-    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v7', $definition, $old);
+    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v8', $definition, $old);
     expect($new->fingerprint)->not->toBe($old->fingerprint)->and($new->version)->not->toBe($old->version);
 })->with([['description', 'New label'], ['service', 'cml'], ['revisit', true]]);

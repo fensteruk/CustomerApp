@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 22 September 2026 (additional global exclusions approved under DEC-070)
+**Last updated:** 22 September 2026 (current-scope exclusions approved under DEC-071)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -41,6 +41,15 @@ CustomerApp: `CM8`, `P02`, `P06`, `P08`, `Q01`, `QU5`, `SS1`, `T03`, `T05`,
 exclusion provenance but contribute no plot, product, visit, service, completion,
 customer date/workflow or notification. An excluded row does not block an otherwise
 valid selected-site review. CU4 remains the separate DEC-069 Customer Care rule.
+
+DEC-071 further excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz` for the current
+CustomerApp scope. `CU0`/`CU1`/`CU3` are Customer Care-related, consistent with
+the existing `CU4` exclusion. `zzz` has no required CustomerApp meaning at
+present; preserve its raw spelling while matching normalized `ZZZ`. **P04 is
+temporarily excluded**, with current source description “Plot Installation -
+2nd Visit (use TEAM)”. Management may revisit it. Do not map P04 to Windows
+without a later explicit decision. All five preserve private row evidence and
+make no CustomerApp projection assertion.
 
 Other unknown call types remain unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.

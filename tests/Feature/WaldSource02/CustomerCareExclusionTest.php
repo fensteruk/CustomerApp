@@ -119,12 +119,12 @@ it('excludes every CU4 row from discovery and projection while retaining private
         ->and(DB::table('wald_import_receipts')->where('run_id', $run->id)->exists())->toBeTrue();
 });
 
-it('keeps other unknown CU codes blocked and has no selectable unit for only CU4 rows', function (): void {
+it('keeps a truly unknown CU code blocked and has no selectable unit for only CU4 rows', function (): void {
     $office = careOffice();
     expect(fn () => careUpload($office, ['CODE-1,1001,Example Site,Plot 1,CU4,3'], '2099-10-02'))
         ->toThrow(ImportConflict::class, 'no_source_records');
 
-    $pilot = careUpload($office, ['CODE-1,1002,Example Site,Plot 1,PC1,2', 'CODE-1,1003,Example Site,Plot 2,CU1,3'], '2099-10-03');
+    $pilot = careUpload($office, ['CODE-1,1002,Example Site,Plot 1,PC1,2', 'CODE-1,1003,Example Site,Plot 2,CU2,3'], '2099-10-03');
     $customer = CustomerOrganisation::factory()->create();
     $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'is_active' => true]);
     $scope = new KnowledgeScope($customer->id, $site->id, 'redzebra', 'call-offs');
@@ -172,7 +172,11 @@ it('excludes all controlled irrelevant codes from the entire selected-site proje
         ->and($rows->skip(1)->every(fn ($row) => $row['issues'] === []
             && $row['provenance']['raw_complete'] === 'Yes'
             && $row['provenance']['raw_products']['VS']['raw'] === 'bad'
-            && $row['provenance']['selection']['approvals'] === [$row['provenance']['raw_call_type'] === 'CU4' ? 'DEC-069' : 'DEC-070']))->toBeTrue();
+            && $row['provenance']['selection']['approvals'] === [match ($row['provenance']['raw_call_type']) {
+                'CU4' => 'DEC-069',
+                'CU0', 'CU1', 'CU3', 'P04', 'ZZZ' => 'DEC-071',
+                default => 'DEC-070',
+            }]))->toBeTrue();
     $review = new ImportReview;
     $preview = $review->preview($office, $scope, $run->uuid, (int) $run->epoch, (string) Str::uuid());
     expect($preview['blockers'])->toBe([]);

@@ -1,5 +1,16 @@
 # Fenster Customer Portal ROADMAP
 
+## Controlled release review after DEC-071 — 22 September 2026
+
+The current real-source files have zero unresolved Call Type codes under the
+feature-branch dictionary v7. P04 is temporarily excluded, not assigned a
+permanent customer meaning. Review the [qualification](documentation/wald-final-call-type-qualification-2026-09-22.md),
+complete production PHP extension/temp and fresh Composer advisory checks, and
+perform the DEC-068/current controlled release review. Each site still needs
+its own exact binding, source validation and explicit review/commit. No code
+or real source data was deployed by this decision. Earlier semantic counts
+below are historical.
+
 ## Release review after DEC-070 — 22 September 2026
 
 The approved exact Call Type exclusions are implemented locally, with dictionary

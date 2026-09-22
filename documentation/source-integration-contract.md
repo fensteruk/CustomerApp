@@ -97,6 +97,9 @@ They retain private source/audit evidence but contribute no site discovery, plot
 visit, completion or Portal-owned fact. DEC-070 extends the global irrelevant-row rule
 to the exact additional Call Types listed in the controlled dictionary. This is a
 source-code decision, independent of display. Other unknown codes remain blocking.
+DEC-071 additionally excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz` for the current
+CustomerApp scope using the same private-evidence/no-projection boundary. P04's
+exclusion is temporary and may be revisited; it is not a Windows mapping.
 
 All SiteApp exports contain whatever the user filtered and therefore default to
 `PARTIAL_FILTERED_EXPORT`. Absence proves no deletion, including within a represented site.

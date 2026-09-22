@@ -2,10 +2,10 @@
 
 Last updated: 22 September 2026. Owner: Product and Architecture.
 
-Current CustomerApp-only difference: WD-59 records DEC-070's additional exact
-irrelevant Call Type exclusions. WD-58 records DEC-069's `CU4` Customer Care
-exclusion. These remain feature-branch only; no SiteApp backport or production
-release is implied.
+Current CustomerApp-only difference: WD-60 records DEC-071's current-scope
+exclusions, including temporary P04 treatment. WD-59/58 retain the earlier
+exact exclusions. These remain feature-branch only; no SiteApp backport or
+production release is implied.
 
 Earlier correction: W5Q-03/04 at `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` adds CustomerApp-only
 durable attempt audit and operation-local batch profile eligibility. Backend application identity
@@ -272,6 +272,7 @@ WD-47/48 retain their original implementation identity; the current identities b
 | WD-57 | CustomerApp-specific source semantics | Exact `Customer Number` joins `CustomerNo`/`CustomerCode` as one approved `source_customer_code` header. Value identity, binding, missing/ambiguous refusal and one-site review are unchanged. Older knowledge is stale under dictionary v4. | DEC-068; 22 September browser failure `customer_code_missing`, synthetic success/refusal and stale-pin tests. Feature branch only; no SiteApp backport, migration, production re-upload or deployment. |
 | WD-58 | CustomerApp-specific source semantics | Exact normalized `CU4` is Customer Care and its rows are excluded from CustomerApp discovery and projection regardless of checksum. Private evidence and exclusion provenance remain. Other unknown codes still block affected site units; dictionary v5 stales older knowledge. | DEC-069; synthetic exclusion and real-file local qualification. Feature branch only; no SiteApp backport, migration, production import or deployment. |
 | WD-59 | CustomerApp-specific source semantics | Twenty-five additional exact normalized Call Types are globally irrelevant; rows preserve private provenance but make no CustomerApp projection. Dictionary v6 stales older knowledge. Other unknown codes remain blocking. | DEC-070; synthetic code coverage and both real-file local pilot paths. Feature branch only; no SiteApp backport, migration, production import or deployment. |
+| WD-60 | CustomerApp-specific current-scope semantics | CU0/CU1/CU3 Customer Care-related and zzz are currently ignored; P04 is temporarily ignored pending possible future meaning. Exact excluded rows retain private evidence and make no CustomerApp projection. Dictionary v7 stales older knowledge. | DEC-071; synthetic exclusion and local genuine XLS qualification. Feature branch only; no SiteApp backport, migration, production import or deployment. |
 
 ## Backport process
 

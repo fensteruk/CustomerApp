@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Final real-source Call Type scope — 22 September 2026
+
+DEC-071 temporarily excludes P04 and currently excludes CU0, CU1, CU3 and
+zzz. The local genuine XLS now has 4,358 rows: 2,567 included, 1,791 excluded,
+zero unresolved Call Types. Of 145 source units, 59 contain supported data,
+86 contain excluded data only, and none have a Call Type semantic blocker.
+The small workbook remains 15 included/one CU4 excluded. Both reached clean
+non-mutating representative previews. No real data was committed. See the
+[final local qualification](documentation/wald-final-call-type-qualification-2026-09-22.md).
+Runtime/advisory/release gates remain. The five-unknown-code snapshot below is historical.
+
 ## Confirmed irrelevant Call Types — 22 September 2026
 
 DEC-070 adds 25 exact global exclusions to the existing CU4 decision on the
