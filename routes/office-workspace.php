@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OfficeAdministrationPageController as Pages;
+use App\Http\Controllers\OfficePermanentDeletionController as PermanentDeletion;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
 use App\Http\Controllers\OfficeUserPageController as UserPages;
 use App\Http\Controllers\OfficeWaldSettingsController as WaldSettings;
@@ -41,12 +42,16 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
             Route::get('/', [Pages::class, 'customer'])->name('customers.show');
             Route::get('/edit', [Pages::class, 'customerForm'])->name('customers.edit');
             Route::get('/change-status', [Pages::class, 'customerLifecycle'])->name('customers.lifecycle');
+            Route::get('/delete-permanently', [PermanentDeletion::class, 'customerPreview'])->name('customers.delete-preview');
+            Route::post('/delete-permanently', [PermanentDeletion::class, 'customerDelete'])->name('customers.delete');
             Route::get('/audit', [Pages::class, 'customerAudit'])->name('customers.audit');
             Route::get('/sites/new', [Pages::class, 'siteForm'])->name('sites.create');
             Route::prefix('/sites/{site:uuid}')->whereUuid('site')->group(function (): void {
                 Route::get('/', [Pages::class, 'site'])->name('sites.show');
                 Route::get('/edit', [Pages::class, 'siteForm'])->name('sites.edit');
                 Route::get('/change-status', [Pages::class, 'siteLifecycle'])->name('sites.lifecycle');
+                Route::get('/delete-permanently', [PermanentDeletion::class, 'sitePreview'])->name('sites.delete-preview');
+                Route::post('/delete-permanently', [PermanentDeletion::class, 'siteDelete'])->name('sites.delete');
                 Route::get('/assign-user', [UserPages::class, 'assignToSite'])->name('sites.assign-user');
             });
         });

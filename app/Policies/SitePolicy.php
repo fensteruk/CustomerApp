@@ -39,6 +39,6 @@ class SitePolicy
 
     public function delete(User $user, Site $site): bool
     {
-        return false;
+        return app(OfficeAdministrationPolicy::class)->allows($user, 'site_delete');
     }
 }

@@ -14,6 +14,7 @@
             </div>
         </header>
         @include('office.partials.feedback')
+        <div class="border-t border-slate-200 pt-4 text-sm"><p>Deactivate keeps this site, its access relationships and history. Permanent deletion removes eligible disposable data and cannot be undone.</p><a class="mt-2 inline-block font-semibold text-red-700 underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" href="{{ route('office.workspace.sites.delete-preview', [$site['customer']['uuid'], $site['uuid']]) }}">Delete permanently</a></div>
         @unless ($site['effective_is_active'])
             <div class="admin-notice">{{ ! $site['customer']['is_active'] ? 'The customer is inactive. External access to this site is blocked, even if the site itself is active.' : 'This site is inactive. External access is blocked.' }} Its records and history are retained.</div>
         @endunless
