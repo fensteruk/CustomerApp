@@ -1,5 +1,19 @@
 # Current Sprint
 
+## Real-source qualification and release hold — 22 September 2026
+
+The combined `.xls`/`Customer Number` feature candidate now has a bounded follow-up for
+optional `Complete` columns. Both private exports pass local upload/discovery; the small
+workbook reaches a blocked selected-site preview because `CU4` has no approved meaning.
+The full export has 4,358 records, and representative approved-only source rows reach a
+clean exact-bound preview. Disposable MySQL 8.4 release groups passed. Management must
+define CU4 before that selected site can commit. Production extension/temp checks, a
+fresh Composer advisory check and DEC-068 release review remain outstanding.
+Forge's upload/execution limits are now 5 MB / 45 seconds after the user's change.
+No candidate code was deployed or production import run. See the
+[qualification report](documentation/wald-real-source-qualification-2026-09-22.md).
+Older sections below are historical checkpoints.
+
 ## Binary XLS master export support — 22 September 2026
 
 **Feature branch only:** `codex/wald-xls-reader` accepts real BIFF `.xls` uploads through the

@@ -155,14 +155,14 @@ final class ProjectionAdapter
                         'source_call_number' => $fact['call_number'],
                         'source_call_type' => $fact['call_type'],
                         'source_job_stage' => null,
-                        'source_completed_at' => $fact['complete'] ? $service->source_completed_at : null,
-                        'source_completion_observed_at' => $fact['complete'] ? ($wasComplete ? $service->source_completion_observed_at ?? now() : now()) : null,
+                        'source_completed_at' => $diff['after_complete'] ? $service->source_completed_at : null,
+                        'source_completion_observed_at' => $diff['after_complete'] ? ($wasComplete ? $service->source_completion_observed_at ?? now() : now()) : null,
                         'last_observed_at' => now(),
                         'source_present' => true,
                         'source_missing_since' => null,
                         'last_source_import_run_id' => $sourceRun->id,
                     ])->save();
-                    $completion->transition($service, $sourceRun, $wasComplete, $fact['complete'], $activeRequests->get($service->id, collect()));
+                    $completion->transition($service, $sourceRun, $wasComplete, $diff['after_complete'], $activeRequests->get($service->id, collect()));
                 }
 
                 $visitKey = SourceIdentity::visit($scope->namespace, $fact['call_number'], $fact['call_type']);

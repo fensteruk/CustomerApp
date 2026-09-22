@@ -1,5 +1,17 @@
 # Fenster Customer Portal ROADMAP
 
+## Release hold — real RedZebra semantics — 22 September 2026
+
+Keep the combined XLS/DEC-068 header candidate and optional-completion follow-up on
+feature branches. The small real workbook reaches a selected-site preview but `CU4`
+blocks commit under the approved dictionary; it occurs 939 times in the full export.
+Obtain the precise management mapping decision, qualify production PHP extensions and
+temporary-file handling, rerun the fresh Composer advisory check after its endpoint
+timeout, then perform DEC-068 release review. Disposable MySQL 8.4 release gates passed.
+The user raised Forge upload/execution limits to 5 MB / 45 seconds; no candidate code
+was deployed. See the [qualification report](documentation/wald-real-source-qualification-2026-09-22.md).
+Earlier roadmap entries below are historical checkpoints.
+
 ## Next release review — binary XLS and exact source header — 22 September 2026
 
 The combined `codex/wald-xls-reader` candidate supports the original RedZebra `.xls` export

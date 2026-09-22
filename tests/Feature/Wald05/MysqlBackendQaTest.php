@@ -85,6 +85,7 @@ it('W5Q races independent claims actual profile receipts and cross-family visit 
         B::$callBase = 100000 + $scope->siteId * 1000;
         B::binding($actor, $scope);
         $second = $actor->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         $scopes = [$scope, $scope];

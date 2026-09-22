@@ -106,7 +106,7 @@ final class WorkbookStager
             $columns[$role] = $candidate['column'];
             $confirmed[$role] = $explicit;
         }
-        foreach (['call_reference', 'plot_reference', 'call_type', 'completion'] as $role) {
+        foreach (['call_reference', 'plot_reference', 'call_type'] as $role) {
             if (! isset($columns[$role])) {
                 throw new ImportConflict('required_column_unresolved');
             }
@@ -193,7 +193,7 @@ final class WorkbookStager
                 ($table['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null,
             );
             $hasVisit = is_scalar($effectiveType) && trim((string) $effectiveType) !== '';
-            $complete = $hasVisit ? $dictionary->completion($raw('completion')) : null;
+            $complete = $hasVisit && isset($columns['completion']) ? $dictionary->completion($raw('completion')) : null;
             if (! $type->isResolved()) {
                 $issues[] = 'UNRESOLVED_CALL_TYPE';
             }
@@ -234,7 +234,7 @@ final class WorkbookStager
             }
             // Compose WALD03 evidence without altering the accepted reasoning or its decisions.
             $semanticEvidence = [];
-            foreach ($hasVisit ? ['call_type', 'completion'] : [] as $role) {
+            foreach ($hasVisit ? array_values(array_intersect(['call_type', 'completion'], array_keys($columns))) : [] as $role) {
                 $cell = $cells[$columns[$role]] ?? null;
                 $hypothesis = collect($reason['hypotheses'])->first(fn ($h) => ($h['hypothesis']['target']['column'] ?? null) === $columns[$role] && ($h['hypothesis']['target']['sheet_id'] ?? null) === $sheet->id);
                 if ($cell && $hypothesis) {

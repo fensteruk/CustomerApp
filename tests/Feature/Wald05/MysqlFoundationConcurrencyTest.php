@@ -72,6 +72,7 @@ it('serializes binding lifecycle mutations across ten real two-connection races'
     for ($iteration = 0; $iteration < 10; $iteration++) {
         [$first, $scope] = F::owner();
         $second = $first->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         $service = new SourceBindingService;

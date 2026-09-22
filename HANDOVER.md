@@ -1,5 +1,24 @@
 # Fenster Customer Portal Handover
 
+## Current handover — real source qualification — 22 September 2026
+
+**Feature branch only; management mapping decision required.** The combined XLS and
+`Customer Number` candidate was privately qualified against the small `.xlsx` and full
+4,358-record genuine `.xls` export. An approved-contract defect requiring optional
+`Complete` was corrected on `codex/wald-realdata03-optional-completion`; a synthetic
+partial-export regression preserves established completion. The small file reaches a
+blocked selected-site preview because `CU4` is unknown (1 occurrence; 939 in the full
+export). Representative approved-only full-export rows resolve exact site binding and
+site-scoped plots. No real-source preview was approved or committed. The user raised
+Forge upload/execution limits to 5 MB / 45 seconds; the agent verified the saved UI
+values. Disposable MySQL 8.4 release groups passed: 285 passed, 4 skipped, 2,996
+assertions. Production PHP extensions and temporary-directory readiness remain unverified;
+the fresh Composer advisory endpoint timed out.
+No candidate code was pushed or deployed; `main` remains `51635964`. See the
+[real-source qualification report](documentation/wald-real-source-qualification-2026-09-22.md)
+for aggregate evidence, test results and remaining release gates. Earlier entries below
+are historical checkpoints.
+
 ## Current handover — legacy XLS master export candidate — 22 September 2026
 
 **Feature branch only; not deployed:** `codex/wald-xls-reader` combines the bounded binary

@@ -32,6 +32,7 @@ it('W5Q03 serializes audit outcomes without duplicate or contradictory history',
         $operations = [['commit', $args], ['commit', $args]];
         if ($scenario !== 'same-command') {
             $actors[1] = $actor->replicate();
+            $actors[1]->uuid = F::command();
             $actors[1]->email = F::command().'@example.test';
             $actors[1]->save();
             $operations[1][1][3] = F::command();
