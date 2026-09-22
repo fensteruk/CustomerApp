@@ -22,6 +22,7 @@ final class OfficeAdministrationPolicy
         'site_deactivate',
         'site_reactivate',
         'site_delete',
+        'demo_purge',
         'user_create',
         'user_update',
         'user_deactivate',

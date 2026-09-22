@@ -14,4 +14,5 @@ enum AdministrativeAction: string
     case SiteAssigned = 'site_assigned';
     case SiteRemoved = 'site_removed';
     case PermanentlyDeleted = 'permanently_deleted';
+    case DemoTestPurged = 'demo_test_purged';
 }

@@ -14,6 +14,7 @@
         </header>
         @include('office.partials.feedback')
         <div class="border-t border-slate-200 pt-4 text-sm"><p>Deactivate keeps this customer, its access relationships and history. Permanent deletion removes eligible disposable data and cannot be undone.</p><a class="mt-2 inline-block font-semibold text-red-700 underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" href="{{ route('office.workspace.customers.delete-preview', $customer['uuid']) }}">Delete permanently</a></div>
+        <div class="border-t border-red-200 pt-4 text-sm"><p><strong>Demo/test cleanup only.</strong> Purge removes explicitly certified test data, including associated Wald evidence. Do not use this for genuine customer records.</p><a class="mt-2 inline-block font-bold text-red-800 underline focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2" href="{{ route('office.workspace.customers.demo-purge-preview', $customer['uuid']) }}">Purge demo/test data</a></div>
         @unless ($customer['is_active'])
             <div class="admin-notice">This customer is inactive. External users cannot access the portal for this customer. Sites, users and history are retained.</div>
         @endunless
