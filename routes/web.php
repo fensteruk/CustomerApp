@@ -89,6 +89,8 @@ Route::middleware(['auth', 'active.portal'])->group(function (): void {
             ->name('portal.plots.show');
         Route::get('/portal/call-offs/new', [NewCallOffController::class, 'create'])
             ->name('portal.call-offs.create');
+        Route::get('/portal/call-offs/cavity-closer-date', [NewCallOffController::class, 'cavityCloserDate'])
+            ->name('portal.call-offs.cavity-closer-date');
         Route::post('/portal/call-offs/dashboard-selection', [NewCallOffController::class, 'dashboardSelection'])
             ->name('portal.call-offs.dashboard-selection');
         Route::post('/portal/call-offs/matrix', [NewCallOffController::class, 'matrix'])

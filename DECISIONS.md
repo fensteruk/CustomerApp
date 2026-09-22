@@ -1956,3 +1956,23 @@ push or deployment.
 Reason: Management corrected the real plot-591 FLU/PFD omission, confirmed CAS
 as Casement window and then explicitly confirmed that GLS, WP and MISC remain
 excluded. This supersedes DEC-040's CAS/FLU/PFD product exclusion only.
+
+---
+
+## DEC-076
+
+Date: 22 September 2026
+
+Decision: Cavity Closers are independently callable by an authorised Site User
+for an eligible plot, even when source service information is absent. Preserve
+active-request, completed-service, scope and ordinary date safeguards. The
+standard initial Cavity Closer lead time is 15 working days under the existing
+weekday/holiday provider. Show the earliest standard date before selection.
+Allow an earlier date with a required Early Date Reason and explain its
+working-day shortfall. Persist the initial lead-time context and requester in
+request history, and show the requested date, earliest date, shortfall and reason
+to Office. Other services, BF lead time and amendment timing remain unchanged.
+This decision does not authorise a production push or deployment.
+
+Reason: Management confirmed independent Cavity Closer call-offs and requested
+clear early-date information while retaining Office acknowledgement.

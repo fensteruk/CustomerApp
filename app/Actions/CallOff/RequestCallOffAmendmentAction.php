@@ -49,7 +49,7 @@ class RequestCallOffAmendmentAction
             if ($priorDate === null || $date->isSameDay($priorDate)) {
                 throw ValidationException::withMessages(['requested_date' => 'Choose a different date from the current agreed date.']);
             }
-            $earliest = $this->leadTimes->earliestNormalDate($service);
+            $earliest = $this->leadTimes->earliestAmendmentDate($service);
             $before = $request->stateSnapshot();
             $amendment = $request->dateNegotiations()->create([
                 'purpose' => CallOffNegotiationPurpose::Amendment,

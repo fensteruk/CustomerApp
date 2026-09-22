@@ -49,7 +49,9 @@ class BuildCallOffMatrixAction
                     $included = false;
                 }
                 $date = CarbonImmutable::parse($serviceDates[$service->value])->startOfDay();
-                $earliest = $projection === null ? null : $this->leadTimes->earliestNormalDate($projection);
+                $earliest = $service === CallOffServiceType::CavityClosers
+                    ? $this->leadTimes->earliestCavityCloserDate()
+                    : ($projection === null ? null : $this->leadTimes->earliestNormalDate($projection));
                 $early = $earliest !== null && $date->lt($earliest);
                 if ($included && ! $this->leadTimes->isPermittedRequestedDate($date)) {
                     throw ValidationException::withMessages(['service_dates' => 'Requested dates must be weekdays within six months.']);
@@ -57,7 +59,7 @@ class BuildCallOffMatrixAction
                 if ($included && $early && $requireEarlyReasons && blank($earlyReasons[$key] ?? null)) {
                     throw ValidationException::withMessages(['early_reasons.'.$key => 'Explain this earlier-date request.']);
                 }
-                $rows[] = ['key' => $key, 'plot_uuid' => $plot->uuid, 'plot_reference' => $plot->plot_reference, 'service' => $service->value, 'requested_date' => $date->toDateString(), 'included' => $included, 'available' => $reason === null, 'reason' => $reason, 'normal_earliest_date' => $earliest?->toDateString(), 'is_early_exception' => $early, 'early_reason' => $early ? ($earlyReasons[$key] ?? null) : null, 'products' => $plot->products->filter->hasPositiveQuantity()->map(fn ($product) => ['code' => $product->product_code, 'quantity' => $product->quantity])->values()->all(), 'plot_service_id' => $projection?->id];
+                $rows[] = ['key' => $key, 'plot_uuid' => $plot->uuid, 'plot_reference' => $plot->plot_reference, 'service' => $service->value, 'requested_date' => $date->toDateString(), 'included' => $included, 'available' => $reason === null, 'reason' => $reason, 'normal_earliest_date' => $earliest?->toDateString(), 'working_days_early' => $service === CallOffServiceType::CavityClosers && $early ? $this->leadTimes->workingDaysEarly($date, $earliest) : null, 'is_early_exception' => $early, 'early_reason' => $early ? ($earlyReasons[$key] ?? null) : null, 'products' => $plot->products->filter->hasPositiveQuantity()->map(fn ($product) => ['code' => $product->product_code, 'quantity' => $product->quantity])->values()->all(), 'plot_service_id' => $projection?->id];
             }
         }
 

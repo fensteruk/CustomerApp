@@ -41,7 +41,7 @@ class ProposeAlternativeCallOffDateAction
             $isEarly = false;
             if ($negotiation->isAmendment()) {
                 app(CallOffAmendmentRules::class)->validateDate($date->toDateString());
-                $isEarly = $date->lessThan(app(CallOffLeadTimeService::class)->earliestNormalDate($service));
+                $isEarly = $date->lessThan(app(CallOffLeadTimeService::class)->earliestAmendmentDate($service));
                 if ($isEarly && ! $acknowledgeEarlyDate) {
                     throw ValidationException::withMessages(['early_date_acknowledgement' => 'Acknowledge the earlier-than-normal date before proposing it.']);
                 }

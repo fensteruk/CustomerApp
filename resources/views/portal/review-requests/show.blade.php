@@ -45,6 +45,9 @@
                     <dt>Submitted timestamp</dt>
                     <dd>{{ $callOffRequest->batch->submitted_at->format('j M Y, H:i:s') }}</dd>
                 </div>
+                @if($callOffRequest->effectiveServiceIdentifier() === App\Enums\CallOffServiceType::CavityClosers && $callOffRequest->is_early_date_exception)
+                    <div class="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950"><dt class="font-bold">Early date request — Cavity Closers</dt><dd class="mt-2">Requested date: {{ $callOffRequest->requested_date->format('l j F Y') }}.</dd><dd>Standard lead time: 15 working days. Earliest standard date: {{ $callOffRequest->normal_earliest_date->format('l j F Y') }}.</dd><dd>{{ $cavityCloserEarlyWorkingDays }} working {{ str('day')->plural($cavityCloserEarlyWorkingDays) }} early.</dd><dd class="mt-2">Early Date Reason: {{ $callOffRequest->early_date_reason }}</dd></div>
+                @endif
                 <div>
                     <dt>Current status</dt>
                     <dd>{{ $statusLabel }}</dd>

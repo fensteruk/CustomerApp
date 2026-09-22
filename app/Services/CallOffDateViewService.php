@@ -6,6 +6,7 @@ use App\Actions\CallOff\DetermineCallOffEligibilityAction;
 use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffDateProposalType;
 use App\Enums\CallOffRequestStatus;
+use App\Enums\CallOffServiceType;
 use App\Models\CallOffRequest;
 use App\Models\SourceProjectionEvent;
 use App\Models\User;
@@ -28,7 +29,8 @@ class CallOffDateViewService
         $isOnHold = $request->status === CallOffRequestStatus::AmendmentOnHold;
         $isCompleted = $request->projectedPlotService?->isSourceCompleted() ?? ($request->status === CallOffRequestStatus::Completed);
         $isClosedAfterReversal = $request->status === CallOffRequestStatus::Completed && ! $isCompleted;
-        $isSourceAvailable = $request->projectedPlotService?->source_present ?? false;
+        $isSourceAvailable = $request->projectedPlotService !== null
+            && ($request->effectiveServiceIdentifier() === CallOffServiceType::CavityClosers || $request->projectedPlotService->source_present);
         $proposals = $request->dateNegotiations->flatMap(fn ($cycle) => $cycle->proposals)->sortBy([['proposed_at', 'asc'], ['id', 'asc']])->values();
         $currentProposal = $request->dateNegotiations->filter(fn ($cycle) => $cycle->status->isOpen())
             ->flatMap(fn ($cycle) => $cycle->proposals)
@@ -46,11 +48,15 @@ class CallOffDateViewService
             && ($request->status === CallOffRequestStatus::AwaitingFenster || ($isOnHold && $activeAmendment !== null));
         $decisionDate = $activeAmendment?->requested_date ?? $request->requested_date;
         $decisionEarliestDate = $activeAmendment !== null && $request->projectedPlotService !== null
-            ? $this->leadTimes->earliestNormalDate($request->projectedPlotService)
+            ? $this->leadTimes->earliestAmendmentDate($request->projectedPlotService)
             : $request->normal_earliest_date;
         $requiresEarlyAcknowledgement = $activeAmendment === null ? $request->is_early_date_exception
             : ($activeAmendment->is_early_date_exception
                 || ($decisionEarliestDate !== null && $decisionDate !== null && $decisionDate->lessThan($decisionEarliestDate)));
+        $cavityCloserEarlyWorkingDays = $activeAmendment === null
+            && $request->effectiveServiceIdentifier() === CallOffServiceType::CavityClosers
+            && $decisionDate !== null && $decisionEarliestDate !== null && $requiresEarlyAcknowledgement
+                ? $this->leadTimes->workingDaysEarly($decisionDate, $decisionEarliestDate) : null;
 
         return [
             'requestDate' => $request->effectiveRequestedDate(),
@@ -68,6 +74,7 @@ class CallOffDateViewService
             'decisionDate' => $decisionDate,
             'decisionEarliestDate' => $decisionEarliestDate,
             'requiresEarlyAcknowledgement' => $requiresEarlyAcknowledgement,
+            'cavityCloserEarlyWorkingDays' => $cavityCloserEarlyWorkingDays,
             'sourceTimeline' => $request->projected_plot_service_id === null ? collect() : SourceProjectionEvent::query()
                 ->where('projected_plot_service_id', $request->projected_plot_service_id)
                 ->where(fn ($q) => $q->where('call_off_request_id', $request->id)->orWhereNull('call_off_request_id'))

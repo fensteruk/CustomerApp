@@ -46,6 +46,6 @@ class CallOffSubmissionWorkflow
             throw ValidationException::withMessages(['request' => 'One or more plot services changed. Review the call-off again.']);
         }
 
-        return $this->submit->handle($user, $site, collect($fresh)->where('included', true)->map(fn ($row) => ['plot_service_id' => $row['plot_service_id'], 'requested_date' => $row['requested_date'], 'early_date_reason' => $row['early_reason']])->values()->all(), $payload['message']);
+        return $this->submit->handle($user, $site, collect($fresh)->where('included', true)->map(fn ($row) => ['plot_service_id' => $row['plot_service_id'], 'plot_uuid' => $row['plot_uuid'], 'service' => $row['service'], 'requested_date' => $row['requested_date'], 'early_date_reason' => $row['early_reason']])->values()->all(), $payload['message']);
     }
 }

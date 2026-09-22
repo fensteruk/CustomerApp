@@ -27,6 +27,7 @@ class BuildCallOffMatrixRequest extends FormRequest
             'excluded.*' => ['string', 'max:200'],
             'early_reasons' => ['nullable', 'array'],
             'early_reasons.*' => ['nullable', 'string', 'max:2000'],
+            'cavity_early_reason' => ['nullable', 'string', 'max:2000'],
             'customer_response' => ['nullable', 'string', 'max:2000'],
         ];
     }

@@ -376,8 +376,11 @@ Batch operations must not overwrite individually diverged decisions.
 
 The current customer lead-time model includes:
 
-- normal customer window: four weeks;
-- five weeks where exact positive BF applies to the relevant plot.
+- Cavity Closers: 15 working days after submission, independently callable for
+  an authorised Site User and plot even without a source service projection;
+- other services: normal customer window of four weeks;
+- five weeks where exact positive BF applies to the relevant plot for those
+  other services.
 
 The underlying minimum includes the approved one-week customer buffer.
 
@@ -390,6 +393,12 @@ dataset is explicitly approved and implemented.
 Do not claim holiday support merely because weekday logic exists.
 
 Requesting an earlier date requires the current approved reason/warning flow.
+For Cavity Closers, the requested-date screen states the 15-working-day rule
+before selection, displays the calculated earliest standard date, and explains
+the selected date and working-day shortfall. An earlier date remains selectable
+but requires an Early Date Reason, enforced server-side. Office sees the
+requested date, standard earliest date, shortfall and reason. Preserve the
+lead-time context and requester in immutable request history.
 
 Office acceptance inside the normal lead time requires the appropriate
 acknowledgement.

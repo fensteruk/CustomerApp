@@ -40,7 +40,7 @@ class AgreeRequestedCallOffDateAction
             $isEarly = $request->is_early_date_exception;
             if ($negotiation->isAmendment()) {
                 app(CallOffAmendmentRules::class)->validateDate($date->toDateString());
-                $isEarly = $negotiation->is_early_date_exception || $date->lessThan(app(CallOffLeadTimeService::class)->earliestNormalDate($service));
+                $isEarly = $negotiation->is_early_date_exception || $date->lessThan(app(CallOffLeadTimeService::class)->earliestAmendmentDate($service));
             }
 
             if ($isEarly && ! $acknowledgeEarlyDate) {
@@ -66,7 +66,7 @@ class AgreeRequestedCallOffDateAction
                     'negotiation_uuid' => $negotiation->uuid,
                     'acknowledged_date' => $date->toDateString(),
                     'acknowledged_normal_earliest_date' => $negotiation->isAmendment()
-                        ? app(CallOffLeadTimeService::class)->earliestNormalDate($service)->toDateString()
+                        ? app(CallOffLeadTimeService::class)->earliestAmendmentDate($service)->toDateString()
                         : $request->normal_earliest_date?->toDateString(),
                 ]);
             }

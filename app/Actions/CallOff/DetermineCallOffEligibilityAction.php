@@ -195,7 +195,8 @@ class DetermineCallOffEligibilityAction
             return 'This completed plot service cannot receive a new call-off.';
         }
 
-        if (($requireProjection && $projection === null) || $projection?->source_present === false) {
+        if ($serviceType !== CallOffServiceType::CavityClosers
+            && (($requireProjection && $projection === null) || $projection?->source_present === false)) {
             return 'Source information is not available for this plot service.';
         }
 
@@ -274,7 +275,8 @@ class DetermineCallOffEligibilityAction
     {
         $request->loadMissing('projectedPlotService');
 
-        if ($request->projectedPlotService === null || ! $request->projectedPlotService->source_present) {
+        if ($request->projectedPlotService === null
+            || ($request->effectiveServiceIdentifier() !== CallOffServiceType::CavityClosers && ! $request->projectedPlotService->source_present)) {
             throw ValidationException::withMessages(['status' => 'This service is no longer available from the source data.']);
         }
 
