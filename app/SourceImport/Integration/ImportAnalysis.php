@@ -13,10 +13,71 @@ use Illuminate\Support\Str;
 
 final class ImportAnalysis
 {
+    public const REANALYSIS_CONFIRMATION = 'RE-ANALYSE THIS IMPORT';
+
+    /** Start a new interpretation of the same private source; old evidence stays immutable. */
+    public function reanalyse(User $actor, KnowledgeScope $scope, string $uuid, int $epoch, string $command): array
+    {
+        (new ImportPolicy)->authorize($actor, $scope, 'reanalyse');
+        $run = (new BackendStore)->run($scope, $uuid);
+        if ($run->context_id === null) {
+            throw new ImportConflict('reanalysis_state_or_epoch_conflict');
+        }
+        $inspection = (new WorkbookStager)->inspect($run); // Outside write locks.
+        $result = (new ImportStore)->run($actor, $scope, 'reanalyse', $command, [$uuid, $epoch, $run->workbook_hash],
+            function (User $fresh) use ($scope, $uuid, $epoch, $inspection, $command): array {
+                $store = new BackendStore;
+                $run = $store->run($scope, $uuid, true);
+                $selection = DB::table('wald_pilot_selections')->where('id', $run->pilot_selection_id)->where('run_id', $run->id)->lockForUpdate()->first();
+                $upload = $selection ? DB::table('wald_pilot_uploads')->where('id', $selection->pilot_upload_id)->lockForUpdate()->first() : null;
+                if ((int) $run->epoch !== $epoch || ! in_array($run->state, ['UPLOADED', 'NEEDS_CLARIFICATION', 'REQUIRES_REVIEW', 'REVIEWED', 'READY_TO_COMMIT', 'FAILED'], true)
+                    || ! $selection || ! $upload || $selection->state !== 'UPLOADED' || ! in_array($upload->state, ['READY', 'IN_PROGRESS'], true)
+                    || (int) $run->pilot_upload_id !== (int) $upload->id || $run->context_id === null
+                    || DB::table('wald_import_receipts')->where('run_id', $run->id)->exists()) {
+                    throw new ImportConflict('reanalysis_not_permitted');
+                }
+                $latest = DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)->where('export_order', $upload->export_order)->max('revision');
+                if ((int) $upload->revision !== (int) $latest || ! hash_equals($upload->workbook_hash, $run->workbook_hash)) {
+                    throw new ImportConflict('reanalysis_source_stale');
+                }
+                $old = KnowledgeContext::query()->whereKey($run->context_id)->lockForUpdate()->firstOrFail();
+                if ($old->state === 'SUPERSEDED') {
+                    throw new ImportConflict('reanalysis_context_stale');
+                }
+                $context = (new RegisterContext)->handle($fresh, $scope, $inspection[2], (string) Str::uuid(), $old->uuid);
+                $before = ['state' => $run->state, 'context' => $old->uuid, 'analysis_hash' => $old->analysis_hash,
+                    'pins' => $old->pins, 'stage_id' => $run->stage_id, 'preview_id' => $run->preview_id];
+                $store->state($run, 'UPLOADED', ['context_id' => $context->id, 'stage_id' => null, 'preview_id' => null,
+                    'attempts' => 0, 'lease_token' => null, 'lease_until' => null, 'failure_code' => null,
+                    'terminal_at' => null, 'workbook_retain_until' => null]);
+                $result = ['run' => $uuid, 'state' => 'UPLOADED', 'epoch' => (int) $run->epoch + 1,
+                    'previous_context' => $old->uuid, 'context' => $context->uuid];
+                (new PilotImportAudit)->record($fresh, $upload->id, 'pilot_import_reanalysis_requested', [
+                    'selection' => $selection->uuid, 'run' => $uuid, 'source_hash' => $run->workbook_hash,
+                    'previous_context' => $old->uuid, 'current_context' => $context->uuid,
+                    'previous_analysis_hash' => $old->analysis_hash, 'current_analysis_hash' => $context->analysis_hash,
+                    'previous_pins' => $old->pins, 'current_pins' => $context->pins,
+                    'superseded_stage_id' => $run->stage_id, 'superseded_preview_id' => $run->preview_id,
+                    'reason' => 'Re-run the existing upload with current Wald rules and fresh clarifications.',
+                ], $selection->id, $command);
+
+                return [$result, $before, ['state' => 'UPLOADED', 'context' => $context->uuid, 'analysis_hash' => $context->analysis_hash, 'pins' => $context->pins]];
+            });
+        $current = (new BackendStore)->run($scope, $uuid);
+        if ((int) $current->epoch !== $result['epoch'] || $current->state !== 'UPLOADED') {
+            return $result; // An idempotent repeat must not start another generation.
+        }
+
+        return $this->analyse($actor, $scope, $uuid, $result['epoch'], (string) Str::uuid());
+    }
+
     public function claim(User $actor, KnowledgeScope $scope, string $uuid, int $epoch, string $command): array
     {
         return (new ImportStore)->run($actor, $scope, 'analyse', $command, [$uuid, $epoch], function () use ($scope, $uuid, $epoch): array {
             $run = (new BackendStore)->run($scope, $uuid, true);
+            if ($run->pilot_selection_id !== null && $run->stage_id !== null) {
+                throw new ImportConflict('reanalysis_required');
+            }
             if ((int) $run->epoch !== $epoch || ! in_array($run->state, ['UPLOADED', 'NEEDS_CLARIFICATION', 'REQUIRES_REVIEW', 'REVIEWED', 'READY_TO_COMMIT'], true) || $run->attempts >= 3) {
                 throw new ImportConflict('analysis_state_or_epoch_conflict');
             }

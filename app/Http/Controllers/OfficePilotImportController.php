@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
 use App\SourceImport\Integration\ImportAnalysis;
@@ -13,6 +14,7 @@ use App\SourceImport\Integration\PilotReplacementConfirmationRequired;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Integration\WaldPilotAvailability;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
+use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeConflict;
 use App\SourceImport\Knowledge\KnowledgeQueries;
 use App\SourceImport\Knowledge\KnowledgeScope;
@@ -200,6 +202,23 @@ final class OfficePilotImportController extends Controller
         return back()->with('status', 'Selected site analysed. Review its evidence and blockers.');
     }
 
+    public function reanalyse(Request $request, string $upload, string $selection): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate([
+            'confirmation' => ['required', 'in:'.ImportAnalysis::REANALYSIS_CONFIRMATION],
+            'command_uuid' => ['required', 'uuid'],
+        ]);
+        try {
+            [$scope, $run] = $this->selection($request, $upload, $selection);
+            (new ImportAnalysis)->reanalyse($request->user(), $scope, $run->uuid, (int) $run->epoch, $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['import' => $this->message($exception)]);
+        }
+
+        return back()->with('status', 'A new analysis was created from the same upload. The previous interpretation remains in history. Review the new staging and create a fresh preview.');
+    }
+
     public function answer(Request $request, string $upload, string $selection): RedirectResponse
     {
         $this->enabled();
@@ -290,12 +309,32 @@ final class OfficePilotImportController extends Controller
         $autoResolved = $context ? DB::table('wald_clarification_answers as answers')
             ->join('wald_clarifications as questions', 'questions.id', '=', 'answers.clarification_id')
             ->where('questions.context_id', $context->id)->where('answers.decision', 'AUTO_SELECTED')->count() : 0;
+        $history = [];
+        $historyContext = $context;
+        while ($historyContext && count($history) < 20) {
+            $answers = DB::table('wald_clarification_answers as answers')
+                ->join('wald_clarifications as questions', 'questions.id', '=', 'answers.clarification_id')
+                ->where('questions.context_id', $historyContext->id)
+                ->selectRaw("SUM(CASE WHEN answers.decision = 'AUTO_SELECTED' THEN 1 ELSE 0 END) as automatic_count")
+                ->selectRaw("SUM(CASE WHEN answers.decision != 'AUTO_SELECTED' THEN 1 ELSE 0 END) as manual_count")
+                ->first();
+            $history[] = ['generation' => (int) $historyContext->generation, 'state' => $historyContext->state,
+                'created_at' => $historyContext->created_at, 'automatic_count' => (int) ($answers->automatic_count ?? 0),
+                'manual_count' => (int) ($answers->manual_count ?? 0), 'current' => (int) $historyContext->id === (int) $run->context_id];
+            $historyContext = $historyContext->predecessor_id
+                ? DB::table('wald_knowledge_contexts')->where('id', $historyContext->predecessor_id)->first() : null;
+        }
+        $stage = $run->stage_id ? DB::table('wald_import_stages')->where('id', $run->stage_id)->first() : null;
+        $stageManifest = $stage ? (new BackendStore)->payload($stage, 'manifest', 'manifest_hash') : null;
+        $analysisNeedsRefresh = $stageManifest && Canonical::hash($stageManifest['integration'] ?? []) !== Canonical::hash(BackendStore::IDENTITY);
 
         return [
             'run' => (array) $run,
             'context_uuid' => $context?->uuid,
             'questions' => $context ? (new KnowledgeQueries)->questions($request->user(), $scope, $context->uuid) : [],
             'auto_resolved_count' => $autoResolved,
+            'analysis_history' => $history,
+            'analysis_needs_refresh' => $analysisNeedsRefresh,
             'rows' => $run->stage_id ? (new ImportReview)->details($request->user(), $scope, $run->uuid, -1, 100) : [],
             'preview' => $preview ? ['uuid' => $preview->uuid, 'hash' => $preview->payload_hash, 'payload' => json_decode($preview->payload, true, flags: JSON_THROW_ON_ERROR)] : null,
             'receipt' => $receipt ? json_decode($receipt->payload, true, flags: JSON_THROW_ON_ERROR) : null,

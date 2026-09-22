@@ -9,7 +9,7 @@ use Illuminate\Support\Facades\DB;
 
 final class ImportPolicy
 {
-    public const ABILITIES = ['binding_draft', 'binding_activate', 'binding_revoke', 'binding_audit', 'upload', 'analyse', 'clarify', 'review', 'commit', 'audit', 'retry'];
+    public const ABILITIES = ['binding_draft', 'binding_activate', 'binding_revoke', 'binding_audit', 'upload', 'analyse', 'reanalyse', 'clarify', 'review', 'commit', 'audit', 'retry'];
 
     public function authorize(User $actor, KnowledgeScope $scope, string $ability, bool $lock = false): User
     {

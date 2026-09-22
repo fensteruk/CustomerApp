@@ -740,6 +740,14 @@ for every included row. Keep the full `Plot Ref` as private source evidence.
 If any included row differs or either value is missing, require review rather
 than guessing. The exact source-site binding still determines the plot's site.
 
+An existing uncommitted selected-site import may be explicitly re-analysed
+from its original private workbook. Re-analysis creates a fresh knowledge
+context and staging generation under current rules, supersedes the old
+clarification context, and invalidates its preview or approval. Earlier
+answers, staged rows and previews remain in private history. A committed
+import requires the separate correction/revision process. Older staged
+interpretations must be refreshed before review or commit.
+
 If the plot does not exist under that site:
 
 Wald may create the source-managed plot according to the approved projection

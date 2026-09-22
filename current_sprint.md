@@ -1,5 +1,14 @@
 # Current Sprint
 
+## Existing import re-analysis candidate — 22 September 2026
+
+DEC-073 adds a feature-branch candidate for confirmed Office re-analysis of an
+uncommitted selected-site import from the same private upload. It preserves
+old clarifications, staging and previews, invalidates old approval paths, and
+creates a new context with current automatic plot choice. The production import
+has not been changed. Qualification and release checks are tracked in the
+candidate report. Earlier snapshots below are historical.
+
 ## Final real-source Call Type scope — 22 September 2026
 
 DEC-071 temporarily excludes P04 and currently excludes CU0, CU1, CU3 and

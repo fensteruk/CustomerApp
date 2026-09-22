@@ -31,6 +31,7 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
             Route::post('/select', [PilotImport::class, 'select'])->name('pilot-import.select');
             Route::prefix('/selections/{selection}')->whereUuid('selection')->group(function (): void {
                 Route::post('/analyse', [PilotImport::class, 'analyse'])->name('pilot-import.selections.analyse');
+                Route::post('/reanalyse', [PilotImport::class, 'reanalyse'])->name('pilot-import.selections.reanalyse');
                 Route::post('/clarifications', [PilotImport::class, 'answer'])->name('pilot-import.selections.clarifications');
                 Route::post('/preview', [PilotImport::class, 'preview'])->name('pilot-import.selections.preview');
                 Route::post('/approve', [PilotImport::class, 'approve'])->name('pilot-import.selections.approve');

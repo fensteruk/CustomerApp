@@ -1888,3 +1888,23 @@ production import, deployment or an unattended commit.
 Reason: Management confirmed that the number and reference in the supplied
 RedZebra export identify the plots together, and Office should not have to
 repeat an unambiguous structural choice.
+
+---
+
+## DEC-073
+
+Date: 22 September 2026
+
+Decision: Office may confirm re-analysis of an existing, uncommitted selected-site
+RedZebra import using the same uploaded private workbook and current Wald rules.
+Create a new analysis context and staging generation; supersede the previous
+context while retaining its answers, staging, preview and audit evidence.
+Invalidate any previous preview or approval. A committed import cannot use this
+path and needs the approved correction/replacement workflow. Existing staging
+from older backend rules is stale and cannot be previewed, approved or applied.
+The identical-upload guard remains in force. Re-analysis never imports plots
+without a new explicit preview, approval and one-site commit.
+
+Reason: An uncommitted real import retained a manual Plot Ref clarification
+after the approved Plot number rule changed. Re-uploading identical bytes is
+correctly blocked, so Office needs an audited continuation on the same revision.

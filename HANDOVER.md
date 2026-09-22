@@ -1,5 +1,14 @@
 # Fenster Customer Portal Handover
 
+## Current handover — existing import re-analysis candidate — 22 September 2026
+
+The feature branch adds a confirmed Office action for a fresh analysis of an
+existing uncommitted selected-site upload under DEC-073. It retains the old
+context, answers, staged rows and preview privately, and makes them stale for
+review or commit. The same source bytes, date/slot and revision are reused.
+No production import was re-analysed, approved, applied or otherwise changed.
+See the candidate report for exact test and Git evidence before release review.
+
 ## Current handover — DEC-071 real-source semantics — 22 September 2026
 
 The local feature branch now excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz`

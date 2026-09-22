@@ -129,7 +129,7 @@ it('commits one pilot site through the production-like HTTP boundary on MySQL', 
 
         $response->assertRedirect()
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('status', 'One selected site committed atomically. No other source site was changed.');
+            ->assertSessionHas('status', 'Import applied successfully to the selected site. View its plots below.');
         $run = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
         $attempt = DB::table('wald_commit_attempts')->where('command_uuid', $command)->firstOrFail();
         expect($run->state)->toBe('COMMITTED')

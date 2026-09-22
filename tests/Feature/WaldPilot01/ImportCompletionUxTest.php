@@ -66,6 +66,9 @@ it('applies the private small workbook to the exact bound site and shows its plo
         expect($preview['blockers'])->toBe([]);
         $review->approve($office, $scope, $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
         $receipt = $review->commit($office, $scope, $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+        $committed = DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
+        expect(fn () => (new ImportAnalysis)->reanalyse($office, $scope, $run->uuid, (int) $committed->epoch, (string) Str::uuid()))
+            ->toThrow(ImportConflict::class, 'reanalysis_not_permitted');
         expect($receipt['counts']['seen'])->toBe(16)
             ->and($receipt['counts']['excluded'])->toBe(1)
             ->and($receipt['counts']['applied'])->toBe(15)
