@@ -1,5 +1,21 @@
 # Fenster Customer Portal Handover
 
+## Current handover — legacy XLS master export candidate — 22 September 2026
+
+**Feature branch only; not deployed:** `codex/wald-xls-reader` combines the bounded binary
+`.xls` upload/neutral reader commit `dde25a6` with the previously approved exact `Customer Number`
+header commit, cherry-picked as `16964ff` under DEC-068. The supplied 22 September RedZebra XLS
+passed private storage, structural staging and source discovery locally: 4,358 records in 145
+source groups, with 192 MiB observed peak PHP memory. No binding, preview approval, commit or
+production import was performed. Full local suite: 1,628 passed, 81 skipped, 8,500 assertions;
+Pint, strict Composer validation, Composer audit, Vite build and production npm audit pass.
+No migration or production configuration changed. The new PhpSpreadsheet runtime dependency and
+production PHP extension/memory settings require release qualification. Disposable MySQL 8.4 and
+Forge verification were not run. Review the exact candidate, dictionary-v4 knowledge staleness,
+source questions and remaining release gates before any production push or re-upload. See the
+[XLS candidate report](documentation/wald-xls-upload-2026-09-22.md). Entries below are historical
+checkpoints and do not describe this combined branch.
+
 ## Current handover — `Customer Number` header candidate — 22 September 2026
 
 `codex/wald-customer-number-header` adds only the exact approved RedZebra `Customer Number`

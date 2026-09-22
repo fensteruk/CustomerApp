@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Binary XLS master export support — 22 September 2026
+
+**Feature branch only:** `codex/wald-xls-reader` accepts real BIFF `.xls` uploads through the
+Office-only Wald pilot and stages neutral physical observations. It includes the approved
+DEC-068 `Customer Number` header change as a separate commit. The supplied workbook passes
+local private discovery; source review and explicit binding still apply. Full suite and release
+checks pass locally; there is no migration, push, deployment or production re-upload. Review the
+[candidate report](documentation/wald-xls-upload-2026-09-22.md), qualify production PHP and
+disposable MySQL where required, then use the controlled release process. Older sections below
+are historical checkpoints.
+
 ## Exact `Customer Number` source header — 22 September 2026
 
 **Feature branch only; not deployed:** `codex/wald-customer-number-header` implements DEC-068's

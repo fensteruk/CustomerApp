@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## Next release review — binary XLS and exact source header — 22 September 2026
+
+The combined `codex/wald-xls-reader` candidate supports the original RedZebra `.xls` export
+and DEC-068's exact `Customer Number` identity header. It is not on `main` or in production.
+Review the [candidate evidence](documentation/wald-xls-upload-2026-09-22.md), dependency/runtime
+requirements, dictionary-v4 stale knowledge and remaining disposable-MySQL/release gates before
+a controlled deployment. After deployment, Office must explicitly review source questions and
+binding before any selected-site commit. No automatic multi-site processing or new source meaning
+is implied. The sections below record earlier milestones.
+
 ## Next release review — exact `Customer Number` header — 22 September 2026
 
 DEC-068's narrow header extension is implemented on `codex/wald-customer-number-header`, not on
