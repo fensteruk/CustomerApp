@@ -733,6 +733,13 @@ Plot identity is:
 
 **resolved site + normalized Plot Ref**
 
+When an export contains both `Plot Ref` and `Plot number`, Wald may select
+`Plot number` as the customer-facing plot identifier without asking Office
+only when its value agrees exactly with the trailing `Plot N` in `Plot Ref`
+for every included row. Keep the full `Plot Ref` as private source evidence.
+If any included row differs or either value is missing, require review rather
+than guessing. The exact source-site binding still determines the plot's site.
+
 If the plot does not exist under that site:
 
 Wald may create the source-managed plot according to the approved projection

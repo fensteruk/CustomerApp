@@ -270,6 +270,10 @@ final class ProjectionAdapter
 
         return [
             'source_run_uuid' => $sourceRun->uuid,
+            'plot_counts' => [
+                'created' => count($newPlots),
+                'reused' => count($references) - count($newPlots),
+            ],
             'counts' => [
                 'seen' => count($rows),
                 'excluded' => count($rows) - count($included),

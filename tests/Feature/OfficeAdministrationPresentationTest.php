@@ -192,7 +192,7 @@ it('shows commitment only from a supplied receipt with a correctly converted tim
             'export_date' => '2026-09-10', 'export_slot' => 'AFTERNOON', 'state' => 'COMMITTED',
             'uploader_name' => 'Synthetic Office', 'receipt' => ['committed_at' => '2026-09-10T16:00:00+01:00'],
         ]])]])->render();
-    expect($html)->toContain('Committed', 'Afternoon', '10 Sep 2026, 15:00 UTC')
+    expect($html)->toContain('Imported — applied to CustomerApp', 'Afternoon', '10 Sep 2026, 15:00 UTC')
         ->not->toContain('Not committed', '>Commit<');
 });
 
@@ -280,7 +280,7 @@ it('does not claim a reviewed import is committed or expose failure internals', 
             'export_date' => '2026-09-10', 'export_slot' => 'MORNING', 'state' => 'READY_TO_COMMIT',
             'uploader_name' => 'Synthetic Office', 'receipt' => null, 'failure_code' => 'PRIVATE-DEBUG',
         ]])]])->render();
-    expect($html)->toContain('Review approved', 'Not committed', 'Morning')
+    expect($html)->toContain('Ready to apply', 'Uploaded — not yet applied', 'Morning')
         ->not->toContain('PRIVATE-DEBUG', '>Commit<');
 });
 

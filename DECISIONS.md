@@ -1864,3 +1864,27 @@ otherwise valid selected-site review merely by existing.
 
 Reason: Management decided these remaining observed codes have no current
 CustomerApp projection. P04's future treatment remains open.
+
+---
+
+## DEC-072
+
+Date: 22 September 2026
+
+Decision: In the supervised RedZebra import, choose an exact, safe structural
+header automatically when there is only one candidate. Where `Plot Ref` and
+`Plot number` compete for plot identity, choose `Plot number` only if every
+included row's value exactly matches the trailing `Plot N` in `Plot Ref`.
+Retain the full source reference privately and record the automatic decision
+with its evidence. Missing or conflicting values remain for Office review.
+
+The exact CustomerCode-to-site binding still governs where the plots are
+projected. Upload and analysis alone do not create plots; a reviewed,
+approved, explicit one-site commit is required. The import screens must show
+this state clearly and provide a link to the resulting site plots and history.
+This decision does not authorise unknown business-code interpretation,
+production import, deployment or an unattended commit.
+
+Reason: Management confirmed that the number and reference in the supplied
+RedZebra export identify the plots together, and Office should not have to
+repeat an unambiguous structural choice.

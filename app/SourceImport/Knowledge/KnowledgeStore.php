@@ -48,10 +48,10 @@ final class KnowledgeStore
         }, 3);
     }
 
-    public function insert(string $class, User $actor, array $attributes): KnowledgeRecord
+    public function insert(string $class, User $actor, array $attributes, string $actorRole = 'fenster_office_staff'): KnowledgeRecord
     {
         $record = new $class;
-        $record->forceFill([...$attributes, 'actor_id' => $actor->id, 'actor_role' => 'fenster_office_staff',
+        $record->forceFill([...$attributes, 'actor_id' => $actor->id, 'actor_role' => $actorRole,
             'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
         $record->save();
 
@@ -84,12 +84,12 @@ final class KnowledgeStore
         return $evidence->payload;
     }
 
-    public function evidence(User $actor, KnowledgeContext $context, array $payload, string $kind): KnowledgeEvidence
+    public function evidence(User $actor, KnowledgeContext $context, array $payload, string $kind, string $actorRole = 'fenster_office_staff'): KnowledgeEvidence
     {
         Canonical::json($payload, $kind === 'analysis_snapshot' ? 262144 : 65536);
 
         return $this->insert(KnowledgeEvidence::class, $actor, ['context_id' => $context->id,
-            'payload' => $payload, 'payload_hash' => Canonical::hash($payload), 'retention_class' => $kind]);
+            'payload' => $payload, 'payload_hash' => Canonical::hash($payload), 'retention_class' => $kind], $actorRole);
     }
 
     public function reason(string $reason): string

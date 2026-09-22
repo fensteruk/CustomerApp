@@ -55,8 +55,12 @@ final class ImportAnalysis
 
                 return [['run' => $uuid, 'context_id' => (int) $run->context_id], [], ['analysis_hash' => $inspection[2]->data['analysis_hash']]];
             })['context_id'];
-            $knowledge = DB::transaction(function () use ($actor, $scope, $contextId) {
+            $knowledge = DB::transaction(function () use ($actor, $scope, $contextId, $inspection, $run) {
                 (new ImportPolicy)->authorize($actor, $scope, 'analyse', true);
+
+                if (DB::table('wald_pilot_selections')->where('run_id', $run->id)->exists()) {
+                    (new AutoResolveClarifications)->forContext($actor, $scope, $contextId, $inspection[1]);
+                }
 
                 return (new ImportKnowledge)->capture($actor, $scope, $contextId);
             });

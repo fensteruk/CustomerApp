@@ -213,7 +213,7 @@ it('commits one synthetic pilot site through the authenticated HTTP route', func
             ],
         )->assertRedirect()
             ->assertSessionHasNoErrors()
-            ->assertSessionHas('status', 'One selected site committed atomically. No other source site was changed.');
+            ->assertSessionHas('status', 'Import applied successfully to the selected site. View its plots below.');
 
         $attempt = DB::table('wald_commit_attempts')->where('command_uuid', $command)->firstOrFail();
         expect(DB::table('wald_import_receipts')->where('run_id', $run->id)->count())->toBe(1)
@@ -311,9 +311,9 @@ it('renders an exact minimal legacy manifest at review and committed states with
 
         if ($commit) {
             expect(DB::table('wald_import_receipts')->where('run_id', $run->id)->exists())->toBeTrue();
-            $response->assertSee('Committed atomically');
+            $response->assertSee('Import applied successfully');
         } else {
-            $response->assertSee('Commit this one site');
+            $response->assertSee('Apply to CustomerApp');
             DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
                 'state' => 'SUPERSEDED',
                 'updated_at' => now('UTC'),

@@ -89,7 +89,7 @@ final class OfficePilotImportController extends Controller
             return back()->withInput()->withErrors(['import' => $this->message($exception)]);
         }
 
-        return redirect()->route('office.workspace.pilot-import.show', $result['upload'])->with('status', 'Workbook stored and inspected privately. Select only one site at a time.');
+        return redirect()->route('office.workspace.pilot-import.show', $result['upload'])->with('status', 'Workbook uploaded and inspected. No plots have been applied yet. Continue with one site below.');
     }
 
     public function show(Request $request, string $upload, PilotImportWorkflow $workflow): View
@@ -183,7 +183,7 @@ final class OfficePilotImportController extends Controller
             return back()->withErrors(['import' => $this->message($exception)]);
         }
 
-        return back()->with('status', 'One site selected. Analyse and review it before any commit.');
+        return back()->with('status', 'One site selected. Analyse, review and apply its changes to create or update plots.');
     }
 
     public function analyse(Request $request, string $upload, string $selection): RedirectResponse
@@ -242,7 +242,7 @@ final class OfficePilotImportController extends Controller
             return back()->withErrors(['import' => $this->message($exception)]);
         }
 
-        return back()->with('status', 'Preview approved. A separate explicit commit is still required.');
+        return back()->with('status', 'Preview approved. The plots have not been applied yet. Choose Apply to CustomerApp below.');
     }
 
     public function commit(Request $request, string $upload, string $selection): RedirectResponse
@@ -265,7 +265,7 @@ final class OfficePilotImportController extends Controller
             return back()->withErrors(['import' => $this->message($exception)]);
         }
 
-        return back()->with('status', 'One selected site committed atomically. No other source site was changed.');
+        return back()->with('status', 'Import applied successfully to the selected site. View its plots below.');
     }
 
     private function selection(Request $request, string $uploadUuid, string $selectionUuid): array
@@ -286,13 +286,19 @@ final class OfficePilotImportController extends Controller
         [$scope, $run] = $this->selection($request, $upload, $selection['uuid']);
         $context = $run->context_id ? DB::table('wald_knowledge_contexts')->where('id', $run->context_id)->first() : null;
         $preview = $run->preview_id ? DB::table('wald_import_previews')->where('id', $run->preview_id)->first() : null;
+        $receipt = DB::table('wald_import_receipts')->where('run_id', $run->id)->first();
+        $autoResolved = $context ? DB::table('wald_clarification_answers as answers')
+            ->join('wald_clarifications as questions', 'questions.id', '=', 'answers.clarification_id')
+            ->where('questions.context_id', $context->id)->where('answers.decision', 'AUTO_SELECTED')->count() : 0;
 
         return [
             'run' => (array) $run,
             'context_uuid' => $context?->uuid,
             'questions' => $context ? (new KnowledgeQueries)->questions($request->user(), $scope, $context->uuid) : [],
+            'auto_resolved_count' => $autoResolved,
             'rows' => $run->stage_id ? (new ImportReview)->details($request->user(), $scope, $run->uuid, -1, 100) : [],
             'preview' => $preview ? ['uuid' => $preview->uuid, 'hash' => $preview->payload_hash, 'payload' => json_decode($preview->payload, true, flags: JSON_THROW_ON_ERROR)] : null,
+            'receipt' => $receipt ? json_decode($receipt->payload, true, flags: JSON_THROW_ON_ERROR) : null,
         ];
     }
 

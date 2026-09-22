@@ -259,13 +259,20 @@ final class OfficeAdministrationQueryService
             ->join('wald_pilot_uploads as uploads', 'uploads.id', '=', 'selections.pilot_upload_id')
             ->join('wald_import_runs as runs', 'runs.id', '=', 'selections.run_id')
             ->leftJoin('wald_import_receipts as receipts', 'receipts.run_id', '=', 'runs.id')
+            ->leftJoinSub(DB::table('wald_clarifications')->selectRaw('context_id, COUNT(*) as open_count')
+                ->where('state', '!=', 'ANSWERED')->groupBy('context_id'), 'questions',
+                fn ($join) => $join->on('questions.context_id', '=', 'runs.context_id'))
             ->where('selections.customer_organisation_id', $customer->id)->where('selections.site_id', $site->id)
             ->orderByDesc('uploads.export_order')->orderByDesc('uploads.revision')
-            ->select(['selections.uuid', 'runs.state', 'uploads.export_date', 'uploads.export_slot', 'uploads.revision', 'uploads.uploader_name', 'uploads.replacement_reason', 'receipts.payload as receipt_payload'])
+            ->select(['selections.uuid', 'selections.uuid as selection_uuid', 'uploads.uuid as upload_uuid', 'runs.state', 'runs.failure_code',
+                'questions.open_count', 'uploads.export_date', 'uploads.export_slot', 'uploads.revision', 'uploads.uploader_name',
+                'uploads.replacement_reason', 'receipts.payload as receipt_payload'])
             ->paginate($this->perPage($perPage))->through(function ($run): array {
                 $receipt = $run->receipt_payload ? json_decode($run->receipt_payload, true, flags: JSON_THROW_ON_ERROR) : null;
 
-                return ['uuid' => $run->uuid, 'state' => $run->state, 'export_date' => $run->export_date, 'export_slot' => $run->export_slot,
+                return ['uuid' => $run->uuid, 'upload_uuid' => $run->upload_uuid, 'selection_uuid' => $run->selection_uuid,
+                    'state' => $run->state, 'failure_code' => $run->failure_code, 'open_questions' => (int) ($run->open_count ?? 0),
+                    'export_date' => $run->export_date, 'export_slot' => $run->export_slot,
                     'uploader_name' => $run->uploader_name, 'replacement_reason' => $run->replacement_reason, 'is_correction' => (int) $run->revision > 1,
                     'is_superseded' => $run->state === 'SUPERSEDED', 'receipt' => $receipt];
             });
