@@ -59,7 +59,7 @@ final class OfficePilotImportController extends Controller
     {
         $this->enabled();
         $data = $request->validate([
-            'workbook' => ['required', 'file', 'max:20480', 'mimes:xlsx,csv'],
+            'workbook' => ['required', 'file', 'max:20480', 'mimes:xls,xlsx,csv'],
             'export_date' => ['required', 'date_format:Y-m-d'],
             'export_slot' => ['required', Rule::in(['MORNING', 'AFTERNOON'])],
             'confirmation' => ['required', Rule::in([ExportOrder::CONFIRMATION])],

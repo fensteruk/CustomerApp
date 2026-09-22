@@ -2,6 +2,7 @@
 
 namespace App\SourceImport\Integration;
 
+use App\SourceImport\Readers\XlsWorkbookSource;
 use App\Wald\Services\AnalysisBudget;
 use App\Wald\Services\WorkbookSourceFactory;
 use Illuminate\Filesystem\FilesystemAdapter;
@@ -25,7 +26,7 @@ final class PrivateWorkbookStorage
             throw new ImportConflict('invalid_upload');
         }
         $format = strtolower($file->getClientOriginalExtension());
-        if (! in_array($format, ['xlsx', 'csv'], true)) {
+        if (! in_array($format, ['xls', 'xlsx', 'csv'], true)) {
             throw new ImportConflict('unsupported_upload_type');
         }
         $budget = new AnalysisBudget;
@@ -35,11 +36,17 @@ final class PrivateWorkbookStorage
             throw new ImportConflict('empty_upload');
         }
         $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file->getPathname());
-        $allowed = $format === 'xlsx' ? ['application/zip', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'] : ['text/plain', 'text/csv', 'application/csv'];
+        $allowed = match ($format) {
+            'xls' => ['application/vnd.ms-excel', 'application/x-ole-storage'],
+            'xlsx' => ['application/zip', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
+            'csv' => ['text/plain', 'text/csv', 'application/csv'],
+        };
         if (! in_array($mime, $allowed, true)) {
             throw new ImportConflict('upload_content_type_mismatch');
         }
-        $source = (new WorkbookSourceFactory)->open($file->getPathname(), $format, $budget);
+        $source = $format === 'xls'
+            ? new XlsWorkbookSource($file->getPathname(), $budget)
+            : (new WorkbookSourceFactory)->open($file->getPathname(), $format, $budget);
         $source->close();
         $hash = hash_file('sha256', $file->getPathname());
         $key = (string) Str::uuid().'.'.$format;
@@ -63,7 +70,7 @@ final class PrivateWorkbookStorage
 
     public function path(object $artifact): string
     {
-        if (! preg_match('/^[a-f0-9-]{36}\.(xlsx|csv)$/D', $artifact->storage_key)) {
+        if (! preg_match('/^[a-f0-9-]{36}\.(xls|xlsx|csv)$/D', $artifact->storage_key)) {
             throw new ImportConflict('invalid_private_storage_key');
         }
         $path = $this->disk()->path($artifact->storage_key);
@@ -79,7 +86,7 @@ final class PrivateWorkbookStorage
     {
         $registeredPilot = Schema::hasTable('wald_pilot_uploads')
             && DB::table('wald_pilot_uploads')->where('storage_key', $key)->exists();
-        if (preg_match('/^[a-f0-9-]{36}\.(xlsx|csv)$/D', $key)
+        if (preg_match('/^[a-f0-9-]{36}\.(xls|xlsx|csv)$/D', $key)
             && ! $registeredPilot
             && ! DB::table('wald_import_runs')->where('storage_key', $key)->exists()) {
             $this->disk()->delete($key);

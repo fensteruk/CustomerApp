@@ -4,6 +4,7 @@ namespace App\SourceImport\Integration;
 
 use App\SourceImport\Knowledge\AnalysisSnapshot;
 use App\SourceImport\Knowledge\Canonical;
+use App\SourceImport\Readers\XlsWorkbookSource;
 use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
@@ -21,8 +22,19 @@ final class WorkbookStager
     {
         $path = (new PrivateWorkbookStorage)->path($run);
         $budget = new AnalysisBudget;
-        $profile = app(WorkbookProfiler::class)->profile($path, $run->format, $budget);
-        $source = (new WorkbookSourceFactory)->open($path, $run->format, $budget);
+        if ($run->format === 'xls') {
+            $source = new XlsWorkbookSource($path, $budget);
+            try {
+                $profile = app(WorkbookProfiler::class)->analyse($source, $run->workbook_hash, $budget);
+            } finally {
+                $source->close();
+            }
+        } else {
+            $profile = app(WorkbookProfiler::class)->profile($path, $run->format, $budget);
+        }
+        $source = $run->format === 'xls'
+            ? new XlsWorkbookSource($path, $budget)
+            : (new WorkbookSourceFactory)->open($path, $run->format, $budget);
         try {
             $sheets = iterator_to_array($source->sheets());
         } finally {
