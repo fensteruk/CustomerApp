@@ -27,6 +27,20 @@ it('never repairs CC bang', function () {
         ->and($result->suggestions)->toBe([['code' => 'CC1', 'reason' => 'LIKELY_TYPO']]);
 });
 
+it('classifies only CU4 as globally excluded Customer Care work', function () {
+    $dictionary = new Dictionary;
+    $excluded = $dictionary->callType(' cu4 ');
+    expect($excluded->rawValue)->toBe(' cu4 ')
+        ->and($excluded->lookupValue)->toBe('CU4')
+        ->and($excluded->classification)->toBe(C::Ignored)
+        ->and($excluded->resolution)->toBe(R::Resolved)
+        ->and($excluded->value)->toBeNull()
+        ->and($excluded->reasons)->toBe(['EXCLUDED_CUSTOMER_CARE_CALL_TYPE'])
+        ->and(Dictionary::excludesCallType(' cu4 '))->toBeTrue()
+        ->and(Dictionary::excludesCallType('CU0'))->toBeFalse()
+        ->and($dictionary->callType('CU0')->classification)->toBe(C::Unknown);
+});
+
 it('does not invent unknown or historical calls', function ($code) {
     $result = (new Dictionary)->callType($code);
     expect($result->classification)->toBe(C::Unknown)->and($result->resolution)->toBe(R::RequiresConfirmation)
@@ -139,9 +153,9 @@ it('defaults partial and requires downstream confirmation of stronger assertions
 it('has canonical stable immutable versioned identity', function () {
     $definition = Dictionary::definition();
     $identity = (new Dictionary)->identity();
-    expect($identity->version)->toBe('customerapp.source-dictionary.v4')
-        // v4 is frozen: a definition edit must introduce a new version, not update this pair.
-        ->and($identity->fingerprint)->toBe('5f093506ef91170a05b047400325aff441f5d77ddb27924cc4a446a259507642')
+    expect($identity->version)->toBe('customerapp.source-dictionary.v5')
+        // v5 is frozen: a definition edit must introduce a new version, not update this pair.
+        ->and($identity->fingerprint)->toBe('03c658a32a06aab571f4b7f6d5a3eb3f54f7f63eb85dc471591f446f1356c407')
         ->and(DictionaryIdentity::fromDefinition(Dictionary::VERSION, array_reverse($definition, true))->fingerprint)->toBe($identity->fingerprint)
         ->and((new Dictionary)->callType('PC1')->jsonSerialize()['wald_core']['commit'])->toBe(CoreIdentity::SHA);
     $definition['calls']['PC1']['service'] = 'changed';
@@ -154,6 +168,6 @@ it('requires a version and fingerprint change for labels meanings and mappings',
     $old = (new Dictionary)->identity();
     $definition['calls']['PC1'][$field] = $value;
     expect(fn () => DictionaryIdentity::fromDefinition(Dictionary::VERSION, $definition, $old))->toThrow(InvalidArgumentException::class);
-    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v5', $definition, $old);
+    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v6', $definition, $old);
     expect($new->fingerprint)->not->toBe($old->fingerprint)->and($new->version)->not->toBe($old->version);
 })->with([['description', 'New label'], ['service', 'cml'], ['revisit', true]]);

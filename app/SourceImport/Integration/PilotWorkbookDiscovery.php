@@ -3,6 +3,7 @@
 namespace App\SourceImport\Integration;
 
 use App\SourceImport\Knowledge\Canonical;
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 
 /** Structural discovery only; the controlled dictionary remains the sole meaning authority. */
 final class PilotWorkbookDiscovery
@@ -69,6 +70,12 @@ final class PilotWorkbookDiscovery
                 throw new ImportConflict('duplicate_call_number');
             }
             $seen[$call] = true;
+            $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
+            if (is_string($rawCallType) && CustomerAppDictionary::excludesCallType($rawCallType)) {
+                $excluded++;
+
+                continue;
+            }
             $identityValue = $identity['kind'] === MasterExportSiteIdentity::KIND
                 ? (new MasterExportSiteIdentity)->customerCode($cells[$identity['identity_column']]->rawValue ?? null)
                 : trim((string) ($cells[$identity['identity_column']]->rawValue ?? ''));
@@ -78,7 +85,6 @@ final class PilotWorkbookDiscovery
             $siteName = (new MasterExportSiteIdentity)->siteName(
                 $identity['site_name_column'] === null ? null : ($cells[$identity['site_name_column']]->rawValue ?? null),
             );
-            $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
             $selection = (new ReviewedWorkbookSelection)->treatment(
                 $upload->workbook_hash,
                 $sheet->id,

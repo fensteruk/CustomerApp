@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## Next release review — CU4 exclusion — 22 September 2026
+
+DEC-069 removes Customer Care `CU4` rows from CustomerApp projection. The local
+feature branch qualifies a clean non-mutating preview for the small workbook and
+counts 939 excluded rows in the genuine XLS. Review the full branch diff and release
+gates, verify production PHP extensions/temp handling and obtain a fresh Composer
+advisory result before a controlled release. Remaining unknown source codes require
+separate decisions for affected selected sites. No code was pushed or deployed by
+this change. The earlier CU4 mapping request below is historical.
+
 ## Release hold — real RedZebra semantics — 22 September 2026
 
 Keep the combined XLS/DEC-068 header candidate and optional-completion follow-up on

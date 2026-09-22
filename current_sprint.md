@@ -1,5 +1,15 @@
 # Current Sprint
 
+## CU4 decision implementation — 22 September 2026
+
+DEC-069 confirms `CU4` is Customer Care and all such rows are excluded from
+CustomerApp import. The feature branch has the dictionary v5 exclusion, private
+audit and focused regression. The small real workbook reaches a clean selected-site
+preview with one CU4 excluded; the full genuine XLS discovers 939 excluded CU4 rows.
+No real data was committed. Other unknown codes remain unresolved for affected sites.
+Complete release checks and production runtime/advisory verification before reviewing
+any deployment. The earlier CU4 hold below records the state before DEC-069.
+
 ## Real-source qualification and release hold — 22 September 2026
 
 The combined `.xls`/`Customer Number` feature candidate now has a bounded follow-up for

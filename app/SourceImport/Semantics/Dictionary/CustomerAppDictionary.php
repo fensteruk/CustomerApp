@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v4';
+    public const VERSION = 'customerapp.source-dictionary.v5';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -24,6 +24,8 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         'CM2' => ['description' => 'Revisit 2', 'service' => 'cml', 'revisit' => true],
         'CML' => ['description' => 'CML Call Off', 'service' => 'cml', 'revisit' => false],
     ];
+
+    private const EXCLUDED_CALLS = ['CU4' => 'Customer care; no CustomerApp projection'];
 
     private const WINDOWS = ['VS' => 'Vertical Slider', 'TT' => 'Tilt and Turn', 'BAY' => 'Bay Window',
         'ALI' => 'Aluminium Windows', 'AOV' => 'Automatic Opening Vent Window', 'FI' => 'Fire Window'];
@@ -60,7 +62,8 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 
     public static function definition(): array
     {
-        return ['calls' => self::CALLS, 'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
+        return ['calls' => self::CALLS, 'excluded_calls' => self::EXCLUDED_CALLS,
+            'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
             'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded' => self::EXCLUDED,
             'fields' => self::FIELDS, 'completion' => ['yes' => true, 'no' => false],
             'normalization' => ['codes' => 'ASCII uppercase and surrounding whitespace trim; punctuation preserved',
@@ -89,6 +92,11 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
             return $this->result('call_type', $raw, null, C::Confirmed, ['description' => 'No call-off started'], null,
                 ['BLANK_CALL_TYPE_NO_VISIT']);
         }
+        if (self::excludesCallType($raw)) {
+            return $this->result('call_type', $raw, $key, C::Ignored,
+                ['code' => $key, 'description' => self::EXCLUDED_CALLS[$key]], null,
+                ['EXCLUDED_CUSTOMER_CARE_CALL_TYPE']);
+        }
         if ($profile === self::COMPOSITE_PROFILE && ! in_array($key, ['PC1', 'CC1', 'CM1'], true)) {
             return $this->result('call_type', $raw, $key, C::Unknown, null, null, ['UNKNOWN_CALL_TYPE']);
         }
@@ -101,6 +109,11 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         return $this->result('call_type', $raw, $key, $entry ? C::Confirmed : C::Unknown,
             $entry === null ? null : ['code' => $key, ...$entry], $entry['service'] ?? null,
             [$entry ? 'EXACT_DICTIONARY_MATCH' : 'UNKNOWN_CALL_TYPE']);
+    }
+
+    public static function excludesCallType(string $raw): bool
+    {
+        return isset(self::EXCLUDED_CALLS[strtoupper(trim($raw))]);
     }
 
     public function completion(string|int|float|bool|null $raw): SemanticResult

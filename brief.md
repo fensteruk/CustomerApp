@@ -830,6 +830,11 @@ Current confirmed mappings include:
 - `CC1` → Cavity Closers
 - `CM1` → CML-related visit
 
+`CU4` means Customer Care and all such source rows are excluded from
+CustomerApp discovery and projection under DEC-069. They make no plot,
+product, visit, completion or customer date assertion. Other nonblank unknown
+Call Types remain blocking for their selected site unit.
+
 Do not invent a Snagging code.
 
 Workbook-specific corrections remain scoped to their explicitly approved

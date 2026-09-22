@@ -1,5 +1,17 @@
 # Fenster Customer Portal Handover
 
+## Current handover — CU4 customer-care exclusion — 22 September 2026
+
+DEC-069 approves ignoring every exact `CU4` Call Type row: Customer Care is outside
+CustomerApp. The feature branch `codex/wald-realdata03-optional-completion` implements
+the global dictionary exclusion with private provenance and dictionary v5 staleness.
+The supplied small workbook now reaches a clean, non-mutating selected-site preview:
+16 records, 15 included, one CU4 excluded. The genuine XLS is accepted directly:
+4,358 records, 3,419 included, 939 CU4 excluded. No real data was committed. Other
+unknown full-export codes still block their affected selected sites. Production PHP
+extension/temp verification, a fresh Composer advisory check and release review remain.
+No push or deployment has occurred. The earlier CU4 decision request below is historical.
+
 ## Current handover — real source qualification — 22 September 2026
 
 **Feature branch only; management mapping decision required.** The combined XLS and

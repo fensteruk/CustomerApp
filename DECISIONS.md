@@ -1778,3 +1778,28 @@ Reason: the 22 September supervised upload of a RedZebra export with a populated
 column failed safely with `customer_code_missing`, while the earlier export with `Customercode`
 passed identity discovery. Fenster explicitly approved this exact header as another spelling of
 the source customer identity.
+
+---
+
+## DEC-069
+
+Date: 22 September 2026
+
+Decision: RedZebra Call Type `CU4` is Customer Care work and is outside CustomerApp's
+customer-facing source projection. Exclude every `CU4` row from source-site discovery and
+Portal projection, regardless of workbook checksum. Preserve private source evidence and
+an explicit exclusion reason in staging; do not create a plot, product fact, visit,
+completion or Portal date from an excluded row.
+
+- Match the exact normalized Call Type `CU4` under the dictionary's existing ASCII
+  uppercase and surrounding-whitespace rule. Do not treat other `CU*` codes as equivalent.
+- Retain CallNo duplicate, malformed-reference and unsafe-cell guards for excluded rows.
+- A selected-site review may proceed when its other rows are valid; a source group with
+  only excluded rows has no CustomerApp site unit to select. In partial exports, excluded
+  rows make no assertion about previously committed facts or missing visits.
+- Advance dictionary identity and stale prior analysis/reviews under the usual pin checks.
+- This decision does not enable Wald, approve any unknown Call Type, authorise a
+  production re-upload/import, merge or deployment. DEC-068 release review still applies.
+
+Reason: Management confirmed that `CU4` means Customer Care and that all such rows are
+irrelevant to this customer-facing application.

@@ -1,5 +1,33 @@
 # Wald real-source release qualification — 22 September 2026
 
+## Addendum — DEC-069 Customer Care exclusion, 22 September 2026
+
+Management subsequently confirmed that `CU4` means Customer Care and every such row
+is irrelevant to CustomerApp. DEC-069 is implemented locally on
+`codex/wald-realdata03-optional-completion` as a global exact-code exclusion, with
+private provenance and dictionary v5 knowledge staleness. The original findings below
+describe the earlier dictionary and are retained as historical evidence.
+
+Both supplied files passed local Office pilot upload/discovery again. The 16-record
+small `.xlsx` now has 15 included and one excluded CU4 row. With an explicit test-only
+site binding and reviewed structural header answers, its selected-site staging has
+zero blockers and the non-mutating preview has no blockers. No preview was approved
+and no real data was committed. The original 4,358-record `.xls` is accepted without
+conversion, with 3,419 included and 939 CU4 rows excluded. Other unknown codes in
+the full file remain unresolved and can block their affected selected-site units.
+
+This addendum does not establish production readiness. The PHP extension/temporary
+directory check, fresh Composer advisory result and controlled release review remain.
+No code or real import was pushed or deployed for DEC-069.
+
+Final local qualification after the exclusion: full SQLite suite **1,632 passed,
+81 skipped, 8,539 assertions**; focused disposable MySQL 8.4 CU4 success/blocker
+cases **2 passed, 19 assertions**, after 21 existing migrations applied. The
+disposable container was removed. Pint, frontend build, production npm audit
+(zero vulnerabilities) and whitespace check passed. The Composer executable is
+not available on this machine for a fresh validation or advisory check. There
+is no new migration or dependency change.
+
 ## Result and Git boundary
 
 **Management mapping decision required; release remains on hold.** No production upload,

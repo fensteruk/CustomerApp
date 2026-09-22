@@ -92,6 +92,10 @@ date. Customer product output is the confirmed Total Windows/Total Doors roll-up
 exact BF remains available internally for the five-week rule. These business definitions
 come from the controlled dictionary, not Wald confidence or code similarity.
 
+DEC-069 excludes exact normalized `CU4` Customer Care rows from CustomerApp entirely.
+They retain private source/audit evidence but contribute no site discovery, plot, product,
+visit, completion or Portal-owned fact. Other `CU*` values remain unknown and blocking.
+
 All SiteApp exports contain whatever the user filtered and therefore default to
 `PARTIAL_FILTERED_EXPORT`. Absence proves no deletion, including within a represented site.
 `SITE_COMPLETE_SNAPSHOT` and `GLOBAL_COMPLETE_SNAPSHOT` are non-committable in WALD05 V1.

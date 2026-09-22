@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 22 September 2026 (exact `Customer Number` header added under DEC-068)
+**Last updated:** 22 September 2026 (CU4 exclusion approved under DEC-069)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -32,8 +32,9 @@ is still unconfirmed. No Snagging source call-type code has been confirmed.
 | `CM2` | Revisit 2 | CML | Recognised mapping; not a separate service. |
 | `CML` | CML Call Off | CML | Recognised mapping. |
 | `CC!` | Unknown; likely a typo | None until confirmed | Preserve raw value, optionally suggest `CC1`, and require human confirmation. Never silently normalise. |
+| `CU4` | Customer Care | None | Exclude the entire source row from CustomerApp discovery/projection; retain private evidence and exclude audit. |
 
-An unknown call type remains unknown. Structural similarity, neighbouring rows or a familiar
+Other unknown call types remain unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.
 
 For the CUSTAPP2 composite profile, only PC1, CC1 and CM1 are recognized. That workbook does not
