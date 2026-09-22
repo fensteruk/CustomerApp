@@ -107,9 +107,10 @@ it('requires clarification for other completion inputs', function ($raw) {
 dataset('wald03 products', [
     ['VS', 'Vertical Slider', 'WINDOWS'], ['TT', 'Tilt and Turn', 'WINDOWS'], ['BAY', 'Bay Window', 'WINDOWS'],
     ['ALI', 'Aluminium Windows', 'WINDOWS'], ['AOV', 'Automatic Opening Vent Window', 'WINDOWS'], ['FI', 'Fire Window', 'WINDOWS'],
+    ['FLU', 'Flush Window', 'WINDOWS'], ['CAS', 'Casement window', 'WINDOWS'],
     ['PSU', 'PVC Door Utility', 'DOORS'], ['PSG', 'PVC Door Garage', 'DOORS'], ['CDF', 'Composite Door Front', 'DOORS'],
     ['CDU', 'Composite Door Utility', 'DOORS'], ['CDG', 'Composite Door Garage', 'DOORS'],
-    ['PSP', 'PVC Sliding Patio', 'DOORS'], ['BF', 'Bifold', 'DOORS'],
+    ['PSP', 'PVC Sliding Patio', 'DOORS'], ['BF', 'Bifold', 'DOORS'], ['PFD', 'Patio/French Door', 'DOORS'],
 ]);
 
 it('covers every product meaning and permitted quantity', function ($code, $label, $group, $raw, $quantity) {
@@ -126,14 +127,15 @@ it('rejects invalid quantity for every included product', function ($code, $labe
     expect(json_encode($result, JSON_THROW_ON_ERROR))->toBeString();
 })->with('wald03 products')->with([-1, '-0.1', '2.0001', 'text', '1e3', '1,000', true, '1000000000', INF, NAN]);
 
-it('excludes all approved codes from rollups', function ($code) {
+it('excludes GLS WP and MISC from customer totals', function ($code) {
     $dictionary = new Dictionary;
     $result = $dictionary->product($code, 100);
     $rollup = $dictionary->rollup([$code => 100]);
-    expect($result->classification)->toBe(C::Ignored)->and($rollup->totalWindows)->toBe('0.000')
+    expect($result->classification)->toBe(C::Ignored)->and($result->value)->toBe('100.000')
+        ->and($result->match['group'])->toBe('EXCLUDED')->and($rollup->totalWindows)->toBe('0.000')
         ->and($rollup->totalDoors)->toBe('0.000')->and($rollup->resolved)->toBeTrue();
     expect($dictionary->product($code, 'bad')->classification)->toBe(C::Invalid);
-})->with(['CAS', 'FLU', 'PFD', 'GLS', 'WP', 'MISC']);
+})->with(['GLS', 'WP', 'MISC']);
 
 it('blocks unknown products and does not silently include known partial totals', function () {
     $result = (new Dictionary)->rollup(['VS' => 3, 'ZZ9' => 8]);
@@ -144,11 +146,32 @@ it('blocks unknown products and does not silently include known partial totals',
 it('calculates both rollups using exact fixed point arithmetic', function () {
     $dictionary = new Dictionary;
     $products = array_fill_keys(array_keys(Dictionary::definition()['windows']), '0.1')
-        + array_fill_keys(array_keys(Dictionary::definition()['doors']), '0.2') + ['CAS' => 999];
+        + array_fill_keys(array_keys(Dictionary::definition()['doors']), '0.2') + ['GLS' => 999];
     $rollup = $dictionary->rollup($products);
-    expect($rollup->totalWindows)->toBe('0.600')->and($rollup->totalDoors)->toBe('1.400')
+    expect($rollup->totalWindows)->toBe('0.800')->and($rollup->totalDoors)->toBe('1.600')
         ->and($rollup->resolved)->toBeTrue()->and($dictionary->rollup([])->totalWindows)->toBe('0.000')
         ->and($rollup->jsonSerialize()['absence_authority'])->toBeFalse();
+});
+
+it('counts the real FLU/PFD/PSU example and mixed products exactly', function () {
+    $dictionary = new Dictionary;
+    $example = $dictionary->rollup(['CAS' => 0, 'FLU' => 9, 'PFD' => 2, 'PSU' => 1]);
+    $mixed = $dictionary->rollup(['VS' => 2, 'FLU' => 3, 'BF' => 1, 'PFD' => 2]);
+    expect([$example->totalWindows, $example->totalDoors, $example->bfPresent])->toBe(['9.000', '3.000', false])
+        ->and([$mixed->totalWindows, $mixed->totalDoors, $mixed->bfPresent])->toBe(['5.000', '3.000', true]);
+});
+
+it('counts CAS as a casement window and preserves all mixed product meanings', function () {
+    $dictionary = new Dictionary;
+    $cas = $dictionary->rollup(['CAS' => 4, 'FLU' => 0, 'VS' => 0]);
+    $windows = $dictionary->rollup(['CAS' => 2, 'FLU' => 3, 'VS' => 4, 'TT' => 1]);
+    $doors = $dictionary->rollup(['PFD' => 2, 'PSU' => 1, 'BF' => 1]);
+    $other = $dictionary->rollup(['GLS' => 5, 'WP' => 4, 'MISC' => 3]);
+    expect($dictionary->product('CAS', 4)->match['description'])->toBe('Casement window')
+        ->and([$cas->totalWindows, $cas->totalDoors])->toBe(['4.000', '0.000'])
+        ->and($windows->totalWindows)->toBe('10.000')
+        ->and([$doors->totalDoors, $doors->bfPresent])->toBe(['4.000', true])
+        ->and([$other->totalWindows, $other->totalDoors])->toBe(['0.000', '0.000']);
 });
 
 it('blocks overflow duplicates and malformed input', function () {
@@ -189,9 +212,9 @@ it('defaults partial and requires downstream confirmation of stronger assertions
 it('has canonical stable immutable versioned identity', function () {
     $definition = Dictionary::definition();
     $identity = (new Dictionary)->identity();
-    expect($identity->version)->toBe('customerapp.source-dictionary.v7')
-        // v7 is frozen: a definition edit must introduce a new version, not update this pair.
-        ->and($identity->fingerprint)->toBe('9e7b43078e7c8adb6a57ce516cd8ae67752466ee55491d96ee174cccf3328dbf')
+    expect($identity->version)->toBe('customerapp.source-dictionary.v8')
+        // v8 is frozen: a definition edit must introduce a new version, not update this pair.
+        ->and($identity->fingerprint)->toBe(KnowledgeIdentity::FINGERPRINT)
         ->and(DictionaryIdentity::fromDefinition(Dictionary::VERSION, array_reverse($definition, true))->fingerprint)->toBe($identity->fingerprint)
         ->and((new Dictionary)->callType('PC1')->jsonSerialize()['wald_core']['commit'])->toBe(CoreIdentity::SHA);
     $definition['calls']['PC1']['service'] = 'changed';
@@ -204,6 +227,6 @@ it('requires a version and fingerprint change for labels meanings and mappings',
     $old = (new Dictionary)->identity();
     $definition['calls']['PC1'][$field] = $value;
     expect(fn () => DictionaryIdentity::fromDefinition(Dictionary::VERSION, $definition, $old))->toThrow(InvalidArgumentException::class);
-    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v8', $definition, $old);
+    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v9', $definition, $old);
     expect($new->fingerprint)->not->toBe($old->fingerprint)->and($new->version)->not->toBe($old->version);
 })->with([['description', 'New label'], ['service', 'cml'], ['revisit', true]]);

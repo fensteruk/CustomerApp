@@ -966,6 +966,8 @@ Known approved source product codes include:
 - ALI — Aluminium Windows
 - AOV — Automatic Opening Vent Window
 - FI — Fire Window
+- FLU — Flush Window
+- CAS — Casement window
 
 ### Doors
 
@@ -978,9 +980,11 @@ Known approved source product codes include:
 - CDG
 - PSP
 - BF
+- PFD — Patio/French Door
 
-Certain other source codes are excluded from customer totals according to the
-current dictionary.
+`GLS`, `WP` and `MISC` are excluded from customer product projection and totals;
+their raw values remain private source evidence. Approved irrelevant Call Type
+rows remain excluded independently of product treatment.
 
 BF remains individually significant for approved lead-time behaviour.
 

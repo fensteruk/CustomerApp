@@ -2,8 +2,10 @@
 
 use App\Models\CustomerOrganisation;
 use App\Models\PortalRole;
+use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
+use App\Services\OfficeAdministrationQueryService;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
@@ -75,6 +77,12 @@ it('applies the private small workbook to the exact bound site and shows its plo
             ->and($receipt['plot_counts']['created'])->toBe(15)
             ->and($receipt['plot_counts']['reused'])->toBe(0)
             ->and(DB::table('projected_plots')->where('site_id', $site->id)->count())->toBe(15);
+        $plot591 = ProjectedPlot::query()->where('site_id', $site->id)->where('plot_reference', '591')->firstOrFail();
+        expect($plot591->products()->orderBy('product_code')->pluck('quantity', 'product_code')->only(['FLU', 'PFD', 'PSU'])->all())
+            ->toBe(['FLU' => '9.000', 'PFD' => '2.000', 'PSU' => '1.000']);
+        $plotTotals = app(OfficeAdministrationQueryService::class)->plots($office, $customer, $site, '591')->items();
+        expect($plotTotals)->toHaveCount(1)
+            ->and($plotTotals[0]['product_totals'])->toBe(['windows' => '9.000', 'doors' => '3.000', 'bifold' => '0.000']);
         $this->actingAs($office)->get(route('office.workspace.sites.show', [$customer->uuid, $site->uuid, 'section' => 'plots']))
             ->assertOk()->assertSee('15')->assertSee('673');
         $this->actingAs($office)->get(route('office.workspace.sites.show', [$customer->uuid, $site->uuid, 'section' => 'imports']))

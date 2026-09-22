@@ -48,13 +48,17 @@ it('blocks duplicates and unknown source meanings without projection effects', f
     expect(ProjectedPlot::query()->count())->toBe(0);
 })->with([[['Call No.' => '1001']], [['Call Type' => 'CC!']], [['Call Type' => 'ZZ9', 'complete' => 'Yes']], [['VS' => '-1']], [['complete' => 'perhaps']]]);
 
-it('keeps excluded products commercial fields and operational dates out of Portal projections', function () {
+it('projects confirmed products while keeping excluded codes and operational fields private', function () {
     [$actor, $scope] = F::owner();
     B::binding($actor, $scope);
-    $preview = B::reviewed($actor, $scope, [0 => ['CAS' => '100', 'FLU' => '200', 'Site Value' => '999999', 'Items Ordered Status' => 'Complete', 'Plot To Be Installed' => '2026-10-12']],
-        headers: ['Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS', 'BF', 'CAS', 'FLU', 'Site Value', 'Items Ordered Status', 'Plot To Be Installed']);
+    $preview = B::reviewed($actor, $scope, [0 => ['CAS' => '100', 'FLU' => '9', 'PFD' => '2', 'PSU' => '1', 'GLS' => '3', 'WP' => '4', 'MISC' => '5', 'Site Value' => '999999', 'Items Ordered Status' => 'Complete', 'Plot To Be Installed' => '2026-10-12']],
+        headers: ['Call No.', 'Site Name', 'Plot', 'Call Type', 'complete', 'VS', 'BF', 'CAS', 'FLU', 'PFD', 'PSU', 'GLS', 'WP', 'MISC', 'Site Value', 'Items Ordered Status', 'Plot To Be Installed']);
     B::commit($actor, $scope, $preview);
-    expect(ProjectedPlotProduct::query()->whereIn('product_code', ['CAS', 'FLU'])->exists())->toBeFalse()
+    foreach (['CAS' => '100.000', 'FLU' => '9.000', 'PFD' => '2.000', 'PSU' => '1.000'] as $code => $quantity) {
+        expect(ProjectedPlotProduct::query()->where('product_code', $code)->where('quantity', $quantity)->exists())->toBeTrue();
+    }
+    expect(ProjectedPlotProduct::query()->whereIn('product_code', ['GLS', 'WP', 'MISC'])->exists())->toBeFalse()
+        ->and(ProjectedPlotProduct::query()->where('product_code', 'Site Value')->exists())->toBeFalse()
         ->and(ProjectedPlotService::query()->whereNotNull('source_completion_observed_at')->exists())->toBeFalse()
         ->and(DB::table('call_off_requests')->count())->toBe(0);
 });

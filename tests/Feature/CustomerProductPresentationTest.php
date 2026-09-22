@@ -60,9 +60,11 @@ it('renders each approved product name and its exact quantity', function (string
     $this->assertDatabaseHas('projected_plot_products', ['id' => $plot->products->first()->id, 'product_code' => $code, 'quantity' => 2]);
 })->with([
     ['VS', 'Vertical Slider'], ['TT', 'Tilt and Turn'], ['BAY', 'Bay Window'],
-    ['ALI', 'Aluminium Windows'], ['AOV', 'Automatic Opening Vent Window'], ['FI', 'Fire Window'],
+    ['ALI', 'Aluminium Windows'], ['AOV', 'Automatic Opening Vent Window'], ['FI', 'Fire Window'], ['FLU', 'Flush Window'],
+    ['CAS', 'Casement window'],
     ['PSU', 'PVC Door Utility'], ['PSG', 'PVC Door Garage'], ['CDF', 'Composite Door Front'],
     ['CDU', 'Composite Door Utility'], ['CDG', 'Composite Door Garage'], ['PSP', 'PVC Sliding Patio'], ['BF', 'Bifold'],
+    ['PFD', 'Patio/French Door'],
 ]);
 
 it('keeps multiple exact quantities correctly paired for all three customer roles', function (PortalRoleIdentifier $role): void {
@@ -109,13 +111,15 @@ it('retains unknown legacy facts without inventing names and escapes their codes
     expect(customerProductPairs($response->getContent()))->toBe(['Product (<script>x</script>)' => '1', 'Product (ZZ9)' => '7.5']);
 });
 
-it('keeps dictionary-excluded evidence private without deleting stored facts', function (): void {
+it('shows confirmed products while keeping excluded legacy facts private', function (): void {
     $facts = array_fill_keys(['CAS', 'FLU', 'PFD', 'GLS', 'WP', 'MISC'], 1);
     [$user, $site, $plot] = customerProductFixture($facts);
     $response = $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
         ->get(route('portal.plots.show', $plot))->assertOk()
-        ->assertSee('No customer-visible product quantities are available for this plot.');
-    expect(customerProductPairs($response->getContent()))->toBe([])
+        ->assertSee('Flush Window')->assertSee('Patio/French Door');
+    expect(customerProductPairs($response->getContent()))->toBe([
+        'Casement window' => '1', 'Flush Window' => '1', 'Patio/French Door' => '1',
+    ])
         ->and($plot->products()->count())->toBe(6);
 });
 
@@ -127,7 +131,7 @@ it('uses the same labels on call-off check and confirmation without changing can
     foreach (['portal.call-offs.matrix', 'portal.call-offs.review'] as $route) {
         $response = $this->post(route($route), $payload)->assertOk()
             ->assertSee('Vertical Slider × 2')->assertSee('Tilt and Turn × 3.5')->assertSee('Bifold × 1')
-            ->assertDontSee('CAS ×')->assertDontSee('VS ×')->assertDontSee('PRIVATE-PLOT-KEY');
+            ->assertSee('Casement window × 8')->assertDontSee('VS ×')->assertDontSee('PRIVATE-PLOT-KEY');
         $rows = $route === 'portal.call-offs.matrix' ? $response->viewData('rows') : $response->viewData('review')['rows'];
         expect(collect($rows[0]['products'])->firstWhere('code', 'VS')['quantity'])->toBe('2.000')
             ->and(collect($rows[0]['products'])->firstWhere('code', 'CAS')['quantity'])->toBe('8.000')
@@ -135,6 +139,25 @@ it('uses the same labels on call-off check and confirmation without changing can
     }
     $this->assertDatabaseCount('call_off_requests', 0);
     $this->travelBack();
+});
+
+it('shows the exact source example and sums mixed products while retaining BF separately', function (): void {
+    [$user, $site, $plot] = customerProductFixture(['CAS' => 0, 'FLU' => 9, 'PFD' => 2, 'PSU' => 1]);
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create(['customer_organisation_id' => null]);
+    $items = app(OfficeAdministrationQueryService::class)->plots($office, $site->customerOrganisation, $site, null)->items();
+    expect($items[0]['product_totals'])->toBe(['windows' => '9.000', 'doors' => '3.000', 'bifold' => '0.000']);
+    $response = $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.plots.show', $plot))->assertOk();
+    expect(customerProductPairs($response->getContent()))->toBe([
+        'Flush Window' => '9', 'Patio/French Door' => '2', 'PVC Door Utility' => '1',
+    ]);
+    $plot->products()->where('product_code', 'CAS')->update(['quantity' => '0.000']);
+    foreach (['VS' => 2, 'FLU' => 3, 'BF' => 1, 'PFD' => 2] as $code => $quantity) {
+        $plot->products()->updateOrCreate(['product_code' => $code], ['quantity' => $quantity]);
+    }
+    $plot->products()->where('product_code', 'PSU')->delete();
+    $mixed = app(OfficeAdministrationQueryService::class)->plots($office, $site->customerOrganisation, $site, null)->items();
+    expect($mixed[0]['product_totals'])->toBe(['windows' => '5.000', 'doors' => '3.000', 'bifold' => '1.000']);
 });
 
 it('preserves the positive-BF five-week and zero-BF four-week lead-time rules', function (string $quantity, string $expected): void {
@@ -152,8 +175,8 @@ it('preserves Office totals and private source identity while changing only cust
     [$user, $site, $plot] = customerProductFixture(['VS' => '2.500', 'TT' => 4, 'PSU' => 2, 'BF' => 1, 'CAS' => 8]);
     $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create(['customer_organisation_id' => null]);
     $items = app(OfficeAdministrationQueryService::class)->plots($office, $site->customerOrganisation, $site, null)->items();
-    expect($items[0]['product_totals'])->toBe(['windows' => '6.500', 'doors' => '3.000', 'bifold' => '1.000'])
+    expect($items[0]['product_totals'])->toBe(['windows' => '14.500', 'doors' => '3.000', 'bifold' => '1.000'])
         ->and($items[0]['source_identity'])->toBe(['source' => 'PRIVATE-SOURCE', 'identifier' => 'PRIVATE-PLOT-KEY']);
     $this->actingAs($office)->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
-        ->assertOk()->assertSee('Windows 6.5')->assertSee('Doors 3')->assertSee('Bifold 1')->assertSee('PRIVATE-PLOT-KEY');
+        ->assertOk()->assertSee('Windows 14.5')->assertSee('Doors 3')->assertSee('Bifold 1')->assertSee('PRIVATE-PLOT-KEY');
 });

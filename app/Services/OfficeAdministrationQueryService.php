@@ -9,19 +9,17 @@ use App\Models\Site;
 use App\Models\User;
 use App\Policies\OfficeAdministrationPolicy;
 use App\SourceImport\Integration\WaldPilotAvailability;
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 
 final class OfficeAdministrationQueryService
 {
-    private const WINDOWS_PRODUCTS = ['VS', 'TT', 'BAY', 'ALI', 'AOV', 'FI'];
-
-    private const DOOR_PRODUCTS = ['PSU', 'PSG', 'CDF', 'CDU', 'CDG', 'PSP', 'BF'];
-
     public function __construct(
         private readonly OfficeAdministrationPolicy $policy,
         private readonly PlotOverviewQueryService $plotOverview,
+        private readonly CustomerAppDictionary $dictionary,
     ) {}
 
     public function customers(User $actor, ?string $search, ?bool $active, int $perPage = 20): LengthAwarePaginator
@@ -111,6 +109,9 @@ final class OfficeAdministrationQueryService
     {
         $this->policy->authorize($actor, 'view');
         $this->assertContained($customer, $site);
+        $products = $this->dictionary::definition();
+        $windows = array_keys($products['windows']);
+        $doors = array_keys($products['doors']);
 
         return ProjectedPlot::query()
             ->where('site_id', $site->getKey())
@@ -134,7 +135,7 @@ final class OfficeAdministrationQueryService
             ->orderBy('plot_reference')
             ->orderBy('id')
             ->paginate($this->perPage($perPage))
-            ->through(function (ProjectedPlot $plot): array {
+            ->through(function (ProjectedPlot $plot) use ($windows, $doors): array {
                 $overview = $this->plotOverview->present($plot);
 
                 return [
@@ -149,8 +150,8 @@ final class OfficeAdministrationQueryService
                         'label' => $overview->overallStatus->label(),
                     ],
                     'product_totals' => [
-                        'windows' => $this->productTotal($plot, self::WINDOWS_PRODUCTS),
-                        'doors' => $this->productTotal($plot, self::DOOR_PRODUCTS),
+                        'windows' => $this->productTotal($plot, $windows),
+                        'doors' => $this->productTotal($plot, $doors),
                         'bifold' => $this->productTotal($plot, ['BF']),
                     ],
                     'is_completed' => (bool) $plot->is_completed,

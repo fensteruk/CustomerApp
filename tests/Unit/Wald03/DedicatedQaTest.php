@@ -105,14 +105,14 @@ it('independently canonicalises nested dictionaries and identity bearing mutatio
         return is_array($value) ? array_map($reverse, array_is_list($value) ? $value : array_reverse($value, true)) : $value;
     };
     $definition = D::definition();
-    $expected = '9e7b43078e7c8adb6a57ce516cd8ae67752466ee55491d96ee174cccf3328dbf';
+    $expected = '232ff3ed79c4195f62752c45a5d9d460726bcff8515ee6450da2f7322369b9c8';
     expect(hash('sha256', json_encode($canonical($definition), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)))->toBe($expected)
         ->and(DictionaryIdentity::fromDefinition(D::VERSION, $reverse($definition))->fingerprint)->toBe($expected);
     foreach (array_keys($definition) as $section) {
         $changed = $definition;
         $changed[$section] = ['QA_SEMANTIC_MUTATION'];
         expect(fn () => DictionaryIdentity::fromDefinition(D::VERSION, $changed, (new D)->identity()))->toThrow(InvalidArgumentException::class)
-            ->and(DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v8', $changed)->fingerprint)->not->toBe($expected);
+            ->and(DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v9', $changed)->fingerprint)->not->toBe($expected);
     }
 });
 
@@ -156,10 +156,10 @@ it('suppresses both totals for hostile quantities or unknown codes', function ($
 
 it('independently verifies complete rollups and supplied input coverage', function () {
     $d = new D;
-    $windows = ['VS', 'TT', 'BAY', 'ALI', 'AOV', 'FI'];
-    $doors = ['PSU', 'PSG', 'CDF', 'CDU', 'CDG', 'PSP', 'BF'];
-    $excluded = ['CAS', 'FLU', 'PFD', 'GLS', 'WP', 'MISC'];
-    foreach ([...$windows, ...$doors, ...$excluded] as $code) {
+    $windows = ['VS', 'TT', 'BAY', 'ALI', 'AOV', 'FI', 'FLU', 'CAS'];
+    $doors = ['PSU', 'PSG', 'CDF', 'CDU', 'CDG', 'PSP', 'BF', 'PFD'];
+    $other = ['GLS', 'WP', 'MISC'];
+    foreach ([...$windows, ...$doors, ...$other] as $code) {
         $result = $d->rollup([$code => '1.125']);
         expect($result->totalWindows)->toBe(in_array($code, $windows, true) ? '1.125' : '0.000')
             ->and($result->totalDoors)->toBe(in_array($code, $doors, true) ? '1.125' : '0.000')

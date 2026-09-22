@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v7';
+    public const VERSION = 'customerapp.source-dictionary.v8';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -48,13 +48,15 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
     ];
 
     private const WINDOWS = ['VS' => 'Vertical Slider', 'TT' => 'Tilt and Turn', 'BAY' => 'Bay Window',
-        'ALI' => 'Aluminium Windows', 'AOV' => 'Automatic Opening Vent Window', 'FI' => 'Fire Window'];
+        'ALI' => 'Aluminium Windows', 'AOV' => 'Automatic Opening Vent Window', 'FI' => 'Fire Window',
+        'FLU' => 'Flush Window', 'CAS' => 'Casement window'];
 
     private const DOORS = ['PSU' => 'PVC Door Utility', 'PSG' => 'PVC Door Garage',
         'CDF' => 'Composite Door Front', 'CDU' => 'Composite Door Utility',
-        'CDG' => 'Composite Door Garage', 'PSP' => 'PVC Sliding Patio', 'BF' => 'Bifold'];
+        'CDG' => 'Composite Door Garage', 'PSP' => 'PVC Sliding Patio', 'BF' => 'Bifold',
+        'PFD' => 'Patio/French Door'];
 
-    private const EXCLUDED = ['CAS', 'FLU', 'PFD', 'GLS', 'WP', 'MISC'];
+    private const EXCLUDED_PRODUCTS = ['GLS', 'WP', 'MISC'];
 
     private const FIELDS = [
         'items ordered status' => ['description' => 'Items Ordered Status', 'role' => 'ignored'],
@@ -84,7 +86,7 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
     {
         return ['calls' => self::CALLS, 'excluded_calls' => self::EXCLUDED_CALLS,
             'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
-            'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded' => self::EXCLUDED,
+            'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded_products' => self::EXCLUDED_PRODUCTS,
             'fields' => self::FIELDS, 'completion' => ['yes' => true, 'no' => false],
             'normalization' => ['codes' => 'ASCII uppercase and surrounding whitespace trim; punctuation preserved',
                 'headers' => 'Exact field labels, except CallNo semantic token pairs ignore case, spacing and punctuation; CustomerNo, CustomerCode and Customer Number are exact approved CustomerCode headers',
@@ -151,7 +153,7 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         $key = strtoupper(trim($code));
         $entry = isset(self::WINDOWS[$key]) ? ['description' => self::WINDOWS[$key], 'group' => 'WINDOWS']
             : (isset(self::DOORS[$key]) ? ['description' => self::DOORS[$key], 'group' => 'DOORS'] : null);
-        $excluded = in_array($key, self::EXCLUDED, true);
+        $excluded = in_array($key, self::EXCLUDED_PRODUCTS, true);
         $evidence = ['raw_code' => $code];
         if ($entry === null && ! $excluded) {
             return $this->result('product_quantity', $quantity, $key, C::Unknown, null, null, ['UNKNOWN_PRODUCT_CODE'], evidence: $evidence);

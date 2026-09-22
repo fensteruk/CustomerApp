@@ -1933,3 +1933,26 @@ This decision does not authorise a production purge, push or deployment.
 Reason: Management certified the current unwanted import-development records as
 disposable and requested an explicit cleanup path without weakening normal data
 protection.
+
+---
+
+## DEC-075
+
+Date: 22 September 2026
+
+Decision: `CAS` is Casement window and `FLU` is Flush Window; both contribute
+to Total Windows. `PFD` is Patio/French Door and contributes to Total Doors.
+Preserve all existing Windows and Doors codes, with exact `BF` still separately
+identifiable for the lead-time rule. `GLS`, `WP` and `MISC` remain excluded from
+customer product projection and totals, with raw values retained privately.
+Approved irrelevant Call Type rows remain excluded. Unknown product codes
+still require review. No date or customer workflow semantics change. Dictionary
+v8 stales old knowledge and
+uncommitted reviews. Already committed plots require a controlled correction
+import of source evidence for quantities previously skipped; do not silently
+rewrite production facts. This decision does not authorise production import,
+push or deployment.
+
+Reason: Management corrected the real plot-591 FLU/PFD omission, confirmed CAS
+as Casement window and then explicitly confirmed that GLS, WP and MISC remain
+excluded. This supersedes DEC-040's CAS/FLU/PFD product exclusion only.
