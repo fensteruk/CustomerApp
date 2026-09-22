@@ -151,6 +151,32 @@ it('renders paginated source plots without turning source data into editing cont
         ->not->toContain($reference, 'Add Plot', 'Edit Plot', 'Delete Plot');
 });
 
+it('shows whole product totals without decimals and keeps exact source references in a subdued footer', function (): void {
+    $longReference = 'wald:'.str_repeat('a', 72).'644c0b';
+    $plot = [
+        'plot_reference' => 'PLOT-01', 'source_identity' => ['source' => 'redzebra', 'identifier' => $longReference],
+        'overall_status' => ['value' => 'available', 'label' => 'Nothing Called Off'],
+        'product_totals' => ['windows' => '3.000', 'doors' => '0.000', 'bifold' => '0.000'],
+        'is_completed' => false, 'synchronised_at' => null, 'services' => [],
+    ];
+    $otherPlot = [...$plot,
+        'plot_reference' => 'PLOT-02',
+        'source_identity' => ['source' => 'redzebra', 'identifier' => 'REF-7'],
+        'product_totals' => ['windows' => '2.500', 'doors' => '0.000', 'bifold' => '1.000'],
+    ];
+
+    $html = view('office.sites.plots', [
+        'site' => adminSiteViewData(), 'search' => '', 'items' => adminPageItems([$plot, $otherPlot]),
+    ])->render();
+
+    expect($html)->toContain('Windows 3 · Doors 0 · Bifold 0', 'Windows 2.500 · Doors 0 · Bifold 1')
+        ->toContain('Source ref:', 'wald:'.str_repeat('a', 6).'…644c0b', 'REF-7')
+        ->toContain('data-source-reference="'.$longReference.'"', 'data-source-reference="REF-7"')
+        ->toContain('Show full source reference', '<code class="block break-all rounded-lg bg-slate-50 p-2 select-all">'.$longReference.'</code>')
+        ->toContain('Copy <span class="sr-only">full source reference for PLOT-01</span>', 'aria-live="polite"', 'Inspect source services')
+        ->not->toContain('<dt class="admin-term">Source reference</dt>', 'Windows 3.000', $longReference.'</dd>');
+});
+
 it('distinguishes unavailable source integrations from an empty integrated history', function (string $section, string $heading): void {
     $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => $section, 'search' => '',
         'items' => ['availability' => 'NOT_YET_INTEGRATED', 'active_bindings' => [], 'runs' => []]])->render();
