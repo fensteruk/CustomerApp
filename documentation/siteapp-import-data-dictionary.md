@@ -86,8 +86,8 @@ automatically reopen a closed process.
 Only the following customer roll-ups are approved:
 
 ```text
-Total Windows = VS + TT + BAY + ALI + AOV + FI
-Total Doors   = PSU + PSG + CDF + CDU + CDG + PSP + BF
+Total Windows = CAS + FLU + VS + TT + BAY + ALI + AOV + FI
+Total Doors   = PSU + PSG + CDF + CDU + CDG + PSP + BF + PFD
 ```
 
 | Code | Meaning | Customer roll-up |
@@ -98,6 +98,8 @@ Total Doors   = PSU + PSG + CDF + CDU + CDG + PSP + BF
 | `ALI` | Aluminium Windows | Total Windows |
 | `AOV` | Automatic Opening Vent Window | Total Windows |
 | `FI` | Fire Window | Total Windows |
+| `FLU` | Flush Window | Total Windows |
+| `CAS` | Casement window | Total Windows |
 | `PSU` | PVC Door Utility | Total Doors |
 | `PSG` | PVC Door Garage | Total Doors |
 | `CDF` | Composite Door Front | Total Doors |
@@ -105,14 +107,18 @@ Total Doors   = PSU + PSG + CDF + CDU + CDG + PSP + BF
 | `CDG` | Composite Door Garage | Total Doors |
 | `PSP` | PVC Sliding Patio | Total Doors |
 | `BF` | Bifold | Total Doors |
+| `PFD` | Patio/French Door | Total Doors |
+| `GLS` | Excluded | Neither total; private raw evidence |
+| `WP` | Excluded | Neither total; private raw evidence |
+| `MISC` | Excluded | Neither total; private raw evidence |
 
 `BF` contributes to Total Doors and must also remain separately identifiable internally. An
 exact positive BF quantity changes the customer-facing normal earliest request from four weeks
 to five weeks.
 
-`CAS`, `FLU`, `PFD`, `GLS`, `WP` and `MISC` are excluded/redundant for the final customer
-product model. Raw values may be retained privately for evidence but must not be exposed as
-customer product types or added to either roll-up.
+GLS, WP and MISC are excluded from customer product projection and totals;
+their raw source values remain private evidence. Approved irrelevant Call Type
+rows are separately excluded from the selected-site projection.
 
 Product presence and multi-row plot consolidation are explicit:
 

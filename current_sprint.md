@@ -1,5 +1,17 @@
 # Current Sprint
 
+## Product quantity column correction candidate — 22 September 2026
+
+DEC-075 corrects CAS and FLU as Windows and PFD as Doors. GLS, WP and MISC
+remain excluded with private raw evidence. Approved irrelevant Call Type rows
+remain excluded. Dictionary v8
+stales old uncommitted reviews; existing committed plots need a controlled
+correction import for previously skipped quantities. The local small real
+workbook has a passing disposable import regression for Plot 591: Windows 9,
+Doors 3. The full genuine XLS has positive CAS, FLU and PFD on 1,848, 483 and
+1,568 supported rows respectively. The focused MySQL 8.4 gate passed 42 tests
+and 204 assertions. This is feature branch only; production remains unchanged.
+
 ## Existing import re-analysis candidate — 22 September 2026
 
 DEC-073 adds a feature-branch candidate for confirmed Office re-analysis of an

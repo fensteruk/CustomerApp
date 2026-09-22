@@ -144,7 +144,7 @@ Each transport adapter must convert its input into one `SourceRecord` containing
 | Complete | Optional Yes/No source flag. Case-insensitive sensible Yes/No variants are accepted; Yes completes this specific source call-off part without inventing a date. |
 | Job Stage / Completed Date | Not required by the confirmed spreadsheet contract. Retain as private evidence if later supplied, but do not give older speculative stages/dates completion authority without a separate decision. |
 | Plot To Be Installed | Optional operational/source date for Fenster arrival to install PC1 only; never a customer Requested Date, Date Agreed or alternative date. |
-| Products | Confirmed product-code quantities used to calculate Total Windows/Total Doors; exact BF must remain identifiable. Raw excluded values may be retained privately. |
+| Products | Preserve exact source quantities. Confirmed Windows/Doors codes contribute to those totals; exact BF remains identifiable. Excluded product codes remain private raw evidence. |
 | Source updated timestamp | Optional and only retained when supplied. |
 
 The Portal records its own `synchronised_at`, observation time and import-run timestamps;
@@ -162,9 +162,12 @@ contract.
   variants case-insensitively and never fabricate a completion date. Completion evidence
   does not supply a missing service mapping: an invalid/unknown Call Type still blocks the
   affected Portal projection.
-- Total Windows = VS + TT + BAY + ALI + AOV + FI. Total Doors = PSU + PSG + CDF + CDU +
-  CDG + PSP + BF. CAS, FLU, PFD, GLS, WP and MISC are excluded/redundant from the final
-  customer product model but may remain private raw evidence.
+- Total Windows = CAS (Casement window) + FLU (Flush Window) + VS + TT + BAY +
+  ALI + AOV + FI. Total Doors = PSU + PSG + CDF + CDU + CDG + PSP + BF + PFD
+  (Patio/French Door).
+  GLS, WP and MISC are excluded from customer product projection and totals while
+  remaining private raw source evidence. Approved irrelevant Call Type **rows**
+  remain excluded independently.
 - Exact positive BF means Bifold, contributes to Total Doors and changes the normal
   earliest request from four to five weeks. Similar text and the aggregate alone do not
   prove BF.

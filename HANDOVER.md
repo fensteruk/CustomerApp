@@ -1,5 +1,18 @@
 # Fenster Customer Portal Handover
 
+## Current handover — product quantity correction candidate — 22 September 2026
+
+DEC-075 maps CAS and FLU to Windows and PFD to Doors. GLS/WP/MISC remain
+excluded from customer product projection with private raw evidence. Approved
+row exclusions still apply. Knowledge and uncommitted previews
+from the former dictionary become stale. Previously committed plots do not
+gain skipped quantities until an explicitly reviewed correction import.
+Disposable local qualification of the small real workbook verified Plot 591
+with FLU 9, PFD 2 and PSU 1, yielding Windows 9 / Doors 3. No production
+import, push or deployment has occurred. The genuine full XLS has positive
+CAS, FLU and PFD on 1,848, 483 and 1,568 supported rows respectively. The
+focused disposable MySQL 8.4 gate passed 42 tests and 204 assertions.
+
 ## Current handover — existing import re-analysis candidate — 22 September 2026
 
 The feature branch adds a confirmed Office action for a fresh analysis of an
