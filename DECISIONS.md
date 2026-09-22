@@ -1751,3 +1751,116 @@ Reason:
 Management explicitly approved merging and pushing the completed, tested changes before the
 planned absence. Keeping enablement and import authority separate preserves the fail-closed pilot
 boundary while allowing the qualified code release to proceed.
+
+---
+
+## DEC-068
+
+Date: 22 September 2026
+
+Decision: The exact RedZebra header `Customer Number` is also an approved source-customer
+identity header. It maps to the existing `source_customer_code` role alongside `CustomerNo` and
+`CustomerCode`. This extends only the header vocabulary in DEC-066; it does not change the
+meaning or value of CustomerCode.
+
+- Match the exact header after the dictionary's existing case and surrounding-whitespace
+  normalization. Do not accept fuzzy or plural variants, or derive a code from Site Name.
+- Preserve the source namespace + exact, trimmed CustomerCode value as the binding key.
+  Unknown codes still require explicit Office binding; missing or ambiguous codes still block.
+- Advance the dictionary version and fingerprint. Older analysis/knowledge is stale and must be
+  re-analysed under the new dictionary; do not silently reinterpret an existing review.
+- This decision does not define `CU4`, completion from a date or status column, automatic
+  multi-site processing, a production import, or any source-data correction.
+- Implementation on a non-deploying feature branch does not authorise a `main` push, Forge
+  deployment, production re-upload, binding, preview approval or commit.
+
+Reason: the 22 September supervised upload of a RedZebra export with a populated `Customer Number`
+column failed safely with `customer_code_missing`, while the earlier export with `Customercode`
+passed identity discovery. Fenster explicitly approved this exact header as another spelling of
+the source customer identity.
+
+---
+
+## DEC-069
+
+Date: 22 September 2026
+
+Decision: RedZebra Call Type `CU4` is Customer Care work and is outside CustomerApp's
+customer-facing source projection. Exclude every `CU4` row from source-site discovery and
+Portal projection, regardless of workbook checksum. Preserve private source evidence and
+an explicit exclusion reason in staging; do not create a plot, product fact, visit,
+completion or Portal date from an excluded row.
+
+- Match the exact normalized Call Type `CU4` under the dictionary's existing ASCII
+  uppercase and surrounding-whitespace rule. Do not treat other `CU*` codes as equivalent.
+- Retain CallNo duplicate, malformed-reference and unsafe-cell guards for excluded rows.
+- A selected-site review may proceed when its other rows are valid; a source group with
+  only excluded rows has no CustomerApp site unit to select. In partial exports, excluded
+  rows make no assertion about previously committed facts or missing visits.
+- Advance dictionary identity and stale prior analysis/reviews under the usual pin checks.
+- This decision does not enable Wald, approve any unknown Call Type, authorise a
+  production re-upload/import, merge or deployment. DEC-068 release review still applies.
+
+Reason: Management confirmed that `CU4` means Customer Care and that all such rows are
+irrelevant to this customer-facing application.
+
+---
+
+## DEC-070
+
+Date: 22 September 2026
+
+Decision: The exact normalized RedZebra Call Type codes below are globally irrelevant
+to CustomerApp. Exclude their entire rows from source-site discovery and customer
+projection regardless of workbook checksum:
+
+`CM8`, `P02`, `P06`, `P08`, `Q01`, `QU5`, `SS1`, `T03`, `T05`, `T07`, `T09`,
+`T11`, `T13`, `T15`, `VC1`, `X10`, `X14`, `X16`, `X50`, `X99`, `XR1`, `XR2`,
+`XX1`, `Z05`, `Z09`.
+
+- Classify each row as excluded / `IRRELEVANT_TO_CUSTOMERAPP`, retain raw private
+  evidence and explicit DEC-070 provenance, and preserve duplicate CallNo and unsafe
+  workbook guards. Excluded-only source groups provide no selectable site unit.
+- Excluded rows make no plot, product, visit, service, request, completion, date,
+  proposal, amendment or notification assertion; they do not reverse committed facts
+  or block an otherwise valid selected-site review merely by existing.
+- DEC-069's CU4 Customer Care exclusion remains in force. Existing PC1, CC1, CM1,
+  CM2 and CML mappings retain their approved contexts. Every other unrecognised
+  nonblank code remains unresolved; do not infer meaning from nearby values.
+- Advance dictionary identity and stale prior analysis/reviews. This decision does
+  not approve a production import, Wald enablement, merge, push or deployment.
+
+Reason: Management explicitly confirmed these exact source codes have no CustomerApp
+relevance. The decision is about source meaning; it has no display dependency.
+
+---
+
+## DEC-071
+
+Date: 22 September 2026
+
+Decision: For the current CustomerApp scope, exact normalized RedZebra Call Type
+codes `CU0`, `CU1`, `CU3`, `P04` and `zzz` are ignored. Exclude their entire rows
+from CustomerApp discovery and projection with private source evidence and
+attributed exclusion provenance. They make no plot, product, visit, service,
+completion, Portal date/workflow or notification assertion and do not block an
+otherwise valid selected-site review merely by existing.
+
+- `CU0`, `CU1` and `CU3` are Customer Care-related and use the same exclusion
+  mechanism as DEC-069's `CU4` without creating Customer Care projection logic.
+- `P04` currently denotes **Plot Installation - 2nd Visit (use TEAM)**. Its
+  exclusion is **temporary** for the current CustomerApp scope. Management may
+  later approve a meaning; do not map it to Windows now or describe it as
+  permanently irrelevant.
+- `zzz` needs no CustomerApp meaning at present and is ignored. Preserve its
+  exact raw spelling privately; the existing code normalizer uses uppercase
+  `ZZZ` for matching.
+- Existing approved service mappings and the DEC-069/070 exclusions remain.
+  A genuinely unapproved nonblank code still blocks. Preserve source safety
+  guards and partial-export non-reversal. Advance dictionary identity so older
+  unknown interpretations and reviews become stale.
+- This decision does not authorise Wald enablement, production upload/import,
+  merge, push or deployment. DEC-068/current release review still applies.
+
+Reason: Management decided these remaining observed codes have no current
+CustomerApp projection. P04's future treatment remains open.

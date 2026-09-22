@@ -1,5 +1,123 @@
 # Fenster Customer Portal Handover
 
+## Current handover — DEC-071 real-source semantics — 22 September 2026
+
+The local feature branch now excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz`
+under DEC-071, with P04 explicitly temporary. Both real files passed local
+pilot upload and representative non-mutating previews. The small file remains
+16 total/15 included/one CU4 excluded. The genuine XLS has 4,358 total,
+2,567 included, 1,791 excluded and zero unresolved Call Types. Of 145 source
+units, 59 contain supported rows, 86 contain excluded rows only, and zero
+have a Call Type semantic blocker. No real import was committed. See the
+[qualification report](documentation/wald-final-call-type-qualification-2026-09-22.md).
+Production runtime/advisory checks and controlled release review remain; no
+push or deployment. Earlier code-count snapshots below are historical.
+
+## Current handover — DEC-070 source exclusions — 22 September 2026
+
+The feature branch adds 25 exact global irrelevant Call Types under DEC-070,
+preserving the separate CU4 rule and approved service meanings. The full XLS
+has 4,358 rows: 3,036 included, 1,322 excluded and 469 unresolved-code rows.
+Of 145 source units, 13 are selectable with no Call Type semantic blocker,
+28 contain only excluded rows, and 104 still contain unknown codes. Local
+small/full representative previews are clean and non-mutating. No real data
+was committed. See [qualification](documentation/wald-call-type-exclusions-2026-09-22.md).
+Release/runtime/advisory checks remain; no push or deployment. The CU4-only
+snapshot below is historical.
+
+## Current handover — CU4 customer-care exclusion — 22 September 2026
+
+DEC-069 approves ignoring every exact `CU4` Call Type row: Customer Care is outside
+CustomerApp. The feature branch `codex/wald-realdata03-optional-completion` implements
+the global dictionary exclusion with private provenance and dictionary v5 staleness.
+The supplied small workbook now reaches a clean, non-mutating selected-site preview:
+16 records, 15 included, one CU4 excluded. The genuine XLS is accepted directly:
+4,358 records, 3,419 included, 939 CU4 excluded. No real data was committed. Other
+unknown full-export codes still block their affected selected sites. Production PHP
+extension/temp verification, a fresh Composer advisory check and release review remain.
+No push or deployment has occurred. The earlier CU4 decision request below is historical.
+
+## Current handover — real source qualification — 22 September 2026
+
+**Feature branch only; management mapping decision required.** The combined XLS and
+`Customer Number` candidate was privately qualified against the small `.xlsx` and full
+4,358-record genuine `.xls` export. An approved-contract defect requiring optional
+`Complete` was corrected on `codex/wald-realdata03-optional-completion`; a synthetic
+partial-export regression preserves established completion. The small file reaches a
+blocked selected-site preview because `CU4` is unknown (1 occurrence; 939 in the full
+export). Representative approved-only full-export rows resolve exact site binding and
+site-scoped plots. No real-source preview was approved or committed. The user raised
+Forge upload/execution limits to 5 MB / 45 seconds; the agent verified the saved UI
+values. Disposable MySQL 8.4 release groups passed: 285 passed, 4 skipped, 2,996
+assertions. Production PHP extensions and temporary-directory readiness remain unverified;
+the fresh Composer advisory endpoint timed out.
+No candidate code was pushed or deployed; `main` remains `51635964`. See the
+[real-source qualification report](documentation/wald-real-source-qualification-2026-09-22.md)
+for aggregate evidence, test results and remaining release gates. Earlier entries below
+are historical checkpoints.
+
+## Current handover — legacy XLS master export candidate — 22 September 2026
+
+**Feature branch only; not deployed:** `codex/wald-xls-reader` combines the bounded binary
+`.xls` upload/neutral reader commit `dde25a6` with the previously approved exact `Customer Number`
+header commit, cherry-picked as `16964ff` under DEC-068. The supplied 22 September RedZebra XLS
+passed private storage, structural staging and source discovery locally: 4,358 records in 145
+source groups, with 192 MiB observed peak PHP memory. No binding, preview approval, commit or
+production import was performed. Full local suite: 1,628 passed, 81 skipped, 8,500 assertions;
+Pint, strict Composer validation, Composer audit, Vite build and production npm audit pass.
+No migration or production configuration changed. The new PhpSpreadsheet runtime dependency and
+production PHP extension/memory settings require release qualification. Disposable MySQL 8.4 and
+Forge verification were not run. Review the exact candidate, dictionary-v4 knowledge staleness,
+source questions and remaining release gates before any production push or re-upload. See the
+[XLS candidate report](documentation/wald-xls-upload-2026-09-22.md). Entries below are historical
+checkpoints and do not describe this combined branch.
+
+## Current handover — `Customer Number` header candidate — 22 September 2026
+
+`codex/wald-customer-number-header` adds only the exact approved RedZebra `Customer Number`
+header to the existing CustomerCode role under DEC-068. Dictionary v4 has a new fingerprint;
+prior analysis knowledge is stale and must not be silently reused. Synthetic tests prove the
+new header, unchanged explicit binding, refusal of a near-match and competing code columns, and
+old-pin staleness. Final local suite passes 1,705 tests / 8,481 assertions / 81 expected skips;
+Pint and Vite build pass. Composer is not installed here; no disposable MySQL or production
+qualification has run. No schema, dependency, workbook, production setting, import or deployment
+changed. The live second upload is still failed Revision 2; Revision 1 remains superseded in
+history. Obtain separate release review and complete remaining gates before any `main` push or
+Forge action. Earlier handovers below remain historical release evidence.
+
+## Current handover — product labels deployed and verified — 21 September 2026
+
+**SUCCESS — PRODUCT LABELS VERIFIED.** Production/main remain
+`b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998` (31 seconds).
+Live E2E VS labels/quantities and WALD-GL-01 Bifold/VS labels/check summaries pass.
+Positive BF shows 26 October earliest (five weeks); other semantic boundaries retain tests.
+Office totals/source evidence, Linked/bindings, E2E uniqueness and replacement history pass.
+Site Manager Office/Imports denial and both-role fresh GET logout Back/Forward checks pass.
+Earlier POST history cache-miss remains documented, not reclassified as a clean POST test.
+Final served check at 02:06:32 UTC: 21 applied/0 pending, 0 queued/failed; `/up` healthy.
+Final log check at 02:06:55 UTC has zero matches across all seven recorded error patterns.
+No call-off submission, import, binding/data edit or additional deployment. App logged out.
+See [final release report and exact verification limits](documentation/customer-product-labels-deployment-2026-09-21.md).
+This branch remains local/non-deploying. Below checkpoints are historical and superseded.
+Next proposed bounded task: import completion/status wording, separately approved.
+
+## Current handover — product labels deployed; live acceptance pending — 21 September 2026
+
+Production and remote main are `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`.
+Forge `78156998` deployed successfully (31 seconds displayed); Nothing to migrate.
+Served-SHA check at 01:37:17 UTC: 21 applied / 0 pending migrations, 0 queued/failed jobs.
+Post-release `/up` passes and checked error counts at 01:37:52 UTC are zero.
+Exact two-commit ancestry was reconciled; documentation parent `12d765c` was intentionally
+retained. No rebase, import replay, data edit or call-off submission. Fresh focused tests pass.
+**Site Manager labels/check-summary are verified live; Office acceptance is pending.**
+Both E2E plots show Vertical Slider 2 and matrix summaries match. Office/Imports return 403;
+normal logout plus first two Back checks show sign-in. Third Back hit browser ERR_CACHE_MISS
+for the POST matrix; Forward was not exercised. No call-off submitted. User has been asked
+to navigate normally to login and sign in as Office. Do not claim full acceptance yet.
+See [saved release checkpoint and continuation checklist](documentation/customer-product-labels-deployment-2026-09-21.md).
+This evidence branch is local/non-deploying. Earlier candidate and Overview entries below
+are historical and superseded for deployment status. Do not push another production revision.
+
 ## Current handover — customer product labels candidate — 21 September 2026
 
 `codex/customer-product-labels` preserves local documentation commit

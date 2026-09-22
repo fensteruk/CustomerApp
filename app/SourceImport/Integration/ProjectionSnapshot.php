@@ -147,7 +147,7 @@ final class ProjectionSnapshot
                     throw new ImportConflict('explicit_visit_correction_required');
                 }
                 $beforeComplete = $service ? ($service->source_completed_at !== null || $service->source_completion_observed_at !== null) : false;
-                $visitOutcome = ! $visit ? 'added' : (($visit->fact_hash === Canonical::hash($fact) && $beforeComplete === $fact['complete']) ? 'unchanged' : 'changed');
+                $visitOutcome = ! $visit ? 'added' : (($visit->fact_hash === Canonical::hash($fact) && $beforeComplete === ($fact['complete'] ?? $beforeComplete)) ? 'unchanged' : 'changed');
             }
 
             $productsForRow = isset($claimedProducts[$fact['plot']]) ? [] : ($productChanges[$fact['plot']] ?? []);
@@ -166,7 +166,7 @@ final class ProjectionSnapshot
                 'service_id' => $service?->id,
                 'service_epoch' => $service ? (int) $service->wald_epoch : null,
                 'before_complete' => $beforeComplete,
-                'after_complete' => $fact['complete'],
+                'after_complete' => $fact['complete'] ?? $beforeComplete,
                 'products' => $productsForRow,
                 'visit_outcome' => $visitOutcome,
                 'outcome' => $rowOutcome,

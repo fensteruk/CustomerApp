@@ -26,6 +26,7 @@ it('preserves atomic ordering and dependency outcomes in repeated independent co
         $scope = new KnowledgeScope($initialScope->organisationId, $initialScope->siteId, 'race-'.F::command(), 'family-v1');
         B::$callBase = 100000 + $scope->siteId * 1000;
         $second = $first->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         $binding = B::binding($first, $scope);

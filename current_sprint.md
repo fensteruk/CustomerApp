@@ -1,5 +1,100 @@
 # Current Sprint
 
+## Final real-source Call Type scope — 22 September 2026
+
+DEC-071 temporarily excludes P04 and currently excludes CU0, CU1, CU3 and
+zzz. The local genuine XLS now has 4,358 rows: 2,567 included, 1,791 excluded,
+zero unresolved Call Types. Of 145 source units, 59 contain supported data,
+86 contain excluded data only, and none have a Call Type semantic blocker.
+The small workbook remains 15 included/one CU4 excluded. Both reached clean
+non-mutating representative previews. No real data was committed. See the
+[final local qualification](documentation/wald-final-call-type-qualification-2026-09-22.md).
+Runtime/advisory/release gates remain. The five-unknown-code snapshot below is historical.
+
+## Confirmed irrelevant Call Types — 22 September 2026
+
+DEC-070 adds 25 exact global exclusions to the existing CU4 decision on the
+local `codex/wald-realdata03-optional-completion` feature branch. The full
+4,358-row XLS now has 3,036 included and 1,322 excluded rows; 469 rows bear
+unresolved codes (`CU0`, `CU1`, `CU3`, `P04`, `zzz`). Of 145 source units, 13
+selectable units have no Call Type semantic blocker; 28 contain excluded rows
+only, and 104 still contain unknown codes. A representative clean full-export
+unit and the small workbook reached non-mutating clean previews. No real data
+was committed. See the [qualification report](documentation/wald-call-type-exclusions-2026-09-22.md).
+Release/runtime/advisory checks remain; earlier CU4-only counts below are historical.
+
+## CU4 decision implementation — 22 September 2026
+
+DEC-069 confirms `CU4` is Customer Care and all such rows are excluded from
+CustomerApp import. The feature branch has the dictionary v5 exclusion, private
+audit and focused regression. The small real workbook reaches a clean selected-site
+preview with one CU4 excluded; the full genuine XLS discovers 939 excluded CU4 rows.
+No real data was committed. Other unknown codes remain unresolved for affected sites.
+Complete release checks and production runtime/advisory verification before reviewing
+any deployment. The earlier CU4 hold below records the state before DEC-069.
+
+## Real-source qualification and release hold — 22 September 2026
+
+The combined `.xls`/`Customer Number` feature candidate now has a bounded follow-up for
+optional `Complete` columns. Both private exports pass local upload/discovery; the small
+workbook reaches a blocked selected-site preview because `CU4` has no approved meaning.
+The full export has 4,358 records, and representative approved-only source rows reach a
+clean exact-bound preview. Disposable MySQL 8.4 release groups passed. Management must
+define CU4 before that selected site can commit. Production extension/temp checks, a
+fresh Composer advisory check and DEC-068 release review remain outstanding.
+Forge's upload/execution limits are now 5 MB / 45 seconds after the user's change.
+No candidate code was deployed or production import run. See the
+[qualification report](documentation/wald-real-source-qualification-2026-09-22.md).
+Older sections below are historical checkpoints.
+
+## Binary XLS master export support — 22 September 2026
+
+**Feature branch only:** `codex/wald-xls-reader` accepts real BIFF `.xls` uploads through the
+Office-only Wald pilot and stages neutral physical observations. It includes the approved
+DEC-068 `Customer Number` header change as a separate commit. The supplied workbook passes
+local private discovery; source review and explicit binding still apply. Full suite and release
+checks pass locally; there is no migration, push, deployment or production re-upload. Review the
+[candidate report](documentation/wald-xls-upload-2026-09-22.md), qualify production PHP and
+disposable MySQL where required, then use the controlled release process. Older sections below
+are historical checkpoints.
+
+## Exact `Customer Number` source header — 22 September 2026
+
+**Feature branch only; not deployed:** `codex/wald-customer-number-header` implements DEC-068's
+exact third header for the existing `source_customer_code` role. Source values, binding,
+authorisation, one-site review/commit and fail-closed unknown meanings are unchanged. Dictionary
+identity advances to v4; older knowledge must be re-analysed. Synthetic success, near-match,
+ambiguous-column, unbound-site and stale-pin tests pass. Full local suite: 1,705 tests,
+8,481 assertions, 81 expected skips; Pint and Vite build pass. Composer CLI is unavailable in
+this environment; disposable MySQL and production re-upload were not run. Separate release
+review is required. The live 22 September Revision 2 remains failed under the older deployed
+dictionary; no production data was committed by this task. Earlier sections below are preserved
+release history.
+
+## Product labels deployed and verified — 21 September 2026
+
+**SUCCESS — PRODUCT LABELS VERIFIED:** production/main `b0bdca0`, Forge `78156998`.
+Live VS/BF Plot Details and check summaries agree. Office totals/private evidence, bindings,
+E2E uniqueness, replacement history, role denial and both-role GET logout privacy pass.
+No call-off submitted; confirmation and unknown/excluded/zero cases retain automated coverage.
+Earlier POST cache-miss limitation is preserved. Final health: 21 applied/0 pending migrations,
+0 queued/failed jobs; `/up` healthy. See the
+[final release report](documentation/customer-product-labels-deployment-2026-09-21.md).
+Next proposed work: separately approve import completion/status wording; no further deployment.
+Earlier pending/candidate sections below are historical, superseded checkpoints.
+
+## Product labels deployed; authenticated acceptance pending — 21 September 2026
+
+**Deployed:** `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998`, 31 seconds.
+Exact served SHA verified at 01:37:17 UTC. No migrations/data rewrite; 21 applied/0 pending,
+0 queued/failed jobs, `/up` healthy and checked post-release error counts zero.
+Ancestry retains intended docs parent `12d765c`; no rebase. Fresh 24-test/119-assertion run passes.
+**Customer labels verified live:** both E2E plots and call-off check show Vertical Slider 2.
+Office/Imports are denied. Office smoke awaits normal Office sign-in; full browser-history
+acceptance has a documented POST cache-miss limitation. No call-off was submitted. See the
+[release checkpoint](documentation/customer-product-labels-deployment-2026-09-21.md).
+Earlier candidate sections are historical; remaining UX fixes stay outside this release.
+
 ## Customer product labels candidate — 21 September 2026
 
 **READY FOR RELEASE REVIEW, feature branch only:** `codex/customer-product-labels`.

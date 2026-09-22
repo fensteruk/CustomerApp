@@ -75,6 +75,7 @@ it('serializes competing answers without last-write-wins across twenty MySQL rac
     foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         $context = (new RegisterContext)->handle($office, $scope, F::snapshot(), F::command());
@@ -90,6 +91,7 @@ it('serializes activation revoke and draft-use races with truthful receipts', fu
     foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         [$origin, , $answer, $version, $profile] = $race === 'activate-activate' ? F::draft($office, $scope) : F::active($office, $scope);
@@ -124,6 +126,7 @@ it('activates only one of two competing immutable versions across twenty MySQL r
     foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         [$origin, , $answer, $first, $profile] = F::draft($office, $scope);
@@ -144,6 +147,7 @@ it('preserves a retention hold racing with reuse across twenty MySQL races', fun
     foreach (range(1, 20) as $iteration) {
         [$office, $scope] = F::owner();
         $second = $office->replicate();
+        $second->uuid = F::command();
         $second->email = F::command().'@example.test';
         $second->save();
         [$origin, , , , $profile] = F::active($office, $scope);

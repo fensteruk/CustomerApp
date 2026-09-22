@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v3';
+    public const VERSION = 'customerapp.source-dictionary.v7';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -23,6 +23,28 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         'CM1' => ['description' => 'Revisit 1', 'service' => 'cml', 'revisit' => true],
         'CM2' => ['description' => 'Revisit 2', 'service' => 'cml', 'revisit' => true],
         'CML' => ['description' => 'CML Call Off', 'service' => 'cml', 'revisit' => false],
+    ];
+
+    private const EXCLUDED_CALLS = [
+        'CU4' => 'Customer care; no CustomerApp projection',
+        'CU0' => 'Customer care; no current CustomerApp projection',
+        'CU1' => 'Customer care; no current CustomerApp projection',
+        'CU3' => 'Customer care; no current CustomerApp projection',
+        'P04' => 'Plot Installation - 2nd Visit (use TEAM); temporarily excluded from CustomerApp',
+        'ZZZ' => 'No current CustomerApp meaning; ignored by management decision',
+        'CM8' => 'Irrelevant to CustomerApp', 'P02' => 'Irrelevant to CustomerApp',
+        'P06' => 'Irrelevant to CustomerApp', 'P08' => 'Irrelevant to CustomerApp',
+        'Q01' => 'Irrelevant to CustomerApp', 'QU5' => 'Irrelevant to CustomerApp',
+        'SS1' => 'Irrelevant to CustomerApp', 'T03' => 'Irrelevant to CustomerApp',
+        'T05' => 'Irrelevant to CustomerApp', 'T07' => 'Irrelevant to CustomerApp',
+        'T09' => 'Irrelevant to CustomerApp', 'T11' => 'Irrelevant to CustomerApp',
+        'T13' => 'Irrelevant to CustomerApp', 'T15' => 'Irrelevant to CustomerApp',
+        'VC1' => 'Irrelevant to CustomerApp', 'X10' => 'Irrelevant to CustomerApp',
+        'X14' => 'Irrelevant to CustomerApp', 'X16' => 'Irrelevant to CustomerApp',
+        'X50' => 'Irrelevant to CustomerApp', 'X99' => 'Irrelevant to CustomerApp',
+        'XR1' => 'Irrelevant to CustomerApp', 'XR2' => 'Irrelevant to CustomerApp',
+        'XX1' => 'Irrelevant to CustomerApp', 'Z05' => 'Irrelevant to CustomerApp',
+        'Z09' => 'Irrelevant to CustomerApp',
     ];
 
     private const WINDOWS = ['VS' => 'Vertical Slider', 'TT' => 'Tilt and Turn', 'BAY' => 'Bay Window',
@@ -41,6 +63,7 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         'site name' => ['description' => 'Transitional source-site clue', 'role' => 'transitional_site_clue'],
         'customerno' => ['description' => 'Authoritative RedZebra CustomerCode', 'role' => 'source_customer_code'],
         'customercode' => ['description' => 'Authoritative RedZebra CustomerCode', 'role' => 'source_customer_code'],
+        'customer number' => ['description' => 'Authoritative RedZebra CustomerCode', 'role' => 'source_customer_code'],
         'source site id' => ['description' => 'Durable source identity when supplied', 'role' => 'source_site_identity'],
         'source site reference' => ['description' => 'Durable source identity when supplied', 'role' => 'source_site_identity'],
         'call no.' => ['description' => 'Source call-off reference', 'role' => 'call_reference'],
@@ -59,11 +82,12 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 
     public static function definition(): array
     {
-        return ['calls' => self::CALLS, 'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
+        return ['calls' => self::CALLS, 'excluded_calls' => self::EXCLUDED_CALLS,
+            'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
             'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded' => self::EXCLUDED,
             'fields' => self::FIELDS, 'completion' => ['yes' => true, 'no' => false],
             'normalization' => ['codes' => 'ASCII uppercase and surrounding whitespace trim; punctuation preserved',
-                'headers' => 'Exact field labels, except CallNo semantic token pairs ignore case, spacing and punctuation; CustomerNo and CustomerCode are exact approved CustomerCode headers',
+                'headers' => 'Exact field labels, except CallNo semantic token pairs ignore case, spacing and punctuation; CustomerNo, CustomerCode and Customer Number are exact approved CustomerCode headers',
                 'quantity' => 'plain nonnegative decimal, at most 3 fractional digits; unrepresented values make no assertion; no exponent/grouping/bool',
                 'quantity_max_units' => Quantity::MAX_UNITS, 'scale' => 1000,
                 'duplicates' => 'reject normalized duplicate codes', 'overflow' => 'null totals and blocked',
@@ -88,6 +112,11 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
             return $this->result('call_type', $raw, null, C::Confirmed, ['description' => 'No call-off started'], null,
                 ['BLANK_CALL_TYPE_NO_VISIT']);
         }
+        if (self::excludesCallType($raw)) {
+            return $this->result('call_type', $raw, $key, C::Ignored,
+                ['code' => $key, 'description' => self::EXCLUDED_CALLS[$key]], null,
+                ['IRRELEVANT_TO_CUSTOMERAPP']);
+        }
         if ($profile === self::COMPOSITE_PROFILE && ! in_array($key, ['PC1', 'CC1', 'CM1'], true)) {
             return $this->result('call_type', $raw, $key, C::Unknown, null, null, ['UNKNOWN_CALL_TYPE']);
         }
@@ -100,6 +129,11 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         return $this->result('call_type', $raw, $key, $entry ? C::Confirmed : C::Unknown,
             $entry === null ? null : ['code' => $key, ...$entry], $entry['service'] ?? null,
             [$entry ? 'EXACT_DICTIONARY_MATCH' : 'UNKNOWN_CALL_TYPE']);
+    }
+
+    public static function excludesCallType(string $raw): bool
+    {
+        return isset(self::EXCLUDED_CALLS[strtoupper(trim($raw))]);
     }
 
     public function completion(string|int|float|bool|null $raw): SemanticResult

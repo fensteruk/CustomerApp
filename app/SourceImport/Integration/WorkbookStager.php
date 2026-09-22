@@ -4,6 +4,7 @@ namespace App\SourceImport\Integration;
 
 use App\SourceImport\Knowledge\AnalysisSnapshot;
 use App\SourceImport\Knowledge\Canonical;
+use App\SourceImport\Readers\XlsWorkbookSource;
 use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
@@ -21,8 +22,19 @@ final class WorkbookStager
     {
         $path = (new PrivateWorkbookStorage)->path($run);
         $budget = new AnalysisBudget;
-        $profile = app(WorkbookProfiler::class)->profile($path, $run->format, $budget);
-        $source = (new WorkbookSourceFactory)->open($path, $run->format, $budget);
+        if ($run->format === 'xls') {
+            $source = new XlsWorkbookSource($path, $budget);
+            try {
+                $profile = app(WorkbookProfiler::class)->analyse($source, $run->workbook_hash, $budget);
+            } finally {
+                $source->close();
+            }
+        } else {
+            $profile = app(WorkbookProfiler::class)->profile($path, $run->format, $budget);
+        }
+        $source = $run->format === 'xls'
+            ? new XlsWorkbookSource($path, $budget)
+            : (new WorkbookSourceFactory)->open($path, $run->format, $budget);
         try {
             $sheets = iterator_to_array($source->sheets());
         } finally {
@@ -94,7 +106,7 @@ final class WorkbookStager
             $columns[$role] = $candidate['column'];
             $confirmed[$role] = $explicit;
         }
-        foreach (['call_reference', 'plot_reference', 'call_type', 'completion'] as $role) {
+        foreach (['call_reference', 'plot_reference', 'call_type'] as $role) {
             if (! isset($columns[$role])) {
                 throw new ImportConflict('required_column_unresolved');
             }
@@ -152,6 +164,12 @@ final class WorkbookStager
                 $issues[] = 'INVALID_PLOT';
             }
             $plot = SourceIdentity::plotReference((string) $plot);
+            // An excluded row without a source identity cannot belong to this selected site.
+            // Discovery has already retained its original workbook and checked CallNo uniqueness.
+            if (is_string($callType) && CustomerAppDictionary::excludesCallType($callType)
+                && ($sourceIdentityValue === null || trim((string) $sourceIdentityValue) === '')) {
+                continue;
+            }
             $normalisedSite = $sourceIdentity['kind'] === MasterExportSiteIdentity::KIND
                 ? (new MasterExportSiteIdentity)->customerCode($sourceIdentityValue)
                 : trim((string) $sourceIdentityValue);
@@ -181,7 +199,7 @@ final class WorkbookStager
                 ($table['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null,
             );
             $hasVisit = is_scalar($effectiveType) && trim((string) $effectiveType) !== '';
-            $complete = $hasVisit ? $dictionary->completion($raw('completion')) : null;
+            $complete = $hasVisit && isset($columns['completion']) ? $dictionary->completion($raw('completion')) : null;
             if (! $type->isResolved()) {
                 $issues[] = 'UNRESOLVED_CALL_TYPE';
             }
@@ -222,7 +240,7 @@ final class WorkbookStager
             }
             // Compose WALD03 evidence without altering the accepted reasoning or its decisions.
             $semanticEvidence = [];
-            foreach ($hasVisit ? ['call_type', 'completion'] : [] as $role) {
+            foreach ($hasVisit ? array_values(array_intersect(['call_type', 'completion'], array_keys($columns))) : [] as $role) {
                 $cell = $cells[$columns[$role]] ?? null;
                 $hypothesis = collect($reason['hypotheses'])->first(fn ($h) => ($h['hypothesis']['target']['column'] ?? null) === $columns[$role] && ($h['hypothesis']['target']['sheet_id'] ?? null) === $sheet->id);
                 if ($cell && $hypothesis) {

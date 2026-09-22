@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 15 September 2026 (master-export CustomerCode identity refinement)
+**Last updated:** 22 September 2026 (current-scope exclusions approved under DEC-071)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -32,8 +32,26 @@ is still unconfirmed. No Snagging source call-type code has been confirmed.
 | `CM2` | Revisit 2 | CML | Recognised mapping; not a separate service. |
 | `CML` | CML Call Off | CML | Recognised mapping. |
 | `CC!` | Unknown; likely a typo | None until confirmed | Preserve raw value, optionally suggest `CC1`, and require human confirmation. Never silently normalise. |
+| `CU4` | Customer Care | None | Exclude the entire source row from CustomerApp discovery/projection; retain private evidence and exclude audit. |
 
-An unknown call type remains unknown. Structural similarity, neighbouring rows or a familiar
+DEC-070 also excludes these exact normalized Call Types globally as irrelevant to
+CustomerApp: `CM8`, `P02`, `P06`, `P08`, `Q01`, `QU5`, `SS1`, `T03`, `T05`,
+`T07`, `T09`, `T11`, `T13`, `T15`, `VC1`, `X10`, `X14`, `X16`, `X50`, `X99`,
+`XR1`, `XR2`, `XX1`, `Z05`, `Z09`. Their rows retain private raw evidence with
+exclusion provenance but contribute no plot, product, visit, service, completion,
+customer date/workflow or notification. An excluded row does not block an otherwise
+valid selected-site review. CU4 remains the separate DEC-069 Customer Care rule.
+
+DEC-071 further excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz` for the current
+CustomerApp scope. `CU0`/`CU1`/`CU3` are Customer Care-related, consistent with
+the existing `CU4` exclusion. `zzz` has no required CustomerApp meaning at
+present; preserve its raw spelling while matching normalized `ZZZ`. **P04 is
+temporarily excluded**, with current source description “Plot Installation -
+2nd Visit (use TEAM)”. Management may revisit it. Do not map P04 to Windows
+without a later explicit decision. All five preserve private row evidence and
+make no CustomerApp projection assertion.
+
+Other unknown call types remain unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.
 
 For the CUSTAPP2 composite profile, only PC1, CC1 and CM1 are recognized. That workbook does not
@@ -116,7 +134,7 @@ A filtered export cannot zero or delete values outside supplied records.
 
 | Field | Treatment |
 |---|---|
-| `CustomerNo` / `CustomerCode` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
+| `CustomerNo` / `CustomerCode` / `Customer Number` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
 | `Call No.` | Permanent Source Row reference within the source namespace. A recognized non-null Call Type establishes a Visit; CallNo alone does not. Every within-workbook duplicate still blocks; never merge or select first/last. |
 | `Site Name` | Descriptive source evidence under the new master-export contract. Retain changed/variant names for review, but do not use them to identify, create, split or rebind a CustomerCode. Exact Site Name remains only for explicitly bounded historical workbook compatibility. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |

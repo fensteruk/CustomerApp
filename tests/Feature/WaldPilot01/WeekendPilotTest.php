@@ -281,7 +281,9 @@ it('renders an exact minimal legacy manifest at review and committed states with
 
         $storedManifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
         $legacySource = array_intersect_key($storedManifest['sources'][0], array_flip(['hash', 'kind', 'rows', 'identity']));
-        expect(array_keys($legacySource))->toBe(['hash', 'identity', 'kind', 'rows']);
+        $legacyKeys = array_keys($legacySource);
+        sort($legacyKeys);
+        expect($legacyKeys)->toBe(['hash', 'identity', 'kind', 'rows']);
         $legacyManifest = [...$storedManifest, 'sources' => [$legacySource]];
         DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
             'source_manifest' => Canonical::json($legacyManifest),

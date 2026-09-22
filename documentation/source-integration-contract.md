@@ -35,9 +35,13 @@ inherit the earlier workbook's checksum-specific `CC!`/CM2 treatment.
 
 ## CUSTOMER-WALD-SOURCE02 addendum — 15 September 2026
 
-For new RedZebra master exports, exact `CustomerNo` or `CustomerCode` is the authoritative
-`customer_code` field. The binding identity is source namespace + exact CustomerCode. Site Name
-is retained as descriptive evidence and may produce a review warning when its wording changes;
+DEC-068 (22 September 2026) extends SOURCE02's original two-header vocabulary with the exact
+header `Customer Number`.
+
+For new RedZebra master exports, exact `CustomerNo`, `CustomerCode` or `Customer Number` is the
+authoritative `customer_code` field. The binding identity is source namespace + exact
+CustomerCode. Site Name is retained as descriptive evidence and may produce a review warning
+when its wording changes;
 it cannot fuzzy-match, create a Portal site, override or split the code identity. Unknown codes
 require explicit Office binding to an existing active Portal site. Missing codes block the
 dependent new-master-export intake. Historical exact Site Name/source-ID bindings remain readable;
@@ -87,6 +91,15 @@ authoritative completion evidence for that specific source call-off part and sup
 date. Customer product output is the confirmed Total Windows/Total Doors roll-up while
 exact BF remains available internally for the five-week rule. These business definitions
 come from the controlled dictionary, not Wald confidence or code similarity.
+
+DEC-069 excludes exact normalized `CU4` Customer Care rows from CustomerApp entirely.
+They retain private source/audit evidence but contribute no site discovery, plot, product,
+visit, completion or Portal-owned fact. DEC-070 extends the global irrelevant-row rule
+to the exact additional Call Types listed in the controlled dictionary. This is a
+source-code decision, independent of display. Other unknown codes remain blocking.
+DEC-071 additionally excludes `CU0`, `CU1`, `CU3`, `P04` and `zzz` for the current
+CustomerApp scope using the same private-evidence/no-projection boundary. P04's
+exclusion is temporary and may be revisited; it is not a Windows mapping.
 
 All SiteApp exports contain whatever the user filtered and therefore default to
 `PARTIAL_FILTERED_EXPORT`. Absence proves no deletion, including within a represented site.

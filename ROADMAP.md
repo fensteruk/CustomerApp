@@ -1,5 +1,87 @@
 # Fenster Customer Portal ROADMAP
 
+## Controlled release review after DEC-071 — 22 September 2026
+
+The current real-source files have zero unresolved Call Type codes under the
+feature-branch dictionary v7. P04 is temporarily excluded, not assigned a
+permanent customer meaning. Review the [qualification](documentation/wald-final-call-type-qualification-2026-09-22.md),
+complete production PHP extension/temp and fresh Composer advisory checks, and
+perform the DEC-068/current controlled release review. Each site still needs
+its own exact binding, source validation and explicit review/commit. No code
+or real source data was deployed by this decision. Earlier semantic counts
+below are historical.
+
+## Release review after DEC-070 — 22 September 2026
+
+The approved exact Call Type exclusions are implemented locally, with dictionary
+v6 staleness. Five unknown codes still affect 104 full-export source units.
+Review the [local qualification](documentation/wald-call-type-exclusions-2026-09-22.md)
+and resolve only the site units intended for import. Complete production PHP
+extension/temp checks, a fresh Composer advisory check, disposable MySQL
+qualification and the controlled release review before any deployment. No
+production import is implied. Older CU4-only counts below are historical.
+
+## Next release review — CU4 exclusion — 22 September 2026
+
+DEC-069 removes Customer Care `CU4` rows from CustomerApp projection. The local
+feature branch qualifies a clean non-mutating preview for the small workbook and
+counts 939 excluded rows in the genuine XLS. Review the full branch diff and release
+gates, verify production PHP extensions/temp handling and obtain a fresh Composer
+advisory result before a controlled release. Remaining unknown source codes require
+separate decisions for affected selected sites. No code was pushed or deployed by
+this change. The earlier CU4 mapping request below is historical.
+
+## Release hold — real RedZebra semantics — 22 September 2026
+
+Keep the combined XLS/DEC-068 header candidate and optional-completion follow-up on
+feature branches. The small real workbook reaches a selected-site preview but `CU4`
+blocks commit under the approved dictionary; it occurs 939 times in the full export.
+Obtain the precise management mapping decision, qualify production PHP extensions and
+temporary-file handling, rerun the fresh Composer advisory check after its endpoint
+timeout, then perform DEC-068 release review. Disposable MySQL 8.4 release gates passed.
+The user raised Forge upload/execution limits to 5 MB / 45 seconds; no candidate code
+was deployed. See the [qualification report](documentation/wald-real-source-qualification-2026-09-22.md).
+Earlier roadmap entries below are historical checkpoints.
+
+## Next release review — binary XLS and exact source header — 22 September 2026
+
+The combined `codex/wald-xls-reader` candidate supports the original RedZebra `.xls` export
+and DEC-068's exact `Customer Number` identity header. It is not on `main` or in production.
+Review the [candidate evidence](documentation/wald-xls-upload-2026-09-22.md), dependency/runtime
+requirements, dictionary-v4 stale knowledge and remaining disposable-MySQL/release gates before
+a controlled deployment. After deployment, Office must explicitly review source questions and
+binding before any selected-site commit. No automatic multi-site processing or new source meaning
+is implied. The sections below record earlier milestones.
+
+## Next release review — exact `Customer Number` header — 22 September 2026
+
+DEC-068's narrow header extension is implemented on `codex/wald-customer-number-header`, not on
+`main` or production. Local SQLite regression, Pint and build pass. Before release, review the
+dictionary v4 knowledge-staleness effect, run the remaining Composer/disposable-MySQL gates and
+approve a controlled deployment. Only after that should the failed 22 September master export
+be re-uploaded and reviewed; `CU4`, completion and other source meanings remain separate decisions.
+The earlier product-label deployment evidence below remains valid history.
+
+## Product labels delivered and verified — 21 September 2026
+
+**Deployed and live-verified:** `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998`.
+Customer VS/BF labels/check summaries, Office/source boundaries, bindings/uniqueness/history
+and both-role access/GET logout checks pass. No production data edits or call-off submissions.
+See [final evidence and explicit live-test limits](documentation/customer-product-labels-deployment-2026-09-21.md).
+Next recommended bounded UX task: import completion/status wording, with separate approval.
+Filters/navigation, View/Edit User and Projected plots remain separate. Earlier checkpoints
+below are historical and do not override this verified deployment state.
+
+## Product labels deployed — live acceptance pending — 21 September 2026
+
+**Deployed:** `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998`.
+Release health and exact served revision verified; no migration/data rewrite.
+Customer Plot Details and call-off check labels pass live; role denials pass. Office smoke
+awaits Office sign-in, and the browser-history limitation remains documented. See the
+[release checkpoint](documentation/customer-product-labels-deployment-2026-09-21.md).
+Next: complete live acceptance, then separately approve import completion/status wording.
+Earlier candidate/release-review entries below are historical. No additional deployment is planned.
+
 ## Customer product labels — release review — 21 September 2026
 
 The bounded dictionary-backed customer label correction is **feature-branch only, READY FOR

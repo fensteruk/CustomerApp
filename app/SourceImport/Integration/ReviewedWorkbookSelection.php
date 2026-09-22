@@ -2,17 +2,25 @@
 
 namespace App\SourceImport\Integration;
 
-/** Exact-artifact approved provenance. Never register these rules as reusable aliases. */
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
+
+/** Keep globally approved exclusions separate from checksum-scoped artifact exceptions. */
 final class ReviewedWorkbookSelection
 {
     public const CHECKSUM = 'ee07e1f7296cf88cf548748e624ada576e1cf20120ba2c0be0617f446fb9f893';
 
-    public const VERSION = 'customerapp.reviewed-workbook.dec050-dec051.v1';
+    public const VERSION = 'customerapp.reviewed-workbook.dec050-dec051-dec069-dec070-dec071.v4';
 
     /** Caller supplies server-computed checksum and original reader observations, never browser authority. */
     public function treatment(string $checksum, string $sheetId, int $row, string $callNo, string $site, string $rawCallType): array
     {
         $result = ['raw_call_type' => $rawCallType, 'canonical_override' => null, 'excluded' => false, 'approvals' => [], 'selection_version' => self::VERSION];
+        if (CustomerAppDictionary::excludesCallType($rawCallType)) {
+            $result['excluded'] = true;
+            $code = strtoupper(trim($rawCallType));
+            $result['approvals'][] = $code === 'CU4' ? 'DEC-069'
+                : (in_array($code, ['CU0', 'CU1', 'CU3', 'P04', 'ZZZ'], true) ? 'DEC-071' : 'DEC-070');
+        }
         if (! hash_equals(self::CHECKSUM, $checksum)) {
             return $result;
         }
