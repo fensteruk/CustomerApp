@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## Release review after DEC-070 — 22 September 2026
+
+The approved exact Call Type exclusions are implemented locally, with dictionary
+v6 staleness. Five unknown codes still affect 104 full-export source units.
+Review the [local qualification](documentation/wald-call-type-exclusions-2026-09-22.md)
+and resolve only the site units intended for import. Complete production PHP
+extension/temp checks, a fresh Composer advisory check, disposable MySQL
+qualification and the controlled release review before any deployment. No
+production import is implied. Older CU4-only counts below are historical.
+
 ## Next release review — CU4 exclusion — 22 September 2026
 
 DEC-069 removes Customer Care `CU4` rows from CustomerApp projection. The local

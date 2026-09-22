@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v5';
+    public const VERSION = 'customerapp.source-dictionary.v6';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -25,7 +25,22 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         'CML' => ['description' => 'CML Call Off', 'service' => 'cml', 'revisit' => false],
     ];
 
-    private const EXCLUDED_CALLS = ['CU4' => 'Customer care; no CustomerApp projection'];
+    private const EXCLUDED_CALLS = [
+        'CU4' => 'Customer care; no CustomerApp projection',
+        'CM8' => 'Irrelevant to CustomerApp', 'P02' => 'Irrelevant to CustomerApp',
+        'P06' => 'Irrelevant to CustomerApp', 'P08' => 'Irrelevant to CustomerApp',
+        'Q01' => 'Irrelevant to CustomerApp', 'QU5' => 'Irrelevant to CustomerApp',
+        'SS1' => 'Irrelevant to CustomerApp', 'T03' => 'Irrelevant to CustomerApp',
+        'T05' => 'Irrelevant to CustomerApp', 'T07' => 'Irrelevant to CustomerApp',
+        'T09' => 'Irrelevant to CustomerApp', 'T11' => 'Irrelevant to CustomerApp',
+        'T13' => 'Irrelevant to CustomerApp', 'T15' => 'Irrelevant to CustomerApp',
+        'VC1' => 'Irrelevant to CustomerApp', 'X10' => 'Irrelevant to CustomerApp',
+        'X14' => 'Irrelevant to CustomerApp', 'X16' => 'Irrelevant to CustomerApp',
+        'X50' => 'Irrelevant to CustomerApp', 'X99' => 'Irrelevant to CustomerApp',
+        'XR1' => 'Irrelevant to CustomerApp', 'XR2' => 'Irrelevant to CustomerApp',
+        'XX1' => 'Irrelevant to CustomerApp', 'Z05' => 'Irrelevant to CustomerApp',
+        'Z09' => 'Irrelevant to CustomerApp',
+    ];
 
     private const WINDOWS = ['VS' => 'Vertical Slider', 'TT' => 'Tilt and Turn', 'BAY' => 'Bay Window',
         'ALI' => 'Aluminium Windows', 'AOV' => 'Automatic Opening Vent Window', 'FI' => 'Fire Window'];
@@ -95,7 +110,7 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         if (self::excludesCallType($raw)) {
             return $this->result('call_type', $raw, $key, C::Ignored,
                 ['code' => $key, 'description' => self::EXCLUDED_CALLS[$key]], null,
-                ['EXCLUDED_CUSTOMER_CARE_CALL_TYPE']);
+                ['IRRELEVANT_TO_CUSTOMERAPP']);
         }
         if ($profile === self::COMPOSITE_PROFILE && ! in_array($key, ['PC1', 'CC1', 'CM1'], true)) {
             return $this->result('call_type', $raw, $key, C::Unknown, null, null, ['UNKNOWN_CALL_TYPE']);

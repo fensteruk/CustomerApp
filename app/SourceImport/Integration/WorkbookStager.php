@@ -164,7 +164,7 @@ final class WorkbookStager
                 $issues[] = 'INVALID_PLOT';
             }
             $plot = SourceIdentity::plotReference((string) $plot);
-            // An excluded Customer Care row without a source identity cannot belong to this selected site.
+            // An excluded row without a source identity cannot belong to this selected site.
             // Discovery has already retained its original workbook and checked CallNo uniqueness.
             if (is_string($callType) && CustomerAppDictionary::excludesCallType($callType)
                 && ($sourceIdentityValue === null || trim((string) $sourceIdentityValue) === '')) {

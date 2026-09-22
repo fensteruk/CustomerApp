@@ -832,8 +832,11 @@ Current confirmed mappings include:
 
 `CU4` means Customer Care and all such source rows are excluded from
 CustomerApp discovery and projection under DEC-069. They make no plot,
-product, visit, completion or customer date assertion. Other nonblank unknown
-Call Types remain blocking for their selected site unit.
+product, visit, completion or customer date assertion. DEC-070 additionally
+excludes exact codes `CM8`, `P02`, `P06`, `P08`, `Q01`, `QU5`, `SS1`, `T03`,
+`T05`, `T07`, `T09`, `T11`, `T13`, `T15`, `VC1`, `X10`, `X14`, `X16`, `X50`,
+`X99`, `XR1`, `XR2`, `XX1`, `Z05` and `Z09` on the same terms. Other nonblank
+unknown Call Types remain blocking for their selected site unit.
 
 Do not invent a Snagging code.
 

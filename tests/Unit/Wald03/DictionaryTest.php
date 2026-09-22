@@ -27,7 +27,7 @@ it('never repairs CC bang', function () {
         ->and($result->suggestions)->toBe([['code' => 'CC1', 'reason' => 'LIKELY_TYPO']]);
 });
 
-it('classifies only CU4 as globally excluded Customer Care work', function () {
+it('preserves the existing CU4 Customer Care exclusion', function () {
     $dictionary = new Dictionary;
     $excluded = $dictionary->callType(' cu4 ');
     expect($excluded->rawValue)->toBe(' cu4 ')
@@ -35,11 +35,23 @@ it('classifies only CU4 as globally excluded Customer Care work', function () {
         ->and($excluded->classification)->toBe(C::Ignored)
         ->and($excluded->resolution)->toBe(R::Resolved)
         ->and($excluded->value)->toBeNull()
-        ->and($excluded->reasons)->toBe(['EXCLUDED_CUSTOMER_CARE_CALL_TYPE'])
+        ->and($excluded->reasons)->toBe(['IRRELEVANT_TO_CUSTOMERAPP'])
         ->and(Dictionary::excludesCallType(' cu4 '))->toBeTrue()
         ->and(Dictionary::excludesCallType('CU0'))->toBeFalse()
         ->and($dictionary->callType('CU0')->classification)->toBe(C::Unknown);
 });
+
+it('classifies every newly approved irrelevant Call Type without inferring neighbouring codes', function ($code) {
+    $raw = ' '.strtolower($code).' ';
+    $result = (new Dictionary)->callType($raw);
+    expect($result->rawValue)->toBe($raw)
+        ->and($result->lookupValue)->toBe($code)
+        ->and($result->classification)->toBe(C::Ignored)
+        ->and($result->resolution)->toBe(R::Resolved)
+        ->and($result->value)->toBeNull()
+        ->and($result->reasons)->toBe(['IRRELEVANT_TO_CUSTOMERAPP'])
+        ->and(Dictionary::excludesCallType($raw))->toBeTrue();
+})->with(['CM8', 'P02', 'P06', 'P08', 'Q01', 'QU5', 'SS1', 'T03', 'T05', 'T07', 'T09', 'T11', 'T13', 'T15', 'VC1', 'X10', 'X14', 'X16', 'X50', 'X99', 'XR1', 'XR2', 'XX1', 'Z05', 'Z09']);
 
 it('does not invent unknown or historical calls', function ($code) {
     $result = (new Dictionary)->callType($code);
@@ -153,9 +165,9 @@ it('defaults partial and requires downstream confirmation of stronger assertions
 it('has canonical stable immutable versioned identity', function () {
     $definition = Dictionary::definition();
     $identity = (new Dictionary)->identity();
-    expect($identity->version)->toBe('customerapp.source-dictionary.v5')
-        // v5 is frozen: a definition edit must introduce a new version, not update this pair.
-        ->and($identity->fingerprint)->toBe('03c658a32a06aab571f4b7f6d5a3eb3f54f7f63eb85dc471591f446f1356c407')
+    expect($identity->version)->toBe('customerapp.source-dictionary.v6')
+        // v6 is frozen: a definition edit must introduce a new version, not update this pair.
+        ->and($identity->fingerprint)->toBe('033f9d259007db173970150d1b103428f0d5b2b46998ed57f5d1324b1f4f5308')
         ->and(DictionaryIdentity::fromDefinition(Dictionary::VERSION, array_reverse($definition, true))->fingerprint)->toBe($identity->fingerprint)
         ->and((new Dictionary)->callType('PC1')->jsonSerialize()['wald_core']['commit'])->toBe(CoreIdentity::SHA);
     $definition['calls']['PC1']['service'] = 'changed';
@@ -168,6 +180,6 @@ it('requires a version and fingerprint change for labels meanings and mappings',
     $old = (new Dictionary)->identity();
     $definition['calls']['PC1'][$field] = $value;
     expect(fn () => DictionaryIdentity::fromDefinition(Dictionary::VERSION, $definition, $old))->toThrow(InvalidArgumentException::class);
-    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v6', $definition, $old);
+    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v7', $definition, $old);
     expect($new->fingerprint)->not->toBe($old->fingerprint)->and($new->version)->not->toBe($old->version);
 })->with([['description', 'New label'], ['service', 'cml'], ['revisit', true]]);

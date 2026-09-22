@@ -1,5 +1,17 @@
 # Current Sprint
 
+## Confirmed irrelevant Call Types — 22 September 2026
+
+DEC-070 adds 25 exact global exclusions to the existing CU4 decision on the
+local `codex/wald-realdata03-optional-completion` feature branch. The full
+4,358-row XLS now has 3,036 included and 1,322 excluded rows; 469 rows bear
+unresolved codes (`CU0`, `CU1`, `CU3`, `P04`, `zzz`). Of 145 source units, 13
+selectable units have no Call Type semantic blocker; 28 contain excluded rows
+only, and 104 still contain unknown codes. A representative clean full-export
+unit and the small workbook reached non-mutating clean previews. No real data
+was committed. See the [qualification report](documentation/wald-call-type-exclusions-2026-09-22.md).
+Release/runtime/advisory checks remain; earlier CU4-only counts below are historical.
+
 ## CU4 decision implementation — 22 September 2026
 
 DEC-069 confirms `CU4` is Customer Care and all such rows are excluded from

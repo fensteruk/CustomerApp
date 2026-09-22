@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 22 September 2026 (CU4 exclusion approved under DEC-069)
+**Last updated:** 22 September 2026 (additional global exclusions approved under DEC-070)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -33,6 +33,14 @@ is still unconfirmed. No Snagging source call-type code has been confirmed.
 | `CML` | CML Call Off | CML | Recognised mapping. |
 | `CC!` | Unknown; likely a typo | None until confirmed | Preserve raw value, optionally suggest `CC1`, and require human confirmation. Never silently normalise. |
 | `CU4` | Customer Care | None | Exclude the entire source row from CustomerApp discovery/projection; retain private evidence and exclude audit. |
+
+DEC-070 also excludes these exact normalized Call Types globally as irrelevant to
+CustomerApp: `CM8`, `P02`, `P06`, `P08`, `Q01`, `QU5`, `SS1`, `T03`, `T05`,
+`T07`, `T09`, `T11`, `T13`, `T15`, `VC1`, `X10`, `X14`, `X16`, `X50`, `X99`,
+`XR1`, `XR2`, `XX1`, `Z05`, `Z09`. Their rows retain private raw evidence with
+exclusion provenance but contribute no plot, product, visit, service, completion,
+customer date/workflow or notification. An excluded row does not block an otherwise
+valid selected-site review. CU4 remains the separate DEC-069 Customer Care rule.
 
 Other unknown call types remain unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.

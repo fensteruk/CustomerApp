@@ -1,5 +1,17 @@
 # Fenster Customer Portal Handover
 
+## Current handover — DEC-070 source exclusions — 22 September 2026
+
+The feature branch adds 25 exact global irrelevant Call Types under DEC-070,
+preserving the separate CU4 rule and approved service meanings. The full XLS
+has 4,358 rows: 3,036 included, 1,322 excluded and 469 unresolved-code rows.
+Of 145 source units, 13 are selectable with no Call Type semantic blocker,
+28 contain only excluded rows, and 104 still contain unknown codes. Local
+small/full representative previews are clean and non-mutating. No real data
+was committed. See [qualification](documentation/wald-call-type-exclusions-2026-09-22.md).
+Release/runtime/advisory checks remain; no push or deployment. The CU4-only
+snapshot below is historical.
+
 ## Current handover — CU4 customer-care exclusion — 22 September 2026
 
 DEC-069 approves ignoring every exact `CU4` Call Type row: Customer Care is outside

@@ -94,7 +94,9 @@ come from the controlled dictionary, not Wald confidence or code similarity.
 
 DEC-069 excludes exact normalized `CU4` Customer Care rows from CustomerApp entirely.
 They retain private source/audit evidence but contribute no site discovery, plot, product,
-visit, completion or Portal-owned fact. Other `CU*` values remain unknown and blocking.
+visit, completion or Portal-owned fact. DEC-070 extends the global irrelevant-row rule
+to the exact additional Call Types listed in the controlled dictionary. This is a
+source-code decision, independent of display. Other unknown codes remain blocking.
 
 All SiteApp exports contain whatever the user filtered and therefore default to
 `PARTIAL_FILTERED_EXPORT`. Absence proves no deletion, including within a represented site.

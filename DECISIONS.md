@@ -1803,3 +1803,32 @@ completion or Portal date from an excluded row.
 
 Reason: Management confirmed that `CU4` means Customer Care and that all such rows are
 irrelevant to this customer-facing application.
+
+---
+
+## DEC-070
+
+Date: 22 September 2026
+
+Decision: The exact normalized RedZebra Call Type codes below are globally irrelevant
+to CustomerApp. Exclude their entire rows from source-site discovery and customer
+projection regardless of workbook checksum:
+
+`CM8`, `P02`, `P06`, `P08`, `Q01`, `QU5`, `SS1`, `T03`, `T05`, `T07`, `T09`,
+`T11`, `T13`, `T15`, `VC1`, `X10`, `X14`, `X16`, `X50`, `X99`, `XR1`, `XR2`,
+`XX1`, `Z05`, `Z09`.
+
+- Classify each row as excluded / `IRRELEVANT_TO_CUSTOMERAPP`, retain raw private
+  evidence and explicit DEC-070 provenance, and preserve duplicate CallNo and unsafe
+  workbook guards. Excluded-only source groups provide no selectable site unit.
+- Excluded rows make no plot, product, visit, service, request, completion, date,
+  proposal, amendment or notification assertion; they do not reverse committed facts
+  or block an otherwise valid selected-site review merely by existing.
+- DEC-069's CU4 Customer Care exclusion remains in force. Existing PC1, CC1, CM1,
+  CM2 and CML mappings retain their approved contexts. Every other unrecognised
+  nonblank code remains unresolved; do not infer meaning from nearby values.
+- Advance dictionary identity and stale prior analysis/reviews. This decision does
+  not approve a production import, Wald enablement, merge, push or deployment.
+
+Reason: Management explicitly confirmed these exact source codes have no CustomerApp
+relevance. The decision is about source meaning; it has no display dependency.

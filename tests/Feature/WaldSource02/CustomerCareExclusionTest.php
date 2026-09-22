@@ -14,6 +14,7 @@ use App\SourceImport\Knowledge\Actions\AnswerClarification;
 use App\SourceImport\Knowledge\KnowledgeQueries;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use App\SourceImport\Knowledge\Models\KnowledgeContext;
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -137,4 +138,52 @@ it('keeps other unknown CU codes blocked and has no selectable unit for only CU4
     expect((int) $stage->blocked_count)->toBe(1);
     $preview = (new ImportReview)->preview($office, $scope, $run->uuid, (int) $run->epoch, (string) Str::uuid());
     expect($preview['blockers'])->toContain('BLOCKED_STAGED_RECORDS');
+});
+
+it('excludes all controlled irrelevant codes from the entire selected-site projection', function (): void {
+    $office = careOffice();
+    $codes = array_keys(CustomerAppDictionary::definition()['excluded_calls']);
+    $records = ['CODE-1,1001,Example Site,Anchor,PC1,2,No'];
+    foreach ($codes as $index => $code) {
+        $records[] = 'CODE-1,'.(1002 + $index).',Example Site,Excluded '.$index.','.$code.',bad,Yes';
+    }
+    $pilot = (new PilotImportWorkflow)->upload($office,
+        UploadedFile::fake()->createWithContent('master.csv',
+            "CustomerNo,Call No.,Site Name,Plot Ref,Call Type,VS,Complete\n".implode("\n", $records)."\n"),
+        new ExportOrder('2099-10-04', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid());
+    expect($pilot['manifest']['record_count'])->toBe(count($codes) + 1)
+        ->and($pilot['manifest']['included_count'])->toBe(1)
+        ->and($pilot['manifest']['excluded_count'])->toBe(count($codes));
+
+    $customer = CustomerOrganisation::factory()->create();
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'is_active' => true]);
+    $scope = new KnowledgeScope($customer->id, $site->id, 'redzebra', 'call-offs');
+    $source = $pilot['sources'][0];
+    $binding = new SourceBindingService;
+    $draft = $binding->draft($office, $scope, $source['kind'], $source['identity'], 'Exact source binding.', (string) Str::uuid());
+    $binding->activate($office, $scope, $draft['binding'], $draft['version'], $draft['definition_hash'], $draft['epoch'], 'Reviewed exact binding.', (string) Str::uuid());
+    $selection = (new PilotImportWorkflow)->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+    $run = careAnalyse($office, $scope, DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+    $stage = DB::table('wald_import_stages')->where('id', $run->stage_id)->firstOrFail();
+    $rows = DB::table('wald_staged_rows')->where('stage_id', $stage->id)->orderBy('ordinal')->pluck('payload')
+        ->map(fn ($json) => json_decode($json, true, flags: JSON_THROW_ON_ERROR));
+    expect((int) $stage->blocked_count)->toBe(0)
+        ->and($rows->where('excluded', true)->count())->toBe(count($codes))
+        ->and($rows->skip(1)->every(fn ($row) => $row['issues'] === []
+            && $row['provenance']['raw_complete'] === 'Yes'
+            && $row['provenance']['raw_products']['VS']['raw'] === 'bad'
+            && $row['provenance']['selection']['approvals'] === [$row['provenance']['raw_call_type'] === 'CU4' ? 'DEC-069' : 'DEC-070']))->toBeTrue();
+    $review = new ImportReview;
+    $preview = $review->preview($office, $scope, $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    expect($preview['blockers'])->toBe([]);
+    $review->approve($office, $scope, $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $review->commit($office, $scope, $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    expect(DB::table('projected_plots')->where('site_id', $site->id)->count())->toBe(1)
+        ->and(DB::table('projected_plot_services')->count())->toBe(1)
+        ->and(DB::table('projected_plot_products')->count())->toBe(1)
+        ->and((float) DB::table('projected_plot_products')->value('quantity'))->toBe(2.0)
+        ->and(DB::table('wald_visit_observations')->where('run_id', $run->id)->count())->toBe(1)
+        ->and(DB::table('source_projection_events')->where('event_type', 'completion_reported')->count())->toBe(0)
+        ->and(DB::table('call_off_requests')->count())->toBe(0)
+        ->and(DB::table('portal_notifications')->count())->toBe(0);
 });
