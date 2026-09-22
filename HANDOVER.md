@@ -1,5 +1,51 @@
 # Fenster Customer Portal Handover
 
+## Current handover — `Customer Number` header candidate — 22 September 2026
+
+`codex/wald-customer-number-header` adds only the exact approved RedZebra `Customer Number`
+header to the existing CustomerCode role under DEC-068. Dictionary v4 has a new fingerprint;
+prior analysis knowledge is stale and must not be silently reused. Synthetic tests prove the
+new header, unchanged explicit binding, refusal of a near-match and competing code columns, and
+old-pin staleness. Final local suite passes 1,705 tests / 8,481 assertions / 81 expected skips;
+Pint and Vite build pass. Composer is not installed here; no disposable MySQL or production
+qualification has run. No schema, dependency, workbook, production setting, import or deployment
+changed. The live second upload is still failed Revision 2; Revision 1 remains superseded in
+history. Obtain separate release review and complete remaining gates before any `main` push or
+Forge action. Earlier handovers below remain historical release evidence.
+
+## Current handover — product labels deployed and verified — 21 September 2026
+
+**SUCCESS — PRODUCT LABELS VERIFIED.** Production/main remain
+`b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998` (31 seconds).
+Live E2E VS labels/quantities and WALD-GL-01 Bifold/VS labels/check summaries pass.
+Positive BF shows 26 October earliest (five weeks); other semantic boundaries retain tests.
+Office totals/source evidence, Linked/bindings, E2E uniqueness and replacement history pass.
+Site Manager Office/Imports denial and both-role fresh GET logout Back/Forward checks pass.
+Earlier POST history cache-miss remains documented, not reclassified as a clean POST test.
+Final served check at 02:06:32 UTC: 21 applied/0 pending, 0 queued/failed; `/up` healthy.
+Final log check at 02:06:55 UTC has zero matches across all seven recorded error patterns.
+No call-off submission, import, binding/data edit or additional deployment. App logged out.
+See [final release report and exact verification limits](documentation/customer-product-labels-deployment-2026-09-21.md).
+This branch remains local/non-deploying. Below checkpoints are historical and superseded.
+Next proposed bounded task: import completion/status wording, separately approved.
+
+## Current handover — product labels deployed; live acceptance pending — 21 September 2026
+
+Production and remote main are `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`.
+Forge `78156998` deployed successfully (31 seconds displayed); Nothing to migrate.
+Served-SHA check at 01:37:17 UTC: 21 applied / 0 pending migrations, 0 queued/failed jobs.
+Post-release `/up` passes and checked error counts at 01:37:52 UTC are zero.
+Exact two-commit ancestry was reconciled; documentation parent `12d765c` was intentionally
+retained. No rebase, import replay, data edit or call-off submission. Fresh focused tests pass.
+**Site Manager labels/check-summary are verified live; Office acceptance is pending.**
+Both E2E plots show Vertical Slider 2 and matrix summaries match. Office/Imports return 403;
+normal logout plus first two Back checks show sign-in. Third Back hit browser ERR_CACHE_MISS
+for the POST matrix; Forward was not exercised. No call-off submitted. User has been asked
+to navigate normally to login and sign in as Office. Do not claim full acceptance yet.
+See [saved release checkpoint and continuation checklist](documentation/customer-product-labels-deployment-2026-09-21.md).
+This evidence branch is local/non-deploying. Earlier candidate and Overview entries below
+are historical and superseded for deployment status. Do not push another production revision.
+
 ## Current handover — customer product labels candidate — 21 September 2026
 
 `codex/customer-product-labels` preserves local documentation commit

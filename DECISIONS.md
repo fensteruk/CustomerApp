@@ -1751,3 +1751,30 @@ Reason:
 Management explicitly approved merging and pushing the completed, tested changes before the
 planned absence. Keeping enablement and import authority separate preserves the fail-closed pilot
 boundary while allowing the qualified code release to proceed.
+
+---
+
+## DEC-068
+
+Date: 22 September 2026
+
+Decision: The exact RedZebra header `Customer Number` is also an approved source-customer
+identity header. It maps to the existing `source_customer_code` role alongside `CustomerNo` and
+`CustomerCode`. This extends only the header vocabulary in DEC-066; it does not change the
+meaning or value of CustomerCode.
+
+- Match the exact header after the dictionary's existing case and surrounding-whitespace
+  normalization. Do not accept fuzzy or plural variants, or derive a code from Site Name.
+- Preserve the source namespace + exact, trimmed CustomerCode value as the binding key.
+  Unknown codes still require explicit Office binding; missing or ambiguous codes still block.
+- Advance the dictionary version and fingerprint. Older analysis/knowledge is stale and must be
+  re-analysed under the new dictionary; do not silently reinterpret an existing review.
+- This decision does not define `CU4`, completion from a date or status column, automatic
+  multi-site processing, a production import, or any source-data correction.
+- Implementation on a non-deploying feature branch does not authorise a `main` push, Forge
+  deployment, production re-upload, binding, preview approval or commit.
+
+Reason: the 22 September supervised upload of a RedZebra export with a populated `Customer Number`
+column failed safely with `customer_code_missing`, while the earlier export with `Customercode`
+passed identity discovery. Fenster explicitly approved this exact header as another spelling of
+the source customer identity.

@@ -1,5 +1,34 @@
 # Fenster Customer Portal ROADMAP
 
+## Next release review — exact `Customer Number` header — 22 September 2026
+
+DEC-068's narrow header extension is implemented on `codex/wald-customer-number-header`, not on
+`main` or production. Local SQLite regression, Pint and build pass. Before release, review the
+dictionary v4 knowledge-staleness effect, run the remaining Composer/disposable-MySQL gates and
+approve a controlled deployment. Only after that should the failed 22 September master export
+be re-uploaded and reviewed; `CU4`, completion and other source meanings remain separate decisions.
+The earlier product-label deployment evidence below remains valid history.
+
+## Product labels delivered and verified — 21 September 2026
+
+**Deployed and live-verified:** `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998`.
+Customer VS/BF labels/check summaries, Office/source boundaries, bindings/uniqueness/history
+and both-role access/GET logout checks pass. No production data edits or call-off submissions.
+See [final evidence and explicit live-test limits](documentation/customer-product-labels-deployment-2026-09-21.md).
+Next recommended bounded UX task: import completion/status wording, with separate approval.
+Filters/navigation, View/Edit User and Projected plots remain separate. Earlier checkpoints
+below are historical and do not override this verified deployment state.
+
+## Product labels deployed — live acceptance pending — 21 September 2026
+
+**Deployed:** `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998`.
+Release health and exact served revision verified; no migration/data rewrite.
+Customer Plot Details and call-off check labels pass live; role denials pass. Office smoke
+awaits Office sign-in, and the browser-history limitation remains documented. See the
+[release checkpoint](documentation/customer-product-labels-deployment-2026-09-21.md).
+Next: complete live acceptance, then separately approve import completion/status wording.
+Earlier candidate/release-review entries below are historical. No additional deployment is planned.
+
 ## Customer product labels — release review — 21 September 2026
 
 The bounded dictionary-backed customer label correction is **feature-branch only, READY FOR

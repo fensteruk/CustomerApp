@@ -28,6 +28,15 @@ it('fails closed when any compatibility pin changes', function ($key) {
     expect($identity->compatible($pins))->toBe($key === 'fingerprint' ? Compatibility::Incompatible : Compatibility::Stale);
 })->with(['dictionary', 'fingerprint', 'core', 'reader_adapters', 'schema', 'signature', 'matcher', 'selector', 'semantic_executable', 'accepted_baseline', 'policy']);
 
+it('marks knowledge from the prior exact-header dictionary stale', function () {
+    $identity = new KnowledgeIdentity;
+    $old = $identity->current();
+    $old['dictionary'] = 'customerapp.source-dictionary.v3';
+    $old['fingerprint'] = '5afdf1aead95644378f885d8d2b77d6063901e50978af8ab0fcef103d573bd88';
+
+    expect($identity->compatible($old))->toBe(Compatibility::Stale);
+});
+
 it('W5-T01 marks pre-correction reader knowledge stale without changing dictionary meaning', function () {
     $identity = new KnowledgeIdentity;
     $current = $identity->current();

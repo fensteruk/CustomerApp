@@ -35,9 +35,13 @@ inherit the earlier workbook's checksum-specific `CC!`/CM2 treatment.
 
 ## CUSTOMER-WALD-SOURCE02 addendum — 15 September 2026
 
-For new RedZebra master exports, exact `CustomerNo` or `CustomerCode` is the authoritative
-`customer_code` field. The binding identity is source namespace + exact CustomerCode. Site Name
-is retained as descriptive evidence and may produce a review warning when its wording changes;
+DEC-068 (22 September 2026) extends SOURCE02's original two-header vocabulary with the exact
+header `Customer Number`.
+
+For new RedZebra master exports, exact `CustomerNo`, `CustomerCode` or `Customer Number` is the
+authoritative `customer_code` field. The binding identity is source namespace + exact
+CustomerCode. Site Name is retained as descriptive evidence and may produce a review warning
+when its wording changes;
 it cannot fuzzy-match, create a Portal site, override or split the code identity. Unknown codes
 require explicit Office binding to an existing active Portal site. Missing codes block the
 dependent new-master-export intake. Historical exact Site Name/source-ID bindings remain readable;

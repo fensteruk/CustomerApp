@@ -47,10 +47,10 @@ function source02Office(array $attributes = []): User
     ]);
 }
 
-function source02Workbook(array $rows, bool $withCustomerCode = true): UploadedFile
+function source02Workbook(array $rows, bool $withCustomerCode = true, string $customerCodeHeader = 'CustomerNo'): UploadedFile
 {
     $headers = array_values(array_filter([
-        $withCustomerCode ? 'CustomerNo' : null,
+        $withCustomerCode ? $customerCodeHeader : null,
         'Call No.',
         'Site Name',
         'Plot Ref',
@@ -83,10 +83,11 @@ function source02Upload(
     ?string $predecessor = null,
     ?string $replacementConfirmation = null,
     bool $withCustomerCode = true,
+    string $customerCodeHeader = 'CustomerNo',
 ): array {
     return (new PilotImportWorkflow)->upload(
         $office,
-        source02Workbook($rows, $withCustomerCode),
+        source02Workbook($rows, $withCustomerCode, $customerCodeHeader),
         new ExportOrder($date, $slot),
         ExportOrder::CONFIRMATION,
         (string) Str::uuid(),
@@ -145,6 +146,41 @@ it('uses CustomerCode as identity while retaining changed source names as review
         ->and($first['binding'])->toBeNull()
         ->and($second['identity'])->toBe('FNA2649')
         ->and($second['hash'])->not->toBe($first['hash']);
+});
+
+it('accepts the exact Customer Number header as CustomerCode without relaxing binding or header checks', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2664', 'call' => '1001', 'site' => 'Little Cotton Farm', 'plot' => '1'],
+    ], '2099-02-03', customerCodeHeader: 'Customer Number');
+    $source = $pilot['sources'][0];
+
+    expect($source['kind'])->toBe('CUSTOMER_CODE')
+        ->and($source['customer_code'])->toBe('FNA2664')
+        ->and($source['identity'])->toBe('FNA2664')
+        ->and($source['rows'])->toBe(1);
+
+    $customer = CustomerOrganisation::factory()->create();
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'is_active' => true]);
+    $workflow = new PilotImportWorkflow;
+    expect(fn () => $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'source_site_binding_required');
+
+    source02Bind($office, $source, $site);
+    $selection = $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+    expect($selection['selection'])->toBeString();
+
+    expect(fn () => source02Upload($office, [
+        ['code' => 'FNA2664', 'call' => '1002', 'site' => 'Little Cotton Farm', 'plot' => '2'],
+    ], '2099-02-04', customerCodeHeader: 'Customer Numbers'))
+        ->toThrow(ImportConflict::class, 'customer_code_missing');
+
+    $ambiguous = UploadedFile::fake()->createWithContent('master.csv',
+        "CustomerNo,Customer Number,Call No.,Site Name,Plot Ref,Call Type,Complete,VS\n".
+        "FNA2664,FNA2664,1003,Little Cotton Farm,3,PC1,No,2\n");
+    expect(fn () => $workflow->upload($office, $ambiguous, new ExportOrder('2099-02-05', 'MORNING'),
+        ExportOrder::CONFIRMATION, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'customer_code_column_ambiguous');
 });
 
 it('blocks a new master export when CustomerCode is missing instead of falling back to Site Name', function (): void {

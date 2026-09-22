@@ -1,8 +1,11 @@
 # Wald Distribution Divergence Register
 
-Last updated: 15 September 2026. Owner: Product and Architecture.
+Last updated: 22 September 2026. Owner: Product and Architecture.
 
-Latest correction: W5Q-03/04 at `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` adds CustomerApp-only
+Current CustomerApp-only difference: WD-57 records DEC-068's exact `Customer Number` header
+extension. It is feature-branch only; no SiteApp backport or production release is implied.
+
+Earlier correction: W5Q-03/04 at `dbd17c68a04c028418e2d8a08fc43312aae5fe3b` adds CustomerApp-only
 durable attempt audit and operation-local batch profile eligibility. Backend application identity
 is v3; projection and transient digest remain v2, preserving W5Q-01/02 and synthetic-fixture
 W5Q-05. Older staged application-v2 manifests become stale. Generic Wald and dictionary meaning
@@ -264,6 +267,7 @@ WD-47/48 retain their original implementation identity; the current identities b
 | WD-54 | CustomerApp-specific integration | Plot = bound site + normalized Plot Ref; Source Row = namespace + CallNo; Visit = Source Row + recognized non-null Call Type. Blank type may project compatible plot/products without a visit; partial exports never reverse an established visit merely through blank/absence. | DEC-064; additive 000016 migration; identity/transition/security/SQLite/MySQL tests. Backend application/projection and dictionary identities advance; no historical receipt is rewritten. |
 | WD-55 | CustomerApp-specific semantics | Per-plot product consolidation treats unrepresented as no assertion, explicit zero exactly, equal facts as agreement and conflicting explicit facts as a blocking site-unit conflict. CUSTAPP2 profile recognizes PC1/CC1/CM1 only and does not inherit checksum-scoped CC!/CM2 behaviour. | Private exact-SHA qualification: eight site units pass, one site unit blocks on genuine conflicting source evidence. PARTIAL; no source repair, production import or customer exposure. |
 | WD-56 | CustomerApp-specific integration | RedZebra date/slot is a retained master-export revision family; failed replacement is automatic, non-failed replacement requires exact confirmation, identical hashes deduplicate, and supersession stales uncommitted review. Exact CustomerNo/CustomerCode supplies source namespace + CustomerCode binding identity; Site Name is descriptive evidence. | DEC-066 / CUSTOMER-WALD-SOURCE02; dictionary v3, pilot discovery v3, backend pilot v3, projection v4. Existing schema reused; no SiteApp backport, deployment or enablement. |
+| WD-57 | CustomerApp-specific source semantics | Exact `Customer Number` joins `CustomerNo`/`CustomerCode` as one approved `source_customer_code` header. Value identity, binding, missing/ambiguous refusal and one-site review are unchanged. Older knowledge is stale under dictionary v4. | DEC-068; 22 September browser failure `customer_code_missing`, synthetic success/refusal and stale-pin tests. Feature branch only; no SiteApp backport, migration, production re-upload or deployment. |
 
 ## Backport process
 

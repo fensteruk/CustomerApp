@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 15 September 2026 (master-export CustomerCode identity refinement)
+**Last updated:** 22 September 2026 (exact `Customer Number` header added under DEC-068)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -116,7 +116,7 @@ A filtered export cannot zero or delete values outside supplied records.
 
 | Field | Treatment |
 |---|---|
-| `CustomerNo` / `CustomerCode` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
+| `CustomerNo` / `CustomerCode` / `Customer Number` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
 | `Call No.` | Permanent Source Row reference within the source namespace. A recognized non-null Call Type establishes a Visit; CallNo alone does not. Every within-workbook duplicate still blocks; never merge or select first/last. |
 | `Site Name` | Descriptive source evidence under the new master-export contract. Retain changed/variant names for review, but do not use them to identify, create, split or rebind a CustomerCode. Exact Site Name remains only for explicitly bounded historical workbook compatibility. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |

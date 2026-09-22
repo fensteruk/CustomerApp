@@ -1,5 +1,42 @@
 # Current Sprint
 
+## Exact `Customer Number` source header — 22 September 2026
+
+**Feature branch only; not deployed:** `codex/wald-customer-number-header` implements DEC-068's
+exact third header for the existing `source_customer_code` role. Source values, binding,
+authorisation, one-site review/commit and fail-closed unknown meanings are unchanged. Dictionary
+identity advances to v4; older knowledge must be re-analysed. Synthetic success, near-match,
+ambiguous-column, unbound-site and stale-pin tests pass. Full local suite: 1,705 tests,
+8,481 assertions, 81 expected skips; Pint and Vite build pass. Composer CLI is unavailable in
+this environment; disposable MySQL and production re-upload were not run. Separate release
+review is required. The live 22 September Revision 2 remains failed under the older deployed
+dictionary; no production data was committed by this task. Earlier sections below are preserved
+release history.
+
+## Product labels deployed and verified — 21 September 2026
+
+**SUCCESS — PRODUCT LABELS VERIFIED:** production/main `b0bdca0`, Forge `78156998`.
+Live VS/BF Plot Details and check summaries agree. Office totals/private evidence, bindings,
+E2E uniqueness, replacement history, role denial and both-role GET logout privacy pass.
+No call-off submitted; confirmation and unknown/excluded/zero cases retain automated coverage.
+Earlier POST cache-miss limitation is preserved. Final health: 21 applied/0 pending migrations,
+0 queued/failed jobs; `/up` healthy. See the
+[final release report](documentation/customer-product-labels-deployment-2026-09-21.md).
+Next proposed work: separately approve import completion/status wording; no further deployment.
+Earlier pending/candidate sections below are historical, superseded checkpoints.
+
+## Product labels deployed; authenticated acceptance pending — 21 September 2026
+
+**Deployed:** `b0bdca00ffd3cd8b307e28d798b133c8b4f978cc`, Forge `78156998`, 31 seconds.
+Exact served SHA verified at 01:37:17 UTC. No migrations/data rewrite; 21 applied/0 pending,
+0 queued/failed jobs, `/up` healthy and checked post-release error counts zero.
+Ancestry retains intended docs parent `12d765c`; no rebase. Fresh 24-test/119-assertion run passes.
+**Customer labels verified live:** both E2E plots and call-off check show Vertical Slider 2.
+Office/Imports are denied. Office smoke awaits normal Office sign-in; full browser-history
+acceptance has a documented POST cache-miss limitation. No call-off was submitted. See the
+[release checkpoint](documentation/customer-product-labels-deployment-2026-09-21.md).
+Earlier candidate sections are historical; remaining UX fixes stay outside this release.
+
 ## Customer product labels candidate — 21 September 2026
 
 **READY FOR RELEASE REVIEW, feature branch only:** `codex/customer-product-labels`.
