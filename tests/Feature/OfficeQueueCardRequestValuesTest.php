@@ -206,8 +206,12 @@ it('keeps Requested date semantics across negotiation and amendment states', fun
     }
 
     $queue = $this->actingAs($office)->get(route('portal.review-requests', ['status' => $status->value]));
-    $queue->assertOk()
-        ->assertSeeInOrder(['Lifecycle '.$scenario, 'Windows', $scenario === 'amendment' ? '20 Oct 2026' : '5 Oct 2026']);
+    $queue->assertOk();
+    if ($scenario === 'amendment') {
+        $queue->assertDontSee('Lifecycle amendment')->assertViewHas('requests', fn ($rows) => $rows->total() === 0);
+    } else {
+        $queue->assertSeeInOrder(['Lifecycle '.$scenario, 'Windows', '5 Oct 2026']);
+    }
 
     if ($otherDate !== null && $scenario !== 'amendment') {
         $queue->assertDontSee(Carbon::parse($otherDate)->format('j M Y'));
@@ -282,4 +286,31 @@ it('does not change the Office boundary', function (): void {
     $this->actingAs($siteUser)
         ->get(route('portal.review-requests', ['status' => CallOffRequestStatus::AwaitingFenster->value]))
         ->assertForbidden();
+});
+
+it('combines customer site service search and request-specific date filters', function (): void {
+    [$office, , $site, $batch] = queueCardFixture();
+    $wanted = queueCardRequest($site, $batch, 'Find Plot 01', CallOffServiceType::Windows, '2026-10-05');
+    queueCardRequest($site, $batch, 'Find Plot 02', CallOffServiceType::Windows, '2026-10-06');
+    $this->actingAs($office)->get(route('portal.review-requests', [
+        'customer' => $site->customer_organisation_id, 'site' => $site->id,
+        'service' => 'windows', 'search' => 'Find Plot', 'date' => '2026-10-05',
+    ]))->assertOk()->assertViewHas('requests', fn ($rows) => $rows->pluck('id')->all() === [$wanted->id]);
+    $this->get(route('portal.review-requests', ['date' => 'not-a-date']))->assertSessionHasErrors('date');
+});
+
+it('keeps ordinary attention separate while direct amended detail retains the current decision UUID', function (): void {
+    [$office, , $site, $batch] = queueCardFixture();
+    $ordinary = queueCardRequest($site, $batch, 'Ordinary attention', CallOffServiceType::Windows, '2026-10-05');
+    $changed = queueCardRequest($site, $batch, 'Changed attention', CallOffServiceType::Windows, '2026-10-06', CallOffRequestStatus::AmendmentOnHold);
+    $amendment = CallOffDateNegotiation::query()->create([
+        'call_off_request_id' => $changed->id, 'purpose' => 'amendment', 'status' => 'open',
+        'active_negotiation_key' => 'final04-'.$changed->id, 'requested_date' => '2026-10-20',
+        'reason_code' => 'PROGRAMME_CHANGE', 'reason_label' => 'Programme Change', 'opened_at' => now(),
+    ]);
+    $this->actingAs($office)->get(route('portal.review-requests'))->assertOk()
+        ->assertViewHas('requests', fn ($rows) => $rows->pluck('id')->all() === [$ordinary->id]);
+    $this->get(route('portal.review-requests.show', $changed))->assertOk()
+        ->assertSee('20 Oct 2026')->assertSee('View in Amendments')
+        ->assertSee('name="negotiation_uuid" value="'.$amendment->uuid.'"', false);
 });

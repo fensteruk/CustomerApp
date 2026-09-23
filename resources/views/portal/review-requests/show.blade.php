@@ -1,5 +1,6 @@
 <x-layouts.portal title="Review request | Fenster Customer Portal">
-    <section class="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:px-8" aria-labelledby="page-title">
+    @include('portal.review-requests.styles')
+    <section class="rr-workspace rr-detail" aria-labelledby="page-title">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             <div>
                 <p class="eyebrow">{{ $callOffRequest->batch->site->name }}</p>
@@ -9,12 +10,19 @@
             <a href="{{ route('portal.review-requests') }}" class="secondary-button">Back to queue</a>
         </div>
 
+        @if(session('status'))<p class="rr-notice" role="status">{{ session('status') }}</p>@endif
         @if ($errors->any())
             <div class="mt-6 rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-950" role="alert">
                 {{ $errors->first() }}
             </div>
         @endif
 
+        <div class="rr-current">
+            <h2>{{ $statusLabel }}</h2>
+            @if($currentProposal)<p>Current alternative: <strong>{{ $currentProposal->proposed_date->format('j M Y') }}</strong> · awaiting the Site User.</p>@endif
+            @if($activeAmendment)<p>This request has changed. Decisions below use the current amendment.</p><a class="secondary-button mt-3" href="{{ route('office.workspace.amendments.index', ['request' => $callOffRequest->uuid]) }}">View in Amendments</a>@endif
+            <div class="rr-next">@if($awaitingFenster || $callOffRequest->status === App\Enums\CallOffRequestStatus::Submitted)<a class="primary-button" href="#office-decision">Make a decision</a>@endif<a class="secondary-button" href="#history-heading">View history</a></div>
+        </div>
         <article class="mt-8 rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
@@ -48,6 +56,8 @@
                 @if($callOffRequest->effectiveServiceIdentifier() === App\Enums\CallOffServiceType::CavityClosers && $callOffRequest->is_early_date_exception)
                     <div class="md:col-span-2 rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-950"><dt class="font-bold">Early date request — Cavity Closers</dt><dd class="mt-2">Requested date: {{ $callOffRequest->requested_date->format('l j F Y') }}.</dd><dd>Standard lead time: 15 working days. Earliest standard date: {{ $callOffRequest->normal_earliest_date->format('l j F Y') }}.</dd><dd>{{ $cavityCloserEarlyWorkingDays }} working {{ str('day')->plural($cavityCloserEarlyWorkingDays) }} early.</dd><dd class="mt-2">Early Date Reason: {{ $callOffRequest->early_date_reason }}</dd></div>
                 @endif
+                @if($decisionEarliestDate)<div><dt>Earliest standard date</dt><dd>{{ $decisionEarliestDate->format('j M Y') }}</dd></div>@endif
+                @if($requiresEarlyAcknowledgement && $callOffRequest->effectiveServiceIdentifier() !== App\Enums\CallOffServiceType::CavityClosers)<div><dt>Early Date Reason</dt><dd>{{ $activeAmendment ? ($amendmentEarlyReasons[$activeAmendment->uuid] ?? $activeAmendment->reason_label) : $callOffRequest->early_date_reason }}</dd></div>@endif
                 <div>
                     <dt>Current status</dt>
                     <dd>{{ $statusLabel }}</dd>
@@ -65,66 +75,7 @@
             </dl>
         </article>
 
-        @include('portal.call-offs.amendments.history', ['amendmentHeading' => 'Amendment request'])
-
-        <section class="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="history-heading">
-            <h2 id="history-heading" class="section-title">Request history</h2>
-            <div class="mt-4 space-y-4">
-                @forelse ($callOffRequest->histories as $history)
-                    <article class="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-                            <h3 class="font-bold text-slate-900">{{ $history->event_type->label() }}</h3>@if ($history->recordedAgreedDate())<p class="font-bold">Date Agreed — {{ $history->recordedAgreedDate() }}</p>@endif
-                            <p class="text-sm text-slate-600">{{ $history->performed_at->format('j M Y, H:i:s') }}</p>
-                        </div>
-                        <dl class="mt-3 grid gap-3 text-sm md:grid-cols-2">
-                            <div>
-                                <dt>Performed by</dt>
-                                <dd>{{ $history->recordedActorName() }}@if ($history->recordedActorRole()), {{ $history->recordedActorRole() }}@endif</dd>
-                            </div>
-                            <div>
-                                <dt>Status change</dt>
-                                <dd>{{ $history->previous_status?->label() ?? 'None' }} to {{ $history->new_status?->label() ?? 'None' }}</dd>
-                            </div>
-                            @if ($history->customer_response)
-                                <div>
-                                    <dt>Customer response</dt>
-                                    <dd>{{ $history->customer_response }}</dd>
-                                </div>
-                            @endif
-                            @if ($history->internal_reason)
-                                <div>
-                                    <dt>Internal reason</dt>
-                                    <dd>{{ $history->internal_reason }}</dd>
-                                </div>
-                            @endif
-                        </dl>
-                    </article>
-                @empty
-                    <div class="empty-state">
-                        <h3 class="text-lg font-bold text-slate-900">No history yet</h3>
-                        <p class="mt-2 text-sm leading-6 text-slate-700">No customer-visible history has been recorded for this request.</p>
-                    </div>
-                @endforelse
-            </div>
-        </section>
-
-        @if ($alternativeProposals->isNotEmpty())
-            <section class="mt-6 rounded-lg border border-sky-200 bg-sky-50 p-5" aria-labelledby="alternatives-heading">
-                <h2 id="alternatives-heading" class="section-title">Alternative date history</h2>
-                <div class="mt-4 space-y-3">
-                    @foreach ($alternativeProposals as $proposal)
-                        <article class="rounded-lg border border-sky-200 bg-white p-4">
-                            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><h3 class="font-bold text-slate-950">Proposed {{ $proposal->proposed_date->format('j M Y') }}</h3><p class="text-sm text-slate-600">{{ $proposal->proposed_at?->format('j M Y, H:i:s') }}</p></div>
-                            <p class="mt-2 text-sm text-slate-700">Proposed by {{ $proposal->proposedBy?->name ?? 'Fenster' }}@if ($proposal->proposedBy?->portalRole), {{ $proposal->proposedBy->portalRole->name }}@endif.</p>
-                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Rejected)<p class="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-950"><strong>Customer rejected this date.</strong> {{ $proposal->customer_response }}@if ($proposal->respondedBy) Responded by {{ $proposal->respondedBy->name }}@if ($proposal->respondedBy->portalRole), {{ $proposal->respondedBy->portalRole->name }}@endif.@endif</p>@endif
-                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Accepted)<p class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-950">Customer accepted this date.</p>@endif
-                        </article>
-                    @endforeach
-                </div>
-            </section>
-        @endif
-
-        @include('portal.call-offs.amendments.source-history')
+        <section id="office-decision" tabindex="-1" aria-label="Office decision">
         @if ($awaitingFenster)
             <div class="mt-6 grid gap-6 lg:grid-cols-2">
                 <form method="POST" action="{{ route('portal.review-requests.agree-requested-date', $callOffRequest) }}" class="rounded-xl border border-emerald-200 bg-emerald-50 p-5" x-data="{ submitting: false }" @submit="submitting = true">
@@ -194,5 +145,67 @@
                 This request has already been decided or moved out of the submitted queue.
             </div>
         @endif
+        </section>
+
+        @include('portal.call-offs.amendments.history', ['amendmentHeading' => 'Amendment request'])
+
+        <section class="mt-6 rounded-lg border border-slate-200 bg-white p-5 shadow-sm" aria-labelledby="history-heading">
+            <h2 id="history-heading" class="section-title">Request history</h2>
+            <div class="rr-timeline mt-4 space-y-4">
+                @forelse ($callOffRequest->histories as $history)
+                    <article class="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                        <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                            <h3 class="font-bold text-slate-900">{{ $history->event_type->label() }}</h3>@if ($history->recordedAgreedDate())<p class="font-bold">Date Agreed — {{ $history->recordedAgreedDate() }}</p>@endif
+                            <p class="text-sm text-slate-600">{{ $history->performed_at->format('j M Y, H:i:s') }}</p>
+                        </div>
+                        <dl class="mt-3 grid gap-3 text-sm md:grid-cols-2">
+                            <div>
+                                <dt>Performed by</dt>
+                                <dd>{{ $history->recordedActorName() }}@if ($history->recordedActorRole()), {{ $history->recordedActorRole() }}@endif</dd>
+                            </div>
+                            <div>
+                                <dt>Status change</dt>
+                                <dd>{{ $history->previous_status?->label() ?? 'None' }} to {{ $history->new_status?->label() ?? 'None' }}</dd>
+                            </div>
+                            @if ($history->customer_response)
+                                <div>
+                                    <dt>Customer response</dt>
+                                    <dd>{{ $history->customer_response }}</dd>
+                                </div>
+                            @endif
+                            @if ($history->internal_reason)
+                                <div>
+                                    <dt>Internal reason</dt>
+                                    <dd>{{ $history->internal_reason }}</dd>
+                                </div>
+                            @endif
+                        </dl>
+                    </article>
+                @empty
+                    <div class="empty-state">
+                        <h3 class="text-lg font-bold text-slate-900">No history yet</h3>
+                        <p class="mt-2 text-sm leading-6 text-slate-700">No customer-visible history has been recorded for this request.</p>
+                    </div>
+                @endforelse
+            </div>
+        </section>
+
+        @if ($alternativeProposals->isNotEmpty())
+            <section class="mt-6 rounded-lg border border-sky-200 bg-sky-50 p-5" aria-labelledby="alternatives-heading">
+                <h2 id="alternatives-heading" class="section-title">Alternative date history</h2>
+                <div class="mt-4 space-y-3">
+                    @foreach ($alternativeProposals as $proposal)
+                        <article class="rounded-lg border border-sky-200 bg-white p-4">
+                            <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><h3 class="font-bold text-slate-950">Proposed {{ $proposal->proposed_date->format('j M Y') }}</h3><p class="text-sm text-slate-600">{{ $proposal->proposed_at?->format('j M Y, H:i:s') }}</p></div>
+                            <p class="mt-2 text-sm text-slate-700">Proposed by {{ $proposal->proposedBy?->name ?? 'Fenster' }}@if ($proposal->proposedBy?->portalRole), {{ $proposal->proposedBy->portalRole->name }}@endif.</p>
+                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Rejected)<p class="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm text-rose-950"><strong>Customer rejected this date.</strong> {{ $proposal->customer_response }}@if ($proposal->respondedBy) Responded by {{ $proposal->respondedBy->name }}@if ($proposal->respondedBy->portalRole), {{ $proposal->respondedBy->portalRole->name }}@endif.@endif</p>@endif
+                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Accepted)<p class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-950">Customer accepted this date.</p>@endif
+                        </article>
+                    @endforeach
+                </div>
+            </section>
+        @endif
+
+        @include('portal.call-offs.amendments.source-history')
     </section>
 </x-layouts.portal>
