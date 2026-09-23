@@ -21,6 +21,10 @@
     .wald-found h4,.wald-preview h4,.wald-confirm h4,.wald-subtitle { font-size:18px; font-weight:750; }
     .wald-status { display:inline-block; border-radius:20px; background:#e9f2fa; color:#175679; padding:7px 12px; font-size:12px; font-weight:750; }
     .wald-safety { font-weight:650; color:#735014; }
+    .wald-result { border:1px solid #9ed0b6; background:#effaf4; border-radius:12px; padding:20px; margin:24px 0; }
+    .wald-result h4 { font-size:23px; font-weight:800; }
+    .wald-timeline { padding-left:18px; border-left:2px solid #dce5ee; margin:16px 0; }
+    .wald-timeline li { padding:12px 0; }
     .wald-steps { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:8px; margin:22px 0; }
     .wald-steps li { font-size:12px; color:#53637b; border-bottom:3px solid #dce5ee; padding:8px 4px; }
     .wald-steps li > span { display:block; font-weight:800; margin-bottom:5px; }

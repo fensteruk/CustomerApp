@@ -13,6 +13,7 @@ use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\PilotImportPolicy;
 use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\PilotReplacementConfirmationRequired;
+use App\SourceImport\Integration\PrivateWorkbookStorage;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Integration\WaldPilotAvailability;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
@@ -104,14 +105,26 @@ final class OfficePilotImportController extends Controller
     {
         $this->enabled();
         $summary = $workflow->summary($request->user(), $upload);
+        $artifact = DB::table('wald_pilot_uploads')->where('uuid', $upload)->firstOrFail();
+        try {
+            (new PrivateWorkbookStorage)->path($artifact);
+            $workbookAvailable = true;
+        } catch (ImportConflict) {
+            $workbookAvailable = false;
+        }
         $details = [];
         foreach ($summary['selections'] as $selection) {
             $details[$selection['uuid']] = $this->details($request, $upload, $selection);
+            $details[$selection['uuid']]['workbook_available'] = $workbookAvailable
+                && hash_equals($artifact->workbook_hash, $details[$selection['uuid']]['run']['workbook_hash'])
+                && $artifact->storage_key === $details[$selection['uuid']]['run']['storage_key'];
         }
 
         return view('office.pilot-import.show', [
             'import' => $summary,
             'details' => $details,
+            'uploadRecord' => ['uploader' => $artifact->uploader_name, 'created_at' => $artifact->created_at,
+                'replacement_reason' => $artifact->replacement_reason, 'workbook_available' => $workbookAvailable],
             'sites' => DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
                 ->where('sites.is_active', true)->where('customer_organisations.is_active', true)
                 ->orderBy('customer_organisations.name')->orderBy('sites.name')
@@ -346,7 +359,7 @@ final class OfficePilotImportController extends Controller
             'stage_summary' => $stage ? ImportReviewPresentation::stage($stageRows) : null,
             'rows' => array_slice($stageRows, 0, 100),
             'preview' => $preview ? ['uuid' => $preview->uuid, 'hash' => $preview->payload_hash, 'expires_at' => $preview->expires_at, 'payload' => (new BackendStore)->payload($preview)] : null,
-            'receipt' => $receipt ? json_decode($receipt->payload, true, flags: JSON_THROW_ON_ERROR) : null,
+            'receipt' => $receipt ? (new BackendStore)->payload($receipt) : null,
         ];
     }
 

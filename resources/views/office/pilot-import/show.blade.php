@@ -10,8 +10,7 @@
         <div class="wald-notice"><strong>Uploaded does not mean imported.</strong><p>Each selected site needs its own analysis, review, approval and Apply. Other sites in this master workbook are not applied automatically.</p></div>
         @if ($errors->any())<div class="wald-notice wald-danger" role="alert"><strong>This action could not be completed.</strong><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
         @if(session('status'))<div class="wald-notice" role="status">{{ session('status') }}</div>@endif
-        @if($import['failure_code'])<div class="wald-notice wald-danger" role="alert">Needs attention: {{ str($import['failure_code'])->replace('_',' ')->title() }}. No Portal data changed.</div>@endif
-        @if(count($import['revisions']) > 1)<details class="wald-panel"><summary>Revision history</summary><div class="wald-links">@foreach($import['revisions'] as $revision)<a class="secondary-button" href="{{ route('office.workspace.pilot-import.show', $revision['uuid']) }}">Revision {{ $revision['revision'] }} · {{ $revision['current'] ? 'Current' : 'Superseded' }}</a>@endforeach</div></details>@endif
+        @include('office.pilot-import.lifecycle')
         @if($import['state'] === 'NEEDS_CLARIFICATION')
             <section class="wald-panel wald-question" id="workbook-question"><h2 class="section-title">Check the workbook layout</h2><p>Wald needs you to confirm the detected header and site list before a site can be selected. This confirms the layout only; it does not apply any data.</p><dl class="wald-facts"><div><dt>Worksheet</dt><dd>{{ $import['manifest']['sheet'] ?? 'Not identified' }}</dd></div><div><dt>Header rows</dt><dd>{{ implode(' to ', $import['manifest']['header'] ?? []) ?: 'Not identified' }}</dd></div><div><dt>Detected table</dt><dd>{{ $import['manifest']['logical_table'] ?? 'Not identified' }}</dd></div></dl><p>Compare these locations and the source sites below with your workbook.</p>
                 <form id="confirm-workbook" method="POST" action="{{ route('office.workspace.pilot-import.confirm-structure', $import['upload']) }}">@csrf<input type="hidden" name="command_uuid" value="{{ (string) Illuminate\Support\Str::uuid() }}"><label class="wald-check"><input type="checkbox" name="confirmation" value="CONFIRM DETECTED HEADER AND SITE LIST" required><span>I have reviewed the detected structure and site list.</span></label><button class="primary-button" type="submit">Confirm structure</button></form>
@@ -24,7 +23,7 @@
                 @php($ui = App\View\Presenters\ImportReviewPresentation::forSelection($import, $item))
                 @include('office.pilot-import.site-review')
             @endforeach
-        </section>@else<div class="wald-panel"><h2 class="section-title">Next: link and select a site</h2><p>Choose the exact CustomerApp site for each CustomerCode below. Every plot for that source will inherit the selected site.</p><a class="secondary-button" href="#detected-sites-title">Review source sites</a></div>@endif
+        </section>@elseif(!in_array($import['state'], ['FAILED','SUPERSEDED']))<div class="wald-panel"><h2 class="section-title">Next: link and select a site</h2><p>Choose the exact CustomerApp site for each CustomerCode below. Every plot for that source will inherit the selected site.</p><a class="secondary-button" href="#detected-sites-title">Review source sites</a></div>@endif
         @include('office.pilot-import.source-sites')
     </div>
 </x-layouts.portal>

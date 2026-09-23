@@ -26,9 +26,13 @@ final class ImportReviewPresentation
         $expired = isset($item['preview']['expires_at']) && now('UTC')->greaterThanOrEqualTo(Carbon::parse($item['preview']['expires_at']));
         $blocked = ($item['stage_summary']['blocked'] ?? 0) > 0 || $blockers !== [];
         $refresh = $item['analysis_needs_refresh'];
+        $canReanalyse = ! $closed && ! $item['receipt'] && ! empty($item['workbook_available']) && $item['context_uuid']
+            && in_array($state, ['UPLOADED', 'NEEDS_CLARIFICATION', 'REQUIRES_REVIEW', 'REVIEWED', 'READY_TO_COMMIT', 'FAILED']);
         $action = match (true) {
             $closed => null,
-            $refresh => 'reanalyse',
+            array_key_exists('workbook_available', $item) && ! $item['workbook_available'] => null,
+            $refresh => $canReanalyse ? 'reanalyse' : null,
+            $state === 'FAILED' && $canReanalyse => 'reanalyse',
             $state === 'NEEDS_CLARIFICATION' && $questions > 0 => 'questions',
             in_array($state, ['UPLOADED', 'NEEDS_CLARIFICATION']) => 'analyse',
             $state === 'REQUIRES_REVIEW' => 'preview',
@@ -50,13 +54,29 @@ final class ImportReviewPresentation
                 'REQUIRES_REVIEW' => 'Ready to review', 'REVIEWED' => 'Ready to approve', 'READY_TO_COMMIT' => 'Ready to apply', 'COMMITTING' => 'Applying'][$state] ?? 'Status unavailable',
         };
         $step = match (true) {
+            $state === 'COMMITTED' => 6,
             $refresh || $state === 'FAILED' => 2,
             $expired => 3,
             default => ['UPLOADED' => 2, 'ANALYSING' => 2, 'NEEDS_CLARIFICATION' => 2, 'REQUIRES_REVIEW' => 3, 'REVIEWED' => 4,
                 'READY_TO_COMMIT' => 5, 'COMMITTING' => 5, 'COMMITTED' => 6][$state] ?? null,
         };
 
-        return compact('action', 'label', 'step', 'closed', 'questions', 'blockers', 'expired', 'blocked', 'refresh');
+        return compact('action', 'label', 'step', 'closed', 'questions', 'blockers', 'expired', 'blocked', 'refresh', 'canReanalyse');
+    }
+
+    public static function failure(?string $code): string
+    {
+        return match ($code) {
+            'customer_code_missing', 'invalid_source_site' => 'A source site could not be identified safely. Check the CustomerCode column in RedZebra.',
+            'duplicate_call_number' => 'The export contains the same Call No. more than once. Correct the duplicate in the source export.',
+            'invalid_call_number' => 'A Call No. is missing or invalid. Correct it in the source export.',
+            'no_source_records' => 'No usable source rows were found. Check that the export contains supported CustomerApp rows.',
+            'pilot_workbook_row_limit_exceeded' => 'This workbook exceeds the current supervised import row limit. Prepare a smaller supported export.',
+            'bounded_single_table_required', 'ambiguous_composite_table', 'unsafe_or_unsupported_structure' => 'Wald could not identify one safe table layout. Check the worksheet and its headers.',
+            'unsafe_source_cell', 'unsafe_cell' => 'A source cell could not be read safely. Check formulas and error values in the export.',
+            'workbook_integrity_error', 'invalid_private_storage_key' => 'The stored workbook could not be verified. Its retained review cannot be used to apply data.',
+            default => 'Wald could not finish this analysis safely. Review the source evidence and the recovery options below.',
+        };
     }
 
     public static function issue(string $code): string

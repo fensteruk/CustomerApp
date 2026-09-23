@@ -26,12 +26,12 @@
                 <thead><tr><th>Date / time</th><th>Import</th><th>Source sites</th><th>Rows</th><th>Included / excluded</th><th>Blocked rows</th><th>Status</th><th>Uploaded by</th><th>Action</th></tr></thead>
                 <tbody>@forelse ($importHistory as $import)<tr>
                     <td data-label="Uploaded"><time datetime="{{ Illuminate\Support\Carbon::parse($import['created_at'])->toIso8601String() }}">{{ Illuminate\Support\Carbon::parse($import['created_at'])->format('j M Y, H:i') }}</time></td>
-                    <th scope="row" data-label="Import">{{ $import['title'] }}<span class="imports-subtext">Revision {{ $import['revision'] }}</span></th>
+                    <th scope="row" data-label="Import">{{ $import['title'] }}<span class="imports-subtext">Export {{ Illuminate\Support\Carbon::parse($import['export_date'])->format('j M Y') }} · {{ str($import['export_slot'])->title() }} · Revision {{ $import['revision'] }}</span></th>
                     <td data-label="Source sites">{{ $import['sites'] === null ? 'Not known' : number_format($import['sites']) }}</td>
                     <td data-label="Rows">{{ $import['rows'] === null ? 'Not known' : number_format($import['rows']) }}</td>
                     <td data-label="Included / excluded">{{ $import['included'] === null ? 'Not known' : number_format($import['included']) }} / {{ $import['excluded'] === null ? 'Not known' : number_format($import['excluded']) }}</td>
                     <td data-label="Blocked rows">{{ $import['blocked_rows'] === null ? 'Not checked' : number_format($import['blocked_rows']) }}</td>
-                    <td data-label="Status"><span class="imports-status imports-status-{{ $import['tone'] }}">{{ $import['status'] }}</span></td>
+                    <td data-label="Status"><span class="imports-status imports-status-{{ $import['tone'] }}">{{ $import['status'] }}</span><span class="imports-subtext">{{ $import['applied'] }} site receipts · {{ $import['selected'] }} sites selected</span>@if($import['status'] === 'Superseded')<span class="imports-subtext">Earlier revision retained</span>@elseif($import['needs_refresh'])<span class="imports-subtext">Open for fresh review options</span>@endif</td>
                     <td data-label="Uploaded by">{{ $import['uploader'] }}</td>
                     <td data-label="Action"><a class="imports-history-action" href="{{ $import['url'] }}" aria-label="{{ $import['action'] }}: {{ $import['title'] }}, revision {{ $import['revision'] }}">{{ $import['action'] }}</a></td>
                 </tr>@empty<tr><td colspan="9" class="imports-empty">{{ $historyFilter === 'all' ? 'No older imports yet.' : 'No older imports match this filter.' }}</td></tr>@endforelse</tbody>
