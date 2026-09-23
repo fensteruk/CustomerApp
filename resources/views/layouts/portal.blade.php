@@ -11,7 +11,7 @@
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body
-    class="min-h-screen bg-stone-100 text-slate-900 antialiased"
+    class="portal-shell min-h-screen text-slate-900 antialiased"
     @auth
         x-data="portalShell()"
         @keydown.escape.window="closeSidebar()"
@@ -39,13 +39,13 @@
             :inert="!desktop && !sidebarOpen"
             :role="desktop ? null : 'dialog'"
             :aria-modal="desktop ? null : 'true'"
-            aria-label="Portal navigation and filters"
+            aria-label="Portal navigation"
             @keydown="handleSidebarKeydown($event)"
         >
             @include('layouts.partials.portal-sidebar')
         </aside>
 
-        <div class="min-h-screen xl:pl-[14.5rem]">
+        <div class="min-h-screen xl:pl-[14.5rem]" :inert="sidebarOpen && !desktop">
             <header class="sticky top-0 z-30 border-b border-slate-200 bg-white/95 shadow-sm backdrop-blur">
                 <div class="flex min-h-16 items-center gap-2 px-3 sm:px-4 xl:px-5">
                     <button
@@ -58,10 +58,8 @@
                         aria-controls="portal-sidebar"
                     >
                         <svg aria-hidden="true" class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" d="M4 6h16M4 12h16M4 18h16" /></svg>
-                        <span>{{ $sidebarLabel }}</span>
-                        @if ($sidebarBadge !== null && (int) $sidebarBadge > 0)
-                            <span class="rounded-full bg-sky-100 px-2 py-0.5 text-xs font-extrabold text-sky-900">{{ $sidebarBadge }}</span>
-                        @endif
+                        <span>Menu</span>
+
                     </button>
 
                     <a href="{{ route('dashboard') }}" class="ml-1 hidden rounded min-[360px]:block xl:hidden">
@@ -69,21 +67,18 @@
                     </a>
 
                     <div class="ml-auto flex items-center gap-1 sm:gap-2">
-                        <div class="hidden text-right lg:block">
+                        <div class="min-w-0 max-w-xs break-words hidden text-right lg:block">
                             <p class="text-sm font-bold text-slate-900">{{ auth()->user()->name }}</p>
                             <p class="text-xs text-slate-500">{{ auth()->user()->portalRole?->name }}</p>
                         </div>
 
                         @include('layouts.partials.notification-bell')
 
-                        <form method="POST" action="{{ route('logout') }}">
-                            @csrf
-                            <button type="submit" class="min-h-11 rounded-lg px-3 text-sm font-bold text-slate-700 hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-600">Log out</button>
-                        </form>
+
                     </div>
                 </div>
             </header>
-            <main id="main-content">{{ $slot }}</main>
+            <main id="main-content" tabindex="-1">@include('layouts.partials.page-tools'){{ $slot }}</main>
         </div>
     @else
         <header class="border-b border-slate-800 bg-slate-900 text-white">
@@ -95,7 +90,7 @@
                 <span class="hidden text-sm text-slate-300 sm:block">Simple call-off requests and updates</span>
             </div>
         </header>
-        <main id="main-content">{{ $slot }}</main>
+        <main id="main-content" tabindex="-1">{{ $slot }}</main>
     @endauth
 </body>
 </html>

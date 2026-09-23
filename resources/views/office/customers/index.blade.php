@@ -1,18 +1,15 @@
 <x-layouts.portal title="Customers | Fenster Customer Portal" sidebar-label="Menu">
     <section class="mx-auto w-full min-w-0 max-w-[1600px] space-y-6 px-4 py-6 sm:px-6 sm:py-8" aria-labelledby="customers-title" data-customer-workspace>
-        <header class="flex flex-wrap items-start justify-between gap-5">
-            <div class="min-w-0">
-                <p class="eyebrow">Office</p>
-                <h1 id="customers-title" class="mt-1 text-3xl font-bold tracking-tight text-slate-950 sm:text-4xl">Customers</h1>
-                <p class="mt-2 text-sm leading-6 text-slate-600 sm:text-base">Manage customers and the sites belonging to them.</p>
-                <p class="mt-2 flex flex-wrap gap-x-2 gap-y-1 text-sm font-medium text-slate-600" aria-label="Workspace totals">
+        <x-page-header title="Customers" id="customers-title" eyebrow="Office" description="Manage customers and the sites belonging to them.">
+            <x-slot:context>
+                <p class="flex flex-wrap gap-x-2 gap-y-1 text-sm font-medium text-slate-600" aria-label="Workspace totals">
                     <span>{{ number_format($summary['customers']) }} {{ Str::plural('customer', $summary['customers']) }}</span><span aria-hidden="true">·</span>
                     <span>{{ number_format($summary['sites']) }} {{ Str::plural('site', $summary['sites']) }}</span><span aria-hidden="true">·</span>
                     <span>{{ number_format($summary['active_sites']) }} active {{ Str::plural('site', $summary['active_sites']) }}</span>
                 </p>
-            </div>
-            <a class="primary-button gap-2" href="{{ route('office.workspace.customers.create') }}"><span aria-hidden="true" class="text-xl leading-none">+</span> Add customer</a>
-        </header>
+            </x-slot:context>
+            <x-slot:actions><a class="primary-button gap-2" href="{{ route('office.workspace.customers.create') }}"><span aria-hidden="true" class="text-xl leading-none">+</span> Add customer</a></x-slot:actions>
+        </x-page-header>
 
         @include('office.partials.feedback')
 
