@@ -23,6 +23,14 @@
             <ul class="mt-2 space-y-1">
                 @if (auth()->user()->isFensterOfficeStaff())
                     <li>
+                        <a href="{{ route('dashboard') }}"
+                            @class(['portal-nav-link', 'portal-nav-link-active' => request()->routeIs('dashboard')])
+                            @if (request()->routeIs('dashboard')) aria-current="page" @endif>
+                            <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                            <span>Dashboard</span>
+                        </a>
+                    </li>
+                    <li>
                         <a
                             href="{{ route('portal.review-requests') }}"
                             @class([

@@ -1,5 +1,15 @@
 # Fenster Customer Portal Handover
 
+## Current handover — first-wave Office UI integration — 23 September 2026
+
+Local `main` contains the accepted Dashboard, Customers, Users and Imports redesign
+commits. Integrated browser QA covered desktop, tablet and narrow mobile widths with
+fictional data. A small Office sidebar correction makes Dashboard directly reachable
+and highlights its current route. No production push or deployment occurred, and the
+second redesign wave has not started. The integration report records exact commit and
+test evidence. Three pre-existing uncommitted Cavity Closer changes are still present
+in the original checkout and are not part of the UI baseline.
+
 ## Current handover — product quantity correction candidate — 22 September 2026
 
 DEC-075 maps CAS and FLU to Windows and PFD to Doors. GLS/WP/MISC remain

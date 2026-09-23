@@ -69,7 +69,7 @@ it('renders a personalised Office overview with honest empty states and no impor
     $this->travelTo(now()->setDate(2026, 9, 23)->setTime(9, 0));
     config(['wald_import.pilot_available' => false]);
     $office = overviewOffice(['name' => 'Alex <Office>']);
-    $this->actingAs($office)->get(route('dashboard'))->assertOk()
+    $response = $this->actingAs($office)->get(route('dashboard'))->assertOk()
         ->assertViewIs('office.dashboard.index')
         ->assertSee('Good morning, Alex &lt;Office&gt;', false)
         ->assertSeeInOrder(['Needs attention', 'Amendments', 'Import reviews', 'Call-off actions', 'Active sites', 'Upcoming activity', 'Recent activity', 'Quick actions'])
@@ -81,6 +81,7 @@ it('renders a personalised Office overview with honest empty states and no impor
         ->assertViewHas('attentionCount', 0)
         ->assertViewHas('importCount', null)
         ->assertViewHas('lastImport', null);
+    expect(preg_match('/<a[^>]*href="'.preg_quote(route('dashboard'), '/').'"[^>]*aria-current="page"[^>]*>/', $response->getContent()))->toBe(1);
 });
 
 it('counts current work across customers without counting closed or trashed requests as open', function (): void {

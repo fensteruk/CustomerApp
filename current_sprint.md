@@ -1,5 +1,16 @@
 # Current Sprint
 
+## First-wave Office UI integration — 23 September 2026
+
+The accepted Dashboard, Customers, Users and Imports redesign commits have been merged into
+local `main` in that order. The combined workspace passed local UI and regression review;
+the only integration correction adds Dashboard to Office navigation. This first wave has
+not been pushed or deployed. The second redesign wave has not started. See
+`documentation/customer-ui-integration01-first-wave-2026-09-23.md` for exact evidence.
+
+The three pre-existing uncommitted Cavity Closer files remain in the original checkout;
+they are separate from this UI integration and must be preserved during subsequent work.
+
 ## Product quantity column correction candidate — 22 September 2026
 
 DEC-075 corrects CAS and FLU as Windows and PFD as Doors. GLS, WP and MISC
