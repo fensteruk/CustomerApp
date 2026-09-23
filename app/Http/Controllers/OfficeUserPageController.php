@@ -2,23 +2,39 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\PortalRoleIdentifier;
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\OfficeUserAdministrationQueryService;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 final class OfficeUserPageController extends Controller
 {
     public function index(Request $request, OfficeUserAdministrationQueryService $queries): View
     {
-        $input = $request->validate(['search' => ['nullable', 'string', 'max:100'], 'active' => ['nullable', 'in:all,active,inactive']]);
+        $input = $request->validate([
+            'search' => ['nullable', 'string', 'max:100'],
+            'active' => ['nullable', 'in:all,active,inactive'],
+            'role' => ['nullable', Rule::enum(PortalRoleIdentifier::class)],
+            'customer' => ['nullable', 'uuid'],
+        ]);
         $active = match ($input['active'] ?? 'all') {
             'active' => true, 'inactive' => false, default => null
         };
 
-        return view('office.users.index', ['users' => $queries->users($request->user(), $input['search'] ?? null, $active)->withQueryString(), 'search' => $input['search'] ?? '', 'active' => $input['active'] ?? 'all']);
+        return view('office.users.index', [
+            'users' => $queries->users($request->user(), $input['search'] ?? null, $active,
+                role: $input['role'] ?? null, customer: $input['customer'] ?? null)->withQueryString(),
+            'summary' => $queries->summary($request->user()),
+            'customers' => $queries->customers($request->user()),
+            'search' => $input['search'] ?? '',
+            'active' => $input['active'] ?? 'all',
+            'role' => $input['role'] ?? '',
+            'customerFilter' => $input['customer'] ?? '',
+        ]);
     }
 
     public function show(Request $request, User $user, OfficeUserAdministrationQueryService $queries): View

@@ -18,19 +18,40 @@ final class OfficeUserAdministrationQueryService
 {
     public function __construct(private readonly OfficeAdministrationPolicy $policy) {}
 
-    public function users(User $actor, ?string $search, ?bool $active, int $perPage = 20): LengthAwarePaginator
+    public function users(User $actor, ?string $search, ?bool $active, int $perPage = 20, ?string $role = null, ?string $customer = null): LengthAwarePaginator
     {
         $this->policy->authorize($actor, 'view');
 
         return User::query()
             ->where('is_preview_user', false)
             ->with(['portalRole:id,identifier,name', 'customerOrganisation:id,uuid,name,is_active'])
+            ->with(['assignedSites' => fn ($query) => $query->select('sites.id', 'sites.name', 'sites.is_active')->orderBy('name')->orderBy('sites.id')->limit(3)])
             ->withCount('assignedSites')
             ->when(filled($search), fn (Builder $query) => $query->where(fn (Builder $inner) => $inner
                 ->where('name', 'like', '%'.trim((string) $search).'%')
                 ->orWhere('email', 'like', '%'.trim((string) $search).'%')))
             ->when($active !== null, fn (Builder $query) => $query->where('is_active', $active))
+            ->when(filled($role), fn (Builder $query) => $query->whereHas('portalRole', fn (Builder $roles) => $roles->where('identifier', $role)))
+            ->when(filled($customer), fn (Builder $query) => $query->whereHas('customerOrganisation', fn (Builder $customers) => $customers->where('uuid', $customer)))
             ->orderBy('name')->orderBy('id')->paginate(max(1, min(100, $perPage)));
+    }
+
+    /** Counts cover all non-preview accounts, independently of list filters. */
+    public function summary(User $actor): array
+    {
+        $this->policy->authorize($actor, 'view');
+
+        $users = User::query()->where('is_preview_user', false);
+        $external = (clone $users)->whereHas('portalRole', fn (Builder $query) => $query
+            ->whereIn('identifier', array_map(fn (PortalRoleIdentifier $role): string => $role->value, PortalRoleIdentifier::siteRoles())));
+
+        return [
+            'total' => (clone $users)->count(),
+            'office' => (clone $users)->whereHas('portalRole', fn (Builder $query) => $query->where('identifier', PortalRoleIdentifier::FensterOfficeStaff->value))->count(),
+            'external' => (clone $external)->count(),
+            'attention' => (clone $external)->where(fn (Builder $query) => $query
+                ->whereNull('customer_organisation_id')->orWhereDoesntHave('assignedSites'))->count(),
+        ];
     }
 
     public function user(User $actor, User $target): User
