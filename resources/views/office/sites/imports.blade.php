@@ -17,7 +17,7 @@
                         default => 'View import details',
                     };
                 @endphp
-                <article class="admin-card {{ $superseded ? 'opacity-75' : '' }}">
+                <article class="admin-card">
                     <h3 class="admin-card-title">{{ \Illuminate\Support\Carbon::parse($run['export_date'])->format('j M Y') }} · {{ $run['export_slot'] === 'MORNING' ? 'Morning' : 'Afternoon' }}</h3>
                     <p class="mt-3"><span class="status {{ $applied && ! $superseded ? 'status-green' : ($run['state'] === 'FAILED' ? 'status-red' : 'status-slate') }}">{{ $superseded ? 'Superseded' : ($applied ? 'Imported — applied to CustomerApp' : 'Uploaded — not yet applied') }}</span></p>
                     @if(! $applied && ! $superseded)
@@ -31,12 +31,15 @@
                         @if ($run['is_superseded'] ?? false)<div><dt class="admin-term">Current record</dt><dd class="admin-value">Superseded by a later import</dd></div>@endif
                         @if (! empty($run['replacement_reason']))<div><dt class="admin-term">Replacement reason</dt><dd class="admin-value">{{ $run['replacement_reason'] }}</dd></div>@endif
                         @if ($applied)
+                            <div><dt class="admin-term">Receipt result</dt><dd class="admin-value">Applied to CustomerApp</dd></div>
+                            <div><dt class="admin-term">Plots created / existing plots reused</dt><dd class="admin-value">{{ $run['receipt']['plot_counts']['created'] ?? 'Not recorded' }} / {{ $run['receipt']['plot_counts']['reused'] ?? 'Not recorded' }}</dd></div>
                             <div><dt class="admin-term">Applied</dt><dd class="admin-value">{{ \Illuminate\Support\Carbon::parse($run['receipt']['committed_at'])->utc()->format('j M Y, H:i') }} UTC</dd></div>
                             @if (! empty($run['receipt']['counts']))
                                 <div><dt class="admin-term">Committed records</dt><dd class="admin-value">{{ collect($run['receipt']['counts'])->map(fn ($count, $label) => str($label)->replace('_', ' ')->title().': '.$count)->join(' · ') }}</dd></div>
                             @endif
                         @endif
                     </dl>
+                    @if($superseded)<p class="mt-4 text-sm">Earlier review retained. Any recorded applied result remains in history; open import details for the current revision.</p>@elseif($run['state'] === 'FAILED')<p class="mt-4 text-sm">This site review did not apply partial changes. Open import details for the failure and available recovery options.</p>@endif
                     <div class="mt-5 flex flex-wrap gap-3">
                         @if(! $superseded && ! $applied && ! empty($run['upload_uuid']) && ! empty($run['selection_uuid']))
                             <a class="primary-button" href="{{ route('office.workspace.pilot-import.show', $run['upload_uuid']) }}#selection-{{ $run['selection_uuid'] }}">{{ $nextAction }}</a>

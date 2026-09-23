@@ -5,6 +5,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\ImportAnalysis;
+use App\SourceImport\Integration\ImportConflict;
 use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\SourceBindingService;
@@ -79,7 +80,6 @@ it('presents actual upload analysis review approval and apply steps with preserv
     $document = new DOMDocument;
     @$document->loadHTML($response->getContent());
     $xpath = new DOMXPath($document);
-    $button = $xpath->query('//button[@form="next-'.$f['selection']['selection'].'"]')->item(0);
     // Every sticky submit refers to a real POST form; the Apply confirmation stays required.
     $buttons = $xpath->query('//div[contains(@class,"wald-action-bar")]//button[@form]');
     expect($buttons->length)->toBe(1);
@@ -137,4 +137,86 @@ it('renders genuine clarification choices and a large master summary without inv
     $html = view('office.pilot-import.show', $data)->render();
     expect($html)->toContain('Which column identifies the plot?', 'Workbook column 4', 'Record clarification', '4,358', 'Whole workbook', 'Reviewing this site only')->not->toContain('We found 4,358 plots');
     finalUxCapture('clarification', $html);
+});
+
+it('shows applied receipt facts and onward links without replaying mutation controls', function (): void {
+    $f = finalUxFixture($this->office);
+    (new ImportAnalysis)->analyse($this->office, $f['scope'], $f['run']->uuid, (int) $f['run']->epoch, (string) Str::uuid());
+    $run = DB::table('wald_import_runs')->where('id', $f['run']->id)->first();
+    $review = new ImportReview;
+    $preview = $review->preview($this->office, $f['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    $review->approve($this->office, $f['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $receipt = $review->commit($this->office, $f['scope'], $run->uuid, $preview['preview'], $preview['hash'], (string) Str::uuid());
+    $url = route('office.workspace.pilot-import.show', $f['upload']['upload']);
+    $response = $this->get($url)->assertOk()->assertSee('Applied to CustomerApp')->assertSee('Plots created')->assertSee('Existing plots reused')->assertSee('Applied (UTC)')->assertSee('Alex Example')->assertSee('View site plots')->assertSee('View import history')->assertDontSee('RE-ANALYSE THIS IMPORT')->assertDontSee('COMMIT THIS ONE SITE');
+    $detail = array_values($response->viewData('details'))[0];
+    // MySQL JSON storage reorders keys; compare the complete canonical payload.
+    expect(Canonical::json($detail['receipt']))->toBe(Canonical::json($receipt))->and($receipt['plot_counts']['created'])->toBe(2)->and($receipt['counts']['excluded'])->toBe(1);
+    finalUxCapture('applied', $response->getContent());
+    $this->travel(25)->hours();
+    $expiredReceipt = $this->get($url)->assertOk()->assertDontSee('This preview has expired.');
+    $document = new DOMDocument;
+    @$document->loadHTML($expiredReceipt->getContent());
+    expect((new DOMXPath($document))->query('//li[@aria-current="step"]')->item(0)->textContent)->toBe('7Applied');
+    $this->travelBack();
+    $history = $this->get(route('office.workspace.sites.show', [$f['site']->customerOrganisation->uuid, $f['site']->uuid, 'section' => 'imports']))->assertOk()->assertSee('Applied to CustomerApp')->assertSee('View import details');
+    finalUxCapture('site-history', $history->getContent());
+    $replacement = UploadedFile::fake()->createWithContent('replacement.csv', "Call No.,CustomerCode,Site Name,Plot number,Call Type,Complete,VS\n2001,FNA001,Willow Park,594,PC1,No,2\n");
+    $new = (new PilotImportWorkflow)->upload($this->office, $replacement, new ExportOrder('2026-09-23', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid(), $f['upload']['upload'], 'Corrected source export.', PilotImportWorkflow::REPLACEMENT_CONFIRMATION);
+    $response = $this->get($url)->assertOk()->assertSee('Superseded upload')->assertSee('Open current revision 2')->assertSee('earlier applied receipt')->assertDontSee('COMMIT THIS ONE SITE');
+    expect(DB::table('projected_plots')->where('site_id', $f['site']->id)->count())->toBe(2);
+    finalUxCapture('superseded', $response->getContent());
+    $this->get(route('office.workspace.pilot-import.show', $new['upload']))->assertOk()->assertSee('Corrected source export.')->assertSee('Revision 2');
+});
+
+it('explains failed upload recovery without claiming partial application', function (): void {
+    $file = UploadedFile::fake()->createWithContent('missing-code.csv', "Call No.,Site Name,Plot number,Call Type,Complete\n3001,Willow Park,591,PC1,No\n");
+    expect(fn () => (new PilotImportWorkflow)->upload($this->office, $file, new ExportOrder('2026-09-24', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid()))->toThrow(ImportConflict::class, 'customer_code_missing');
+    $upload = DB::table('wald_pilot_uploads')->sole();
+    expect($upload->state)->toBe('FAILED');
+    $response = $this->get(route('office.workspace.pilot-import.show', $upload->uuid))->assertOk()->assertSee('The workbook could not be prepared')->assertSee('No site from this upload has been applied')->assertSee('Upload a corrected export')->assertDontSee('RE-ANALYSE THIS IMPORT');
+    finalUxCapture('failed-upload', $response->getContent());
+});
+
+it('reanalyzes stored bytes with current and historical generations shown separately', function (): void {
+    $f = finalUxFixture($this->office);
+    (new ImportAnalysis)->analyse($this->office, $f['scope'], $f['run']->uuid, (int) $f['run']->epoch, (string) Str::uuid());
+    $old = DB::table('wald_import_runs')->where('id', $f['run']->id)->first();
+    DB::table('wald_import_runs')->where('id', $old->id)->update(['state' => 'FAILED', 'failure_code' => 'analysis_failed']);
+    $url = route('office.workspace.pilot-import.show', $f['upload']['upload']);
+    $response = $this->get($url)->assertOk()->assertSee('Analysis stopped for Willow Park')->assertSee('No changes from this site review were applied.')->assertSee('You do not need to upload identical bytes again.')->assertSee('RE-ANALYSE THIS IMPORT');
+    finalUxCapture('failed-analysis', $response->getContent());
+    $selection = DB::table('wald_pilot_selections')->where('run_id', $old->id)->value('uuid');
+    $this->post(route('office.workspace.pilot-import.selections.reanalyse', [$f['upload']['upload'], $selection]), ['command_uuid' => (string) Str::uuid(), 'confirmation' => 'RE-ANALYSE THIS IMPORT'])->assertRedirect()->assertSessionHasNoErrors();
+    $response = $this->get($url)->assertOk()->assertSee('Superseded / historical')->assertSee('Current')->assertSee('Ready to review');
+    $new = DB::table('wald_import_runs')->where('id', $old->id)->first();
+    expect($new->context_id)->not->toBe($old->context_id)->and($new->stage_id)->not->toBe($old->stage_id)
+        ->and($new->workbook_hash)->toBe($old->workbook_hash)->and(DB::table('wald_pilot_uploads')->count())->toBe(1)
+        ->and(DB::table('wald_import_stages')->where('id', $old->stage_id)->exists())->toBeTrue()
+        ->and(DB::table('projected_plots')->count())->toBe(0);
+    finalUxCapture('reanalysed', $response->getContent());
+});
+
+it('keeps retained evidence readable when the stored workbook has been removed', function (): void {
+    $f = finalUxFixture($this->office);
+    (new ImportAnalysis)->analyse($this->office, $f['scope'], $f['run']->uuid, (int) $f['run']->epoch, (string) Str::uuid());
+    Storage::build(['driver' => 'local', 'root' => storage_path('app/private/wald-imports')])->delete($f['run']->storage_key);
+    $response = $this->get(route('office.workspace.pilot-import.show', $f['upload']['upload']))->assertOk()->assertSee('The stored workbook is unavailable')->assertSee('Upload a fresh export')->assertDontSee('RE-ANALYSE THIS IMPORT')->assertDontSee('Create one-site preview');
+    finalUxCapture('missing-workbook', $response->getContent());
+});
+
+it('preserves independently paginated import history and surfaces export identity and receipt counts', function (): void {
+    $f = finalUxFixture($this->office);
+    $record = (array) DB::table('wald_pilot_uploads')->where('uuid', $f['upload']['upload'])->first();
+    unset($record['id']);
+    for ($i = 1; $i <= 24; $i++) {
+        DB::table('wald_pilot_uploads')->insert([...$record, 'uuid' => (string) Str::uuid(), 'storage_key' => Str::uuid().'.csv', 'export_order' => '202610'.sprintf('%02d', $i).'AM',
+            'export_date' => '2026-10-'.sprintf('%02d', $i), 'workbook_hash' => hash('sha256', 'fictional-'.$i), 'created_at' => now()->subDays($i),
+            'state' => $i % 2 ? 'FAILED' : 'READY', 'failure_code' => $i % 2 ? 'duplicate_call_number' : null]);
+    }
+    $response = $this->get(route('office.workspace.imports'))->assertOk()->assertSee('site receipts')->assertSee('Export 3 Oct 2026');
+    expect($response->viewData('recentImports'))->toHaveCount(3)->and($response->viewData('importHistory')->count())->toBe(10)->and($response->viewData('importHistory')->total())->toBe(22);
+    finalUxCapture('history', $response->getContent());
+    $this->get(route('office.workspace.imports', ['history_page' => 2]))->assertOk()->assertViewHas('importHistory', fn ($history) => $history->currentPage() === 2 && $history->count() === 10);
+    $this->get(route('office.workspace.imports', ['history_filter' => 'failed']))->assertOk()->assertViewHas('importHistory', fn ($history) => $history->total() === 11);
 });
