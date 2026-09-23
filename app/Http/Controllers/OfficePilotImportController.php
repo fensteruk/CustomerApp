@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Services\OfficeImportsWorkspaceQuery;
 use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
@@ -27,12 +28,14 @@ use Illuminate\View\View;
 
 final class OfficePilotImportController extends Controller
 {
-    public function index(Request $request): View
+    public function index(Request $request, OfficeImportsWorkspaceQuery $workspace): View
     {
         if (! (new WaldPilotAvailability)->enabled()) {
             return view('office.imports', ['site' => null]);
         }
         (new PilotImportPolicy)->authorize($request->user());
+        $data = $request->validate(['history_filter' => ['sometimes', Rule::in(array_keys(OfficeImportsWorkspaceQuery::FILTERS))],
+            'history_page' => ['sometimes', 'integer', 'min:1']]);
 
         $current = DB::table('wald_pilot_uploads as uploads')
             ->whereNotExists(function ($query): void {
@@ -52,7 +55,7 @@ final class OfficePilotImportController extends Controller
             ])->all();
 
         return view('office.pilot-import.index', [
-            'uploads' => $current->orderByDesc('uploads.export_order')->paginate(20),
+            ...$workspace->forOffice($request->user(), $data['history_filter'] ?? 'all'),
             'replacementSlots' => $replacementSlots,
         ]);
     }
