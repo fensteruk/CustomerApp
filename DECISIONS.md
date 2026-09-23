@@ -2004,3 +2004,51 @@ with concurrent branches based on the same decision ledger.
 
 Reason: Management confirmed that Site Managers must be able to correct a call-off
 immediately and repeatedly without reverting to phone calls while awaiting Office.
+
+---
+
+## DEC-077
+
+Date: 23 September 2026
+
+Decision: For the current RedZebra master export, the recognized `Plot Ref` field is
+the exact Customer – Site – Plot hierarchy. Accept only three nonempty components
+with spaced ASCII hyphen, en dash or em dash separators, or the approved compact
+variant with exactly two unspaced ASCII hyphens. Additional or mixed separators
+remain ambiguous. The final `Plot ` component
+may name a numeric or string plot; `Plot 776` becomes `776`, while `Plot Com 4`
+becomes `Com 4`. Preserve raw source provenance. Approved irrelevant Call Type rows
+remain excluded before hierarchy projection. Included malformed or conflicting
+hierarchy blocks its selected site unit. CustomerCode remains the durable exact
+source-site identity; source Site Name is descriptive. Resolve customer by exact
+name and site by exact name under that customer. New customer/site creation requires
+explicit Office approval. A source binding to a different customer or site blocks.
+Plot identity is resolved exact site plus normalized string plot reference. Dictionary
+v9 stales older interpretations; one selected site per explicit commit remains.
+This supersedes DEC-072's numeric-only `Plot N` assumption for the current composite
+master hierarchy. It does not authorize an unattended all-site import or deployment.
+
+Management also confirms that current production customer/site/plot hierarchy is
+disposable demo data and requests a controlled reset before the next import.
+Preserve Office accounts, configuration and shared audit; detach/deactivate affected
+external users safely. Inspect the complete dependency graph, capture a recovery
+snapshot and verify an approved recovery point before deletion. This does not waive
+the production release and database safety gates; no production reset or master import
+occurs as part of the parser release without its own verified prerequisites.
+
+Reason: The genuine export carries the customer and site hierarchy in Plot Ref,
+including named plots, and the current demo ownership can conflict with that source.
+
+Management subsequently approved the exact compact ASCII hyphen variant and confirmed
+that other malformed forms should be narrowed through source evidence and presented
+to Office for explicit customer/site/plot confirmation before import. The exact
+FNA2664 `Little Cotton Farm 117-144...- Baker Estates Ltd{digits}` form may prefill
+Baker Estates Ltd / Little Cotton Farm 117-144 / trailing digits as a proposal only.
+Row 3950's plot is 222. No such proposal is silently committed or generalized to
+different CustomerCodes or prefixes.
+
+Management subsequently confirmed the exact FNA2561 `Vistry - Northam PH3-{digits}`
+format as a direct parse rule. The customer is Vistry, the site is Northam PH3,
+and every digit after the final unspaced hyphen is the plot reference. The first
+hyphen has spaces on both sides. This scoped rule supersedes the earlier plan to
+ask Office to confirm each Northam row. Other mixed separators remain review cases.

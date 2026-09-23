@@ -10,7 +10,7 @@ final class KnowledgeIdentity
 {
     public const BASELINE = 'a80ce7d14206cf3f3a9343448d406f01ae927b88';
 
-    public const FINGERPRINT = '232ff3ed79c4195f62752c45a5d9d460726bcff8515ee6450da2f7322369b9c8';
+    public const FINGERPRINT = '8f2cec47b59b61a35f50e8c5e96e1aeedc0ac5dfe80ecb10922b51bfa646281b';
 
     public const POLICY = 'customerapp.wald-knowledge-policy.v1';
 

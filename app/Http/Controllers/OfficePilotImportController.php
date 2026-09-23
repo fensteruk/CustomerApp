@@ -5,6 +5,8 @@ namespace App\Http\Controllers;
 use App\Services\OfficeImportsWorkspaceQuery;
 use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
+use App\SourceImport\Integration\HierarchyClarifications;
+use App\SourceImport\Integration\HierarchyTarget;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
 use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
@@ -145,6 +147,26 @@ final class OfficePilotImportController extends Controller
         return back()->with('status', 'Detected structure confirmed. This did not assign business meaning.');
     }
 
+    public function confirmHierarchy(Request $request, string $upload): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate([
+            'source_hash' => ['required', 'size:64'], 'raw_hash' => ['required', 'size:64'],
+            'customer' => ['required', 'string', 'max:200'], 'site' => ['required', 'string', 'max:200'],
+            'plot' => ['required', 'string', 'max:200'], 'command_uuid' => ['required', 'uuid'],
+        ]);
+        try {
+            (new HierarchyClarifications)->answer(
+                $request->user(), $upload, $data['source_hash'], $data['raw_hash'],
+                trim($data['customer']), trim($data['site']), trim($data['plot']), $data['command_uuid'],
+            );
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['hierarchy' => $this->message($exception)]);
+        }
+
+        return back()->with('status', 'Customer, site and plot confirmed for this source value. Review the remaining exceptions.');
+    }
+
     public function draftBinding(Request $request, string $upload, PilotImportWorkflow $workflow): RedirectResponse
     {
         $this->enabled();
@@ -153,6 +175,7 @@ final class OfficePilotImportController extends Controller
             $summary = $workflow->summary($request->user(), $upload);
             $source = collect($summary['sources'])->firstWhere('hash', $data['source_hash']) ?? throw new ImportConflict('source_identity_not_found');
             $site = (new PilotImportPolicy)->activeSite($request->user(), $data['site_uuid']);
+            (new HierarchyTarget)->assertMatches($source, $site);
             $scope = new KnowledgeScope($site->customer_organisation_id, $site->id, 'redzebra', 'call-offs');
             (new SourceBindingService)->draft($request->user(), $scope, $source['kind'], $source['identity'], $data['reason'], $data['command_uuid']);
         } catch (ImportConflict $exception) {
@@ -171,7 +194,7 @@ final class OfficePilotImportController extends Controller
         ]);
         try {
             $summary = $workflow->summary($request->user(), $upload);
-            $belongsToUpload = collect($summary['sources'])->contains(function (array $source) use ($data): bool {
+            $matchingSource = collect($summary['sources'])->first(function (array $source) use ($data): bool {
                 $draft = $source['draft'] ?? null;
 
                 return $draft
@@ -181,10 +204,11 @@ final class OfficePilotImportController extends Controller
                     && (int) $draft['epoch'] === (int) $data['epoch']
                     && hash_equals((string) $draft['site_uuid'], $data['site_uuid']);
             });
-            if (! $belongsToUpload) {
+            if (! $matchingSource) {
                 throw new ImportConflict('binding_draft_not_in_upload');
             }
             $site = (new PilotImportPolicy)->activeSite($request->user(), $data['site_uuid']);
+            (new HierarchyTarget)->assertMatches($matchingSource, $site);
             $scope = new KnowledgeScope($site->customer_organisation_id, $site->id, 'redzebra', 'call-offs');
             (new SourceBindingService)->activate($request->user(), $scope, $data['binding'], (int) $data['version'], $data['definition_hash'], (int) $data['epoch'], $data['reason'], $data['command_uuid']);
         } catch (ImportConflict $exception) {

@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v8';
+    public const VERSION = 'customerapp.source-dictionary.v9';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -69,7 +69,7 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
         'source site id' => ['description' => 'Durable source identity when supplied', 'role' => 'source_site_identity'],
         'source site reference' => ['description' => 'Durable source identity when supplied', 'role' => 'source_site_identity'],
         'call no.' => ['description' => 'Source call-off reference', 'role' => 'call_reference'],
-        'plot ref' => ['description' => 'Source plot reference', 'role' => 'plot_reference'],
+        'plot ref' => ['description' => 'Exact Customer – Site – Plot hierarchy and source plot reference', 'role' => 'plot_reference'],
         'call type' => ['description' => 'Source call type', 'role' => 'call_type'],
         'complete' => ['description' => 'Source call-off part completion flag', 'role' => 'completion'],
         'completed' => ['description' => 'Source call-off part completion flag', 'role' => 'completion'],
@@ -88,9 +88,14 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
             'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
             'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded_products' => self::EXCLUDED_PRODUCTS,
             'fields' => self::FIELDS, 'completion' => ['yes' => true, 'no' => false],
+            'hierarchy_suggestions' => [
+                'FNA2664' => 'Exact Little Cotton Farm 117-144...- Baker Estates Ltd{digits} offers Baker Estates Ltd / Little Cotton Farm 117-144 / {digits} for Office confirmation only',
+                'FNA2561' => 'Exact Vistry - Northam PH3-{digits} parses directly as Vistry / Northam PH3 / all trailing digits',
+            ],
             'normalization' => ['codes' => 'ASCII uppercase and surrounding whitespace trim; punctuation preserved',
                 'headers' => 'Exact field labels, except CallNo semantic token pairs ignore case, spacing and punctuation; CustomerNo, CustomerCode and Customer Number are exact approved CustomerCode headers',
                 'quantity' => 'plain nonnegative decimal, at most 3 fractional digits; unrepresented values make no assertion; no exponent/grouping/bool',
+                'plot_reference' => 'Exactly three nonempty components separated by spaced ASCII hyphen, en dash or em dash, or exactly two compact ASCII hyphens; final Plot prefix removed and remaining nonempty plot identity preserved as a string',
                 'quantity_max_units' => Quantity::MAX_UNITS, 'scale' => 1000,
                 'duplicates' => 'reject normalized duplicate codes', 'overflow' => 'null totals and blocked',
                 'absence' => 'zero within supplied input only; no projection authority'],

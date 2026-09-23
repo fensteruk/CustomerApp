@@ -149,10 +149,15 @@ final class PilotImportWorkflow
                 throw new ImportConflict('pilot_upload_not_selectable');
             }
             $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
+            if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v4') {
+                throw new ImportConflict('pilot_source_manifest_stale');
+            }
             $source = collect($manifest['sources'])->firstWhere('hash', $sourceHash);
             if (! $source) {
                 throw new ImportConflict('source_identity_not_found');
             }
+            $source = (new HierarchyClarifications)->resolve($source, (new HierarchyClarifications)->all($upload->id)[$sourceHash] ?? []);
+            (new HierarchyTarget)->assertMatches($source, $site);
             $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
             $binding = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]))->lockForUpdate()->first();
             $version = $binding?->active_version
@@ -238,8 +243,10 @@ final class PilotImportWorkflow
         $upload = DB::table('wald_pilot_uploads')->where('uuid', $uuid)->firstOrFail();
         $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
         $manifest = $upload->source_manifest ? json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR) : ['sources' => []];
+        $hierarchyAnswers = (new HierarchyClarifications)->all($upload->id);
         $sources = array_map(
-            fn (array $source): array => $this->presentSource($stream->source_namespace, $source),
+            fn (array $source): array => $this->presentSource($stream->source_namespace,
+                (new HierarchyClarifications)->resolve($source, $hierarchyAnswers[$source['hash']] ?? [])),
             $manifest['sources'] ?? [],
         );
         $legacySourceHashes = array_fill_keys(array_column(array_filter(
@@ -319,6 +326,12 @@ final class PilotImportWorkflow
             'site_name' => $siteName,
             'observed_site_names' => $observedSiteNames,
             'warnings' => $warnings,
+            ...($source['hierarchy_mode'] ?? null ? [
+                'hierarchy' => $source['hierarchy'] ?? null,
+                'hierarchy_mode' => $source['hierarchy_mode'],
+                'hierarchy_proposal' => (new HierarchyTarget)->proposal($source),
+                'hierarchy_issues' => $source['hierarchy_issues'] ?? [],
+            ] : []),
             'legacy_pre_customer_code' => $legacy,
             'identity_label' => $legacy ? 'Legacy source identity' : 'CustomerCode',
             ...$this->binding($namespace, $source),

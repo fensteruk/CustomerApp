@@ -212,8 +212,8 @@ it('defaults partial and requires downstream confirmation of stronger assertions
 it('has canonical stable immutable versioned identity', function () {
     $definition = Dictionary::definition();
     $identity = (new Dictionary)->identity();
-    expect($identity->version)->toBe('customerapp.source-dictionary.v8')
-        // v8 is frozen: a definition edit must introduce a new version, not update this pair.
+    expect($identity->version)->toBe('customerapp.source-dictionary.v9')
+        // v9 is frozen: a definition edit must introduce a new version, not update this pair.
         ->and($identity->fingerprint)->toBe(KnowledgeIdentity::FINGERPRINT)
         ->and(DictionaryIdentity::fromDefinition(Dictionary::VERSION, array_reverse($definition, true))->fingerprint)->toBe($identity->fingerprint)
         ->and((new Dictionary)->callType('PC1')->jsonSerialize()['wald_core']['commit'])->toBe(CoreIdentity::SHA);
@@ -227,6 +227,6 @@ it('requires a version and fingerprint change for labels meanings and mappings',
     $old = (new Dictionary)->identity();
     $definition['calls']['PC1'][$field] = $value;
     expect(fn () => DictionaryIdentity::fromDefinition(Dictionary::VERSION, $definition, $old))->toThrow(InvalidArgumentException::class);
-    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v9', $definition, $old);
+    $new = DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v10', $definition, $old);
     expect($new->fingerprint)->not->toBe($old->fingerprint)->and($new->version)->not->toBe($old->version);
 })->with([['description', 'New label'], ['service', 'cml'], ['revisit', true]]);

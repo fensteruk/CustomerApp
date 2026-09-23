@@ -670,6 +670,7 @@ The source workbook may currently expose this field as:
 
 - `CustomerNo`
 - `CustomerCode`
+- `Customer Number`
 
 where explicitly approved in the dictionary.
 
@@ -702,7 +703,9 @@ text changed.
 
 ### Unknown CustomerCode
 
-Require explicit Office binding to an existing CustomerApp customer/site.
+Resolve the parsed composite `Plot Ref` customer and site by exact names. If
+either does not exist, propose its creation for explicit Office approval,
+then require an exact source binding before projection.
 
 Do not:
 
@@ -748,6 +751,7 @@ The UI should clearly show:
 
 - CustomerCode;
 - Source Site Name;
+- parsed source customer and site;
 - bound CustomerApp customer;
 - bound CustomerApp site.
 
@@ -767,7 +771,22 @@ Plot identity is:
 
 **resolved site + normalized Plot Ref**
 
-When an export contains both `Plot Ref` and `Plot number`, Wald may select
+In the current RedZebra master export, the recognized `Plot Ref` header carries
+exactly three nonempty components: Customer – Site – Plot. Separators may be
+spaced ASCII hyphen, en dash or em dash; the approved compact variant uses
+exactly two unspaced ASCII hyphens. The final component starts with
+`Plot `; the nonempty remainder is the canonical string plot identity. For
+example, `Vistry – Countryside 2D – Plot 776` resolves to Vistry,
+Countryside 2D and plot `776`; `Plot Com 4` resolves to plot `Com 4`.
+The confirmed FNA2561 form `Vistry - Northam PH3-{digits}` is a scoped
+exception: the first hyphen is spaced, the final hyphen is unspaced, and all
+final digits are the plot reference.
+Site Name remains descriptive. Included malformed or conflicting hierarchy
+blocks the affected selected-site import. Exact CustomerCode binding and site
+ownership must agree with the parsed hierarchy. Approved excluded Call Type
+rows do not contribute hierarchy blockers.
+
+For an older applicable workbook with both `Plot Ref` and `Plot number`, Wald may select
 `Plot number` as the customer-facing plot identifier without asking Office
 only when its value agrees exactly with the trailing `Plot N` in `Plot Ref`
 for every included row. Keep the full `Plot Ref` as private source evidence.

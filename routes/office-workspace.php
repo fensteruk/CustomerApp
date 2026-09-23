@@ -32,6 +32,7 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
             Route::get('/reconciliation', [OfficeImportReconciliationController::class, 'show'])->name('pilot-import.reconciliation');
             Route::get('/', [PilotImport::class, 'show'])->name('pilot-import.show');
             Route::post('/confirm-structure', [PilotImport::class, 'confirmStructure'])->name('pilot-import.confirm-structure');
+            Route::post('/confirm-hierarchy', [PilotImport::class, 'confirmHierarchy'])->name('pilot-import.confirm-hierarchy');
             Route::post('/bindings/draft', [PilotImport::class, 'draftBinding'])->name('pilot-import.bindings.draft');
             Route::post('/bindings/activate', [PilotImport::class, 'activateBinding'])->name('pilot-import.bindings.activate');
             Route::post('/select', [PilotImport::class, 'select'])->name('pilot-import.select');

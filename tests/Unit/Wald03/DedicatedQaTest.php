@@ -105,14 +105,14 @@ it('independently canonicalises nested dictionaries and identity bearing mutatio
         return is_array($value) ? array_map($reverse, array_is_list($value) ? $value : array_reverse($value, true)) : $value;
     };
     $definition = D::definition();
-    $expected = '232ff3ed79c4195f62752c45a5d9d460726bcff8515ee6450da2f7322369b9c8';
+    $expected = '8f2cec47b59b61a35f50e8c5e96e1aeedc0ac5dfe80ecb10922b51bfa646281b';
     expect(hash('sha256', json_encode($canonical($definition), JSON_THROW_ON_ERROR | JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_PRESERVE_ZERO_FRACTION)))->toBe($expected)
         ->and(DictionaryIdentity::fromDefinition(D::VERSION, $reverse($definition))->fingerprint)->toBe($expected);
     foreach (array_keys($definition) as $section) {
         $changed = $definition;
         $changed[$section] = ['QA_SEMANTIC_MUTATION'];
         expect(fn () => DictionaryIdentity::fromDefinition(D::VERSION, $changed, (new D)->identity()))->toThrow(InvalidArgumentException::class)
-            ->and(DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v9', $changed)->fingerprint)->not->toBe($expected);
+            ->and(DictionaryIdentity::fromDefinition('customerapp.source-dictionary.v10', $changed)->fingerprint)->not->toBe($expected);
     }
 });
 

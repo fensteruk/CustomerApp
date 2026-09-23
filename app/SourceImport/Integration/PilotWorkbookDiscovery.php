@@ -41,12 +41,15 @@ final class PilotWorkbookDiscovery
         }
         $callColumn = $this->single($roles, 'call_reference', 'required_call_column_unresolved');
         $callTypeColumn = $this->single($roles, 'call_type', 'required_call_type_column_unresolved');
+        $plotColumns = array_keys($roles['plot_reference'] ?? []);
+        $plotColumn = count($plotColumns) === 1 ? (int) $plotColumns[0] : null;
         $identity = (new MasterExportSiteIdentity)->columns($roles, $upload->workbook_hash);
 
         $seen = [];
         $sources = [];
         $included = 0;
         $excluded = 0;
+        $sawHierarchySignal = false;
         $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
         $dataEnd = (int) ($table['data_end_row'] ?? $table['range']['end_row']);
         foreach ($sheet->cells as $rowNumber => $cells) {
@@ -99,6 +102,10 @@ final class PilotWorkbookDiscovery
                 continue;
             }
             $hash = Canonical::hash([$identity['kind'], $identityValue]);
+            $rawPlot = $plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null;
+            $sawHierarchySignal = $sawHierarchySignal
+                || (is_string($rawPlot) && (preg_match('/\s[-\x{2013}\x{2014}]\s|[-\x{2013}\x{2014}]\s*Plot\s+/iu', $rawPlot) === 1
+                    || (new HierarchySuggestion)->forIssue($identityValue, $rawPlot) !== null));
             $sources[$hash] ??= [
                 'kind' => $identity['kind'],
                 'identity' => $identityValue,
@@ -108,7 +115,31 @@ final class PilotWorkbookDiscovery
                 'warnings' => $identity['legacy'] ? ['LEGACY_SOURCE_IDENTITY'] : [],
                 'hash' => $hash,
                 'rows' => 0,
+                'hierarchy' => ['customer' => null, 'site' => null, 'valid_rows' => 0, 'invalid_rows' => 0, 'conflicting_rows' => 0],
+                'hierarchy_issues' => [],
             ];
+            if ($plotColumn !== null) {
+                $parsed = (new CompositePlotHierarchy)->parse($rawPlot, $identityValue);
+                if (! $parsed['valid']) {
+                    $sources[$hash]['hierarchy']['invalid_rows']++;
+                    $rawHash = Canonical::hash([$rawPlot]);
+                    $sources[$hash]['hierarchy_issues'][$rawHash] ??= [
+                        'hash' => $rawHash, 'raw' => $rawPlot, 'reason' => $parsed['issue'], 'rows' => [],
+                        'suggestion' => (new HierarchySuggestion)->forIssue($identityValue, $rawPlot),
+                    ];
+                    $sources[$hash]['hierarchy_issues'][$rawHash]['rows'][] = (int) $rowNumber;
+                } else {
+                    $hierarchy = &$sources[$hash]['hierarchy'];
+                    $hierarchy['valid_rows']++;
+                    if ($hierarchy['customer'] === null) {
+                        $hierarchy['customer'] = $parsed['customer'];
+                        $hierarchy['site'] = $parsed['site'];
+                    } elseif ($hierarchy['customer'] !== $parsed['customer'] || $hierarchy['site'] !== $parsed['site']) {
+                        $hierarchy['conflicting_rows']++;
+                    }
+                    unset($hierarchy);
+                }
+            }
             if ($siteName !== null) {
                 $sources[$hash]['observed_site_names'][$siteName] = true;
             }
@@ -118,19 +149,35 @@ final class PilotWorkbookDiscovery
         if ($seen === [] || $sources === []) {
             throw new ImportConflict('no_source_records');
         }
+        $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
+        $compositeMode = ! $identity['legacy'] && ($sawHierarchySignal
+            || is_string($identityHeader) && trim($identityHeader) === 'Customer Number');
         ksort($sources, SORT_STRING);
         foreach ($sources as &$source) {
+            $source['hierarchy_mode'] = $compositeMode ? 'COMPOSITE' : 'LEGACY_FLAT';
+            if (! $compositeMode) {
+                $source['hierarchy'] = null;
+                $source['hierarchy_issues'] = [];
+            } else {
+                $source['hierarchy_issues'] = array_values($source['hierarchy_issues']);
+            }
             $source['observed_site_names'] = array_keys($source['observed_site_names']);
             sort($source['observed_site_names'], SORT_NATURAL | SORT_FLAG_CASE);
             $source['site_name'] = $source['observed_site_names'][0] ?? $source['site_name'];
             if (count($source['observed_site_names']) > 1) {
                 $source['warnings'][] = 'SOURCE_SITE_NAME_VARIATION';
             }
+            if ($compositeMode && $source['hierarchy']['invalid_rows'] > 0) {
+                $source['warnings'][] = 'SOURCE_HIERARCHY_INVALID';
+            }
+            if ($compositeMode && $source['hierarchy']['conflicting_rows'] > 0) {
+                $source['warnings'][] = 'SOURCE_HIERARCHY_CONFLICT';
+            }
         }
         unset($source);
 
         return [
-            'schema' => 'customerapp.wald-pilot-discovery.v3',
+            'schema' => 'customerapp.wald-pilot-discovery.v4',
             'analysis_hash' => $data['analysis_hash'],
             'requires_confirmation' => in_array('no_clear_header', $table['warnings'], true),
             'sheet' => $sheet->id,
