@@ -2,6 +2,9 @@
     $bindingAvailable = ($items['availability'] ?? null) === 'AVAILABLE';
     $hasActiveBinding = $bindingAvailable && ($items['has_active_binding'] ?? false);
 @endphp
+@include('office.sites.plots')
+<details class="sw-disclosure sw-section">
+    <summary>Site and source details <span aria-hidden="true">⌄</span></summary>
 <section aria-labelledby="overview-title">
     <h2 id="overview-title" class="section-title">Overview</h2>
     <dl class="admin-card mt-4 grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -26,3 +29,4 @@
         <a class="admin-link-button mt-2" href="{{ route('office.workspace.sites.show', [$site['customer']['uuid'], $site['uuid'], 'section' => 'source']) }}">View Source Binding</a>
     </div>
 </section>
+</details>

@@ -8,7 +8,7 @@ use App\Enums\PlotServicePresentationState;
 use App\Models\CallOffRequest;
 use App\Models\ProjectedPlotService;
 use App\Models\Site;
-use App\Services\PlotOverviewQueryService;
+use App\Services\SiteWorkspaceQueryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -19,7 +19,7 @@ class SiteDashboardController extends Controller
     /**
      * Show the authenticated active assigned-site dashboard.
      */
-    public function __invoke(Request $request, PlotOverviewQueryService $overview): View
+    public function __invoke(Request $request, SiteWorkspaceQueryService $workspace): View
     {
         $user = $request->user();
         $activeSite = $request->attributes->get('activeSite');
@@ -28,7 +28,7 @@ class SiteDashboardController extends Controller
             'service' => ['nullable', 'string', Rule::enum(CallOffServiceType::class)],
             'status' => ['nullable', 'string', Rule::enum(PlotServicePresentationState::class)],
             'overall_status' => ['nullable', 'array', 'max:5'],
-            'overall_status.*' => ['string', Rule::enum(PlotOverallStatus::class)],
+            'overall_status.*' => ['nullable', 'string', Rule::enum(PlotOverallStatus::class)],
             'show_completed' => ['nullable', 'boolean'],
         ]);
 
@@ -36,7 +36,7 @@ class SiteDashboardController extends Controller
             'plot' => $filters['plot'] ?? '',
             'service' => $filters['service'] ?? '',
             'status' => $filters['status'] ?? '',
-            'overall_status' => array_values(array_unique($filters['overall_status'] ?? [])),
+            'overall_status' => array_values(array_unique(array_filter($filters['overall_status'] ?? []))),
             'show_completed' => (bool) ($filters['show_completed'] ?? false),
         ];
 
@@ -46,9 +46,8 @@ class SiteDashboardController extends Controller
             + count($filters['overall_status'])
             + (int) $filters['show_completed'];
 
-        return view('portal.site-dashboard', [
+        return view('portal.site-dashboard', $workspace->workspace($user, $activeSite, $filters) + [
             'activeSite' => $activeSite->load('customerOrganisation'),
-            'plots' => $overview->paginate($activeSite, $filters),
             'legacyRequests' => CallOffRequest::query()
                 ->select('call_off_requests.*')
                 ->join('call_off_batches', 'call_off_batches.id', '=', 'call_off_requests.call_off_batch_id')
