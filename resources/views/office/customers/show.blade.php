@@ -2,13 +2,13 @@
     @include('office.customers.detail-styles')
     <div class="customer-detail" data-customer-detail>
         <a class="admin-back w-fit" href="{{ route('office.workspace.customers.index') }}">← Customers</a>
-        <header class="admin-page-header">
-            <div><p class="eyebrow">Customer workspace</p><h1 class="admin-title">{{ $customer['name'] }}</h1><div class="mt-3">@include('office.partials.status', ['active' => $customer['is_active']])</div><p class="admin-intro">Sites, call-offs and the people with access.</p></div>
-            <div class="admin-actions">
+        <x-page-header :title="$customer['name']" eyebrow="Customer workspace" description="Sites, call-offs and the people with access.">
+            <x-slot:context>@include('office.partials.status', ['active' => $customer['is_active']])</x-slot:context>
+            <x-slot:actions>
                 @if($customer['is_active'])<a class="primary-button" href="{{ route('office.workspace.sites.create', $customer['uuid']) }}"><span aria-hidden="true">+</span> Add site</a>@endif
                 <a class="secondary-button" href="{{ route('office.workspace.customers.edit', $customer['uuid']) }}">Edit customer</a>
-            </div>
-        </header>
+            </x-slot:actions>
+        </x-page-header>
         @include('office.partials.feedback')
         @unless($customer['is_active'])
             <div class="admin-notice">This customer is inactive. External users cannot access the portal for this customer. Sites, users and history are retained. Reactivate the customer before adding a site. <a class="admin-link-button" href="{{ route('office.workspace.customers.lifecycle', $customer['uuid']) }}">Reactivate customer</a></div>
@@ -77,8 +77,8 @@
             <div class="space-y-4 pt-2 text-sm text-slate-600">
                 <p>Deactivate keeps this customer, its access relationships and history.</p>
                 <a class="admin-link-button" href="{{ route('office.workspace.customers.lifecycle', $customer['uuid']) }}">{{ $customer['is_active'] ? 'Deactivate' : 'Reactivate' }} customer</a>
-                <div class="border-t border-slate-200 pt-4"><p>Permanent deletion removes eligible disposable data and cannot be undone.</p><a class="admin-link-button text-red-700" href="{{ route('office.workspace.customers.delete-preview', $customer['uuid']) }}">Delete permanently</a></div>
-                <div class="border-t border-red-200 pt-4"><p><strong>Demo/test cleanup only.</strong> Purge removes explicitly certified test data, including associated Wald evidence. Do not use this for genuine customer records.</p><a class="admin-link-button text-red-800" href="{{ route('office.workspace.customers.demo-purge-preview', $customer['uuid']) }}">Purge demo/test data</a></div>
+                <div class="border-t border-slate-200 pt-4"><p>Permanent deletion removes eligible disposable data and cannot be undone.</p><a class="destructive-button mt-3" href="{{ route('office.workspace.customers.delete-preview', $customer['uuid']) }}">Delete permanently</a></div>
+                <div class="border-t border-red-200 pt-4"><p><strong>Demo/test cleanup only.</strong> Purge removes explicitly certified test data, including associated Wald evidence. Do not use this for genuine customer records.</p><a class="destructive-button mt-3" href="{{ route('office.workspace.customers.demo-purge-preview', $customer['uuid']) }}">Purge demo/test data</a></div>
             </div>
         </details>
     </div>

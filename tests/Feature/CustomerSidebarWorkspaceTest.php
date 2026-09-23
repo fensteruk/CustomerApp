@@ -75,7 +75,7 @@ function sidebarActiveRequest(User $user, Site $site, ProjectedPlot $plot): Call
     ]);
 }
 
-it('renders the site workspace in a persistent desktop sidebar with assigned-site and plot filters', function (): void {
+it('renders persistent navigation with assigned-site and plot tools in the page', function (): void {
     $user = sidebarSiteUser();
     $site = sidebarAssignedSite($user);
     $otherAssignedSite = sidebarAssignedSite($user, 'Oak View');
@@ -97,7 +97,7 @@ it('renders the site workspace in a persistent desktop sidebar with assigned-sit
         ->assertSee('min-h-16 shrink-0', false)
         ->assertSee('min-h-0 flex-1 overflow-x-hidden overflow-y-auto', false)
         ->assertSee('shrink-0 border-t', false)
-        ->assertSee('Portal navigation and filters')
+        ->assertSee('Portal navigation')
         ->assertSee('Plots &amp; Call-Offs', false)
         ->assertSee('Notifications')
         ->assertSee('Willow Park')

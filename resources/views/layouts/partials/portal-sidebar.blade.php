@@ -1,6 +1,6 @@
 <div class="flex h-full min-h-0 flex-col">
     <div class="flex min-h-16 shrink-0 items-center justify-between gap-3 border-b border-slate-700 px-4">
-        <a href="{{ route('dashboard') }}" class="rounded focus:outline-none focus:ring-2 focus:ring-sky-300">
+        <a href="{{ route('dashboard') }}" class="flex min-h-11 flex-col justify-center rounded focus:outline-none focus:ring-2 focus:ring-sky-300">
             <span class="block text-2xl font-light tracking-tight text-white">fenster</span>
             <span class="block text-xs font-bold uppercase tracking-[0.16em] text-sky-300">Customer Portal</span>
         </a>
@@ -17,7 +17,7 @@
         </button>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto px-3 py-4">
+    <div class="min-h-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain px-3 py-4">
         <nav aria-label="Primary navigation">
             <p class="px-3 text-xs font-extrabold uppercase tracking-[0.16em] text-slate-400">Workspace</p>
             <ul class="mt-2 space-y-1">
@@ -49,6 +49,7 @@
                                 <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6ZM14 2v6h6M8 13h8M8 17h5"/></svg><span>Amendments</span>
                             </a>
                         </li>
+                        <li class="portal-nav-heading" role="presentation">Customers &amp; access</li>
                         <li>
                             <a
                                 href="{{ route('office.workspace.customers.index') }}"
@@ -67,6 +68,7 @@
                                 <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm13 10v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg><span>Users</span>
                             </a>
                         </li>
+                        <li class="portal-nav-heading" role="presentation">Tools</li>
                         @if (app(\App\SourceImport\Integration\WaldPilotAvailability::class)->enabled())
                             <li>
                                 <a
@@ -75,7 +77,7 @@
                                     @if (request()->routeIs('office.workspace.imports', 'office.workspace.pilot-import.*')) aria-current="page" @endif
                                 >
                                     <svg aria-hidden="true" class="h-5 w-5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3v12m-4-4 4 4 4-4M4 15v5h16v-5" /></svg>
-                                    <span>Imports <span class="sr-only">— weekend pilot</span></span>
+                                    <span>Imports</span>
                                 </a>
                             </li>
                         @endif
@@ -131,15 +133,15 @@
             </ul>
         </nav>
 
-        @if ($sidebar !== null)
-            <div class="mt-5 border-t border-slate-700 pt-5">
-                {{ $sidebar }}
-            </div>
-        @endif
+
     </div>
 
-    <div class="shrink-0 border-t border-slate-700 p-4 text-sm">
-        <p class="truncate font-bold text-white">{{ auth()->user()->name }}</p>
-        <p class="mt-0.5 truncate text-xs text-slate-400">{{ auth()->user()->portalRole?->name }}</p>
+    <div class="portal-account shrink-0 border-t border-slate-700 p-4 text-sm" aria-label="Your account">
+        <p class="font-bold text-white">{{ auth()->user()->name }}</p>
+        <p class="mt-0.5 text-xs text-slate-400">{{ auth()->user()->portalRole?->name }}</p>
+        <form method="POST" action="{{ route('logout') }}" class="mt-3">
+            @csrf
+            <button type="submit" class="flex min-h-11 w-full items-center justify-center rounded-lg border border-slate-600 px-3 py-2 text-sm font-bold text-slate-100 hover:bg-slate-800">Log out</button>
+        </form>
     </div>
 </div>
