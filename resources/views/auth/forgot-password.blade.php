@@ -1,14 +1,16 @@
 <x-layouts.portal title="Forgot password | Fenster Customer Portal">
-    <section class="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-10 sm:px-6" aria-labelledby="page-title">
+    @include('office.partials.support-styles')
+    <section class="support-workspace support-auth" aria-labelledby="page-title">
         <p class="eyebrow">Account recovery</p>
         <h1 id="page-title" class="page-title">Reset your password</h1>
         <p class="page-intro">Enter your email address and we will send a secure reset link.</p>
 
         @if (session('status'))
-            <p class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">{{ session('status') }}</p>
+            <p role="status" class="support-note mt-6">{{ session('status') }}</p>
         @endif
 
-        <form method="POST" action="{{ route('password.email') }}" class="mt-8 space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        @if($errors->any())<div class="admin-error mt-5" role="alert"><h2 class="font-bold">Please check your details</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+        <form method="POST" action="{{ route('password.email') }}" class="support-panel space-y-5">
             @csrf
 
             <div>

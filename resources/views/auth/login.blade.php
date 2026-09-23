@@ -1,14 +1,16 @@
 <x-layouts.portal title="Sign in | Fenster Customer Portal">
-    <section class="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-10 sm:px-6" aria-labelledby="page-title">
+    @include('office.partials.support-styles')
+    <section class="support-workspace support-auth" aria-labelledby="page-title">
         <p class="eyebrow">Secure access</p>
         <h1 id="page-title" class="page-title">Sign in to the Customer Portal</h1>
         <p class="page-intro">Use your authorised portal account to continue.</p>
 
         @if (session('status'))
-            <p class="mt-6 rounded-lg border border-emerald-200 bg-emerald-50 p-4 text-sm font-semibold text-emerald-900">{{ session('status') }}</p>
+            <p role="status" class="support-note mt-6">{{ session('status') }}</p>
         @endif
 
-        <form method="POST" action="{{ route('login') }}" class="mt-8 space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        @if($errors->any())<div class="admin-error mt-5" role="alert"><h2 class="font-bold">Please check your details</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+        <form method="POST" action="{{ route('login') }}" class="support-panel space-y-5">
             @csrf
 
             <div>
@@ -27,7 +29,7 @@
                 @enderror
             </div>
 
-            <label class="flex items-center gap-3 text-sm font-medium text-slate-700">
+            <label class="flex min-h-11 items-center gap-3 text-sm font-medium text-slate-700">
                 <input type="checkbox" name="remember" class="rounded border-slate-300 text-sky-700 focus:ring-sky-600">
                 Remember this device
             </label>

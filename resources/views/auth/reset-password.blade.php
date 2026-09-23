@@ -1,10 +1,12 @@
 <x-layouts.portal title="Choose a new password | Fenster Customer Portal">
-    <section class="mx-auto flex min-h-[calc(100vh-73px)] max-w-md flex-col justify-center px-4 py-10 sm:px-6" aria-labelledby="page-title">
+    @include('office.partials.support-styles')
+    <section class="support-workspace support-auth" aria-labelledby="page-title">
         <p class="eyebrow">Account recovery</p>
         <h1 id="page-title" class="page-title">Choose a new password</h1>
         <p class="page-intro">Enter a new password for your portal account.</p>
 
-        <form method="POST" action="{{ route('password.store') }}" class="mt-8 space-y-5 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+        @if($errors->any())<div class="admin-error mt-5" role="alert"><h2 class="font-bold">Please check your details</h2><ul>@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+        <form method="POST" action="{{ route('password.store') }}" class="support-panel space-y-5">
             @csrf
             <input type="hidden" name="token" value="{{ $request->route('token') }}">
 

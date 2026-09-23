@@ -1,4 +1,5 @@
-<div class="relative" x-data="notificationBell({{ (int) ($notificationUnreadCount ?? 0) }})" @keydown.escape.window="close()">
+<div class="relative notification-support" x-data="notificationBell({{ (int) ($notificationUnreadCount ?? 0) }})" @keydown.escape.window="close()">
+    <style>.notification-support :is(a,button):focus-visible{outline:3px solid #167bba;outline-offset:2px}.notification-support article{overflow-wrap:anywhere;border-bottom:1px solid #e5edf3}.notification-support #notification-panel{border-radius:14px;display:flex;flex-direction:column;max-height:calc(100dvh - 6rem)}.notification-support #notification-panel>div:first-child{flex-wrap:wrap;flex-shrink:0}.notification-support #notification-panel>div:nth-child(2){min-height:0;flex:1;overflow-y:auto}.notification-support #notification-panel>a{flex-shrink:0;min-height:44px}</style>
     <button x-ref="bellButton" type="button" class="relative grid min-h-11 min-w-11 place-items-center rounded-lg text-slate-700 hover:bg-slate-100 hover:text-slate-950 focus:outline-none focus:ring-2 focus:ring-sky-600" @click="toggle()" x-effect="$el.setAttribute('aria-label', ariaLabel())" :aria-expanded="open.toString()" aria-controls="notification-panel" aria-label="Notifications, {{ $notificationUnreadCount > 0 ? $notificationUnreadCount.' unread' : 'no unread notifications' }}">
         <svg aria-hidden="true" class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
             <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9a6 6 0 0 0-12 0v.75a8.967 8.967 0 0 1-2.31 6.022c1.733.64 3.55 1.08 5.454 1.31m5.713 0a24.255 24.255 0 0 1-5.713 0m5.713 0a3 3 0 1 1-5.713 0" />
@@ -36,13 +37,13 @@
                     <div class="flex items-start gap-3">
                         <span class="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" :class="notification.read_at ? 'bg-slate-300' : 'bg-sky-700'" aria-hidden="true"></span>
                         <div class="min-w-0 flex-1">
-                            <span class="sr-only" x-text="notification.read_at ? 'Read notification' : 'Unread notification'"></span>
+                            <span class="block text-xs font-semibold text-slate-600" x-text="notification.read_at ? 'Read notification' : 'Unread notification'"></span>
                             <p class="text-xs font-extrabold uppercase tracking-wide text-slate-600" x-text="notification.type_label"></p>
                             <a :href="notification.open_url" @click="close(false)" class="mt-1 block text-sm font-bold leading-5 text-slate-900 underline decoration-slate-300 underline-offset-2 hover:decoration-sky-700" x-text="notification.message"></a>
                             <time class="mt-1 block text-xs text-slate-600" :datetime="notification.created_at" x-text="notification.created_at_label"></time>
                             <div class="mt-2 flex flex-wrap gap-2">
-                                <button type="button" x-show="!notification.read_at" @click="markRead(notification.uuid)" class="min-h-10 rounded px-2 text-xs font-bold text-sky-800 hover:bg-sky-100">Mark as read</button>
-                                <button type="button" @click="dismiss(notification.uuid)" class="min-h-10 rounded px-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Dismiss</button>
+                                <button type="button" x-show="!notification.read_at" @click="markRead(notification.uuid)" class="min-h-11 rounded px-2 text-xs font-bold text-sky-800 hover:bg-sky-100">Mark as read</button>
+                                <button type="button" @click="dismiss(notification.uuid)" class="min-h-11 rounded px-2 text-xs font-bold text-slate-700 hover:bg-slate-100">Dismiss</button>
                             </div>
                         </div>
                     </div>

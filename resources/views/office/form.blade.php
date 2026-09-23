@@ -1,7 +1,8 @@
 <x-layouts.portal :title="$title.' | Fenster Customer Portal'" sidebar-label="Menu">
-    <div class="admin-workspace">
+    @include('office.partials.support-styles')
+    <div class="admin-workspace support-workspace">
         <a class="admin-back" href="{{ $cancel }}">← {{ $record['name'] ?? 'Back' }}</a>
-        <header><p class="eyebrow">{{ $kind === 'site' ? 'Site management' : 'Customer management' }}</p><h1 class="admin-title">{{ $title }}</h1></header>
+        <header><p class="eyebrow">{{ $kind === 'site' ? 'Site management' : 'Customer management' }}</p><h1 class="admin-title">{{ $title }}</h1>@if($intent === 'save' && ! $record)<p class="support-intro">{{ $kind === 'site' ? 'Add a site beneath this customer, ready for plots and assigned users.' : 'Add the customer organisation. You can add sites and give users access afterwards.' }}</p>@endif</header>
         <div class="max-w-2xl">
             @if ($customer)
                 <p class="mb-5 text-sm text-slate-600 [overflow-wrap:anywhere]">Customer: <strong class="text-slate-900">{{ $customer['name'] }}</strong></p>
@@ -13,7 +14,7 @@
                     <p class="mt-2">This change will be recorded in the activity history.</p>
                 </div>
             @elseif ($kind === 'site' && ! $record)
-                <p class="admin-intro mb-5">Create the site now and link its source data later. A source reference is not required.</p>
+                <p class="support-note mb-5">Create the site now and link its source data later. A source reference is not required. Creating a site does not assign users or import plots.</p>
             @endif
             <noscript><div class="admin-notice">JavaScript is needed to save this form. You can still browse customers and sites. Enable JavaScript and reload to continue.</div></noscript>
             <form x-cloak x-data="officeAdminForm({ redirect: @js($redirect), kind: @js($kind) })" @submit.prevent="save($event)" method="POST" action="{{ $action }}" class="admin-card space-y-5" :aria-busy="saving.toString()">
@@ -32,7 +33,7 @@
                     <a x-show="uncertain" class="admin-link-button" href="{{ $cancel }}">Check current records</a>
                 </div>
                 <fieldset :disabled="saving || uncertain || mustReload" class="min-w-0 space-y-5">
-                    <legend class="sr-only">{{ $title }}</legend>
+                    <legend class="form-label mb-4">{{ $intent === 'save' ? ($kind === 'site' ? 'Site details' : 'Customer details') : 'Confirm this change' }}</legend>
                     @if ($intent === 'save')
                         <div>
                             <label class="form-label" for="admin-name">{{ $kind === 'site' ? 'Site name' : 'Customer name' }} <span class="font-normal">(required)</span></label>
