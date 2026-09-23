@@ -30,13 +30,14 @@
                 </form>
                 <table class="recon-table"><caption class="sr-only">Latest Portal amendment per request, with source comparison pending</caption><thead><tr><th scope="col">Plot / site</th><th scope="col">Service</th><th scope="col">Previous RedZebra</th><th scope="col">Portal amendment</th><th scope="col">New RedZebra</th><th scope="col">Status / detail</th></tr></thead><tbody>
                     @forelse($rows as $row)
+                        @php($plotLabel = str($row->plot_reference)->lower()->startsWith('plot ') ? $row->plot_reference : 'Plot '.$row->plot_reference)
                         <tr @class(['recon-selected' => $selected?->amendment_uuid === $row->amendment_uuid])>
-                            <td data-label="Plot / site"><strong>Plot {{ $row->plot_reference }}</strong><span>{{ $row->site_name }}</span><span>{{ $row->customer_name }}</span></td>
+                            <td data-label="Plot / site"><strong>{{ $plotLabel }}</strong><span>{{ $row->site_name }}</span><span>{{ $row->customer_name }}</span></td>
                             <td data-label="Service">{{ App\Enums\CallOffServiceType::from($row->service)->label() }}</td>
                             <td data-label="Previous RedZebra">Not compared</td>
                             <td data-label="Portal amendment"><strong>{{ Illuminate\Support\Carbon::parse($row->portal_date)->format('j M Y') }}</strong></td>
                             <td data-label="New RedZebra">Not compared</td>
-                            <td data-label="Status / detail"><span class="recon-status">{{ $row->completion_closed ? 'Closed by source completion' : 'Portal amendment recorded' }}</span><a class="recon-detail-link" href="{{ route('office.workspace.pilot-import.reconciliation', ['upload'=>$upload['uuid'], ...Illuminate\Support\Arr::except($filters, ['amendment', 'history_page']), 'amendment'=>$row->amendment_uuid]) }}#comparison">View Plot {{ $row->plot_reference }} · {{ App\Enums\CallOffServiceType::from($row->service)->label() }}</a></td>
+                            <td data-label="Status / detail"><span class="recon-status">{{ $row->completion_closed ? 'Closed by source completion' : 'Portal amendment recorded' }}</span><a class="recon-detail-link" href="{{ route('office.workspace.pilot-import.reconciliation', ['upload'=>$upload['uuid'], ...Illuminate\Support\Arr::except($filters, ['amendment', 'history_page']), 'amendment'=>$row->amendment_uuid]) }}#comparison">View {{ $plotLabel }} · {{ App\Enums\CallOffServiceType::from($row->service)->label() }}</a></td>
                         </tr>
                     @empty<tr><td colspan="6" class="recon-empty">No Portal amendments match this view. Adjust the filters or check the source-site bindings below.</td></tr>@endforelse
                 </tbody></table>
@@ -45,7 +46,8 @@
             <aside class="recon-panel recon-comparison" id="comparison" aria-labelledby="comparison-title">
                 <h2 id="comparison-title" class="section-title">Amendment detail</h2>
                 @if($selected)
-                    <h3>Plot {{ $selected->plot_reference }} · {{ App\Enums\CallOffServiceType::from($selected->service)->label() }}</h3>
+                    @php($selectedPlotLabel = str($selected->plot_reference)->lower()->startsWith('plot ') ? $selected->plot_reference : 'Plot '.$selected->plot_reference)
+                    <h3>{{ $selectedPlotLabel }} · {{ App\Enums\CallOffServiceType::from($selected->service)->label() }}</h3>
                     <p class="recon-caption">{{ $selected->site_name }}<br>{{ $selected->customer_name }}</p>
                     <p class="recon-status">{{ $selected->completion_closed ? 'Closed by source completion' : 'Portal amendment recorded' }}</p>
                     <dl class="recon-values"><div><dt>Previous RedZebra date</dt><dd>Not compared</dd></div><div class="recon-portal-value"><dt>Latest Portal amendment</dt><dd><strong>{{ Illuminate\Support\Carbon::parse($selected->portal_date)->format('j M Y') }}</strong><span>Requested by {{ $selected->requester_name ?: 'Recorded Portal user' }}</span><span>{{ $selected->opened_at ? Illuminate\Support\Carbon::parse($selected->opened_at)->format('j M Y, H:i').' UTC' : 'Time not recorded' }}</span></dd></div><div><dt>New RedZebra date</dt><dd>Not compared</dd></div></dl>

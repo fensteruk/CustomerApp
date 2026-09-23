@@ -111,6 +111,15 @@ it('selects the latest valid amendment per request and preserves separate servic
         ->and($request->fresh()->agreed_date->toDateString())->toBe('2026-10-01');
 });
 
+it('does not duplicate an existing Plot prefix in reconciliation labels', function (): void {
+    $site = reconBind($this->office, 'FNA001');
+    reconAmend(reconRequest($site, 'Plot 601'));
+
+    $this->actingAs($this->office)->get(reconUrl(reconUpload($this->office)))->assertOk()
+        ->assertSee('Plot 601')->assertSee('View Plot 601 · Windows')
+        ->assertDontSee('Plot Plot 601');
+});
+
 it('defers every service without treating an operational date as source confirmation', function (CallOffServiceType $service): void {
     $site = reconBind($this->office, 'FNA001');
     reconAmend(reconRequest($site, '591', $service->value));
