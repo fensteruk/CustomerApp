@@ -41,13 +41,14 @@ test('shared Office navigation identifies each current workspace and keeps accou
     ['office.workspace.settings.wald', 'Settings'],
 ]);
 
-test('page filters render once outside navigation with their existing form destination', function () {
+test('Review Requests in-page filters render once outside navigation with their existing form destination', function () {
     $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create(['is_preview_user' => false]);
     $response = $this->actingAs($office)->get(route('portal.review-requests'))->assertOk();
     $xpath = shellDocument($response->getContent());
     expect($xpath->query('//aside//form[@aria-label="Review request filters"]')->length)->toBe(0)
-        ->and($xpath->query('//main//details//form[@aria-label="Review request filters"]')->length)->toBe(1);
-    $response->assertSee('Page filters')->assertSee(':inert="sidebarOpen && !desktop"', false);
+        ->and($xpath->query('//main//form[@aria-label="Review request filters"]')->length)->toBe(1)
+        ->and($xpath->query('//main//form[@aria-label="Review request filters" and @method="GET" and @action="'.route('portal.review-requests').'"]')->length)->toBe(1);
+    $response->assertSee(':inert="sidebarOpen && !desktop"', false);
 });
 
 test('Site User navigation preserves site context and excludes Office actions', function (PortalRoleIdentifier $role) {
