@@ -40,11 +40,11 @@ it('defaults off and requires both layers before showing or serving Imports', fu
         ->assertOk()->assertSee('Emergency OFF')->assertDontSee('href="'.route('office.workspace.imports').'"', false);
     $this->actingAs($office)->put(route('office.workspace.settings.wald.update'), enablePilotSettingPayload(true))
         ->assertRedirect(route('office.workspace.settings.wald'));
-    $this->actingAs($office)->get(route('office.workspace.imports'))->assertOk()->assertDontSee('WEEKEND PILOT');
+    $this->actingAs($office)->get(route('office.workspace.imports'))->assertOk()->assertDontSee('Upload a RedZebra workbook');
 
     config(['wald_import.pilot_available' => true]);
     $this->actingAs($office)->get(route('office.workspace.imports'))
-        ->assertOk()->assertSee('WEEKEND PILOT')->assertSee('ONE SITE AT A TIME');
+        ->assertOk()->assertSee('Upload a RedZebra workbook')->assertSee('One site at a time');
 });
 
 it('audits enable and disable atomically and disable preserves history', function (): void {

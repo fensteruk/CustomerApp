@@ -1,44 +1,43 @@
-<x-layouts.portal title="Weekend Pilot Imports | Fenster Customer Portal" sidebar-label="Menu">
-    <div class="admin-workspace">
-        <header class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-            <div><p class="eyebrow">Office workspace</p><h1 class="admin-title">Weekend Pilot Imports</h1><p class="page-intro">Upload one RedZebra workbook, then select and review one source site at a time.</p></div>
-            <div class="flex flex-wrap gap-2"><span class="status status-red">WEEKEND PILOT</span><span class="status status-slate">OFFICE USE ONLY</span><span class="status status-slate">ONE SITE AT A TIME</span></div>
+<x-layouts.portal title="Imports | Fenster Customer Portal" sidebar-label="Menu">
+    @include('office.pilot-import.workspace-styles')
+    <div class="admin-workspace imports-workspace">
+        <header class="imports-heading">
+            <div><p class="eyebrow">Office workspace</p><h1 class="admin-title">Imports</h1><p class="imports-intro">Upload a RedZebra export. See what it contains, then review and apply one site at a time.</p></div>
+            <div class="imports-badges"><span>Office use only</span><span>One site at a time</span></div>
         </header>
-        @if ($errors->any())<div class="mt-5 rounded-xl border-2 border-rose-300 bg-rose-50 p-4 text-rose-950" role="alert"><p class="font-bold">The import was not started.</p><ul class="mt-2 list-disc space-y-1 pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@if(session('existing_import_url'))<a class="mt-3 inline-flex font-bold underline" href="{{ session('existing_import_url') }}">View existing import</a>@endif</div>@endif
-        @if (session('status'))<div class="mt-5 rounded-xl border border-emerald-300 bg-emerald-50 p-4 font-semibold text-emerald-950" role="status">{{ session('status') }}</div>@endif
-
-        <section class="admin-card mt-6" aria-labelledby="new-pilot-title">
-            <h2 id="new-pilot-title" class="section-title">New supervised import</h2>
-            <p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">The workbook stays private. Uploading does not apply any plots. You will link a site, review the changes, then explicitly apply that site's import.</p>
-            <form x-ref="importForm" method="POST" action="{{ route('office.workspace.pilot-import.upload') }}" enctype="multipart/form-data" class="mt-5 grid gap-5 lg:grid-cols-2"
-                x-data="{ date: @js(old('export_date', now()->format('Y-m-d'))), slot: @js(old('export_slot', 'MORNING')), slots: @js($replacementSlots), replacementConfirmed: false, get existing() { return this.slots[this.date + ':' + this.slot] ?? null }, submitImport() { if (!this.$refs.importForm.reportValidity()) return; if (this.existing && this.existing.state !== 'FAILED') { this.$refs.replacementDialog.showModal(); return } this.$refs.importForm.requestSubmit() }, confirmReplacement() { this.replacementConfirmed = true; this.$refs.replacementDialog.close(); this.$nextTick(() => this.$refs.importForm.requestSubmit()) } }">
-                @csrf<input type="hidden" name="command_uuid" value="{{ (string) Illuminate\Support\Str::uuid() }}">
-                <input type="hidden" name="predecessor" :value="existing?.uuid ?? ''">
-                <input type="hidden" name="replacement_confirmation" :value="replacementConfirmed ? @js(App\SourceImport\Integration\PilotImportWorkflow::REPLACEMENT_CONFIRMATION) : ''">
-                <div class="lg:col-span-2"><label for="workbook" class="form-label">RedZebra workbook</label><input x-ref="workbook" id="workbook" name="workbook" type="file" accept=".xls,.xlsx,.csv" required class="form-input mt-1"><p class="mt-2 text-sm text-slate-600">XLS, XLSX or CSV, maximum 20 MB. Original filenames are never shown.</p></div>
-                <div><label for="export-date" class="form-label">Export date</label><input x-model="date" @change="replacementConfirmed = false" id="export-date" name="export_date" type="date" required value="{{ old('export_date', now()->format('Y-m-d')) }}" class="form-input mt-1"></div>
-                <div><label for="export-slot" class="form-label">Export slot</label><select x-model="slot" @change="replacementConfirmed = false" id="export-slot" name="export_slot" required class="form-input mt-1"><option value="MORNING" @selected(old('export_slot') === 'MORNING')>Morning</option><option value="AFTERNOON" @selected(old('export_slot') === 'AFTERNOON')>Afternoon</option></select></div>
-                <label class="lg:col-span-2 flex min-h-12 items-start gap-3 rounded-xl border border-amber-300 bg-amber-50 p-4 font-semibold text-amber-950"><input type="checkbox" name="confirmation" value="{{ App\SourceImport\Integration\ExportOrder::CONFIRMATION }}" required class="mt-0.5 h-5 w-5"><span>{{ App\SourceImport\Integration\ExportOrder::CONFIRMATION }}</span></label>
-                <div x-cloak x-show="existing && existing.state === 'FAILED'" class="lg:col-span-2 rounded-xl border border-amber-300 bg-amber-50 p-4 text-amber-950" role="status"><p class="font-bold">The current revision failed.</p><p class="mt-1 text-sm">Revision <span x-text="existing?.revision"></span> will be retained and superseded automatically by this upload.</p></div>
-                <div x-cloak x-show="existing && existing.state !== 'FAILED'" class="lg:col-span-2 rounded-xl border-2 border-amber-400 bg-amber-50 p-5 text-amber-950" role="alert" aria-live="polite">
-                    <h3 class="font-bold">An import already exists for this date and slot.</h3>
-                    <p class="mt-2 text-sm">Choosing Replace existing upload will ask for confirmation. Revision <span x-text="existing?.revision"></span> and its history will be retained.</p>
-                </div>
-                <dialog x-ref="replacementDialog" @cancel.prevent="replacementConfirmed = false; $el.close()" class="w-[min(36rem,calc(100%-2rem))] rounded-2xl border-2 border-amber-400 bg-white p-6 text-slate-950 shadow-2xl backdrop:bg-slate-950/60" aria-labelledby="replacement-dialog-title" aria-describedby="replacement-dialog-description">
-                    <h3 id="replacement-dialog-title" class="section-title">Replace existing upload?</h3>
-                    <p id="replacement-dialog-description" class="mt-3 text-sm leading-6">An import already exists for <strong x-text="date"></strong> — <strong x-text="slot.toLowerCase()"></strong>. This upload will replace the current version for this date and slot. The previous version and its history will be retained.</p>
-                    <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end"><button type="button" class="secondary-button" @click="replacementConfirmed = false; $refs.replacementDialog.close()">Cancel</button><button type="button" class="primary-button" @click="confirmReplacement()">Replace existing upload</button></div>
-                </dialog>
-                <div class="lg:col-span-2"><button class="primary-button" type="button" @click="submitImport()" x-text="existing ? (existing.state === 'FAILED' ? 'Replace failed import' : 'Replace existing upload') : 'Upload and inspect privately'">Upload and inspect privately</button></div>
-            </form>
+        @if ($errors->any())<div class="imports-notice imports-notice-danger" role="alert"><strong>The import was not started.</strong><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@if(session('existing_import_url'))<a href="{{ session('existing_import_url') }}">View existing import</a>@endif</div>@endif
+        @if (session('status'))<div class="imports-notice" role="status">{{ session('status') }}</div>@endif
+        <section class="imports-upload" aria-labelledby="upload-title">
+            <div class="imports-upload-title"><span class="imports-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M7 17H5a4 4 0 0 1-.6-8A7 7 0 0 1 18 7a5 5 0 0 1 1 10h-2M12 21V10m-4 4 4-4 4 4"/></svg></span><div><h2 id="upload-title">Upload a RedZebra workbook</h2><p>One master export or a smaller site workbook.</p></div></div>
+            @include('office.pilot-import.upload-form')
         </section>
-
-        <section class="mt-8" aria-labelledby="pilot-history-title"><p class="eyebrow">Private audit history</p><h2 id="pilot-history-title" class="section-title">Pilot uploads</h2>
-            <div class="admin-card-grid mt-5">
-                @forelse($uploads as $upload)
-                    <article class="admin-card"><div class="flex items-start justify-between gap-3"><div><p class="eyebrow">{{ Illuminate\Support\Carbon::parse($upload->export_date)->format('j M Y') }} · {{ str($upload->export_slot)->title() }}</p><h3 class="admin-card-title">RedZebra export</h3></div><span class="status {{ $upload->state === 'FAILED' ? 'status-red' : 'status-slate' }}">{{ ['FAILED' => 'Failed', 'NEEDS_CLARIFICATION' => 'Needs your input', 'READY' => 'Ready to link site', 'IN_PROGRESS' => 'Import in progress'][$upload->state] ?? 'Uploaded' }}</span></div><p class="mt-4 text-sm"><strong>Revision {{ $upload->revision }} · Current</strong><br>Uploaded by {{ $upload->uploader_name }}</p><p class="mt-2 text-sm font-semibold text-slate-800">Uploading alone does not apply plots. Check each site's review and applied status.</p><a class="primary-button mt-5 w-full" href="{{ route('office.workspace.pilot-import.show', $upload->uuid) }}">{{ $upload->state === 'FAILED' ? 'View failed import' : 'Continue import' }}</a></article>
-                @empty<div class="empty-state sm:col-span-2"><h3 class="font-bold">No pilot uploads yet</h3><p class="mt-2">Upload the first controlled export above.</p></div>@endforelse
-            </div><div class="mt-5">{{ $uploads->links() }}</div>
+        <p class="imports-notice imports-safety"><strong>Uploading does not apply data to CustomerApp.</strong> You will review the changes before anything is applied.</p>
+        <section aria-labelledby="recent-imports-title" data-recent-imports>
+            <div class="imports-section-heading"><div><h2 id="recent-imports-title">Recent imports</h2><p>Your three most recent uploads. Continue a review or check the latest result.</p></div></div>
+            <div class="imports-recent-grid">@forelse ($recentImports as $import) @include('office.pilot-import.summary-card', ['import' => $import]) @empty <div class="imports-empty"><h3>No imports yet</h3><p>Choose a workbook above to check its source sites and rows.</p></div> @endforelse</div>
+        </section>
+        <section id="import-history" aria-labelledby="import-history-title" data-import-history>
+            <div class="imports-section-heading"><div><h2 id="import-history-title">Older imports</h2><p>Previous uploads and revisions remain available here.</p></div>
+                <form method="GET" action="{{ route('office.workspace.imports') }}#import-history" class="imports-filter"><label for="history-filter">Show</label><select id="history-filter" name="history_filter">@foreach($historyFilters as $value => $label)<option value="{{ $value }}" @selected($historyFilter === $value)>{{ $label }}</option>@endforeach</select><button class="imports-secondary" type="submit">Filter history</button></form>
+            </div>
+            @if ($historyFilter === 'applied')<p class="imports-filter-note">Includes workbooks with at least one applied site. Each status shows whether the whole workbook is applied.</p>@endif
+            <div class="imports-history-wrap"><table class="imports-history-table">
+                <caption class="sr-only">Older RedZebra uploads, newest first</caption>
+                <thead><tr><th>Date / time</th><th>Import</th><th>Source sites</th><th>Rows</th><th>Included / excluded</th><th>Blocked rows</th><th>Status</th><th>Uploaded by</th><th>Action</th></tr></thead>
+                <tbody>@forelse ($importHistory as $import)<tr>
+                    <td data-label="Uploaded"><time datetime="{{ Illuminate\Support\Carbon::parse($import['created_at'])->toIso8601String() }}">{{ Illuminate\Support\Carbon::parse($import['created_at'])->format('j M Y, H:i') }}</time></td>
+                    <th scope="row" data-label="Import">{{ $import['title'] }}<span class="imports-subtext">Revision {{ $import['revision'] }}</span></th>
+                    <td data-label="Source sites">{{ $import['sites'] === null ? 'Not known' : number_format($import['sites']) }}</td>
+                    <td data-label="Rows">{{ $import['rows'] === null ? 'Not known' : number_format($import['rows']) }}</td>
+                    <td data-label="Included / excluded">{{ $import['included'] === null ? 'Not known' : number_format($import['included']) }} / {{ $import['excluded'] === null ? 'Not known' : number_format($import['excluded']) }}</td>
+                    <td data-label="Blocked rows">{{ $import['blocked_rows'] === null ? 'Not checked' : number_format($import['blocked_rows']) }}</td>
+                    <td data-label="Status"><span class="imports-status imports-status-{{ $import['tone'] }}">{{ $import['status'] }}</span></td>
+                    <td data-label="Uploaded by">{{ $import['uploader'] }}</td>
+                    <td data-label="Action"><a class="imports-history-action" href="{{ $import['url'] }}" aria-label="{{ $import['action'] }}: {{ $import['title'] }}, revision {{ $import['revision'] }}">{{ $import['action'] }}</a></td>
+                </tr>@empty<tr><td colspan="9" class="imports-empty">{{ $historyFilter === 'all' ? 'No older imports yet.' : 'No older imports match this filter.' }}</td></tr>@endforelse</tbody>
+            </table></div>
+            <div class="imports-pagination">{{ $importHistory->onEachSide(1)->links() }}</div>
+            <p class="imports-footnote">Row and source totals reflect upload discovery. Source sites detected are workbook identities, not confirmed CustomerApp matches. Blocked rows cover analysed selections only; preview issues are reviewed inside each import.</p>
         </section>
     </div>
 </x-layouts.portal>

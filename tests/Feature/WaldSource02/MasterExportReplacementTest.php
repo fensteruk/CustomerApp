@@ -487,7 +487,8 @@ it('shows current revision and CustomerCode evidence in the Office UI only', fun
 
     $this->actingAs($office)->get(route('office.workspace.imports'))
         ->assertOk()
-        ->assertSee('Revision 1 · Current')
+        ->assertSee('Revision 1')
+        ->assertSee('Ready to select a site')
         ->assertSee('Replace existing upload')
         ->assertSee('Replace existing upload?')
         ->assertSee('replacementDialog', escape: false);

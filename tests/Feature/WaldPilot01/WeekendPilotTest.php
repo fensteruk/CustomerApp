@@ -87,7 +87,7 @@ it('renders the upload controls without leaking Alpine source into visible conte
     expect($form)->not->toBeNull()
         ->and($form->getAttribute('x-data'))->toContain('confirmReplacement()', 'requestSubmit()')
         ->and($submit)->not->toBeNull()
-        ->and(trim($submit->textContent))->toBe('Upload and inspect privately')
+        ->and(trim($submit->textContent))->toBe('Upload and check file')
         ->and($document->textContent)->not->toContain('this.$refs.importForm.requestSubmit())');
 });
 
