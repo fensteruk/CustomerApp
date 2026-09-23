@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\OfficeAdministrationPageController as Pages;
+use App\Http\Controllers\OfficeAmendmentsWorkspaceController;
 use App\Http\Controllers\OfficeDemoPurgeController as DemoPurge;
 use App\Http\Controllers\OfficePermanentDeletionController as PermanentDeletion;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
@@ -12,6 +13,7 @@ use Illuminate\Support\Facades\Route;
 Route::prefix('/portal/office/workspace')->name('office.workspace.')
     ->middleware(['auth', 'active.portal', 'can:viewAny,'.CustomerOrganisation::class])
     ->scopeBindings()->group(function (): void {
+        Route::get('/amendments', OfficeAmendmentsWorkspaceController::class)->name('amendments.index');
         Route::get('/customers', [Pages::class, 'customers'])->name('customers.index');
         Route::get('/users', [UserPages::class, 'index'])->name('users.index');
         Route::get('/users/new', [UserPages::class, 'create'])->name('users.create');

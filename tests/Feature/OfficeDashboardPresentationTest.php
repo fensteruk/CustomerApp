@@ -131,7 +131,7 @@ it('shows real current Office amendments newest first and keeps waiting-on-site 
         ->assertDontSee('Plot Plot')
         ->assertDontSee('PRIVATE AMENDMENT REASON')->assertDontSee('Superseded Person')
         ->assertDontSee('Plot 503')->assertDontSee('Plot 504')
-        ->assertSee(route('portal.review-requests.show', $new), false);
+        ->assertSee(route('office.workspace.amendments.index', ['request' => $new->uuid]), false);
 });
 
 it('uses future agreed dates for upcoming activity and recorded events for recent activity', function (): void {
