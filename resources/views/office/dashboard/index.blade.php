@@ -17,7 +17,7 @@
             </div>
             <div class="od-attention-grid">
                 <article class="od-attention-card od-rose" aria-labelledby="office-amendments-title">
-                    <a class="od-card-title" href="{{ route('portal.review-requests', ['status' => 'amendment_on_hold']) }}">
+                    <a class="od-card-title" href="{{ route('office.workspace.amendments.index') }}">
                         <span class="od-icon-wrap">@include('office.dashboard.icon', ['icon' => 'amendment'])</span>
                         <h3 id="office-amendments-title">Amendments</h3>
                         <span class="od-count"><span class="sr-only">Date amendments awaiting Office: </span>{{ number_format($amendmentCount) }}</span>
@@ -28,7 +28,7 @@
                         @forelse ($amendmentItems as $amendment)
                             @php($request = $amendment->callOffRequest)
                             <li>
-                                <a class="od-attention-item" href="{{ route('portal.review-requests.show', $request) }}">
+                                <a class="od-attention-item" href="{{ route('office.workspace.amendments.index', ['request' => $request->uuid]) }}">
                                     <strong>{{ str($request->projectedPlot->plot_reference)->lower()->startsWith('plot ') ? $request->projectedPlot->plot_reference : 'Plot '.$request->projectedPlot->plot_reference }} · {{ $request->effectiveServiceIdentifier()?->label() }} date change</strong>
                                     <span class="od-date-change">Agreed {{ $amendment->prior_agreed_date?->format('j M Y') ?? 'Not recorded' }} → Requested {{ $amendment->requested_date?->format('j M Y') ?? 'Not recorded' }}</span>
                                     <span class="od-item-meta"><span>{{ $request->batch->site->name }}</span><time datetime="{{ $amendment->opened_at->toISOString() }}" title="{{ $amendment->opened_at->format('j M Y, H:i') }}">{{ $amendment->opened_at->diffForHumans() }}</time></span>
@@ -39,7 +39,7 @@
                             <li><p class="od-empty">No date amendments awaiting your response.</p></li>
                         @endforelse
                     </ul>
-                    <a class="od-card-footer" href="{{ route('portal.review-requests', ['status' => 'amendment_on_hold']) }}">View date amendments <span aria-hidden="true">→</span></a>
+                    <a class="od-card-footer" href="{{ route('office.workspace.amendments.index') }}">View date amendments <span aria-hidden="true">→</span></a>
                 </article>
 
                 <article class="od-attention-card" aria-labelledby="office-imports-title">
@@ -84,7 +84,7 @@
         <section class="od-summary-grid" aria-label="Across your sites">
             <a class="od-summary" href="{{ route('office.workspace.customers.index') }}"><div class="od-summary-top"><span class="od-icon-wrap">@include('office.dashboard.icon', ['icon' => 'sites'])</span><span aria-hidden="true">›</span></div><h2>Active sites</h2><span class="od-value">{{ number_format($activeSiteCount) }}</span><p>Across active customers</p></a>
             <a class="od-summary" href="{{ route('portal.review-requests') }}"><div class="od-summary-top"><span class="od-icon-wrap">@include('office.dashboard.icon', ['icon' => 'request'])</span><span aria-hidden="true">›</span></div><h2>Open requests</h2><span class="od-value">{{ number_format($openRequestCount) }}</span><p>Awaiting a response or date agreement</p></a>
-            <a class="od-summary" href="{{ route('portal.review-requests', ['status' => 'amendment_on_hold']) }}"><div class="od-summary-top"><span class="od-icon-wrap">@include('office.dashboard.icon', ['icon' => 'amendment'])</span><span aria-hidden="true">›</span></div><h2>Pending amendments</h2><span class="od-value">{{ number_format($pendingAmendmentCount) }}</span><p>Awaiting Office or a Site User</p></a>
+            <a class="od-summary" href="{{ route('office.workspace.amendments.index', ['status' => 'all']) }}"><div class="od-summary-top"><span class="od-icon-wrap">@include('office.dashboard.icon', ['icon' => 'amendment'])</span><span aria-hidden="true">›</span></div><h2>Pending amendments</h2><span class="od-value">{{ number_format($pendingAmendmentCount) }}</span><p>Awaiting Office or a Site User</p></a>
             <div class="od-summary"><div class="od-summary-top"><span class="od-icon-wrap">@include('office.dashboard.icon', ['icon' => 'import'])</span></div><h2>Last applied import</h2>
                 @if ($lastImport)
                     <a class="od-value od-import-value" href="{{ $lastImport['url'] }}"><time datetime="{{ $lastImport['time']->toISOString() }}">{{ $lastImport['time']->isToday() ? 'Today, '.$lastImport['time']->format('H:i') : $lastImport['time']->format('j M Y, H:i') }}</time></a><p>{{ $lastImport['detail'] }} · Applied</p>
