@@ -3,13 +3,16 @@
 namespace App\Http\Controllers;
 
 use App\Enums\AdministrativeEntityType;
+use App\Enums\PlotOverallStatus;
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
 use App\Services\OfficeAdministrationQueryService;
 use App\Services\OfficeCustomerWorkspaceQueryService;
 use App\Services\OfficeUserAdministrationQueryService;
+use App\Services\SiteWorkspaceQueryService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** Read-only page adapters; ADMIN-SITE02A owns every query and mutation. */
@@ -66,17 +69,25 @@ class OfficeAdministrationPageController extends Controller
         ]);
     }
 
-    public function site(Request $request, CustomerOrganisation $customerOrganisation, Site $site, OfficeAdministrationQueryService $queries): View
+    public function site(Request $request, CustomerOrganisation $customerOrganisation, Site $site, OfficeAdministrationQueryService $queries, SiteWorkspaceQueryService $workspace): View
     {
         $input = $request->validate([
             'section' => ['nullable', 'in:overview,plots,users,source,imports,audit'],
             'search' => ['nullable', 'string', 'max:100'],
             'page' => ['nullable', 'integer', 'min:1'],
+            'overall_status' => ['nullable', 'array', 'max:5'],
+            'overall_status.*' => ['nullable', 'string', Rule::enum(PlotOverallStatus::class)],
         ]);
         $section = $input['section'] ?? 'overview';
+        $input['overall_status'] = array_values(array_filter($input['overall_status'] ?? []));
         $record = $queries->site($request->user(), $customerOrganisation, $site->uuid);
+        $siteWorkspace = $workspace->workspace($request->user(), $site, [
+            'plot' => $input['search'] ?? '',
+            'overall_status' => $input['overall_status'] ?? [],
+            'show_completed' => true,
+        ]);
         $items = match ($section) {
-            'plots' => $queries->plots($request->user(), $customerOrganisation, $site, $input['search'] ?? null)->withQueryString(),
+            'plots' => $siteWorkspace['plots'],
             'users' => $queries->assignedUsers($request->user(), $customerOrganisation, $site)->withQueryString(),
             'source' => $queries->sourceBindings($request->user(), $customerOrganisation, $site),
             'imports' => $queries->importHistory($request->user(), $customerOrganisation, $site),
@@ -87,7 +98,7 @@ class OfficeAdministrationPageController extends Controller
             $items['runs']->withQueryString();
         }
 
-        return view('office.sites.show', ['site' => $record, 'section' => $section, 'items' => $items, 'search' => $input['search'] ?? '']);
+        return view('office.sites.show', $siteWorkspace + ['site' => $record, 'section' => $section, 'items' => $items, 'search' => $input['search'] ?? '', 'selectedStatuses' => $input['overall_status'] ?? []]);
     }
 
     public function siteForm(Request $request, CustomerOrganisation $customerOrganisation, OfficeAdministrationQueryService $queries, ?Site $site = null): View

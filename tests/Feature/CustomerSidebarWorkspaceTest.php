@@ -113,7 +113,8 @@ it('renders the site workspace in a persistent desktop sidebar with assigned-sit
         ->assertSeeInOrder(['Cavity Closers', 'Windows', 'Snagging', 'CML'])
         ->assertSee('Advanced filters')
         ->assertSee('Show Completed')
-        ->assertSee('sticky top-16', false)
+        ->assertSee('sw-grid', false)
+        ->assertSee('Open plot')
         ->assertSee('Plot 101');
 
     expect($otherAssignedSite->id)->not->toBe($site->id);
@@ -249,7 +250,7 @@ it('keeps unauthenticated role preview outside the authenticated application sid
         ->assertDontSee('data-portal-sidebar', false);
 });
 
-it('contains long unbroken plot references within desktop rows and responsive cards', function (): void {
+it('contains long unbroken plot references within responsive site cards', function (): void {
     $user = sidebarSiteUser();
     $site = sidebarAssignedSite($user);
     $reference = 'PLOT-'.str_repeat('UNBROKEN', 20);
@@ -261,5 +262,5 @@ it('contains long unbroken plot references within desktop rows and responsive ca
         ->assertOk()
         ->assertSee($reference)
         ->assertSee('min-w-0 [overflow-wrap:anywhere]', false)
-        ->assertSee('min-w-0 text-xl font-bold text-slate-950 [overflow-wrap:anywhere]', false);
+        ->assertSee('sw-plot-title', false);
 });

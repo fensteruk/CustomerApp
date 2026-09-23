@@ -144,7 +144,7 @@ it('shows no projected plots and no requests empty states', function (): void {
         ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
         ->get('/portal/site-dashboard')
         ->assertOk()
-        ->assertSee('No projected plots')
+        ->assertSee('No plots yet')
         ->assertSee('Source data not yet synchronised');
 });
 

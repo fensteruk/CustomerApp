@@ -2,13 +2,16 @@
 
 use App\Enums\PortalRoleIdentifier;
 use App\Models\CustomerOrganisation;
+use App\Models\ProjectedPlot;
 use App\Models\Site;
 use App\Models\User;
 use App\Services\OfficeAdministrationQueryService;
+use App\Services\PlotOverviewQueryService;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
@@ -20,6 +23,11 @@ uses(RefreshDatabase::class);
 beforeEach(function (): void {
     $this->actingAs(User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create());
     View::share('errors', new ViewErrorBag);
+    View::share([
+        'reviewSiteId' => 1, 'selectedStatuses' => [], 'isOffice' => true,
+        'plots' => adminPageItems(), 'cards' => collect(),
+        'siteSummary' => ['total' => 0, 'attention' => 0, 'upcoming' => collect()],
+    ]);
     // Isolated rendering contracts only. These names are supplied by ADMIN-SITE02A at integration.
     foreach ([
         'customers.store' => '/customers',
@@ -56,6 +64,21 @@ function adminSiteViewData(): array
 function adminPageItems(array $items = [], ?int $total = null): LengthAwarePaginator
 {
     return new LengthAwarePaginator($items, $total ?? count($items), 20, 1, ['path' => '/portal/office/workspace/customers']);
+}
+
+function adminPlotCard(string $reference, string $source, string $windows, string $doors, string $bifold): array
+{
+    $plot = ProjectedPlot::factory()->make([
+        'plot_reference' => $reference, 'external_source' => 'redzebra',
+        'external_identifier' => $source, 'synchronised_at' => Carbon::parse('2026-09-10T11:00:00+01:00')->utc(),
+    ]);
+    $plot->setRelation('services', collect())->setRelation('callOffRequests', collect());
+
+    return [
+        'overview' => app(PlotOverviewQueryService::class)->present($plot),
+        'label' => $reference, 'windows' => $windows, 'doors' => $doors, 'bifold' => $bifold,
+        'attention' => false, 'amendment' => false, 'early' => false, 'next' => null, 'request' => null,
+    ];
 }
 
 it('renders bounded customer cards and escapes hostile names', function (): void {
@@ -137,45 +160,32 @@ it('renders assigned user labels and escapes email and name', function (): void 
 
 it('renders paginated source plots without turning source data into editing controls', function (): void {
     $reference = str_repeat('LONG-PLOT-', 28).'<script>';
-    $html = view('office.sites.show', ['site' => adminSiteViewData(), 'section' => 'plots', 'search' => 'LONG',
-        'items' => adminPageItems([[
-            'plot_reference' => $reference, 'source_identity' => ['source' => 'redzebra', 'identifier' => 'SOURCE-42'],
-            'overall_status' => ['value' => 'available', 'label' => 'Available'],
-            'product_totals' => ['windows' => '12', 'doors' => '2', 'bifold' => '1'],
-            'is_completed' => false, 'synchronised_at' => '2026-09-10T11:00:00+01:00',
-            'services' => [['service' => 'windows', 'source_present' => true,
-                'portal_status' => ['value' => 'outstanding', 'label' => 'Outstanding', 'date' => null],
-                'source_completed_at' => null, 'source_completion_observed_at' => null]],
-        ]], 500)])->render();
+    $html = view('office.sites.show', [
+        'site' => adminSiteViewData(), 'section' => 'plots', 'search' => 'LONG',
+        'plots' => adminPageItems([1], 500),
+        'cards' => collect([adminPlotCard($reference, 'SOURCE-42', '12', '2', '1')]),
+    ])->render();
     expect($html)->toContain('500 plots', 'page=2', 'name="section" value="plots"', 'value="LONG"',
-        'Source-managed', 'CustomerApp site', 'Synthetic Meadow', 'Redzebra', 'SOURCE-42', 'Available', 'Windows 12', 'Doors 2', 'Bifold 1', 'Outstanding',
+        'Source-managed', 'Synthetic Meadow', 'Redzebra', 'SOURCE-42', 'Nothing Called Off',
+        'Windows 12', 'Doors 2', 'Bifold 1', 'Not Called Off',
         '10 Sep 2026, 10:00 UTC', '&lt;script&gt;', 'source-managed, read-only')
         ->not->toContain($reference, 'Add Plot', 'Edit Plot', 'Delete Plot');
 });
 
-it('shows whole product totals without decimals and keeps exact source references in a subdued footer', function (): void {
+it('shows exact product totals and keeps source references in a keyboard-accessible disclosure', function (): void {
     $longReference = 'wald:'.str_repeat('a', 72).'644c0b';
-    $plot = [
-        'plot_reference' => 'PLOT-01', 'source_identity' => ['source' => 'redzebra', 'identifier' => $longReference],
-        'overall_status' => ['value' => 'available', 'label' => 'Nothing Called Off'],
-        'product_totals' => ['windows' => '3.000', 'doors' => '0.000', 'bifold' => '0.000'],
-        'is_completed' => false, 'synchronised_at' => null, 'services' => [],
-    ];
-    $otherPlot = [...$plot,
-        'plot_reference' => 'PLOT-02',
-        'source_identity' => ['source' => 'redzebra', 'identifier' => 'REF-7'],
-        'product_totals' => ['windows' => '2.500', 'doors' => '0.000', 'bifold' => '1.000'],
-    ];
-
     $html = view('office.sites.plots', [
-        'site' => adminSiteViewData(), 'search' => '', 'items' => adminPageItems([$plot, $otherPlot]),
+        'site' => adminSiteViewData(), 'search' => '', 'plots' => adminPageItems([1, 2], 2),
+        'cards' => collect([
+            adminPlotCard('PLOT-01', $longReference, '3', '0', '0'),
+            adminPlotCard('PLOT-02', 'REF-7', '2.5', '0', '1'),
+        ]),
     ])->render();
 
-    expect($html)->toContain('Windows 3 · Doors 0 · Bifold 0', 'Windows 2.500 · Doors 0 · Bifold 1')
-        ->toContain('Source ref:', 'wald:'.str_repeat('a', 6).'…644c0b', 'REF-7')
+    expect($html)->toContain('Windows 3 · Doors 0 · Bifold 0', 'Windows 2.5 · Doors 0 · Bifold 1')
         ->toContain('data-source-reference="'.$longReference.'"', 'data-source-reference="REF-7"')
-        ->toContain('Show full source reference', '<code class="block break-all rounded-lg bg-slate-50 p-2 select-all">'.$longReference.'</code>')
-        ->toContain('Copy <span class="sr-only">full source reference for PLOT-01</span>', 'aria-live="polite"', 'Inspect source services')
+        ->toContain('Show full source reference', '<code>'.$longReference.'</code>')
+        ->toContain('Copy <span class="sr-only">full source reference for PLOT-01</span>', 'role="status"', 'Inspect source services')
         ->not->toContain('<dt class="admin-term">Source reference</dt>', 'Windows 3.000', $longReference.'</dd>');
 });
 

@@ -201,7 +201,7 @@ it('moves rejected and withdrawn call-offs to scoped customer Trash without expo
 
     $this->get('/portal/site-dashboard')
         ->assertOk()
-        ->assertSee('Plot overview')
+        ->assertSee('Plots &amp; call-offs', false)
         ->assertDontSee('Manage existing call-offs');
 
     expect($rejected->fresh()->status)->toBe(CallOffRequestStatus::Rejected)

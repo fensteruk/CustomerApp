@@ -81,7 +81,7 @@ it('renders a useful no-result state without leaking another sites call-offs', f
         ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
         ->get('/portal/site-dashboard?plot=nothing')
         ->assertOk()
-        ->assertSee('No projected plots')
+        ->assertSee('No plots yet')
         ->assertDontSee('Other Site UI Plot');
 });
 
