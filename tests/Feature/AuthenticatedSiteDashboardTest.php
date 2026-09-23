@@ -148,13 +148,14 @@ it('shows no projected plots and no requests empty states', function (): void {
         ->assertSee('Source data not yet synchronised');
 });
 
-it('routes office staff to the review requests queue', function (): void {
+it('shows the Office overview and keeps the review requests queue available', function (): void {
     $user = dashboardUser(PortalRoleIdentifier::FensterOfficeStaff);
     dashboardAssignedSite($user, ['name' => 'Office Scope']);
 
     $this->actingAs($user)
         ->get('/dashboard')
-        ->assertRedirect('/portal/review-requests');
+        ->assertOk()
+        ->assertViewIs('office.dashboard.index');
 
     $this->actingAs($user)
         ->get('/portal/review-requests')
