@@ -9,6 +9,7 @@ use App\Enums\CallOffServiceType;
 use App\Http\Requests\ApproveCallOffDecisionRequest;
 use App\Http\Requests\RejectCallOffDecisionRequest;
 use App\Models\CallOffRequest;
+use App\Models\CustomerOrganisation;
 use App\Models\Site;
 use App\Services\CallOffDateViewService;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -30,13 +31,18 @@ class ReviewRequestsController extends Controller
             'status' => ['nullable', 'string', Rule::enum(CallOffRequestStatus::class)],
             'site' => ['nullable', 'integer'],
             'service' => ['nullable', 'string', Rule::enum(CallOffServiceType::class)],
+            'customer' => ['nullable', 'integer'],
+            'search' => ['nullable', 'string', 'max:100'],
+            'date' => ['nullable', 'date_format:Y-m-d'],
         ]);
 
         $assignedSites = Site::query()
+            ->when(isset($validated['customer']), fn ($query) => $query->where('customer_organisation_id', $validated['customer']))
             ->orderBy('name')
             ->get(['sites.id', 'sites.name']);
 
         $status = $validated['status'] ?? (CallOffRequest::query()
+            ->whereDoesntHave('latestEffectiveAmendment')
             ->where('status', CallOffRequestStatus::AwaitingFenster)
             ->exists()
                 ? CallOffRequestStatus::AwaitingFenster->value
@@ -48,6 +54,18 @@ class ReviewRequestsController extends Controller
         }
 
         $requests = CallOffRequest::query()
+            ->whereDoesntHave('latestEffectiveAmendment')
+            ->when(isset($validated['customer']), fn ($query) => $query->whereHas('batch.site', fn ($site) => $site->where('customer_organisation_id', $validated['customer'])))
+            ->when(filled($validated['search'] ?? null), function ($query) use ($validated): void {
+                $term = '%'.$validated['search'].'%';
+                $query->where(fn ($search) => $search
+                    ->whereHas('projectedPlot', fn ($plot) => $plot->where('plot_reference', 'like', $term))
+                    ->orWhereHas('batch.site', fn ($site) => $site->where('name', 'like', $term))
+                    ->orWhereHas('batch.site.customerOrganisation', fn ($customer) => $customer->where('name', 'like', $term)));
+            })
+            ->when(isset($validated['date']), fn ($query) => $query->where(fn ($date) => $date
+                ->whereDate('requested_date', $validated['date'])
+                ->orWhere(fn ($legacy) => $legacy->whereNull('requested_date')->whereHas('batch', fn ($batch) => $batch->whereDate('requested_date', $validated['date'])))))
             ->when($status !== '', function ($query) use ($status): void {
                 if ($status === CallOffRequestStatus::DateAgreed->value) {
                     $query->whereIn('status', [
@@ -77,6 +95,7 @@ class ReviewRequestsController extends Controller
                 'projectedPlot:id,plot_reference',
                 'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
                 'batch.site:id,customer_organisation_id,name',
+                'batch.site.customerOrganisation:id,name',
                 'batch.submittedBy:id,name',
                 'latestEffectiveAmendment',
             ])
@@ -89,6 +108,7 @@ class ReviewRequestsController extends Controller
 
         return view('portal.review-requests.index', [
             'assignedSites' => $assignedSites,
+            'customers' => CustomerOrganisation::query()->orderBy('name')->get(['id', 'name']),
             'requests' => $requests,
             'serviceTypes' => CallOffServiceType::cases(),
             'statuses' => array_values(array_filter(
@@ -99,6 +119,9 @@ class ReviewRequestsController extends Controller
                 'status' => $status,
                 'site' => $validated['site'] ?? '',
                 'service' => $validated['service'] ?? '',
+                'customer' => $validated['customer'] ?? '',
+                'search' => $validated['search'] ?? '',
+                'date' => $validated['date'] ?? '',
             ],
             'activeFilterCount' => (int) filled($status)
                 + (int) isset($validated['site'])
