@@ -27,6 +27,7 @@ beforeEach(function (): void {
         'reviewSiteId' => 1, 'selectedStatuses' => [], 'isOffice' => true,
         'plots' => adminPageItems(), 'cards' => collect(),
         'siteSummary' => ['total' => 0, 'attention' => 0, 'upcoming' => collect()],
+        'plotCount' => 0, 'attentionCount' => 0, 'attentionItems' => collect(), 'customerUsers' => adminPageItems(),
     ]);
     // Isolated rendering contracts only. These names are supplied by ADMIN-SITE02A at integration.
     foreach ([
@@ -56,7 +57,7 @@ function adminSiteViewData(): array
 {
     return ['uuid' => '00000000-0000-4000-8000-000000000002', 'name' => 'Synthetic Meadow',
         'customer' => adminCustomerViewData(), 'location' => null, 'is_active' => true,
-        'effective_is_active' => true, 'lock_version' => 2, 'plot_count' => 250, 'assignment_count' => 30,
+        'effective_is_active' => true, 'lock_version' => 2, 'plot_count' => 250, 'assignment_count' => 30, 'attention_count' => 0,
         'source_reference' => ['source' => 'synthetic', 'identifier' => 'SOURCE-SITE-42'],
         'source_binding_state' => 'NOT_YET_INTEGRATED'];
 }
@@ -327,7 +328,7 @@ it('binds the administration workspace to the real secured lifecycle endpoints',
     $this->get(route('office.workspace.customers.show', $customer))
         ->assertOk()
         ->assertSee('Integrated Customer')
-        ->assertSee('Add Site');
+        ->assertSee('Add site');
 
     $siteResponse = $this->postJson(route('portal.office.customers.sites.store', $customer), [
         'name' => 'Integrated Site',

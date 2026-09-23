@@ -6,9 +6,9 @@ use App\Enums\AdministrativeEntityType;
 use App\Enums\PlotOverallStatus;
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
+use App\Services\CustomerDetailWorkspaceQueryService;
 use App\Services\OfficeAdministrationQueryService;
 use App\Services\OfficeCustomerWorkspaceQueryService;
-use App\Services\OfficeUserAdministrationQueryService;
 use App\Services\SiteWorkspaceQueryService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -29,16 +29,11 @@ class OfficeAdministrationPageController extends Controller
         ]);
     }
 
-    public function customer(Request $request, CustomerOrganisation $customerOrganisation, OfficeAdministrationQueryService $queries, OfficeUserAdministrationQueryService $userQueries): View
+    public function customer(Request $request, CustomerOrganisation $customerOrganisation, CustomerDetailWorkspaceQueryService $workspace): View
     {
-        $filters = $this->filters($request);
+        $request->validate(['users_page' => ['nullable', 'integer', 'min:1']]);
 
-        return view('office.customers.show', [
-            'customer' => $queries->customer($request->user(), $customerOrganisation->uuid),
-            'sites' => $queries->sites($request->user(), $customerOrganisation, $filters['search'], $filters['active'])->withQueryString(),
-            'filters' => $filters,
-            'customerUsers' => $userQueries->customerUsers($request->user(), $customerOrganisation),
-        ]);
+        return view('office.customers.show', $workspace->workspace($request->user(), $customerOrganisation, $this->filters($request)));
     }
 
     public function customerForm(Request $request, OfficeAdministrationQueryService $queries, ?CustomerOrganisation $customerOrganisation = null): View
