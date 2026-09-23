@@ -30,8 +30,8 @@ class CallOffAmendmentRules
     {
         return hash('sha256', json_encode([
             $request->uuid, $request->stateSnapshot(),
-            $request->histories()->max('sequence'),
-            $request->dateNegotiations()->max('id'),
+            $request->relationLoaded('histories') ? $request->histories->max('sequence') : $request->histories()->max('sequence'),
+            $request->relationLoaded('dateNegotiations') ? $request->dateNegotiations->max('id') : $request->dateNegotiations()->max('id'),
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -77,6 +77,26 @@ class CallOffAmendmentRules
         }
 
         return $date;
+    }
+
+    /** Validated and snapshotted for both HTTP review and the locked final action. */
+    public function validateForRequest(array $input, CallOffRequest $request): array
+    {
+        $data = $this->validate($input);
+        $date = $this->validateDate($data['requested_date']);
+        $earliest = $this->leadTimes->earliestAmendmentDate($request->projectedPlotService);
+        $reason = isset($input['early_date_reason']) && is_string($input['early_date_reason'])
+            ? Str::trim($input['early_date_reason']) : ($input['early_date_reason'] ?? null);
+        $validated = Validator::make(['early_date_reason' => $reason], [
+            'early_date_reason' => [Rule::requiredIf($date->lt($earliest)), 'nullable', 'string', 'max:2000'],
+        ], ['early_date_reason.required' => 'Explain why you need a date earlier than the normal lead time.'])->validate();
+
+        return $data + [
+            'early_date_reason' => $date->lt($earliest) ? ($validated['early_date_reason'] ?? null) : null,
+            'normal_earliest_date' => $earliest->toDateString(),
+            'is_early_date_exception' => $date->lt($earliest),
+            'working_days_early' => $this->leadTimes->workingDaysEarly($date, $earliest),
+        ];
     }
 
     public function isUrgent(CarbonInterface $agreedDate, ?CarbonInterface $from = null): bool

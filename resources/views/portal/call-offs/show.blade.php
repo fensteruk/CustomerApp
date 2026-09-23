@@ -104,6 +104,11 @@
                     <li class="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
                         <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><h3 class="font-bold text-slate-950">{{ $history->event_type->label() }}</h3><time class="text-sm text-slate-600" datetime="{{ $history->performed_at?->toIso8601String() }}">{{ $history->performed_at?->format('j M Y, H:i:s') ?? 'Time not available' }}</time></div>
                         <p class="mt-2 text-sm text-slate-700">{{ $history->recordedActorName() }}@if ($history->recordedActorRole()), {{ $history->recordedActorRole() }}@endif</p>
+                        @if (in_array($history->event_type, [App\Enums\CallOffHistoryEventType::Submitted, App\Enums\CallOffHistoryEventType::DateRequested], true) && filled($history->after_state['requested_date'] ?? null))
+                            <p class="mt-3 text-sm font-semibold">Original requested date — {{ $history->after_state['requested_date'] }}</p>
+                        @elseif ($history->event_type === App\Enums\CallOffHistoryEventType::AmendmentRequested && filled($history->after_state['amendment_requested_date'] ?? null))
+                            <p class="mt-3 text-sm font-semibold">Amended requested date — {{ $history->after_state['amendment_requested_date'] }}</p>
+                        @endif
                         @if ($history->customer_response)<p class="mt-3 rounded-lg bg-slate-50 p-3 text-sm leading-6 text-slate-800">{{ $history->customer_response }}</p>@endif
                         @if ($history->recordedAgreedDate())<p class="mt-3 text-sm font-bold text-emerald-800">Date Agreed — {{ $history->recordedAgreedDate() }}</p>@endif
                     </li>

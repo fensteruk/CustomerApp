@@ -1,6 +1,6 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
-Last updated: 19 September 2026.
+Last updated: 23 September 2026.
 
 This document is the current product and integration contract for CustomerApp.
 
@@ -463,8 +463,22 @@ Do not invent new deletion semantics.
 
 ## 14. Date Amendments
 
-After Date Agreed, an authorised Site User may request a new date using the
-existing request/negotiation model.
+An authorised Site User may amend an active call-off immediately, including
+while Awaiting Fenster, Awaiting Site User, or an earlier amendment is awaiting
+a response. No Office decision is required first. Date Agreed amendments remain
+supported through the existing request/negotiation model.
+
+The latest valid Site User amendment is the effective requested date on the same
+request. Keep the original requested date and each amendment, actor, timestamp,
+reason and lead-time context in history. Supersede pending cycles/proposals when
+a later amendment commits; stale decisions and stale reviews cannot act on them.
+A prior agreement is placed on hold; a pre-agreement amendment must not invent one.
+
+Amendments retain the baseline four-week lead time, or five weeks with positive
+BF quantities, for all four services. An early amendment needs a separate Early
+Date Reason, validated server-side, with its normal earliest date and working-day
+shortfall retained. Office acknowledgement remains required. Initial Cavity
+Closer lead time remains separately governed by DEC-076.
 
 The prior agreed date remains preserved as history.
 

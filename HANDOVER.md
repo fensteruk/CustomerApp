@@ -1,5 +1,16 @@
 # Fenster Customer Portal Handover
 
+## Plot workspace and live amendments — 23 September 2026
+
+CUSTOMER-UI-OVERHAUL06 is a separate feature-branch candidate based directly on
+`f94a750d820d5a635d6e4fcac87ef3bd02079fc2`. The Plot workspace and Site User
+amendment entry/domain behavior are implemented in `codex/customer-ui-overhaul06`.
+Awaiting Fenster and pending amendments can be corrected immediately on the same
+request, preserving earlier history. No migration. No push or deployment.
+See `documentation/customer-ui-overhaul06-2026-09-23.md` for qualification and
+integration contracts. Concurrent Site workspace, Office Amendments and Wald
+Reconciliation page ownership remains separate.
+
 ## Current handover — first-wave Office UI integration — 23 September 2026
 
 Local `main` contains the accepted Dashboard, Customers, Users and Imports redesign

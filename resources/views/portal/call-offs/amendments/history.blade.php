@@ -4,14 +4,17 @@
         <p class="mt-2 font-bold">{{ $amendment->progressLabel() }}</p>
         <p class="mt-2">{{ $amendment->requester_name }}, {{ $amendment->requester_role }} · {{ $amendment->opened_at->format('j M Y, H:i:s') }}</p>
         <dl class="mt-4 grid gap-4 sm:grid-cols-2">
-            <div><dt class="font-bold">Previous agreed date</dt><dd>{{ $amendment->prior_agreed_date?->format('j M Y') }}</dd></div>
+            <div><dt class="font-bold">Previous agreed date</dt><dd>{{ $amendment->prior_agreed_date?->format('j M Y') ?? 'No date had been agreed' }}</dd></div>
             <div><dt class="font-bold">Requested new date</dt><dd>{{ $amendment->requested_date?->format('j M Y') }}</dd></div>
             <div><dt class="font-bold">Reason</dt><dd>{{ $amendment->reason_label }}</dd></div>
             @if (filled($amendment->customer_response))<div><dt class="font-bold">Additional information</dt><dd>{{ $amendment->customer_response }}</dd></div>@endif
         </dl>
         @if ($amendment->is_urgent)<p class="mt-3 font-bold">Urgent / Late Amendment</p>@endif
+        @if (filled($amendmentEarlyReasons[$amendment->uuid] ?? null))<p class="mt-3 text-sm"><strong>Early Date Reason:</strong> {{ $amendmentEarlyReasons[$amendment->uuid] }}</p>@endif
         @if ($amendment->status->isOpen())
-            <p class="mt-3 font-bold">On Hold — Date Change Requested</p>
+            <p class="mt-3 font-bold">{{ $amendment->prior_agreed_date ? 'On Hold — Date Change Requested' : 'Amended request — awaiting a date agreement' }}</p>
+        @elseif ($amendment->status === App\Enums\CallOffNegotiationStatus::Superseded)
+            <p class="mt-3 font-bold">Superseded by a later amendment. This date is retained in history.</p>
         @elseif ($amendment->resulting_agreed_date)
             <p class="mt-3 font-bold">New Date Agreed — {{ $amendment->resulting_agreed_date->format('j M Y') }}</p>
         @else

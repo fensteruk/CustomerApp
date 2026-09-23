@@ -6,6 +6,8 @@ use App\Actions\CallOff\DetermineCallOffEligibilityAction;
 use App\Actions\CallOff\RequestCallOffAmendmentAction;
 use App\Models\CallOffRequest;
 use App\Services\CallOffAmendmentRules;
+use App\Services\CallOffDateViewService;
+use App\Services\CallOffLeadTimeService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -15,18 +17,22 @@ class CallOffAmendmentController extends Controller
     public function __construct(
         private readonly CallOffAmendmentRules $rules,
         private readonly DetermineCallOffEligibilityAction $eligibility,
+        private readonly CallOffLeadTimeService $leadTimes,
     ) {}
 
-    public function create(Request $http, CallOffRequest $callOffRequest)
+    public function create(Request $http, CallOffRequest $callOffRequest, CallOffDateViewService $dates)
     {
         $this->authorise($http, $callOffRequest);
         $this->eligibility->ensureCanRequestAmendment($http->user(), $callOffRequest);
-        $agreedDate = $callOffRequest->agreed_date ?? $callOffRequest->requested_date ?? $callOffRequest->batch->requested_date;
+        $agreedDate = $callOffRequest->agreed_date ?? ($callOffRequest->isLegacyDateAgreed() ? $callOffRequest->effectiveRequestedDate() : null);
 
         return view('portal.call-offs.amendments.create', [
             'callOffRequest' => $callOffRequest,
             'agreedDate' => $agreedDate,
-            'isUrgent' => $this->rules->isUrgent($agreedDate),
+            'currentDate' => $callOffRequest->effectiveRequestedDate(),
+            'earliestDate' => $this->leadTimes->earliestAmendmentDate($callOffRequest->projectedPlotService),
+            'isUrgent' => $agreedDate !== null && $this->rules->isUrgent($agreedDate),
+            'currentState' => $dates->forRequest($callOffRequest, $http->user())['statusLabel'],
             'reasons' => $this->rules->reasons(),
             'explanationRequiredReason' => CallOffAmendmentRules::EXPLANATION_REQUIRED_REASON,
         ]);
@@ -36,9 +42,8 @@ class CallOffAmendmentController extends Controller
     {
         $this->authorise($http, $callOffRequest);
         $this->eligibility->ensureCanRequestAmendment($http->user(), $callOffRequest);
-        $data = $this->rules->validate($http->all());
-        $this->rules->validateDate($data['requested_date']);
-        $agreedDate = $callOffRequest->agreed_date ?? $callOffRequest->requested_date ?? $callOffRequest->batch->requested_date;
+        $data = $this->rules->validateForRequest($http->all(), $callOffRequest);
+        $agreedDate = $callOffRequest->agreed_date ?? ($callOffRequest->isLegacyDateAgreed() ? $callOffRequest->effectiveRequestedDate() : null);
         $token = Str::random(64);
         $http->session()->put('amendment_review.'.$callOffRequest->uuid, [
             'token' => hash('sha256', $token), 'user_id' => $http->user()->id,
@@ -49,8 +54,9 @@ class CallOffAmendmentController extends Controller
 
         return view('portal.call-offs.amendments.review', [
             'callOffRequest' => $callOffRequest, 'agreedDate' => $agreedDate,
+            'currentDate' => $callOffRequest->effectiveRequestedDate(),
             'data' => $data, 'reasonLabel' => $this->rules->reasons()[$data['reason_code']],
-            'isUrgent' => $this->rules->isUrgent($agreedDate), 'token' => $token,
+            'isUrgent' => $agreedDate !== null && $this->rules->isUrgent($agreedDate), 'token' => $token,
         ]);
     }
 
@@ -70,7 +76,7 @@ class CallOffAmendmentController extends Controller
             return redirect()->route('portal.call-offs.show', $callOffRequest)->withErrors($exception->errors());
         }
 
-        return redirect()->route('portal.call-offs.show', $callOffRequest)->with('status', 'Your date change has been requested. The previous agreed date is now On Hold.');
+        return redirect()->route('portal.call-offs.show', $callOffRequest)->with('status', 'Your amendment has been submitted. Fenster will review the latest requested date. Any previous agreement is now On Hold.');
     }
 
     private function authorise(Request $http, CallOffRequest $request): void

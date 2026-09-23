@@ -82,7 +82,7 @@ function amendmentFixture(): array
 function requestTestAmendment(User $actor, Site $site, CallOffRequest $request, string $date = '2026-10-22'): CallOffDateNegotiation
 {
     return app(RequestCallOffAmendmentAction::class)->handle($actor, $site, $request, [
-        'requested_date' => $date, 'reason_code' => 'test_reason', 'customer_response' => 'Customer explanation',
+        'requested_date' => $date, 'reason_code' => 'test_reason', 'customer_response' => 'Customer explanation', 'early_date_reason' => 'Synthetic programme needs an earlier date',
     ], app(CallOffAmendmentRules::class)->revision($request));
 }
 

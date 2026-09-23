@@ -207,14 +207,14 @@ it('keeps Requested date semantics across negotiation and amendment states', fun
 
     $queue = $this->actingAs($office)->get(route('portal.review-requests', ['status' => $status->value]));
     $queue->assertOk()
-        ->assertSeeInOrder(['Lifecycle '.$scenario, 'Windows', '5 Oct 2026']);
+        ->assertSeeInOrder(['Lifecycle '.$scenario, 'Windows', $scenario === 'amendment' ? '20 Oct 2026' : '5 Oct 2026']);
 
-    if ($otherDate !== null) {
+    if ($otherDate !== null && $scenario !== 'amendment') {
         $queue->assertDontSee(Carbon::parse($otherDate)->format('j M Y'));
     }
 
     $detail = $this->actingAs($office)->get(route('portal.review-requests.show', $request));
-    $detail->assertOk()->assertSeeInOrder(['Requested date', '5 Oct 2026']);
+    $detail->assertOk()->assertSeeInOrder(['Requested date', $scenario === 'amendment' ? '20 Oct 2026' : '5 Oct 2026']);
     if ($otherDate !== null) {
         $detail->assertSee(Carbon::parse($otherDate)->format('j M Y'));
     }
