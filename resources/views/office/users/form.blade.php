@@ -5,7 +5,8 @@
     $returnUrl = $target ? route('office.workspace.users.show', $target) : route('office.workspace.users.index');
 @endphp
 <x-layouts.portal :title="($target ? 'Edit User' : 'Add User').' | Fenster'" sidebar-label="Menu">
-    <div class="admin-workspace min-w-0">
+    @include('office.partials.support-styles')
+    <div class="admin-workspace support-workspace min-w-0">
         <a class="admin-back [overflow-wrap:anywhere]" href="{{ $returnUrl }}">← {{ $target?->name ?? 'Users' }}</a>
         <header><p class="eyebrow">User administration</p><h1 class="admin-title">{{ $target ? 'Edit User' : 'Add User' }}</h1><p class="admin-intro">Set up their identity, Portal role and access in one place.</p></header>
         @if ($errors->any())<div class="admin-error" role="alert"><h2 class="font-bold">Please check the form.</h2><ul class="mt-2 list-disc pl-5">@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
@@ -39,7 +40,6 @@
                 <div class="mt-5 grid gap-5 sm:grid-cols-2"><div class="min-w-0"><label class="form-label" for="user-password">{{ $target ? 'New password (optional)' : 'Temporary password' }}</label><input class="form-input min-w-0" id="user-password" name="password" type="password" {{ $target ? '' : 'required' }} minlength="12" autocomplete="new-password" aria-describedby="password-help{{ $errors->has('password') ? ' password-error' : '' }}" aria-invalid="{{ $errors->has('password') ? 'true' : 'false' }}">@include('office.users.field-error', ['field' => 'password', 'id' => 'password-error'])</div><div class="min-w-0"><label class="form-label" for="user-password-confirmation">Confirm password</label><input class="form-input min-w-0" id="user-password-confirmation" name="password_confirmation" type="password" {{ $target ? '' : 'required' }} autocomplete="new-password"></div></div>
                 @unless ($target)<div class="mt-5 border-t border-slate-100 pt-4"><input type="hidden" name="is_active" value="0"><label class="flex min-h-11 items-center gap-3"><input class="h-5 w-5 rounded" type="checkbox" name="is_active" value="1" @checked(old('is_active', true))><span class="font-semibold">Account active</span></label></div>@endunless
             </section>
-            <div class="flex flex-col gap-3 sm:flex-row"><button class="primary-button" type="submit">{{ $target ? 'Save Changes' : 'Create User' }}</button><a class="secondary-button" href="{{ $returnUrl }}">Cancel</a></div>
-        </form>
+            <div class="flex flex-col gap-3 sm:flex-row"><button class="primary-button" type="submit">{{ $target ? 'Save Changes' : 'Create User' }}</button><a class="secondary-button" href="{{ $returnUrl }}">Cancel</a></div>        </form>
     </div>
 </x-layouts.portal>

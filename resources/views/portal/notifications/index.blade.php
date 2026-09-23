@@ -1,10 +1,12 @@
 <x-layouts.portal title="Notifications | Fenster Customer Portal">
-    <section class="mx-auto max-w-4xl px-4 py-7 sm:px-6 lg:px-8" aria-labelledby="page-title">
+    @include('office.partials.support-styles')
+    <section class="support-workspace" aria-labelledby="page-title">
         <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
                 <p class="eyebrow">Customer Portal updates</p>
                 <h1 id="page-title" class="page-title">Notifications</h1>
-                <p class="page-intro">Keep track of call-off submissions and Fenster decisions for your authorised sites.</p>
+                <p class="support-intro">Follow requests and date decisions for the sites you can access. Open an update to see its current details.</p>
+                <p class="support-count">{{ number_format($unreadCount) }} unread {{ str('update')->plural($unreadCount) }}</p>
             </div>
             @if ($unreadCount > 0)
                 <form method="POST" action="{{ route('portal.notifications.read-all') }}">
@@ -21,14 +23,15 @@
         @endif
 
         @if ($notifications->isEmpty())
-            <div class="empty-state mt-8" role="status">
+            <div class="support-empty mt-8" role="status">
                 <div class="flex items-start gap-4">
                     <span class="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-sky-100 text-sky-800" aria-hidden="true">
                         <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 0 0 5.454-1.31A8.967 8.967 0 0 1 18 9.75V9a6 6 0 0 0-12 0v.75a8.967 8.967 0 0 1-2.31 6.022c1.733.64 3.55 1.08 5.454 1.31m5.713 0a24.255 24.255 0 0 1-5.713 0m5.713 0a3 3 0 1 1-5.713 0" /></svg>
                     </span>
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">No notifications yet</h2>
-                        <p class="mt-2 text-sm leading-6 text-slate-700">When a call-off is submitted, approved or rejected, you will see the update here.</p>
+                        <p class="mt-2 text-sm leading-6 text-slate-700">Updates about requests and date decisions will appear here.</p>
+                        <a class="secondary-button mt-4" href="{{ route('dashboard') }}">Back to dashboard</a>
                     </div>
                 </div>
             </div>
@@ -36,7 +39,7 @@
             <ol class="mt-8 space-y-4" aria-label="Your notifications">
                 @foreach ($notifications as $notification)
                     <li>
-                        <article class="rounded-xl border p-5 shadow-sm {{ $notification['read_at'] ? 'border-slate-200 bg-white' : 'border-sky-300 bg-sky-50' }}" aria-labelledby="notification-{{ $notification['uuid'] }}">
+                        <article class="support-notification {{ $notification['read_at'] ? 'support-notification-read' : 'support-notification-unread' }}" aria-labelledby="notification-{{ $notification['uuid'] }}">
                             <div class="flex items-start gap-4">
                                 <span class="mt-1 h-3 w-3 shrink-0 rounded-full {{ $notification['read_at'] ? 'bg-slate-300' : 'bg-sky-700' }}" aria-hidden="true"></span>
                                 <div class="min-w-0 flex-1">
@@ -76,7 +79,7 @@
                                     @endif
 
                                     <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center">
-                                        <a href="{{ $notification['open_url'] }}" class="primary-button w-full sm:w-auto">Open update</a>
+                                        <a href="{{ $notification['open_url'] }}" class="primary-button w-full sm:w-auto">Open update<span class="sr-only">: {{ $notification['plot_reference'] }} · {{ $notification['site_name'] }}</span></a>
                                         @if (! $notification['read_at'])
                                             <form method="POST" action="{{ route('portal.notifications.read', $notification['uuid']) }}">
                                                 @csrf
