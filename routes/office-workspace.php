@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\OfficeAdministrationPageController as Pages;
 use App\Http\Controllers\OfficeDemoPurgeController as DemoPurge;
+use App\Http\Controllers\OfficeImportReconciliationController;
 use App\Http\Controllers\OfficePermanentDeletionController as PermanentDeletion;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
 use App\Http\Controllers\OfficeUserPageController as UserPages;
@@ -26,6 +27,7 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
         Route::post('/imports/pilot', [PilotImport::class, 'upload'])->name('pilot-import.upload');
         Route::prefix('/imports/pilot/{upload}')->whereUuid('upload')->group(function (): void {
+            Route::get('/reconciliation', [OfficeImportReconciliationController::class, 'show'])->name('pilot-import.reconciliation');
             Route::get('/', [PilotImport::class, 'show'])->name('pilot-import.show');
             Route::post('/confirm-structure', [PilotImport::class, 'confirmStructure'])->name('pilot-import.confirm-structure');
             Route::post('/bindings/draft', [PilotImport::class, 'draftBinding'])->name('pilot-import.bindings.draft');
