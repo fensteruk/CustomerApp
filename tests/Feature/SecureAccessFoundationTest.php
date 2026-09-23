@@ -77,7 +77,7 @@ it('authenticates active Office Staff without assigning a customer organisation'
     ])->assertRedirect('/dashboard');
 
     $this->assertAuthenticatedAs($office);
-    $this->get('/dashboard')->assertRedirect('/portal/review-requests');
+    $this->get('/dashboard')->assertOk()->assertViewIs('office.dashboard.index');
     $this->get('/portal/review-requests')
         ->assertOk()
         ->assertSee('Customer Alpha')
@@ -289,12 +289,12 @@ it('routes site roles to site selection or the active-site dashboard', function 
         ->assertRedirect('/portal/site-dashboard');
 });
 
-it('routes office staff to Review Requests', function (): void {
+it('routes office staff to the Office overview', function (): void {
     $user = portalUserForTest(PortalRoleIdentifier::FensterOfficeStaff);
 
     $this->actingAs($user)
         ->get('/dashboard')
-        ->assertRedirect('/portal/review-requests');
+        ->assertOk()->assertViewIs('office.dashboard.index');
 });
 
 it('does not let site roles access the office review dashboard', function (): void {
