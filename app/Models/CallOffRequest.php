@@ -2,6 +2,8 @@
 
 namespace App\Models;
 
+use App\Enums\CallOffNegotiationPurpose;
+use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
 use App\Enums\CallOffServiceType;
 use App\Models\Concerns\HasUuid;
@@ -11,6 +13,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Support\Carbon;
 
 class CallOffRequest extends Model
@@ -113,7 +116,22 @@ class CallOffRequest extends Model
 
     public function effectiveRequestedDate(): ?Carbon
     {
-        return $this->requested_date ?? $this->batch?->requested_date;
+        // Original request fields remain historical. Each valid amendment is a new
+        // retained negotiation; an Office alternative never becomes a requested date.
+        $amendment = $this->relationLoaded('dateNegotiations')
+            ? $this->dateNegotiations->filter(fn ($cycle) => $cycle->isAmendment()
+                && $cycle->status !== CallOffNegotiationStatus::Withdrawn && $cycle->requested_date !== null)->sortByDesc('id')->first()
+            : $this->latestEffectiveAmendment;
+
+        return $amendment?->requested_date ?? $this->requested_date ?? $this->batch?->requested_date;
+    }
+
+    /** One bounded row per request for eager-loaded list presentations. */
+    public function latestEffectiveAmendment(): HasOne
+    {
+        return $this->hasOne(CallOffDateNegotiation::class)->ofMany(['id' => 'max'], fn (Builder $query) => $query
+            ->where('purpose', CallOffNegotiationPurpose::Amendment)
+            ->where('status', '!=', CallOffNegotiationStatus::Withdrawn)->whereNotNull('requested_date'));
     }
 
     public function isLegacyDateAgreed(): bool

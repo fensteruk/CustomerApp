@@ -1976,3 +1976,31 @@ This decision does not authorise a production push or deployment.
 
 Reason: Management confirmed independent Cavity Closer call-offs and requested
 clear early-date information while retaining Office acknowledgement.
+
+---
+
+## CUSTOMER-UI-OVERHAUL06 — Live call-off amendments
+
+Date: 23 September 2026
+
+Decision: The authorised Site User may correct an active request before Office
+responds, including Awaiting Fenster, Awaiting Site User and a pending amendment.
+Continue to support Date Agreed/legacy Approved amendments. Latest valid amendment
+wins as the effective requested date on the same request. Preserve original dates,
+every amendment payload, actor, timestamp and history; supersede open cycles and
+pending proposals rather than deleting them. Old review tokens and old Office
+cycle/proposal references become stale. Source completion still wins and reversal
+never reopens a closed request. Office initiation permissions do not change.
+
+Use the exact f94a750 baseline lead-time policy: amendments use four weeks, five
+with positive BF. Early amendments require a separate Early Date Reason validated
+at review and locked submission; snapshot its normal earliest date and working-day
+shortfall in existing immutable history. No migration or fabricated old history.
+
+This supersedes the earlier Date Agreed-only amendment entry restriction. It does
+not import configurable lead times, authorise source writeback, or authorise push
+or deployment. The task identifier names this entry to avoid numbering collisions
+with concurrent branches based on the same decision ledger.
+
+Reason: Management confirmed that Site Managers must be able to correct a call-off
+immediately and repeatedly without reverting to phone calls while awaiting Office.

@@ -78,6 +78,7 @@ class ReviewRequestsController extends Controller
                 'batch:id,uuid,site_id,submitted_by_user_id,service_identifier,requested_date,customer_response,submitted_at',
                 'batch.site:id,customer_organisation_id,name',
                 'batch.submittedBy:id,name',
+                'latestEffectiveAmendment',
             ])
             ->orderByRaw(
                 '(select submitted_at from call_off_batches where call_off_batches.id = call_off_requests.call_off_batch_id) desc'

@@ -23,7 +23,7 @@ class CallOffDateViewService
 
     public function forRequest(CallOffRequest $request, User $actor): array
     {
-        $request->loadMissing('dateNegotiations.proposals', 'batch', 'projectedPlotService');
+        $request->loadMissing('dateNegotiations.proposals', 'batch', 'projectedPlotService', 'histories');
         $amendments = $request->dateNegotiations->filter(fn ($cycle) => $cycle->isAmendment())->values();
         $activeAmendment = $amendments->first(fn ($cycle) => $cycle->status->isOpen());
         $isOnHold = $request->status === CallOffRequestStatus::AmendmentOnHold;
@@ -61,10 +61,12 @@ class CallOffDateViewService
         return [
             'requestDate' => $request->effectiveRequestedDate(),
             'agreedDate' => ($isOnHold || $isCompleted || $isClosedAfterReversal) ? null : ($request->agreed_date ?? ($request->isLegacyDateAgreed() ? $request->effectiveRequestedDate() : null)),
-            'statusLabel' => $isCompleted ? 'Completed' : ($isClosedAfterReversal ? 'Source completion reversed — request remains closed' : ($isOnHold ? 'On Hold — Date Change Requested' : $request->status->label())),
+            'statusLabel' => $isCompleted ? 'Completed' : ($isClosedAfterReversal ? 'Source completion reversed — request remains closed' : ($isOnHold ? ($activeAmendment?->prior_agreed_date ? 'On Hold — Date Change Requested' : ($currentProposal ? 'Awaiting Site User — Amended' : 'Awaiting Fenster — Amended')) : $request->status->label())),
             'isClosedAfterReversal' => $isClosedAfterReversal,
             'isCompleted' => $isCompleted, 'isSourceAvailable' => $isSourceAvailable,
             'isOnHold' => $isOnHold, 'activeAmendment' => $activeAmendment, 'amendments' => $amendments,
+            'amendmentEarlyReasons' => $request->histories->filter(fn ($history) => isset($history->after_state['amendment_uuid']))
+                ->mapWithKeys(fn ($history) => [$history->after_state['amendment_uuid'] => $history->after_state['early_date_reason'] ?? null]),
             'proposals' => $proposals, 'currentProposal' => $currentProposal,
             'alternativeProposals' => $proposals->filter(fn ($proposal) => $proposal->proposal_type === CallOffDateProposalType::FensterAlternativeDate)->values(),
             'awaitingSiteUser' => $awaitingSiteUser, 'awaitingFenster' => $awaitingFenster,

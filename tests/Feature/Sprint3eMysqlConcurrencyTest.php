@@ -695,3 +695,42 @@ function mysqlGateRunWorkers(
         }
     }
 }
+
+test('UI06 simultaneous live amendments preserve one winner on the same active request', function (bool $alreadyAmended): void {
+    [$siteUser, $office, , $request, $secondSiteUser] = mysqlGateRequestFixture();
+    config(['call_off_amendments.reasons' => ['test_reason' => 'Synthetic MySQL test reason']]);
+    $first = null;
+    if ($alreadyAmended) {
+        $first = app(RequestCallOffAmendmentAction::class)->handle($siteUser, $request->batch->site, $request,
+            ['requested_date' => mysqlGateWeekday(4), 'reason_code' => 'test_reason'], app(CallOffAmendmentRules::class)->revision($request));
+    }
+    $request->refresh();
+    $original = $request->requested_date->toDateString();
+    $revision = app(CallOffAmendmentRules::class)->revision($request);
+    $results = mysqlGateRunWorkers([
+        ['amend-request', $siteUser->id, $request->id, mysqlGateWeekday(5), $revision],
+        ['amend-request', $secondSiteUser->id, $request->id, mysqlGateWeekday(6), $revision],
+    ]);
+    expect($results->where('ok', true))->toHaveCount(1)
+        ->and($request->fresh()->effectiveRequestedDate()->toDateString())->toBeIn([mysqlGateWeekday(5), mysqlGateWeekday(6)])
+        ->and($request->fresh()->requested_date->toDateString())->toBe($original)
+        ->and($request->fresh()->agreed_date)->toBeNull()
+        ->and($request->dateNegotiations()->where('status', 'open')->count())->toBe(1)
+        ->and($request->histories()->where('event_type', 'amendment_requested')->count())->toBe($alreadyAmended ? 2 : 1)
+        ->and(PortalNotification::where('request_uuid', $request->uuid)->where('notifiable_user_id', $office->id)->where('type', PortalNotificationType::CallOffAmendmentRequested)->count())->toBe($alreadyAmended ? 2 : 1);
+    if ($first) {
+        expect($first->fresh()->status)->toBe(CallOffNegotiationStatus::Superseded);
+    }
+})->with([false, true]);
+
+test('UI06 source completion wins over an unagreed live amendment in both commit orders', function (bool $completionFirst): void {
+    [$siteUser, , , $request, , $service] = mysqlGateRequestFixture();
+    $results = mysqlGateRunWorkers([
+        ['source-complete', $service->id],
+        ['amend-request', $siteUser->id, $request->id, mysqlGateWeekday(4), app(CallOffAmendmentRules::class)->revision($request)],
+    ], [], firstOperation: $completionFirst ? 'source-complete' : 'amend-request');
+    expect($results->where('operation', 'source-complete')->first()['ok'])->toBeTrue()
+        ->and($request->fresh()->status)->toBe(CallOffRequestStatus::Completed)
+        ->and($request->dateNegotiations()->whereNotNull('active_negotiation_key')->count())->toBe(0)
+        ->and($request->histories()->where('event_type', 'amendment_requested')->count())->toBe($completionFirst ? 0 : 1);
+})->with([true, false]);

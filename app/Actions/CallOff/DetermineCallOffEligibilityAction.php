@@ -92,11 +92,10 @@ class DetermineCallOffEligibilityAction
         $this->ensureSiteUserCanActOnRequest($user, $request);
         $this->ensureNotTrashed($request);
         $this->ensureRequestSourceIsAvailable($request);
-        if (! in_array($request->status, [CallOffRequestStatus::DateAgreed, CallOffRequestStatus::Approved], true)
+        if (! in_array($request->status, [CallOffRequestStatus::AwaitingFenster, CallOffRequestStatus::AwaitingSiteUser, CallOffRequestStatus::AmendmentOnHold, CallOffRequestStatus::DateAgreed, CallOffRequestStatus::Approved], true)
             || ($request->status === CallOffRequestStatus::DateAgreed && $request->agreed_date === null)
-            || $request->projectedPlot->is_completed
-            || $request->dateNegotiations()->where('status', 'open')->exists()) {
-            throw ValidationException::withMessages(['request' => 'Only available Date Agreed work without an open date change can be amended.']);
+            || $request->projectedPlot->is_completed) {
+            throw ValidationException::withMessages(['request' => 'Only available active call-offs can be amended. Completed work cannot be reopened.']);
         }
     }
 
