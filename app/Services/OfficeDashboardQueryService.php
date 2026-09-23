@@ -5,10 +5,8 @@ namespace App\Services;
 use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffDateProposalType;
 use App\Enums\CallOffHistoryEventType;
-use App\Enums\CallOffNegotiationPurpose;
 use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
-use App\Models\CallOffDateNegotiation;
 use App\Models\CallOffRequest;
 use App\Models\CallOffStatusHistory;
 use App\Models\Site;
@@ -29,12 +27,9 @@ final class OfficeDashboardQueryService
         $callOffs = (clone $requests)->whereIn('status', [
             CallOffRequestStatus::Submitted, CallOffRequestStatus::AwaitingFenster,
         ]);
-        $amendments = CallOffDateNegotiation::query()
-            ->where('purpose', CallOffNegotiationPurpose::Amendment)
-            ->where('status', CallOffNegotiationStatus::Open)
-            ->whereHas('callOffRequest', fn (Builder $query) => $query
-                ->whereNull('trashed_at')->where('status', CallOffRequestStatus::AmendmentOnHold));
-        $officeAmendments = (clone $amendments)->whereDoesntHave('proposals', fn (Builder $query) => $query
+        $amendments = (clone $requests)->where('status', CallOffRequestStatus::AmendmentOnHold)
+            ->whereHas('latestEffectiveAmendment', fn (Builder $query) => $query->where('status', CallOffNegotiationStatus::Open));
+        $officeAmendments = (clone $amendments)->whereDoesntHave('latestEffectiveAmendment.proposals', fn (Builder $query) => $query
             ->where('proposal_type', CallOffDateProposalType::FensterAlternativeDate)
             ->where('status', CallOffDateProposalStatus::AwaitingResponse));
 
@@ -95,8 +90,16 @@ final class OfficeDashboardQueryService
             'requestItems' => (clone $callOffs)->with(['projectedPlot', 'batch.site'])
                 ->latest('created_at')->latest('id')->limit(2)->get(),
             'amendmentCount' => $amendmentCount,
-            'amendmentItems' => (clone $officeAmendments)->with(['callOffRequest.projectedPlot', 'callOffRequest.batch.site'])
-                ->latest('opened_at')->latest('id')->limit(2)->get(),
+            'amendmentItems' => (clone $officeAmendments)->with(['projectedPlot', 'batch.site', 'latestEffectiveAmendment'])
+                ->withMax('latestEffectiveAmendment as latest_amendment_opened_at', 'opened_at')
+                ->withMax('latestEffectiveAmendment as latest_amendment_id', 'id')
+                ->orderByDesc('latest_amendment_opened_at')->orderByDesc('latest_amendment_id')->limit(2)->get()
+                ->map(function (CallOffRequest $request) {
+                    $amendment = $request->latestEffectiveAmendment;
+                    $amendment->setRelation('callOffRequest', $request);
+
+                    return $amendment;
+                }),
             'pendingAmendmentCount' => (clone $amendments)->count(),
             'activeSiteCount' => Site::query()->effectivelyActive()->count(),
             'openRequestCount' => (clone $requests)->whereIn('status', [

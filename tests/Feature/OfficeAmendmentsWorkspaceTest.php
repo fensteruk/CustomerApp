@@ -196,6 +196,19 @@ it('does not resurrect an older cycle when the latest cycle is closed even with 
         ->assertViewHas('selected', fn ($row) => $row->id === $latest->id);
 });
 
+it('uses the canonical highest valid amendment ID despite timestamps and withdrawn revisions', function (): void {
+    $request = amendmentsRequest();
+    amendmentsCycle($request, ['opened_at' => '2026-09-23 09:00:00', 'status' => CallOffNegotiationStatus::Superseded]);
+    $current = amendmentsCycle($request, ['opened_at' => '2026-09-23 07:00:00', 'requested_date' => '2026-10-07']);
+    amendmentsCycle($request, ['opened_at' => '2026-09-23 10:00:00', 'status' => CallOffNegotiationStatus::Withdrawn]);
+
+    $this->actingAs(amendmentsOffice())->get(route('office.workspace.amendments.index'))->assertOk()
+        ->assertViewHas('amendments', fn ($rows) => $rows->pluck('id')->all() === [$current->id])
+        ->assertViewHas('counts', ['attention' => 1, 'waiting' => 0, 'closed' => 0])
+        ->assertSee('7 Oct 2026');
+    expect($request->fresh()->effectiveRequestedDate()->toDateString())->toBe('2026-10-07');
+});
+
 it('keeps query counts bounded and never loads entire proposal or history collections', function (): void {
     $office = amendmentsOffice();
     $cycle = amendmentsCycle(amendmentsRequest());

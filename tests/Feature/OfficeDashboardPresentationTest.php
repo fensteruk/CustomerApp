@@ -111,6 +111,7 @@ it('shows real current Office amendments newest first and keeps waiting-on-site 
     $old = overviewRequest($site, '501', CallOffRequestStatus::AmendmentOnHold);
     overviewAmendment($old, '2026-09-22 09:00:00');
     $new = overviewRequest($site, 'Plot 502', CallOffRequestStatus::AmendmentOnHold);
+    overviewAmendment($new, '2026-09-20 09:00:00', ['status' => CallOffNegotiationStatus::Superseded, 'requester_name' => 'Superseded Person']);
     overviewAmendment($new, '2026-09-23 09:00:00', ['requester_name' => 'Taylor Site', 'internal_reason' => 'PRIVATE AMENDMENT REASON']);
     $waiting = overviewRequest($site, '503', CallOffRequestStatus::AmendmentOnHold);
     $cycle = overviewAmendment($waiting, '2026-09-23 10:00:00');
@@ -121,7 +122,6 @@ it('shows real current Office amendments newest first and keeps waiting-on-site 
     ]);
     $closed = overviewRequest($site, '504', CallOffRequestStatus::Completed);
     overviewAmendment($closed, '2026-09-23 11:00:00', ['status' => CallOffNegotiationStatus::Completed]);
-    overviewAmendment($new, '2026-09-20 09:00:00', ['status' => CallOffNegotiationStatus::Superseded, 'requester_name' => 'Superseded Person']);
 
     $this->actingAs($office)->get(route('dashboard'))->assertOk()
         ->assertViewHas('amendmentCount', 2)->assertViewHas('pendingAmendmentCount', 3)
@@ -132,6 +132,17 @@ it('shows real current Office amendments newest first and keeps waiting-on-site 
         ->assertDontSee('PRIVATE AMENDMENT REASON')->assertDontSee('Superseded Person')
         ->assertDontSee('Plot 503')->assertDontSee('Plot 504')
         ->assertSee(route('office.workspace.amendments.index', ['request' => $new->uuid]), false);
+});
+
+it('orders Dashboard amendment cards by the latest amendment rather than request creation order', function (): void {
+    $site = Site::factory()->create();
+    $olderRequest = overviewRequest($site, '501', CallOffRequestStatus::AmendmentOnHold);
+    $newerRequest = overviewRequest($site, '502', CallOffRequestStatus::AmendmentOnHold);
+    overviewAmendment($newerRequest, '2026-09-23 07:00:00');
+    $latest = overviewAmendment($olderRequest, '2026-09-23 07:30:00');
+
+    $this->actingAs(overviewOffice())->get(route('dashboard'))->assertOk()
+        ->assertViewHas('amendmentItems', fn ($rows) => $rows->pluck('uuid')->all() === [$latest->uuid, $newerRequest->latestEffectiveAmendment->uuid]);
 });
 
 it('uses future agreed dates for upcoming activity and recorded events for recent activity', function (): void {

@@ -30,7 +30,7 @@
                             <li>
                                 <a class="od-attention-item" href="{{ route('office.workspace.amendments.index', ['request' => $request->uuid]) }}">
                                     <strong>{{ str($request->projectedPlot->plot_reference)->lower()->startsWith('plot ') ? $request->projectedPlot->plot_reference : 'Plot '.$request->projectedPlot->plot_reference }} · {{ $request->effectiveServiceIdentifier()?->label() }} date change</strong>
-                                    <span class="od-date-change">Agreed {{ $amendment->prior_agreed_date?->format('j M Y') ?? 'Not recorded' }} → Requested {{ $amendment->requested_date?->format('j M Y') ?? 'Not recorded' }}</span>
+                                    <span class="od-date-change">@if($amendment->prior_agreed_date)Agreed {{ $amendment->prior_agreed_date->format('j M Y') }} → @endif Requested {{ $amendment->callOffRequest->effectiveRequestedDate()?->format('j M Y') ?? 'Not recorded' }}</span>
                                     <span class="od-item-meta"><span>{{ $request->batch->site->name }}</span><time datetime="{{ $amendment->opened_at->toISOString() }}" title="{{ $amendment->opened_at->format('j M Y, H:i') }}">{{ $amendment->opened_at->diffForHumans() }}</time></span>
                                     <span class="od-item-meta">Requested by {{ $amendment->requester_name ?? 'Name not recorded' }}</span>
                                 </a>

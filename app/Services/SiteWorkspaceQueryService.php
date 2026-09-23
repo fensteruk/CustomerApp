@@ -31,7 +31,8 @@ final class SiteWorkspaceQueryService
         $models = new Collection($plots->getCollection()->pluck('plot')->all());
         $models->load('products:id,projected_plot_id,product_code,quantity');
         $requests = $this->requests($site)->whereIn('projected_plot_id', $models->modelKeys())
-            ->with(['batch', 'dateNegotiations' => fn ($query) => $query->where('status', 'open')->where('purpose', 'amendment')->with('proposals')])->get();
+            ->with(['batch', 'latestEffectiveAmendment' => fn ($query) => $query->withExists(['proposals as awaiting_site_user' => fn (Builder $proposal) => $proposal
+                ->where('proposal_type', 'fenster_alternative_date')->where('status', 'awaiting_response')])])->get();
         $byPlot = $requests->groupBy('projected_plot_id');
         $dictionary = CustomerAppDictionary::definition();
         $cards = $plots->getCollection()->mapWithKeys(function ($overview) use ($byPlot, $office, $dictionary): array {
@@ -58,8 +59,8 @@ final class SiteWorkspaceQueryService
                 ->orWhere(function (Builder $amendment) use ($office): void {
                     $amendment->where('status', CallOffRequestStatus::AmendmentOnHold);
                     $method = $office ? 'whereDoesntHave' : 'whereHas';
-                    $amendment->{$method}('dateNegotiations', fn (Builder $cycle) => $cycle
-                        ->where('status', 'open')->where('purpose', 'amendment')
+                    $amendment->{$method}('latestEffectiveAmendment', fn (Builder $cycle) => $cycle
+                        ->where('status', 'open')
                         ->whereHas('proposals', fn (Builder $proposal) => $proposal
                             ->where('proposal_type', 'fenster_alternative_date')->where('status', 'awaiting_response')));
                 });
@@ -70,7 +71,7 @@ final class SiteWorkspaceQueryService
             ->select('call_off_requests.*')->selectRaw($dateSql.' AS workspace_date')
             ->whereRaw($dateSql.' >= ?', [today()->toDateString()])
             ->reorder()->orderBy('workspace_date')->orderBy('call_off_requests.id')
-            ->with('batch')->limit(3)->get()
+            ->with(['batch', 'latestEffectiveAmendment'])->limit(3)->get()
             ->map(fn ($request) => $this->date($request) + ['request' => $request]);
 
         return [
@@ -102,9 +103,8 @@ final class SiteWorkspaceQueryService
     private function needsResponse(CallOffRequest $request, bool $office): bool
     {
         if ($request->status === CallOffRequestStatus::AmendmentOnHold) {
-            $awaitingSite = $request->dateNegotiations->contains(fn ($cycle) => $cycle->status->value === 'open'
-                && $cycle->purpose->value === 'amendment'
-                && $cycle->proposals->contains(fn ($proposal) => $proposal->proposal_type->value === 'fenster_alternative_date' && $proposal->status->value === 'awaiting_response'));
+            $cycle = $request->latestEffectiveAmendment;
+            $awaitingSite = $cycle?->status->value === 'open' && $cycle->awaiting_site_user;
 
             return $office ? ! $awaitingSite : $awaitingSite;
         }
@@ -117,8 +117,7 @@ final class SiteWorkspaceQueryService
     private function date(CallOffRequest $request): ?array
     {
         if ($request->status === CallOffRequestStatus::AmendmentOnHold) {
-            $cycle = $request->dateNegotiations->first(fn ($cycle) => $cycle->status->value === 'open' && $cycle->purpose->value === 'amendment');
-            $date = $cycle?->requested_date;
+            $date = $request->effectiveRequestedDate();
             $label = 'Amendment requested';
         } elseif (in_array($request->status, [CallOffRequestStatus::Approved, CallOffRequestStatus::DateAgreed], true)) {
             $date = $request->agreed_date ?? $request->effectiveRequestedDate();

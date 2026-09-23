@@ -1,5 +1,18 @@
 # Fenster Customer Portal Handover
 
+## Second-wave UI and amendment integration — 23 September 2026
+
+The four accepted second-wave branch tips are merged in order on the isolated
+`codex/customer-ui-integration02` worktree from first-wave base `f94a750d`.
+Canonical effective requested dates now drive Office and Site presentation;
+one current amendment is counted per request. The exact weekday
+1 Oct → 3 Oct → 5 Oct sequence is covered across Plot and Office. No migration,
+push or deployment occurred. RedZebra writeback and automatic source-date
+confirmation remain deferred. See
+`documentation/customer-ui-integration02-second-wave-2026-09-23.md` for scope,
+verification and remaining release-review checks. Earlier separate-branch
+and first-wave notes below are historical.
+
 ## Plot workspace and live amendments — 23 September 2026
 
 CUSTOMER-UI-OVERHAUL06 is a separate feature-branch candidate based directly on

@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Second-wave integration candidate — 23 September 2026
+
+The Plot/live amendments, Office Amendments, Wald reconciliation and Site
+workspace branch tips are merged locally on `codex/customer-ui-integration02`
+from first-wave base `f94a750d`. The canonical amendment date and latest-cycle
+semantics are integrated across the pages. No migration, push or deployment
+occurred. MySQL combined rerun and actual browser viewport QA remain for release
+review; source-date confirmation and an audited RedZebra handling action remain
+product decisions. See
+`documentation/customer-ui-integration02-second-wave-2026-09-23.md`.
+
 ## Plot workspace and live amendments — 23 September 2026
 
 CUSTOMER-UI-OVERHAUL06 is a separate feature-branch candidate based directly on

@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Enums\CallOffDateProposalStatus;
 use App\Enums\CallOffDateProposalType;
+use App\Enums\CallOffHistoryEventType;
 use App\Enums\CallOffNegotiationPurpose;
 use App\Enums\CallOffNegotiationStatus;
 use App\Enums\CallOffRequestStatus;
@@ -18,8 +19,7 @@ use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Query\Builder as QueryBuilder;
 
 /**
- * Read-only adapter for the baseline amendment domain. OVERHAUL06 can replace
- * latestAmendments() when its canonical latest-effective representation lands.
+ * Read-only Office queue for the canonical latest-effective amendment.
  * Negotiation response state is deliberately not a RedZebra acknowledgement.
  */
 final class OfficeAmendmentsWorkspaceQuery
@@ -54,6 +54,12 @@ final class OfficeAmendmentsWorkspaceQuery
         $selected = ! empty($filters['request'])
             ? $this->withContext(clone $base)->whereHas('callOffRequest', fn (Builder $r) => $r->where('uuid', $filters['request']))->firstOrFail()
             : $amendments->first();
+        $visible = collect($amendments->items())->when($selected, fn ($rows) => $rows->push($selected));
+        $comparison = CallOffStatusHistory::query()
+            ->whereIn('call_off_request_id', $visible->pluck('call_off_request_id')->unique())
+            ->where('event_type', CallOffHistoryEventType::AmendmentRequested)
+            ->whereIn('after_state->amendment_uuid', $visible->pluck('uuid')->unique())
+            ->get(['call_off_request_id', 'after_state'])->keyBy(fn ($event) => $event->after_state['amendment_uuid'] ?? '');
         $history = $selected
             ? CallOffStatusHistory::query()->where('call_off_request_id', $selected->call_off_request_id)
                 ->with('performedBy.portalRole')->orderBy('sequence')->orderBy('id')
@@ -73,19 +79,21 @@ final class OfficeAmendmentsWorkspaceQuery
             }
         }
 
-        return compact('amendments', 'selected', 'history', 'counts', 'filters', 'customers', 'sites') + ['services' => CallOffServiceType::cases()];
+        return compact('amendments', 'selected', 'history', 'counts', 'filters', 'customers', 'sites', 'comparison') + ['services' => CallOffServiceType::cases()];
     }
 
     private function latestAmendments(): Builder
     {
         return CallOffDateNegotiation::query()->where('purpose', CallOffNegotiationPurpose::Amendment)
+            ->where('status', '!=', CallOffNegotiationStatus::Withdrawn)->whereNotNull('requested_date')
             ->whereHas('callOffRequest')
             ->whereNotExists(function (QueryBuilder $newer): void {
                 $newer->selectRaw('1')->from('call_off_date_negotiations as newer')
                     ->whereColumn('newer.call_off_request_id', 'call_off_date_negotiations.call_off_request_id')
                     ->where('newer.purpose', CallOffNegotiationPurpose::Amendment->value)
-                    ->where(fn (QueryBuilder $q) => $q->whereColumn('newer.opened_at', '>', 'call_off_date_negotiations.opened_at')
-                        ->orWhere(fn (QueryBuilder $q) => $q->whereColumn('newer.opened_at', 'call_off_date_negotiations.opened_at')->whereColumn('newer.id', '>', 'call_off_date_negotiations.id')));
+                    ->where('newer.status', '!=', CallOffNegotiationStatus::Withdrawn->value)
+                    ->whereNotNull('newer.requested_date')
+                    ->whereColumn('newer.id', '>', 'call_off_date_negotiations.id');
             });
     }
 
@@ -112,7 +120,7 @@ final class OfficeAmendmentsWorkspaceQuery
 
     private function withContext(Builder $query): Builder
     {
-        return $query->with(['callOffRequest.projectedPlot', 'callOffRequest.batch.site.customerOrganisation'])
+        return $query->with(['callOffRequest.projectedPlot', 'callOffRequest.batch.site.customerOrganisation', 'callOffRequest.latestEffectiveAmendment'])
             ->withExists(['proposals as awaiting_site_user' => $this->pendingProposal(...)]);
     }
 

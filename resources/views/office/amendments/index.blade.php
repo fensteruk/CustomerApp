@@ -38,7 +38,8 @@
                             <a class="am-row {{ $selected?->id === $amendment->id ? 'am-selected' : '' }}" href="{{ route('office.workspace.amendments.index', [...Illuminate\Support\Arr::except($filters, ['history_page']), 'page' => $amendments->currentPage(), 'request' => $callOff->uuid]) }}#amendment-detail" @if($selected?->id === $amendment->id) aria-current="true" @endif>
                                 <div class="am-row-title"><strong>{{ str($callOff->projectedPlot->plot_reference)->lower()->startsWith('plot ') ? $callOff->projectedPlot->plot_reference : 'Plot '.$callOff->projectedPlot->plot_reference }}</strong><span>{{ $callOff->effectiveServiceIdentifier()?->label() ?? 'Service not recorded' }}</span><span aria-hidden="true">›</span></div>
                                 <p class="am-context">{{ $callOff->batch->site->customerOrganisation->name }} · {{ $callOff->batch->site->name }}</p>
-                                <div class="am-row-change"><span><small>Previous agreed</small>{{ $amendment->prior_agreed_date?->format('j M Y') ?? 'Not recorded' }}</span><span aria-hidden="true">→</span><span><small>Now requested</small><strong>{{ $amendment->requested_date?->format('j M Y') ?? 'Not recorded' }}</strong></span></div>
+                                @php($previous = $amendment->prior_agreed_date ?? (!empty($comparison[$amendment->uuid]?->after_state['prior_requested_date']) ? \Illuminate\Support\Carbon::parse($comparison[$amendment->uuid]->after_state['prior_requested_date']) : null))
+                                <div class="am-row-change"><span><small>Previous {{ $amendment->prior_agreed_date ? 'agreed' : 'requested' }}</small>{{ $previous?->format('j M Y') ?? 'Not recorded' }}</span><span aria-hidden="true">→</span><span><small>Now requested</small><strong>{{ $callOff->effectiveRequestedDate()?->format('j M Y') ?? 'Not recorded' }}</strong></span></div>
                                 <div class="am-row-meta"><span>{{ $amendment->requester_name ?? 'Name not recorded' }}</span><time datetime="{{ $amendment->opened_at->toISOString() }}">{{ $amendment->opened_at->format('j M Y, H:i') }}</time></div>
                                 <div class="am-tags"><span class="am-tag">{{ $amendmentQuery->stateLabel($amendment) }}</span><span class="am-tag">Request: {{ $callOff->status->label() }}{{ $callOff->trashed_at ? ' · In Trash' : '' }}</span>@if($amendment->is_early_date_exception)<span class="am-tag am-warning">Early date requested</span>@endif @if($amendment->is_urgent)<span class="am-tag am-warning">Urgent / late amendment</span>@endif</div>
                             </a>
@@ -55,10 +56,11 @@
                     <div class="am-detail-heading"><h2 id="am-detail-title">{{ str($callOff->projectedPlot->plot_reference)->lower()->startsWith('plot ') ? $callOff->projectedPlot->plot_reference : 'Plot '.$callOff->projectedPlot->plot_reference }}</h2><span class="am-tag">{{ $amendmentQuery->stateLabel($selected) }}</span></div>
                     <p class="am-context">{{ $callOff->batch->site->customerOrganisation->name }} · {{ $callOff->batch->site->name }} · {{ $callOff->effectiveServiceIdentifier()?->label() }}</p>
                     <div class="am-change-banner"><strong>{{ $callOff->effectiveServiceIdentifier()?->label() }} date change</strong><p>The latest customer-requested change is shown below.</p></div>
+                    @php($previous = $selected->prior_agreed_date ?? (!empty($comparison[$selected->uuid]?->after_state['prior_requested_date']) ? \Illuminate\Support\Carbon::parse($comparison[$selected->uuid]->after_state['prior_requested_date']) : null))
                     <div class="am-comparison">
-                        <div><span>Previous agreed date</span><strong>{{ $selected->prior_agreed_date?->format('j M Y') ?? 'Not recorded' }}</strong></div>
+                        <div><span>Previous {{ $selected->prior_agreed_date ? 'agreed' : 'requested' }} date</span><strong>{{ $previous?->format('j M Y') ?? 'Not recorded' }}</strong></div>
                         <span aria-hidden="true">→</span>
-                        <div><span>Now requested</span><strong>{{ $selected->requested_date?->format('j M Y') ?? 'Not recorded' }}</strong></div>
+                        <div><span>Now requested</span><strong>{{ $callOff->effectiveRequestedDate()?->format('j M Y') ?? 'Not recorded' }}</strong></div>
                     </div>
                     <dl class="am-facts">
                         <div><dt>Amended by</dt><dd>{{ $selected->requester_name ?? 'Name not recorded' }}@if($selected->requester_role)<span>{{ $selected->requester_role }}</span>@endif</dd></div>
@@ -68,6 +70,7 @@
                     </dl>
                     @if($selected->customer_response)<p class="am-explanation">{{ $selected->customer_response }}</p>@endif
                     @if($selected->is_early_date_exception)<p class="am-notice"><strong>Early date requested.</strong> Recorded normal earliest date: {{ $selected->normal_earliest_date?->format('j M Y') ?? 'Not recorded' }}. Review the existing request before agreeing a date.</p>@endif
+                    @if(!empty($comparison[$selected->uuid]?->after_state['early_date_reason']))<p class="am-notice"><strong>Early date reason:</strong> {{ $comparison[$selected->uuid]->after_state['early_date_reason'] }}</p>@endif
                     @if($selected->is_urgent)<p class="am-notice">Urgent / late amendment</p>@endif
                     <h3 class="am-timeline-heading">Request timeline</h3>
                     <p class="am-muted">Recorded history, oldest first. Includes earlier amendment cycles.</p>
@@ -78,7 +81,8 @@
                                 <time datetime="{{ $event->performed_at->toISOString() }}">{{ $event->performed_at->format('j M Y, H:i') }}</time>
                                 <p>{{ $event->recordedActorName() }}</p>
                                 @if($event->event_type === \App\Enums\CallOffHistoryEventType::AmendmentRequested)
-                                    <p>Previous: {{ ($event->before_state['agreed_date'] ?? $event->before_state['requested_date'] ?? null) ? \Illuminate\Support\Carbon::parse($event->before_state['agreed_date'] ?? $event->before_state['requested_date'])->format('j M Y') : 'Not recorded' }} → Requested: {{ !empty($event->after_state['amendment_requested_date']) ? \Illuminate\Support\Carbon::parse($event->after_state['amendment_requested_date'])->format('j M Y') : 'Not recorded' }}</p>
+                                    <p>Previous {{ !empty($event->after_state['prior_agreed_date']) ? 'agreed' : 'requested' }}: {{ ($event->after_state['prior_agreed_date'] ?? $event->after_state['prior_requested_date'] ?? $event->before_state['agreed_date'] ?? $event->before_state['requested_date'] ?? null) ? \Illuminate\Support\Carbon::parse($event->after_state['prior_agreed_date'] ?? $event->after_state['prior_requested_date'] ?? $event->before_state['agreed_date'] ?? $event->before_state['requested_date'])->format('j M Y') : 'Not recorded' }} → Requested: {{ !empty($event->after_state['amendment_requested_date']) ? \Illuminate\Support\Carbon::parse($event->after_state['amendment_requested_date'])->format('j M Y') : 'Not recorded' }}</p>
+                                    @if(!empty($event->after_state['early_date_reason']))<p>Early date reason: {{ $event->after_state['early_date_reason'] }}</p>@endif
                                 @elseif(!empty($event->after_state['proposed_date']))
                                     <p>Proposed: {{ \Illuminate\Support\Carbon::parse($event->after_state['proposed_date'])->format('j M Y') }}</p>
                                 @elseif($event->event_type === \App\Enums\CallOffHistoryEventType::DateAgreed && !empty($event->after_state['agreed_date']))

@@ -19,6 +19,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\Services\CallOffAmendmentRules;
 use App\Services\CallOffDateViewService;
+use App\Services\OfficeAmendmentsWorkspaceQuery;
 use App\Services\OfficeDashboardQueryService;
 use Carbon\CarbonImmutable;
 use Illuminate\Auth\Access\AuthorizationException;
@@ -54,6 +55,39 @@ function liveAmend(User $user, Site $site, CallOffRequest $request, string $date
         app(CallOffAmendmentRules::class)->revision($request));
 }
 
+it('keeps the exact 1 Oct to 3 Oct to 5 Oct sequence coherent across Plot and Office in a weekday calendar', function () {
+    $this->travelTo(CarbonImmutable::parse('2029-09-03 06:00:00'));
+    $org = CustomerOrganisation::factory()->create();
+    $manager = User::factory()->role(PortalRoleIdentifier::SiteManager)->create(['customer_organisation_id' => $org->id]);
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create(['customer_organisation_id' => null]);
+    $site = Site::factory()->create(['customer_organisation_id' => $org->id]);
+    $manager->assignedSites()->attach($site);
+    $plot = ProjectedPlot::factory()->create(['site_id' => $site->id]);
+    $service = ProjectedPlotService::query()->create(['projected_plot_id' => $plot->id, 'service_identifier' => CallOffServiceType::Windows, 'source_present' => true]);
+    $request = app(SubmitMultiCallOffBatchAction::class)->handle($manager, $site,
+        [['plot_service_id' => $service->id, 'requested_date' => '2029-10-01', 'early_date_reason' => null]])->requests()->firstOrFail();
+    $this->travelTo(CarbonImmutable::parse('2029-09-03 07:00:00'));
+    $first = liveAmend($manager, $site, $request, '2029-10-03');
+    $this->travelTo(CarbonImmutable::parse('2029-09-03 07:30:00'));
+    $latest = liveAmend($manager, $site, $request->fresh(), '2029-10-05');
+
+    expect(CallOffRequest::count())->toBe(1)
+        ->and($request->fresh()->effectiveRequestedDate()->toDateString())->toBe('2029-10-05')
+        ->and($request->fresh()->requested_date->toDateString())->toBe('2029-10-01')
+        ->and($first->fresh()->status)->toBe(CallOffNegotiationStatus::Superseded)
+        ->and(app(OfficeDashboardQueryService::class)->forUser($office)['amendmentCount'])->toBe(1);
+    $queue = app(OfficeAmendmentsWorkspaceQuery::class)->forUser($office);
+    expect($queue['amendments'])->toHaveCount(1)
+        ->and($queue['selected']->uuid)->toBe($latest->uuid)
+        ->and($queue['comparison'][$latest->uuid]->after_state['prior_requested_date'])->toBe('2029-10-03');
+    $this->actingAs($office)->get(route('office.workspace.amendments.index'))->assertOk()
+        ->assertSee('Previous requested')->assertSee('3 Oct 2029')->assertSee('5 Oct 2029');
+    $this->actingAs($manager)->withSession(['active_site_id' => $site->id])
+        ->get(route('portal.plots.show', $plot))->assertOk()->assertSee('5 October 2029');
+    expect($request->histories()->orderBy('sequence')->pluck('after_state')->map(fn ($state) => $state['effective_requested_date'] ?? $state['requested_date'])->all())
+        ->toBe(['2029-10-01', '2029-10-03', '2029-10-05']);
+});
+
 it('amends a 0600 request at 0700 and 0730 without Office action preserving all three events', function () {
     [$user, $office, $request, $site] = liveAmendmentFixture();
     $original = $request->histories()->firstOrFail()->toArray();
@@ -88,7 +122,7 @@ it('amends a 0600 request at 0700 and 0730 without Office action preserving all 
 });
 
 it('requires a separate early reason before any change and snapshots it when supplied', function () {
-    [$user, , $request, $site] = liveAmendmentFixture();
+    [$user, $office, $request, $site] = liveAmendmentFixture();
     foreach ([null, '', '   '] as $reason) {
         try {
             liveAmend($user, $site, $request, '2026-09-08', $reason);
@@ -104,6 +138,8 @@ it('requires a separate early reason before any change and snapshots it when sup
         ->and($history['normal_earliest_date'])->toBe('2026-10-01')
         ->and($history['working_days_early'])->toBe(17)
         ->and($cycle->is_early_date_exception)->toBeTrue();
+    $this->actingAs($office)->get(route('office.workspace.amendments.index'))->assertOk()
+        ->assertSee('Early date reason:')->assertSee('Scaffolding is being removed');
 });
 
 it('accepts normal amendments without an early reason', function () {
