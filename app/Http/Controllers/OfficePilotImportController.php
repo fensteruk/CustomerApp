@@ -8,6 +8,7 @@ use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
 use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
+use App\SourceImport\Integration\ImportPolicy;
 use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\PilotImportPolicy;
 use App\SourceImport\Integration\PilotImportWorkflow;
@@ -17,8 +18,10 @@ use App\SourceImport\Integration\WaldPilotAvailability;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
 use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeConflict;
+use App\SourceImport\Knowledge\KnowledgeIdentity;
 use App\SourceImport\Knowledge\KnowledgeQueries;
 use App\SourceImport\Knowledge\KnowledgeScope;
+use App\View\Presenters\ImportReviewPresentation;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -306,6 +309,8 @@ final class OfficePilotImportController extends Controller
     private function details(Request $request, string $upload, array $selection): array
     {
         [$scope, $run] = $this->selection($request, $upload, $selection['uuid']);
+        (new ImportPolicy)->authorize($request->user(), $scope, 'audit');
+        $run = (new BackendStore)->run($scope, $run->uuid);
         $context = $run->context_id ? DB::table('wald_knowledge_contexts')->where('id', $run->context_id)->first() : null;
         $preview = $run->preview_id ? DB::table('wald_import_previews')->where('id', $run->preview_id)->first() : null;
         $receipt = DB::table('wald_import_receipts')->where('run_id', $run->id)->first();
@@ -327,9 +332,9 @@ final class OfficePilotImportController extends Controller
             $historyContext = $historyContext->predecessor_id
                 ? DB::table('wald_knowledge_contexts')->where('id', $historyContext->predecessor_id)->first() : null;
         }
-        $stage = $run->stage_id ? DB::table('wald_import_stages')->where('id', $run->stage_id)->first() : null;
-        $stageManifest = $stage ? (new BackendStore)->payload($stage, 'manifest', 'manifest_hash') : null;
-        $analysisNeedsRefresh = $stageManifest && Canonical::hash($stageManifest['integration'] ?? []) !== Canonical::hash(BackendStore::IDENTITY);
+        [$stage, $stageManifest, $stageRows] = $run->stage_id ? (new BackendStore)->stage($run) : [null, null, []];
+        $analysisNeedsRefresh = $stageManifest && (Canonical::hash($stageManifest['integration'] ?? []) !== Canonical::hash(BackendStore::IDENTITY)
+            || Canonical::hash($stageManifest['pins'] ?? []) !== Canonical::hash((new KnowledgeIdentity)->current()));
 
         return [
             'run' => (array) $run,
@@ -338,8 +343,9 @@ final class OfficePilotImportController extends Controller
             'auto_resolved_count' => $autoResolved,
             'analysis_history' => $history,
             'analysis_needs_refresh' => $analysisNeedsRefresh,
-            'rows' => $run->stage_id ? (new ImportReview)->details($request->user(), $scope, $run->uuid, -1, 100) : [],
-            'preview' => $preview ? ['uuid' => $preview->uuid, 'hash' => $preview->payload_hash, 'payload' => json_decode($preview->payload, true, flags: JSON_THROW_ON_ERROR)] : null,
+            'stage_summary' => $stage ? ImportReviewPresentation::stage($stageRows) : null,
+            'rows' => array_slice($stageRows, 0, 100),
+            'preview' => $preview ? ['uuid' => $preview->uuid, 'hash' => $preview->payload_hash, 'expires_at' => $preview->expires_at, 'payload' => (new BackendStore)->payload($preview)] : null,
             'receipt' => $receipt ? json_decode($receipt->payload, true, flags: JSON_THROW_ON_ERROR) : null,
         ];
     }
