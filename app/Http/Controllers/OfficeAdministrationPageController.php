@@ -6,6 +6,7 @@ use App\Enums\AdministrativeEntityType;
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
 use App\Services\OfficeAdministrationQueryService;
+use App\Services\OfficeCustomerWorkspaceQueryService;
 use App\Services\OfficeUserAdministrationQueryService;
 use Illuminate\Http\Request;
 use Illuminate\Pagination\LengthAwarePaginator;
@@ -14,12 +15,13 @@ use Illuminate\View\View;
 /** Read-only page adapters; ADMIN-SITE02A owns every query and mutation. */
 class OfficeAdministrationPageController extends Controller
 {
-    public function customers(Request $request, OfficeAdministrationQueryService $queries): View
+    public function customers(Request $request, OfficeCustomerWorkspaceQueryService $queries): View
     {
         $filters = $this->filters($request);
+        $input = $request->validate(['sort' => ['nullable', 'in:name_asc,name_desc']]);
+        $filters['sort'] = $input['sort'] ?? 'name_asc';
 
-        return view('office.customers.index', [
-            'customers' => $queries->customers($request->user(), $filters['search'], $filters['active'])->withQueryString(),
+        return view('office.customers.index', $queries->index($request->user(), $filters['search'], $filters['active'], $filters['sort']) + [
             'filters' => $filters,
         ]);
     }
