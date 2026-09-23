@@ -40,7 +40,7 @@ beforeEach(function (): void {
 function adminCustomerViewData(): array
 {
     return ['uuid' => '00000000-0000-4000-8000-000000000001', 'name' => 'Synthetic Homes',
-        'is_active' => true, 'lock_version' => 3, 'site_count' => 40, 'active_site_count' => 38,
+        'is_active' => true, 'lock_version' => 3, 'site_count' => 40, 'active_site_count' => 38, 'plot_count' => 120, 'attention_count' => 2,
         'user_count' => 12, 'created_at' => '2026-09-10T10:00:00Z', 'updated_at' => '2026-09-10T10:00:00Z'];
 }
 
@@ -61,14 +61,16 @@ function adminPageItems(array $items = [], ?int $total = null): LengthAwarePagin
 it('renders bounded customer cards and escapes hostile names', function (): void {
     $customer = [...adminCustomerViewData(), 'name' => '<script>alert(1)</script>'];
     $html = view('office.customers.index', ['customers' => adminPageItems([$customer], 400),
-        'filters' => ['search' => '', 'active' => null]])->render();
-    expect($html)->toContain('400 customers', 'Add Customer', 'page=2', '&lt;script&gt;')
+        'summary' => ['customers' => 400, 'sites' => 800, 'active_sites' => 750],
+        'filters' => ['search' => '', 'active' => null, 'sort' => 'name_asc']])->render();
+    expect($html)->toContain('400 customers', 'Add customer', 'page=2', '&lt;script&gt;')
         ->not->toContain('<script>alert(1)</script>', 'Delete Customer');
 });
 
 it('distinguishes no customers from no matching customers', function (string $search, string $heading): void {
     $html = view('office.customers.index', ['customers' => adminPageItems(),
-        'filters' => ['search' => $search, 'active' => null]])->render();
+        'summary' => ['customers' => 0, 'sites' => 0, 'active_sites' => 0],
+        'filters' => ['search' => $search, 'active' => null, 'sort' => 'name_asc']])->render();
     expect($html)->toContain($heading);
 })->with([['', 'No customers yet'], ['Missing', 'No matching customers']]);
 
