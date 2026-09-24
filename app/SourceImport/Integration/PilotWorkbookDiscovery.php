@@ -11,7 +11,9 @@ final class PilotWorkbookDiscovery
 {
     public const MAX_PARENT_ROWS = 5000;
 
-    public function inspect(object $upload): array
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v6';
+
+    public function inspect(object $upload, array $restoredRows = []): array
     {
         [, $sheets, $snapshot] = (new WorkbookStager)->inspect($upload);
         $data = $snapshot->data;
@@ -50,6 +52,7 @@ final class PilotWorkbookDiscovery
         $sources = [];
         $included = 0;
         $excluded = 0;
+        $ignoredRows = [];
         $sawHierarchySignal = false;
         $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
         $dataEnd = (int) ($table['data_end_row'] ?? $table['range']['end_row']);
@@ -75,14 +78,24 @@ final class PilotWorkbookDiscovery
             }
             $seen[$call] = true;
             $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
+            $rawIdentity = $cells[$identity['identity_column']]->rawValue ?? null;
+            if ($identity['kind'] === MasterExportSiteIdentity::KIND
+                && (is_string($rawIdentity) || is_int($rawIdentity))
+                && CustomerAppDictionary::excludesCustomerCode(trim((string) $rawIdentity))
+                && ! isset($restoredRows[(int) $rowNumber])) {
+                $excluded++;
+                $ignoredRows[] = $this->ignoredRow($rowNumber, $call, $cells, $identity, $plotColumn, $rawCallType, 'CUSTOMER_CODE');
+
+                continue;
+            }
             if (is_string($rawCallType) && CustomerAppDictionary::excludesCallType($rawCallType)) {
                 $excluded++;
 
                 continue;
             }
             $identityValue = $identity['kind'] === MasterExportSiteIdentity::KIND
-                ? (new MasterExportSiteIdentity)->customerCode($cells[$identity['identity_column']]->rawValue ?? null)
-                : trim((string) ($cells[$identity['identity_column']]->rawValue ?? ''));
+                ? (new MasterExportSiteIdentity)->customerCode($rawIdentity)
+                : trim((string) $rawIdentity);
             if ($identityValue === '' || mb_strlen($identityValue) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $identityValue)) {
                 throw new ImportConflict('invalid_source_site');
             }
@@ -193,7 +206,7 @@ final class PilotWorkbookDiscovery
         unset($source);
 
         return [
-            'schema' => 'customerapp.wald-pilot-discovery.v5',
+            'schema' => self::SCHEMA,
             'knowledge_policy' => KnowledgeIdentity::POLICY,
             'resolver_version' => MasterSourceResolver::VERSION,
             'analysis_hash' => $data['analysis_hash'],
@@ -206,6 +219,22 @@ final class PilotWorkbookDiscovery
             'record_count' => count($seen),
             'included_count' => $included,
             'excluded_count' => $excluded,
+            'ignored_rows' => $ignoredRows,
+        ];
+    }
+
+    private function ignoredRow(int $rowNumber, string $call, array $cells, array $identity, ?int $plotColumn, mixed $rawCallType, string $reason): array
+    {
+        $rawCode = $cells[$identity['identity_column']]->rawValue ?? null;
+        $rawPlot = $plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null);
+
+        return [
+            'row_number' => $rowNumber,
+            'call_no' => $call,
+            'customer_code' => $rawCode === null ? null : mb_substr(trim((string) $rawCode), 0, 512),
+            'call_type' => $rawCallType === null ? null : mb_substr(trim((string) $rawCallType), 0, 100),
+            'plot_ref' => $rawPlot === null ? null : mb_substr((string) $rawPlot, 0, 2000),
+            'reason' => $reason,
         ];
     }
 

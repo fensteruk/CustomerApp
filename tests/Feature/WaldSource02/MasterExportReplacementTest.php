@@ -14,6 +14,7 @@ use App\SourceImport\Integration\ImportConflict;
 use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\PilotReplacementConfirmationRequired;
+use App\SourceImport\Integration\PilotWorkbookDiscovery;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
 use App\SourceImport\Knowledge\Canonical;
@@ -816,6 +817,56 @@ it('permits retrying identical bytes after a failed discovery without duplicate 
         ->and($uploads[1]->revision)->toBe(2)
         ->and($uploads[1]->predecessor_upload_id)->toBe($first->id)
         ->and($uploads[1]->workbook_hash)->toBe($first->workbook_hash);
+});
+
+it('keeps ignored CustomerCodes out of source discovery while other malformed rows need Office review', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'XXTrade', 'call' => '1001', 'site' => 'Trade', 'plot' => 'Richard Williams', 'type' => 'PC1'],
+        ['code' => '83', 'call' => '1002', 'site' => 'Trade', 'plot' => 'Peter Hammett', 'type' => 'CC1'],
+        ['code' => 'XXTEST', 'call' => '1003', 'site' => 'Test', 'plot' => 'TEST SITE ? PLOT 9999', 'type' => 'PC1'],
+        ['code' => 'FNA2664', 'call' => '1004', 'site' => 'Little Cotton Farm', 'plot' => 'Baker Estates Ltd - Little Cotton Farm - Plot 222', 'type' => 'CM1'],
+        ['code' => 'FNA2699', 'call' => '1005', 'site' => 'Marchesi', 'plot' => 'C G FRY-Marchesi-Plot 18-23 Comms', 'type' => 'PC1'],
+    ], '2099-02-09');
+
+    expect($pilot['manifest']['schema'])->toBe(PilotWorkbookDiscovery::SCHEMA)
+        ->and($pilot['manifest']['record_count'])->toBe(5)
+        ->and($pilot['manifest']['excluded_count'])->toBe(3)
+        ->and($pilot['manifest']['included_count'])->toBe(2)
+        ->and($pilot['manifest']['source_count'])->toBe(2)
+        ->and(DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $pilot['id'])->count())->toBe(3)
+        ->and(collect($pilot['sources'])->pluck('customer_code')->sort()->values()->all())->toBe(['FNA2664', 'FNA2699'])
+        ->and(collect($pilot['sources'])->firstWhere('customer_code', 'FNA2699')['resolution']['state'])->toBe('MALFORMED_HIERARCHY');
+});
+
+it('lets Office restore an excluded CustomerCode row to guarded review and confirm those left ignored', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'XXTrade', 'call' => '1101', 'site' => 'Trade', 'plot' => 'Richard Williams', 'type' => 'PC1'],
+        ['code' => '83', 'call' => '1102', 'site' => 'Trade', 'plot' => 'Peter Hammett', 'type' => 'CC1'],
+        ['code' => 'SAFE', 'call' => '1103', 'site' => 'Safe', 'plot' => 'Safe Customer - Safe Site - Plot 1', 'type' => 'PC1'],
+        ['code' => 'OTHER', 'call' => '1104', 'site' => 'Care', 'plot' => 'Care Customer - Care Site - Plot 1', 'type' => 'CU4'],
+    ], '2099-02-10');
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)->count())->toBe(2);
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.show', ['upload' => $pilot['upload'], 'tab' => 'ignored']))
+        ->assertOk()->assertSee('XXTrade')->assertSee('Peter Hammett')->assertDontSee('Care Customer - Care Site');
+
+    (new PilotImportWorkflow)->restoreIgnoredRow($office, $pilot['upload'], 2, (string) Str::uuid());
+    $review = (new PilotImportWorkflow)->summary($office, $pilot['upload']);
+    expect($review['manifest']['included_count'])->toBe(2)
+        ->and($review['manifest']['excluded_count'])->toBe(2)
+        ->and($review['ignored_code_count'])->toBe(1)
+        ->and(collect($review['sources'])->firstWhere('customer_code', 'XXTrade')['resolution']['state'])->toBe('MALFORMED_HIERARCHY')
+        ->and(DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+            ->where('row_number', 2)->value('disposition'))->toBe('RESTORED');
+
+    (new PilotImportWorkflow)->confirmIgnoredRows($office, $pilot['upload'], (string) Str::uuid());
+    expect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['ignored_confirmed'])->toBeTrue()
+        ->and(DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+            ->where('action', 'pilot_ignored_rows_confirmed')->count())->toBe(1);
+    expect(fn () => (new PilotImportWorkflow)->restoreIgnoredRow($office, $pilot['upload'], 3, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'ignored_row_review_not_available');
 });
 
 it('previews and commits a corrected successor after an uncommitted predecessor without fabricating a receipt', function (): void {

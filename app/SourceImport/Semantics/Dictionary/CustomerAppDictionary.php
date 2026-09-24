@@ -13,7 +13,7 @@ use InvalidArgumentException;
 
 final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 {
-    public const VERSION = 'customerapp.source-dictionary.v9';
+    public const VERSION = 'customerapp.source-dictionary.v10';
 
     public const COMPOSITE_PROFILE = 'custapp2_composite';
 
@@ -58,6 +58,8 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
 
     private const EXCLUDED_PRODUCTS = ['GLS', 'WP', 'MISC'];
 
+    private const EXCLUDED_CUSTOMER_CODES = ['XXTRADE', 'XXTEST', '83'];
+
     private const FIELDS = [
         'items ordered status' => ['description' => 'Items Ordered Status', 'role' => 'ignored'],
         'site value' => ['description' => 'Site Value', 'role' => 'ignored'],
@@ -85,6 +87,7 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
     public static function definition(): array
     {
         return ['calls' => self::CALLS, 'excluded_calls' => self::EXCLUDED_CALLS,
+            'excluded_customer_codes' => self::EXCLUDED_CUSTOMER_CODES,
             'invalid_calls' => ['CC!' => ['suggestion' => 'CC1', 'reason' => 'LIKELY_TYPO']],
             'windows' => self::WINDOWS, 'doors' => self::DOORS, 'excluded_products' => self::EXCLUDED_PRODUCTS,
             'fields' => self::FIELDS, 'completion' => ['yes' => true, 'no' => false],
@@ -141,6 +144,11 @@ final readonly class CustomerAppDictionary implements SourceBusinessDictionary
     public static function excludesCallType(string $raw): bool
     {
         return isset(self::EXCLUDED_CALLS[strtoupper(trim($raw))]);
+    }
+
+    public static function excludesCustomerCode(string $raw): bool
+    {
+        return in_array(strtoupper(trim($raw)), self::EXCLUDED_CUSTOMER_CODES, true);
     }
 
     public function completion(string|int|float|bool|null $raw): SemanticResult

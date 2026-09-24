@@ -797,6 +797,14 @@ blocks the affected selected-site import. Exact CustomerCode binding and site
 ownership must agree with the parsed hierarchy. Approved excluded Call Type
 rows do not contribute hierarchy blockers.
 
+The current master export also ignores exact normalized CustomerCodes `XXTrade`,
+`XXTEST` and `83`, even when their Call Type is approved. An Office-only Ignored
+CustomerCodes tab shows those rows, separate from Call Type exclusions. Office
+may restore one to normal guarded review before selecting a site; this does not
+bypass hierarchy, binding, semantic, preview or Apply checks. Office confirms
+once per upload the CustomerCode rows left ignored. That confirmation is
+audited and does not itself apply any site.
+
 For an older applicable workbook with both `Plot Ref` and `Plot number`, Wald may select
 `Plot number` as the customer-facing plot identifier without asking Office
 only when its value agrees exactly with the trailing `Plot N` in `Plot Ref`

@@ -6,6 +6,8 @@ use App\Models\User;
 use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeIdentity;
 use App\SourceImport\Knowledge\KnowledgeScope;
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
+use App\SourceImport\Semantics\Enums\Classification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -13,6 +15,79 @@ use Illuminate\Support\Str;
 final class PilotImportWorkflow
 {
     public const REPLACEMENT_CONFIRMATION = 'REPLACE EXISTING MASTER EXPORT';
+
+    public function restoreIgnoredRow(User $actor, string $uploadUuid, int $rowNumber, string $command): void
+    {
+        $this->command($command);
+        DB::transaction(function () use ($actor, $uploadUuid, $rowNumber, $command): void {
+            $fresh = (new PilotImportPolicy)->authorize($actor, true);
+            $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
+            if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION'], true)
+                || (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)
+                    ->where('export_order', $upload->export_order)->max('revision') !== (int) $upload->revision
+                || DB::table('wald_pilot_selections')->where('pilot_upload_id', $upload->id)->exists()
+                || DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+                    ->where('action', 'pilot_ignored_rows_confirmed')->exists()) {
+                throw new ImportConflict('ignored_row_review_not_available');
+            }
+            $row = DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('row_number', $rowNumber)->lockForUpdate()->first();
+            if (! $row || $row->disposition !== 'IGNORED' || $row->reason !== 'CUSTOMER_CODE') {
+                throw new ImportConflict('ignored_row_requires_dictionary_review');
+            }
+            $callType = (new CustomerAppDictionary)->callType((string) $row->call_type);
+            if ($callType->classification !== Classification::Confirmed || ! $callType->isResolved()) {
+                throw new ImportConflict('ignored_row_requires_dictionary_review');
+            }
+            DB::table('wald_pilot_ignored_rows')->where('id', $row->id)->update([
+                'disposition' => 'RESTORED', 'decision_actor_id' => $fresh->id,
+                'decision_at' => now('UTC'), 'updated_at' => now('UTC'),
+            ]);
+            $restored = array_fill_keys(DB::table('wald_pilot_ignored_rows')
+                ->where('pilot_upload_id', $upload->id)->where('disposition', 'RESTORED')
+                ->pluck('row_number')->map(fn ($value): int => (int) $value)->all(), true);
+            $manifest = (new PilotWorkbookDiscovery)->inspect($upload, $restored);
+            unset($manifest['ignored_rows']);
+            DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
+                'source_manifest' => Canonical::json($manifest),
+                'source_manifest_hash' => Canonical::hash($manifest),
+                'epoch' => (int) $upload->epoch + 1,
+                'updated_at' => now('UTC'),
+            ]);
+            (new PilotImportAudit)->record($fresh, $upload->id, 'pilot_ignored_row_restored', [
+                'row_number' => $rowNumber, 'call_no' => $row->call_no,
+                'reason' => $row->reason, 'manifest_hash' => Canonical::hash($manifest),
+            ], command: $command);
+        }, 3);
+    }
+
+    public function confirmIgnoredRows(User $actor, string $uploadUuid, string $command): void
+    {
+        $this->command($command);
+        DB::transaction(function () use ($actor, $uploadUuid, $command): void {
+            $fresh = (new PilotImportPolicy)->authorize($actor, true);
+            $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
+            if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION', 'IN_PROGRESS'], true)
+                || (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)
+                    ->where('export_order', $upload->export_order)->max('revision') !== (int) $upload->revision) {
+                throw new ImportConflict('ignored_row_review_not_available');
+            }
+            if (DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+                ->where('action', 'pilot_ignored_rows_confirmed')->exists()) {
+                throw new ImportConflict('ignored_rows_already_confirmed');
+            }
+            $ignored = DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('disposition', 'IGNORED')->count();
+            $restored = DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('disposition', 'RESTORED')->count();
+            (new PilotImportAudit)->record($fresh, $upload->id, 'pilot_ignored_rows_confirmed', [
+                'ignored_customer_code_rows' => $ignored,
+                'restored_customer_code_rows' => $restored,
+                'source_manifest_hash' => $upload->source_manifest_hash,
+                'upload_epoch' => (int) $upload->epoch,
+            ], command: $command);
+        }, 3);
+    }
 
     public function upload(User $actor, UploadedFile $file, ExportOrder $order, string $confirmation, string $command, ?string $predecessor = null, ?string $reason = null, ?string $replacementConfirmation = null): array
     {
@@ -150,7 +225,7 @@ final class PilotImportWorkflow
                 throw new ImportConflict('pilot_upload_not_selectable');
             }
             $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
-            if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v5'
+            if (($manifest['schema'] ?? null) !== PilotWorkbookDiscovery::SCHEMA
                 || ($manifest['knowledge_policy'] ?? null) !== KnowledgeIdentity::POLICY
                 || ($manifest['resolver_version'] ?? null) !== MasterSourceResolver::VERSION) {
                 throw new ImportConflict('pilot_source_manifest_stale');
@@ -313,6 +388,10 @@ final class PilotImportWorkflow
             'mode' => $upload->mode,
             'failure_code' => $upload->failure_code,
             'manifest' => $manifest,
+            'ignored_code_count' => DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('disposition', 'IGNORED')->count(),
+            'ignored_confirmed' => DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+                ->where('action', 'pilot_ignored_rows_confirmed')->exists(),
             'sources' => $sources,
             'resolution_summary' => $this->resolutionSummary($sources, $manifest),
             'selections' => $selections,
@@ -409,7 +488,18 @@ final class PilotImportWorkflow
             $manifest = (new PilotWorkbookDiscovery)->inspect($upload);
             DB::transaction(function () use ($actor, $upload, $manifest): void {
                 $locked = DB::table('wald_pilot_uploads')->where('id', $upload->id)->lockForUpdate()->firstOrFail();
+                $ignoredRows = $manifest['ignored_rows'];
+                unset($manifest['ignored_rows']);
                 $payload = Canonical::json($manifest);
+                foreach (array_chunk($ignoredRows, 250) as $chunk) {
+                    DB::table('wald_pilot_ignored_rows')->insert(array_map(fn (array $row): array => [
+                        ...$row,
+                        'pilot_upload_id' => $locked->id,
+                        'disposition' => 'IGNORED',
+                        'created_at' => now('UTC'),
+                        'updated_at' => now('UTC'),
+                    ], $chunk));
+                }
                 DB::table('wald_pilot_uploads')->where('id', $locked->id)->update([
                     'source_manifest' => $payload,
                     'source_manifest_hash' => Canonical::hash($manifest),

@@ -60,7 +60,7 @@ final class ApproveMasterHierarchyProposal
                     throw new ImportConflict('proposal_stale_refresh');
                 }
                 $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
-                if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v5'
+                if (($manifest['schema'] ?? null) !== PilotWorkbookDiscovery::SCHEMA
                     || ($manifest['knowledge_policy'] ?? null) !== KnowledgeIdentity::POLICY
                     || ($manifest['resolver_version'] ?? null) !== MasterSourceResolver::VERSION
                     || $upload->source_manifest_hash !== Canonical::hash($manifest)) {

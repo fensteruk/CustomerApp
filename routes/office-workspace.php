@@ -31,6 +31,10 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         Route::prefix('/imports/pilot/{upload}')->whereUuid('upload')->group(function (): void {
             Route::get('/reconciliation', [OfficeImportReconciliationController::class, 'show'])->name('pilot-import.reconciliation');
             Route::get('/', [PilotImport::class, 'show'])->name('pilot-import.show');
+            Route::post('/ignored-rows/{rowNumber}/restore', [PilotImport::class, 'restoreIgnoredRow'])
+                ->whereNumber('rowNumber')->name('pilot-import.ignored-rows.restore');
+            Route::post('/ignored-rows/confirm', [PilotImport::class, 'confirmIgnoredRows'])
+                ->name('pilot-import.ignored-rows.confirm');
             Route::post('/confirm-structure', [PilotImport::class, 'confirmStructure'])->name('pilot-import.confirm-structure');
             Route::post('/confirm-hierarchy', [PilotImport::class, 'confirmHierarchy'])->name('pilot-import.confirm-hierarchy');
             Route::post('/approve-hierarchy', [PilotImport::class, 'approveHierarchyProposal'])->name('pilot-import.approve-hierarchy');

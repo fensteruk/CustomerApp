@@ -54,6 +54,13 @@ make no CustomerApp projection assertion.
 Other unknown call types remain unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.
 
+DEC-080 also excludes rows with exact CustomerCode `XXTrade`, `XXTEST` or `83`
+(trimmed and case-normalized) regardless of Call Type. These rows have no
+customer/site/plot/service projection while ignored. Office can view them in a
+private Ignored CustomerCodes tab, restore one to ordinary guarded review, and
+confirm the remaining ignored rows once per upload. The tab does not list rows
+excluded solely by Call Type.
+
 For the CUSTAPP2 composite profile, only PC1, CC1 and CM1 are recognized. That workbook does not
 inherit checksum-scoped `CC!` correction or CM2 handling from an earlier approved artifact.
 

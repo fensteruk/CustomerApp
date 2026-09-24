@@ -2096,3 +2096,30 @@ production push, deployment or import approval.
 
 Reason: MASTER02 identifies new relationships but Office needs a safe action
 to turn approved source-backed structures into normal CustomerApp records.
+
+---
+
+## DEC-080
+
+Date: 24 September 2026
+
+Decision: In the current RedZebra master export, rows whose exact normalized
+CustomerCode is `XXTrade`, `XXTEST` or `83` are ignored even if their Call Type
+is otherwise approved. Ignore these rows before customer/site/plot resolution.
+Retain their private row evidence in an Office-only Ignored CustomerCodes tab.
+The tab contains only these three CustomerCodes; existing Call Type exclusions
+remain in whole-workbook totals but do not appear in this tab.
+
+Before any site is selected, Office may mark one of these rows Not ignored.
+That restores the row only to normal guarded review. Its Call Type must have
+approved meaning and its customer, site and plot must pass the usual hierarchy,
+binding, preview and explicit Apply checks. A malformed row remains blocked.
+Office separately confirms once per current upload which CustomerCode rows
+remain ignored; confirmation is immutable, closes further row restoration for
+that upload and does not apply any site. An upload revision starts a new review.
+Unrecognized nonblank Call Types remain blocking under the existing dictionary.
+
+Reason: The genuine workbook has six test/trade CustomerCode rows with otherwise
+approved PC1 or CC1 Call Types. Call Type filtering alone cannot identify them.
+Office needs a visible, auditable way to review and deliberately retain or
+restore those exact rows.

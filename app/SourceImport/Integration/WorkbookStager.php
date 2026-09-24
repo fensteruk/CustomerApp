@@ -129,7 +129,11 @@ final class WorkbookStager
         }
         $compositeMode = false;
         $hierarchyAnswers = [];
+        $restoredRows = [];
         if ($run->pilot_upload_id ?? null) {
+            $restoredRows = array_fill_keys(DB::table('wald_pilot_ignored_rows')
+                ->where('pilot_upload_id', $run->pilot_upload_id)->where('disposition', 'RESTORED')
+                ->pluck('row_number')->map(fn ($row): int => (int) $row)->all(), true);
             $manifest = DB::table('wald_pilot_uploads')->where('id', $run->pilot_upload_id)->value('source_manifest');
             $decoded = is_string($manifest) ? json_decode($manifest, true, flags: JSON_THROW_ON_ERROR) : [];
             $compositeMode = collect($decoded['sources'] ?? [])->contains(
@@ -193,6 +197,10 @@ final class WorkbookStager
             $normalisedSite = $sourceIdentity['kind'] === MasterExportSiteIdentity::KIND
                 ? (new MasterExportSiteIdentity)->customerCode($sourceIdentityValue)
                 : trim((string) $sourceIdentityValue);
+            if ($sourceIdentity['kind'] === MasterExportSiteIdentity::KIND && CustomerAppDictionary::excludesCustomerCode($normalisedSite)
+                && ! isset($restoredRows[(int) $rowNumber])) {
+                continue;
+            }
             if ($normalisedSite === '' || mb_strlen($normalisedSite) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $normalisedSite)) {
                 $issues[] = 'INVALID_SITE';
             }

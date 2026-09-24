@@ -2,6 +2,13 @@
 
 Last updated: 24 September 2026. Owner: Product and Architecture.
 
+CustomerApp-only WD-63 records DEC-080's exact `XXTrade`, `XXTEST` and `83`
+CustomerCode row exclusions and Office-only ignored-row disposition review.
+Restoration enters ordinary guarded review; a separate immutable confirmation
+records the rows left ignored for one upload. Existing Call Type exclusions
+remain outside this tab. This is local feature-branch work, not a SiteApp
+backport or production release.
+
 CustomerApp-only WD-62 implements DEC-079's Office-approved structural
 creation from current Wald proposals. Normal CustomerApp administration
 actions create the customer/site within one transaction with the exact source

@@ -43,7 +43,7 @@ it('retains raw observation header confidence evidence and identity', function (
         ->and($result->evidence['observation'])->toBe($observed->jsonSerialize())
         ->and($result->evidence['wald_candidate']['confidence']['is_probability'])->toBeFalse()
         ->and($result->evidence['wald_candidate']['evidence'][0]['id'])->toBe('synthetic-evidence-1')
-        ->and($result->dictionary->version)->toBe('customerapp.source-dictionary.v9');
+        ->and($result->dictionary->version)->toBe('customerapp.source-dictionary.v10');
 });
 
 it('classifies supplied field values without dates bindings or workflow side effects', function ($header, $raw, $role, $classification) {

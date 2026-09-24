@@ -126,6 +126,9 @@ final class OfficePilotImportController extends Controller
         return view('office.pilot-import.show', [
             'import' => $summary,
             'details' => $details,
+            'ignoredRows' => DB::table('wald_pilot_ignored_rows')
+                ->where('pilot_upload_id', $artifact->id)->orderBy('row_number')
+                ->paginate(25, ['*'], 'ignored_page')->withQueryString(),
             'uploadRecord' => ['uploader' => $artifact->uploader_name, 'created_at' => $artifact->created_at,
                 'replacement_reason' => $artifact->replacement_reason, 'workbook_available' => $workbookAvailable],
             'sites' => DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
@@ -146,6 +149,36 @@ final class OfficePilotImportController extends Controller
         }
 
         return back()->with('status', 'Detected structure confirmed. This did not assign business meaning.');
+    }
+
+    public function restoreIgnoredRow(Request $request, string $upload, int $rowNumber, PilotImportWorkflow $workflow): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate(['command_uuid' => ['required', 'uuid'],
+            'confirmation' => ['required', Rule::in(['MOVE TO APPROVED REVIEW'])]]);
+        try {
+            $workflow->restoreIgnoredRow($request->user(), $upload, $rowNumber, $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['import' => $this->message($exception)]);
+        }
+
+        return redirect()->route('office.workspace.pilot-import.show', ['upload' => $upload, 'tab' => 'ignored'])
+            ->with('status', 'Row moved to the approved review list. Its site and plot still need normal review before Apply.');
+    }
+
+    public function confirmIgnoredRows(Request $request, string $upload, PilotImportWorkflow $workflow): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate(['command_uuid' => ['required', 'uuid'],
+            'confirmation' => ['required', Rule::in(['CONFIRM IGNORED CUSTOMER CODE ROWS'])]]);
+        try {
+            $workflow->confirmIgnoredRows($request->user(), $upload, $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['import' => $this->message($exception)]);
+        }
+
+        return redirect()->route('office.workspace.pilot-import.show', ['upload' => $upload, 'tab' => 'ignored'])
+            ->with('status', 'Ignored CustomerCode rows confirmed for this upload. This did not apply any site.');
     }
 
     public function confirmHierarchy(Request $request, string $upload): RedirectResponse
@@ -429,6 +462,9 @@ final class OfficePilotImportController extends Controller
             'duplicate_call_number' => 'The workbook contains a duplicate Call No. Nothing was staged.',
             'stale_preview', 'stale_preview_generation', 'stale_source_stream', 'stale_source_binding', 'stale_projection' => 'The preview is stale. Analyse and review this site again.',
             'proposal_stale_refresh' => 'This proposal changed. Refresh the import and review its current customer and site before approving.',
+            'ignored_row_requires_dictionary_review' => 'This row needs a separate Call Type or workbook exception decision before it can enter the approved review list.',
+            'ignored_row_review_not_available' => 'This import has already begun site review or has been superseded. Start a new revision to change ignored rows.',
+            'ignored_rows_already_confirmed' => 'The ignored rows have already been confirmed for this upload.',
             default => 'The supervised pilot stopped safely: '.Str::headline($exception->getMessage()).'.',
         };
     }

@@ -37,6 +37,14 @@ requires Office confirmation for each distinct value. It does not establish a gl
 
 ## CUSTOMER-WALD-MASTER02 operational resolution — 24 September 2026
 
+DEC-080 adds exact normalized CustomerCode row exclusions for `XXTrade`,
+`XXTEST` and `83`. These rows are retained in an Office-only ignored-row list,
+not in customer/site/plot projection, even when PC1 or CC1 is present. The list
+does not include Call Type exclusions. Office can restore a row to normal
+guarded review before site selection, and confirms remaining ignored code rows
+once per upload in immutable audit. Confirmation does not apply a site.
+
+
 After included rows have been grouped by exact CustomerCode, resolve each source
 identity once against active CustomerApp customers, their own sites and active source
 bindings. Use exact names with controlled case and whitespace normalization only.
