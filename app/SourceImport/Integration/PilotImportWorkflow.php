@@ -35,7 +35,7 @@ final class PilotImportWorkflow
                 DB::table('wald_import_streams')->insertOrIgnore(['identity_hash' => $streamKey, 'source_namespace' => $namespace, 'workbook_family' => $family]);
                 $stream = DB::table('wald_import_streams')->where('identity_hash', $streamKey)->lockForUpdate()->firstOrFail();
                 $latest = DB::table('wald_pilot_uploads')->where('stream_id', $stream->id)->where('export_order', $order->key())->orderByDesc('revision')->lockForUpdate()->first();
-                if ($latest && hash_equals($latest->workbook_hash, $artifact['workbook_hash'])) {
+                if ($latest && $latest->state !== 'FAILED' && hash_equals($latest->workbook_hash, $artifact['workbook_hash'])) {
                     throw new IdenticalPilotImportConflict($latest->uuid);
                 }
 

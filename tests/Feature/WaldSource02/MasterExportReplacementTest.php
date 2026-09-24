@@ -798,6 +798,26 @@ it('automatically creates a retained successor revision after a failed upload', 
         ->assertSee('Revision 1 · Failed / Superseded');
 });
 
+it('permits retrying identical bytes after a failed discovery without duplicate suppression', function (): void {
+    $office = source02Office();
+    $rows = [['call' => '1001', 'site' => 'Site A', 'plot' => '1']];
+
+    expect(fn () => source02Upload($office, $rows, '2099-02-06', withCustomerCode: false))
+        ->toThrow(ImportConflict::class, 'customer_code_missing');
+    $first = DB::table('wald_pilot_uploads')->firstOrFail();
+
+    expect(fn () => source02Upload($office, $rows, '2099-02-06', withCustomerCode: false))
+        ->toThrow(ImportConflict::class, 'customer_code_missing');
+
+    $uploads = DB::table('wald_pilot_uploads')->orderBy('revision')->get();
+    expect($uploads)->toHaveCount(2)
+        ->and($uploads[0]->state)->toBe('SUPERSEDED')
+        ->and($uploads[1]->state)->toBe('FAILED')
+        ->and($uploads[1]->revision)->toBe(2)
+        ->and($uploads[1]->predecessor_upload_id)->toBe($first->id)
+        ->and($uploads[1]->workbook_hash)->toBe($first->workbook_hash);
+});
+
 it('previews and commits a corrected successor after an uncommitted predecessor without fabricating a receipt', function (): void {
     $office = source02Office();
     $customer = CustomerOrganisation::factory()->create(['name' => 'TEST — Acme Developments']);
