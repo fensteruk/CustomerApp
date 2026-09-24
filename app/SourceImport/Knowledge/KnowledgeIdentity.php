@@ -2,6 +2,7 @@
 
 namespace App\SourceImport\Knowledge;
 
+use App\SourceImport\Integration\MasterSourceResolver;
 use App\SourceImport\Semantics\Data\CoreIdentity;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use LogicException;
@@ -10,9 +11,9 @@ final class KnowledgeIdentity
 {
     public const BASELINE = 'a80ce7d14206cf3f3a9343448d406f01ae927b88';
 
-    public const FINGERPRINT = '232ff3ed79c4195f62752c45a5d9d460726bcff8515ee6450da2f7322369b9c8';
+    public const FINGERPRINT = '65168dd6d269b746426238a3ac5dfe23d8971d5d868e4e8895abcc6a6a151d07';
 
-    public const POLICY = 'customerapp.wald-knowledge-policy.v1';
+    public const POLICY = 'customerapp.wald-knowledge-policy.v3';
 
     public function current(): array
     {
@@ -26,7 +27,8 @@ final class KnowledgeIdentity
             'schema' => 'customerapp.wald-knowledge.v1', 'signature' => 'customerapp.wald-profile-signature.v1',
             'matcher' => 'customerapp.wald-profile-compatibility.v1', 'selector' => 'customerapp.wald-selector.v1',
             'semantic_executable' => 'f4fda0f069bd5106a125b42615ca212294a9dfad',
-            'accepted_baseline' => self::BASELINE, 'policy' => self::POLICY];
+            'accepted_baseline' => self::BASELINE, 'policy' => self::POLICY,
+            'resolution' => MasterSourceResolver::VERSION];
     }
 
     public function compatible(array $pins): Compatibility

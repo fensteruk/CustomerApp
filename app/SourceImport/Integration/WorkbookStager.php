@@ -14,6 +14,7 @@ use App\Wald\Services\Reasoning\ReasoningEngine;
 use App\Wald\Services\ValueProfiler;
 use App\Wald\Services\WorkbookProfiler;
 use App\Wald\Services\WorkbookSourceFactory;
+use Illuminate\Support\Facades\DB;
 
 /** Reader-derived immutable evidence. No Portal queries, mutations or browser supplied facts. */
 final class WorkbookStager
@@ -120,6 +121,32 @@ final class WorkbookStager
             throw new ImportConflict('structural_clarification_required');
         }
         $dictionary = new CustomerAppDictionary;
+        $target = DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
+            ->where('sites.id', $run->site_id)
+            ->first(['sites.name as site_name', 'customer_organisations.name as customer_name']);
+        if (! $target) {
+            throw new ImportConflict('source_site_binding_required');
+        }
+        $compositeMode = false;
+        $hierarchyAnswers = [];
+        $restoredRows = [];
+        $reviewRows = [];
+        if ($run->pilot_upload_id ?? null) {
+            $reviewRows = DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $run->pilot_upload_id)
+                ->get()->keyBy('row_number')->all();
+            $restoredRows = array_fill_keys(DB::table('wald_pilot_ignored_rows')
+                ->where('pilot_upload_id', $run->pilot_upload_id)->where('disposition', 'RESTORED')
+                ->pluck('row_number')->map(fn ($row): int => (int) $row)->all(), true);
+            $manifest = DB::table('wald_pilot_uploads')->where('id', $run->pilot_upload_id)->value('source_manifest');
+            $decoded = is_string($manifest) ? json_decode($manifest, true, flags: JSON_THROW_ON_ERROR) : [];
+            $compositeMode = collect($decoded['sources'] ?? [])->contains(
+                fn (array $source): bool => ($source['hash'] ?? null) === $run->source_site_filter_hash
+                    && ($source['hierarchy_mode'] ?? null) === 'COMPOSITE',
+            );
+            if ($compositeMode) {
+                $hierarchyAnswers = (new HierarchyClarifications)->all($run->pilot_upload_id)[$run->source_site_filter_hash] ?? [];
+            }
+        }
         $rows = [];
         $seen = [];
         $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
@@ -136,6 +163,10 @@ final class WorkbookStager
                 continue;
             }
             if (! array_filter($cells, fn ($c) => isset($fragmentByColumn[$c->column]) && $c->hasContent())) {
+                continue;
+            }
+            $reviewRow = $reviewRows[(int) $rowNumber] ?? null;
+            if ($reviewRow && in_array($reviewRow->disposition, ['UNKNOWN', 'REVIEWED_MISSING_CODE', 'EXCLUDED'], true)) {
                 continue;
             }
             $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
@@ -173,6 +204,10 @@ final class WorkbookStager
             $normalisedSite = $sourceIdentity['kind'] === MasterExportSiteIdentity::KIND
                 ? (new MasterExportSiteIdentity)->customerCode($sourceIdentityValue)
                 : trim((string) $sourceIdentityValue);
+            if ($sourceIdentity['kind'] === MasterExportSiteIdentity::KIND && CustomerAppDictionary::excludesCustomerCode($normalisedSite)
+                && ! isset($restoredRows[(int) $rowNumber])) {
+                continue;
+            }
             if ($normalisedSite === '' || mb_strlen($normalisedSite) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $normalisedSite)) {
                 $issues[] = 'INVALID_SITE';
             }
@@ -187,6 +222,34 @@ final class WorkbookStager
                 throw new ImportConflict('explicit_run_row_limit_exceeded');
             }
             $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call, $siteName ?? $normalisedSite, is_string($callType) ? $callType : '');
+            $excluded = $selection['excluded'];
+            $rawPlot = $raw('plot_reference');
+            $hierarchy = $excluded || ! $compositeMode ? null : (new CompositePlotHierarchy)->parse($rawPlot, $normalisedSite);
+            if ($hierarchy !== null && $reviewRow && $reviewRow->disposition === 'CONFIRMED') {
+                $hierarchy = ['valid' => true, 'customer' => $target->customer_name,
+                    'site' => $target->site_name, 'plot_source' => $rawPlot,
+                    'plot' => $reviewRow->confirmed_plot, 'raw' => $rawPlot,
+                    'office_confirmed' => true];
+                if ((int) $reviewRow->site_id !== (int) $run->site_id
+                    || (int) $reviewRow->customer_organisation_id !== (int) $run->customer_organisation_id) {
+                    $issues[] = 'SOURCE_BINDING_CUSTOMER_OWNERSHIP_CONFLICT';
+                }
+            }
+            if ($hierarchy !== null && ! $hierarchy['valid'] && isset($hierarchyAnswers[Canonical::hash([$rawPlot])])) {
+                $answer = $hierarchyAnswers[Canonical::hash([$rawPlot])];
+                $hierarchy = ['valid' => true, 'customer' => $answer['customer'], 'site' => $answer['site'],
+                    'plot_source' => $rawPlot, 'plot' => $answer['plot'], 'raw' => $rawPlot, 'office_confirmed' => true];
+            }
+            if ($hierarchy !== null) {
+                if (! $hierarchy['valid']) {
+                    $issues[] = $hierarchy['issue'];
+                } elseif (! MasterSourceResolver::sameName($hierarchy['customer'], $target->customer_name)
+                    || ! MasterSourceResolver::sameName($hierarchy['site'], $target->site_name)) {
+                    $issues[] = 'SOURCE_BINDING_CUSTOMER_OWNERSHIP_CONFLICT';
+                } else {
+                    $plot = $hierarchy['plot'];
+                }
+            }
             $semanticApproval = null;
             $cell = $cells[$columns['call_type']] ?? null;
             if ($cell && $selection['canonical_override'] === null && $callType === 'CC!') {
@@ -251,11 +314,12 @@ final class WorkbookStager
                     }
                 }
             }
-            $excluded = $selection['excluded'];
             $facts = ['call_number' => $call, 'source_site' => $normalisedSite, 'site_kind' => $sourceIdentity['kind'],
                 'plot' => $plot, 'service' => $hasVisit && $type->isResolved() ? $type->value : null,
                 'call_type' => $hasVisit && $type->isResolved() ? $type->lookupValue : null,
-                'complete' => $complete?->isResolved() ? $complete->value : null, 'products' => $products];
+                'complete' => $complete?->isResolved() ? $complete->value : null, 'products' => $products,
+                'hierarchy_customer' => ($hierarchy['valid'] ?? false) ? $hierarchy['customer'] : null,
+                'hierarchy_site' => ($hierarchy['valid'] ?? false) ? $hierarchy['site'] : null];
             $valueProvenance = [];
             foreach ($columns as $role => $column) {
                 $cell = $cells[$column] ?? null;
@@ -277,6 +341,7 @@ final class WorkbookStager
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),
                 'provenance' => ['sheet' => $sheet->id, 'row' => $rowNumber, 'raw_call_type' => $callType, 'raw_complete' => $raw('completion'),
                     'source_site_name' => $siteName,
+                    'parsed_hierarchy' => $hierarchy,
                     'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
                     'values' => $valueProvenance, 'unmapped_private_evidence' => $unmapped,
                     'raw_products' => $rawProducts, 'operational_date' => $raw('pc1_operational_install_date'), 'selection' => $selection, 'semantic_answer' => $semanticApproval, 'semantic_evidence' => $semanticEvidence]];

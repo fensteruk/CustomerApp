@@ -1,5 +1,14 @@
 # Fenster Customer Portal ROADMAP
 
+## Wald master import after structural approval — 24 September 2026
+
+The local MASTER03 candidate lets Office approve one exact new customer/site
+structure and source binding at a time. Next integrate the exception-review
+experience and qualify the approved multi-site preview/apply orchestration
+as separate work. No unattended import, bulk hierarchy approval, production
+push or deployment is implied. See
+`documentation/wald-master03-office-creation-2026-09-24.md`.
+
 ## Plot workspace and live amendments — 23 September 2026
 
 CUSTOMER-UI-OVERHAUL06 is a separate feature-branch candidate based directly on

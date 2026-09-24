@@ -1,6 +1,34 @@
 # Wald Distribution Divergence Register
 
-Last updated: 22 September 2026. Owner: Product and Architecture.
+Last updated: 24 September 2026. Owner: Product and Architecture.
+
+CustomerApp-only WD-63 records DEC-080's exact `XXTrade`, `XXTEST` and `83`
+CustomerCode row exclusions and Office-only ignored-row disposition review.
+Restoration enters ordinary guarded review; a separate immutable confirmation
+records the rows left ignored for one upload. Existing Call Type exclusions
+remain outside this tab. This is local feature-branch work, not a SiteApp
+backport or production release.
+
+CustomerApp-only WD-64 records DEC-081's CustomerCode review wizard and final
+Unknown / Unclassified queue. Exact target selection, deterministic plot
+derivation, row membership and upload-scoped exclusions are audited and feed
+the existing selected-site preview/Apply boundary. This is a local feature
+branch only; no SiteApp backport or production deployment is implied.
+
+CustomerApp-only WD-62 implements DEC-079's Office-approved structural
+creation from current Wald proposals. Normal CustomerApp administration
+actions create the customer/site within one transaction with the exact source
+binding and immutable audit. It grants no site-user access or plot projection.
+The resolver refreshes after approval; multi-site commit remains deferred.
+This is a local feature-branch candidate with no SiteApp backport or production
+release implied.
+
+CustomerApp-only WD-61 implements DEC-078's exact workbook-wide customer/site
+resolution and audited binding at Office selected-site action. It returns
+customer/site creation proposals without mutating them and preserves the
+one-site commit gate. Knowledge policy v2 and discovery schema v5 stale older
+uncommitted interpretations. This is a local feature-branch candidate; no
+SiteApp backport, production push or deployment is implied.
 
 Current CustomerApp-only difference: WD-60 records DEC-071's current-scope
 exclusions, including temporary P04 treatment. WD-59/58 retain the earlier

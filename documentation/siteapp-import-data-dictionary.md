@@ -54,6 +54,22 @@ make no CustomerApp projection assertion.
 Other unknown call types remain unknown. Structural similarity, neighbouring rows or a familiar
 label may support a suggestion but cannot create business meaning.
 
+DEC-080 also excludes rows with exact CustomerCode `XXTrade`, `XXTEST` or `83`
+(trimmed and case-normalized) regardless of Call Type. These rows have no
+customer/site/plot/service projection while ignored. Office can view them in a
+private Ignored CustomerCodes tab, restore one to ordinary guarded review, and
+confirm the remaining ignored rows once per upload. The tab does not list rows
+excluded solely by Call Type.
+
+DEC-081 permits Office-reviewed fallback Plot derivation after one exact
+Customer and Site are chosen for a CustomerCode group. Match only the chosen
+names with controlled case/whitespace normalization and approved dash
+separators; remove an initial `Plot ` token from the sole remaining value.
+`033`, `Com 4` and `Block A` are valid string Plot Refs. Do not join multiple
+unexplained fragments. Keep uncertain rows in the final Unknown queue for
+manual plot confirmation or upload-scoped exclusion; neither changes global
+Call Type meanings. Retain source row and Office decision evidence.
+
 For the CUSTAPP2 composite profile, only PC1, CC1 and CM1 are recognized. That workbook does not
 inherit checksum-scoped `CC!` correction or CM2 handling from an earlier approved artifact.
 
@@ -143,6 +159,7 @@ A filtered export cannot zero or delete values outside supplied records.
 | `CustomerNo` / `CustomerCode` / `Customer Number` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
 | `Call No.` | Permanent Source Row reference within the source namespace. A recognized non-null Call Type establishes a Visit; CallNo alone does not. Every within-workbook duplicate still blocks; never merge or select first/last. |
 | `Site Name` | Descriptive source evidence under the new master-export contract. Retain changed/variant names for review, but do not use them to identify, create, split or rebind a CustomerCode. Exact Site Name remains only for explicitly bounded historical workbook compatibility. |
+| `Plot Ref` | Current composite master-export hierarchy: exact Customer – Site – Plot in three nonempty components, separated by spaced `-`, `–` or `—`, or by exactly two compact ASCII hyphens. The final component starts `Plot ` and the remaining nonempty text is the site-scoped plot reference, including named plots such as `Com 4`. Preserve the raw cell. Additional or mixed separators remain blocking ambiguity. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |
 | `Plot To Be Installed` | Operational arrival-to-install date for PC1. Never map to Requested Date, alternative date, Date Agreed or completion date. |
 | `Items Ordered Status` | Ignore. It must not drive eligibility, status, completion, lead time or workflow. |

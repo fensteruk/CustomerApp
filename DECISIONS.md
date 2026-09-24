@@ -2007,6 +2007,162 @@ immediately and repeatedly without reverting to phone calls while awaiting Offic
 
 ---
 
+## DEC-077
+
+Date: 23 September 2026
+
+Decision: For the current RedZebra master export, the recognized `Plot Ref` field is
+the exact Customer – Site – Plot hierarchy. Accept only three nonempty components
+with spaced ASCII hyphen, en dash or em dash separators, or the approved compact
+variant with exactly two unspaced ASCII hyphens. Additional or mixed separators
+remain ambiguous. The final `Plot ` component
+may name a numeric or string plot; `Plot 776` becomes `776`, while `Plot Com 4`
+becomes `Com 4`. Preserve raw source provenance. Approved irrelevant Call Type rows
+remain excluded before hierarchy projection. Included malformed or conflicting
+hierarchy blocks its selected site unit. CustomerCode remains the durable exact
+source-site identity; source Site Name is descriptive. Resolve customer by exact
+name and site by exact name under that customer. New customer/site creation requires
+explicit Office approval. A source binding to a different customer or site blocks.
+Plot identity is resolved exact site plus normalized string plot reference. Dictionary
+v9 stales older interpretations; one selected site per explicit commit remains.
+This supersedes DEC-072's numeric-only `Plot N` assumption for the current composite
+master hierarchy. It does not authorize an unattended all-site import or deployment.
+
+Management also confirms that current production customer/site/plot hierarchy is
+disposable demo data and requests a controlled reset before the next import.
+Preserve Office accounts, configuration and shared audit; detach/deactivate affected
+external users safely. Inspect the complete dependency graph, capture a recovery
+snapshot and verify an approved recovery point before deletion. This does not waive
+the production release and database safety gates; no production reset or master import
+occurs as part of the parser release without its own verified prerequisites.
+
+Reason: The genuine export carries the customer and site hierarchy in Plot Ref,
+including named plots, and the current demo ownership can conflict with that source.
+
+Management subsequently approved the exact compact ASCII hyphen variant and confirmed
+that other malformed forms should be narrowed through source evidence and presented
+to Office for explicit customer/site/plot confirmation before import. The exact
+FNA2664 `Little Cotton Farm 117-144...- Baker Estates Ltd{digits}` form may prefill
+Baker Estates Ltd / Little Cotton Farm 117-144 / trailing digits as a proposal only.
+Row 3950's plot is 222. No such proposal is silently committed or generalized to
+different CustomerCodes or prefixes.
+
+Management subsequently confirmed the exact FNA2561 `Vistry - Northam PH3-{digits}`
+format as a direct parse rule. The customer is Vistry, the site is Northam PH3,
+and every digit after the final unspaced hyphen is the plot reference. The first
+hyphen has spaces on both sides. This scoped rule supersedes the earlier plan to
+ask Office to confirm each Northam row. Other mixed separators remain review cases.
+
+---
+
+## DEC-078
+
+Date: 24 September 2026
+
+Decision: The approved Wald master hierarchy must feed an operational, workbook-wide
+source-site resolver. For each distinct included CustomerCode, classify exact active
+binding, exact existing customer/site without a binding, existing customer/new site,
+new customer/site, binding conflict, source hierarchy conflict or malformed hierarchy.
+Use only controlled case and whitespace normalization for exact names; resolve sites
+under the matched customer. Excluded rows have no customer/site/plot projection effect.
+An exact existing customer/site may receive an audited source binding atomically when
+Office selects that site for the existing one-site review. New customer/site records
+remain Office-approved proposals and are not created by Wald. A source conflict blocks
+only its own site unit. The workbook may be analysed as a whole; multi-site commit and
+unattended import remain outside this decision. The resolution model must stale older
+uncommitted analyses and previews.
+
+Reason: The qualified hierarchy should remove repetitive binding work for existing
+sites while preserving exact identity, Office approval and the single-site commit gate.
+
+---
+
+## DEC-079
+
+Date: 24 September 2026
+
+Decision: An active Fenster Office Staff member may approve one current, exact
+Wald creation proposal at a time. For an existing exact customer, approval
+creates only the missing site and exact CustomerCode binding. For a genuinely
+new customer, approval atomically creates customer, site and binding. Use normal
+CustomerApp administration actions/defaults, current workbook discovery and
+source revision evidence, one shared binding action, and immutable Office audit.
+Re-resolve after approval; concurrent or stale proposals must refresh rather
+than create duplicates. No user assignment or plot projection occurs during
+structural approval. Binding/source/malformed conflicts remain blockers.
+Existing one-site preview and explicit apply continue; no bulk approval or
+multi-site commit is authorised. This is a feature-branch decision, not a
+production push, deployment or import approval.
+
+Reason: MASTER02 identifies new relationships but Office needs a safe action
+to turn approved source-backed structures into normal CustomerApp records.
+
+---
+
+## DEC-080
+
+Date: 24 September 2026
+
+Decision: In the current RedZebra master export, rows whose exact normalized
+CustomerCode is `XXTrade`, `XXTEST` or `83` are ignored even if their Call Type
+is otherwise approved. Ignore these rows before customer/site/plot resolution.
+Retain their private row evidence in an Office-only Ignored CustomerCodes tab.
+The tab contains only these three CustomerCodes; existing Call Type exclusions
+remain in whole-workbook totals but do not appear in this tab.
+
+Before any site is selected, Office may mark one of these rows Not ignored.
+That restores the row only to normal guarded review. Its Call Type must have
+approved meaning and its customer, site and plot must pass the usual hierarchy,
+binding, preview and explicit Apply checks. A malformed row remains blocked.
+Office separately confirms once per current upload which CustomerCode rows
+remain ignored; confirmation is immutable, closes further row restoration for
+that upload and does not apply any site. An upload revision starts a new review.
+Unrecognized nonblank Call Types remain blocking under the existing dictionary.
+
+Reason: The genuine workbook has six test/trade CustomerCode rows with otherwise
+approved PC1 or CC1 Call Types. Call Type filtering alone cannot identify them.
+Office needs a visible, auditable way to review and deliberately retain or
+restore those exact rows.
+
+---
+
+## DEC-081
+
+Date: 24 September 2026
+
+Decision: The supervised master import gains an Office CustomerCode review
+wizard above the existing exact resolver. Fully and safely resolved codes are
+skipped. Each remaining code is shown one at a time with all of its included
+rows selected by default; Office chooses the exact Customer and Site once,
+unticks exceptions, reviews proposed string Plot Refs and confirms the group.
+Customer and Site text may be removed from a raw Plot Ref only when their exact
+normalized words and approved separators are identifiable. A single remaining
+plot string may be proposed, including `033`, `Com 4` and `Block A`; an initial
+`Plot ` token is removed. Multiple or unexplained fragments are not guessed.
+Canonical MASTER03 creation remains the creation path for valid new-structure
+proposals. Confirming a group records source row membership and immutable Office
+decision history, refreshes the source resolver, and creates no plots or visits.
+
+Rows unticked or lacking safe plot/customer/site structure go to a final
+Unknown / Unclassified queue after normal groups. Office can resolve them
+manually against an exact existing Customer and Site, exclude them for this
+upload with a reason, or leave them unresolved. A missing CustomerCode cannot
+be manufactured by manual target choice; its row stays outside projection.
+Unknown rows left unresolved do not block other independently safe selected
+site units. One-site preview and explicit Apply remain mandatory, with no
+unattended multi-site commit. The DEC-080 three-code Ignored tab remains a
+separate exact-code disposition review.
+When no safe Customer/Site target exists yet, Office may defer the whole
+CustomerCode to Unknown review. This records every row as unresolved without
+fabricating a target. Later manual review must still resolve against an exact
+active target and pass source binding checks before projection.
+
+Reason: Group review removes repetitive row-by-row mapping while keeping
+uncertain rows visible, auditable and outside customer-facing projection until
+their source identity and Plot Ref are safely established.
+
+---
+
 ## CUSTOMER-CALLOFF-UX01 — Submit confirmation modal
 
 Date: 24 September 2026

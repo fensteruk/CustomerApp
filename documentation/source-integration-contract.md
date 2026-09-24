@@ -2,6 +2,94 @@
 
 _Sprint 3B — 20 August 2026; CUSTAPP2 identity/composite refinement updated 15 September 2026_
 
+## CUSTOMER-WALD-MASTER01 hierarchy addendum — 23 September 2026
+
+The recognized `Plot Ref` header in the current RedZebra master export carries an exact
+`Customer – Site – Plot` hierarchy. Parse exactly three nonempty components separated by a
+spaced ASCII hyphen, en dash or em dash. Also accept the explicitly approved compact form with
+exactly two unspaced ASCII hyphens and a final `Plot ` component. Additional or mixed separators
+remain ambiguous; do not infer missing components. Remove the final `Plot ` prefix and preserve the
+remaining nonempty plot identity as a string (`Plot 776` → `776`, `Plot Com 4` → `Com 4`).
+Keep the original cell and its physical provenance. Invalid or conflicting hierarchy in an
+included source-site unit blocks that unit; approved excluded Call Type rows do not contribute
+hierarchy blockers.
+
+The exact CustomerCode remains the durable source-site binding key. The parsed customer and site
+are business names for exact customer resolution and site resolution beneath that customer.
+Source `Site Name` is descriptive evidence only. A new customer or site is proposed for explicit
+Office creation; an established matching customer/site may be reused. An active binding to a
+different customer or site is a conflict, never an implicit reassignment. Plot identity remains
+the exact resolved site plus normalized string plot reference. The import remains one selected
+site per reviewed commit. Historical flat workbook handling remains separately bounded and
+does not authorize fuzzy interpretation of a composite master export.
+
+For malformed included values, retain source row and raw cell in an Office-only review list.
+Office explicitly confirms customer, site and plot for each distinct ambiguous source value;
+answers are upload-scoped, append-only and auditable. An unanswered value blocks selection.
+An answer that disagrees with the other rows under the same CustomerCode also blocks.
+Answers cannot change after that source site is selected. The exact FNA2561
+`Vistry - Northam PH3-{digits}` form parses directly: the first hyphen has spaces on
+both sides, the final hyphen has none, and all trailing digits form the plot reference.
+This rule is scoped to FNA2561 and that exact text pattern. The exact FNA2664
+`Little Cotton Farm 117-144...- Baker Estates Ltd{digits}` pattern may prefill a suggestion
+of Baker Estates Ltd, Little Cotton Farm 117-144 and the trailing plot digits, but still
+requires Office confirmation for each distinct value. It does not establish a global split rule.
+
+## CUSTOMER-WALD-MASTER02 operational resolution — 24 September 2026
+
+DEC-080 adds exact normalized CustomerCode row exclusions for `XXTrade`,
+`XXTEST` and `83`. These rows are retained in an Office-only ignored-row list,
+not in customer/site/plot projection, even when PC1 or CC1 is present. The list
+does not include Call Type exclusions. Office can restore a row to normal
+guarded review before site selection, and confirms remaining ignored code rows
+once per upload in immutable audit. Confirmation does not apply a site.
+
+DEC-081 adds a manual exception layer after automatic resolution. Office
+reviews one CustomerCode group at a time with all rows selected by default,
+one exact Customer/Site target, deterministic remaining-string Plot derivation,
+and an audited group confirmation. Unticked or unresolved rows move to a final
+Unknown / Unclassified queue. They are not silently projected. Individual
+manual resolution or upload-scoped exclusion is audited; missing CustomerCode
+cannot be replaced by a guessed identity. The source manifest is versioned
+after a decision, and prior review pins become stale. Existing selected-site
+preview and explicit Apply remain the only Portal projection path.
+
+
+After included rows have been grouped by exact CustomerCode, resolve each source
+identity once against active CustomerApp customers, their own sites and active source
+bindings. Use exact names with controlled case and whitespace normalization only.
+Return one of `EXACT_EXISTING_BINDING`, `EXACT_CUSTOMER_EXACT_SITE`,
+`EXACT_CUSTOMER_NEW_SITE`, `NEW_CUSTOMER_AND_SITE`, `BINDING_CONFLICT`,
+`SOURCE_HIERARCHY_CONFLICT` or `MALFORMED_HIERARCHY`. Retained historical flat
+sources keep their separate legacy handling. Each result carries source evidence,
+row/plot counts, target identity where safe, and site-scoped plot reuse/create
+counts. New customer/site results are proposals, not mutations.
+
+The whole-workbook analysis is read-only. On the existing one-site Office selection,
+an exact existing customer/site without a binding may create its immutable, audited
+binding atomically with the selection. Recheck Office authority, site activity and
+the current source revision at persistence. Other binding states remain guarded.
+The selected-site preview and explicit commit boundary are unchanged. Discovery
+schema v5 and knowledge policy v2 stale older uncommitted interpretations.
+
+## CUSTOMER-WALD-MASTER03 Office structural approval — 24 September 2026
+
+An active Office Staff member may approve one `EXACT_CUSTOMER_NEW_SITE` or
+`NEW_CUSTOMER_AND_SITE` proposal from the current, non-superseded upload.
+Its discovery manifest pins knowledge policy v2 and resolver version v1;
+older manifests lacking these pins cannot approve structural creation.
+The existing-site selected-site binding path checks the same pins before
+creating a new exact binding.
+The action pins the discovery manifest and upload epoch, re-resolves the
+source under a transaction, uses the normal administration creation actions,
+and creates an exact active CustomerCode binding through the same binding
+action as the existing-site selection. The site is created under the exact
+customer; no source-derived address, contacts, user assignment or plot rows
+are manufactured. One immutable pilot event records source, revision,
+discovery generation, actor, created IDs, binding and resulting resolution.
+Competing or stale proposals return for review. Approval refreshes the
+workbook summary; one-site selection, preview and apply remain separate.
+
 ## CUSTOMER-WALD-CUSTAPP2-01 addendum — 15 September 2026
 
 DEC-064 supersedes three narrow assumptions below wherever they conflict: the source record need

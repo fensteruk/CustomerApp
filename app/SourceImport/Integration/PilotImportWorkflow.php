@@ -4,7 +4,10 @@ namespace App\SourceImport\Integration;
 
 use App\Models\User;
 use App\SourceImport\Knowledge\Canonical;
+use App\SourceImport\Knowledge\KnowledgeIdentity;
 use App\SourceImport\Knowledge\KnowledgeScope;
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
+use App\SourceImport\Semantics\Enums\Classification;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -12,6 +15,90 @@ use Illuminate\Support\Str;
 final class PilotImportWorkflow
 {
     public const REPLACEMENT_CONFIRMATION = 'REPLACE EXISTING MASTER EXPORT';
+
+    public function restoreIgnoredRow(User $actor, string $uploadUuid, int $rowNumber, string $command): void
+    {
+        $this->command($command);
+        DB::transaction(function () use ($actor, $uploadUuid, $rowNumber, $command): void {
+            $fresh = (new PilotImportPolicy)->authorize($actor, true);
+            $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
+            if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION'], true)
+                || (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)
+                    ->where('export_order', $upload->export_order)->max('revision') !== (int) $upload->revision
+                || DB::table('wald_pilot_selections')->where('pilot_upload_id', $upload->id)->exists()
+                || DB::table('wald_pilot_review_groups')->where('pilot_upload_id', $upload->id)->exists()
+                || DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+                    ->where('action', 'pilot_ignored_rows_confirmed')->exists()) {
+                throw new ImportConflict('ignored_row_review_not_available');
+            }
+            $row = DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('row_number', $rowNumber)->lockForUpdate()->first();
+            if (! $row || $row->disposition !== 'IGNORED' || $row->reason !== 'CUSTOMER_CODE') {
+                throw new ImportConflict('ignored_row_requires_dictionary_review');
+            }
+            $callType = (new CustomerAppDictionary)->callType((string) $row->call_type);
+            if ($callType->classification !== Classification::Confirmed || ! $callType->isResolved()) {
+                throw new ImportConflict('ignored_row_requires_dictionary_review');
+            }
+            DB::table('wald_pilot_ignored_rows')->where('id', $row->id)->update([
+                'disposition' => 'RESTORED', 'decision_actor_id' => $fresh->id,
+                'decision_at' => now('UTC'), 'updated_at' => now('UTC'),
+            ]);
+            $restored = array_fill_keys(DB::table('wald_pilot_ignored_rows')
+                ->where('pilot_upload_id', $upload->id)->where('disposition', 'RESTORED')
+                ->pluck('row_number')->map(fn ($value): int => (int) $value)->all(), true);
+            $manifest = (new PilotWorkbookDiscovery)->inspect($upload, $restored);
+            $reviewRows = $manifest['review_rows'];
+            unset($manifest['ignored_rows'], $manifest['review_rows']);
+            foreach (array_chunk($reviewRows, 250) as $chunk) {
+                DB::table('wald_pilot_review_rows')->insertOrIgnore(array_map(fn (array $reviewRow): array => [
+                    ...$reviewRow,
+                    'pilot_upload_id' => $upload->id,
+                    'disposition' => 'ACTIVE',
+                    'created_at' => now('UTC'),
+                    'updated_at' => now('UTC'),
+                ], $chunk));
+            }
+            DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
+                'source_manifest' => Canonical::json($manifest),
+                'source_manifest_hash' => Canonical::hash($manifest),
+                'epoch' => (int) $upload->epoch + 1,
+                'updated_at' => now('UTC'),
+            ]);
+            (new PilotImportAudit)->record($fresh, $upload->id, 'pilot_ignored_row_restored', [
+                'row_number' => $rowNumber, 'call_no' => $row->call_no,
+                'reason' => $row->reason, 'manifest_hash' => Canonical::hash($manifest),
+            ], command: $command);
+        }, 3);
+    }
+
+    public function confirmIgnoredRows(User $actor, string $uploadUuid, string $command): void
+    {
+        $this->command($command);
+        DB::transaction(function () use ($actor, $uploadUuid, $command): void {
+            $fresh = (new PilotImportPolicy)->authorize($actor, true);
+            $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
+            if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION', 'IN_PROGRESS'], true)
+                || (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)
+                    ->where('export_order', $upload->export_order)->max('revision') !== (int) $upload->revision) {
+                throw new ImportConflict('ignored_row_review_not_available');
+            }
+            if (DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+                ->where('action', 'pilot_ignored_rows_confirmed')->exists()) {
+                throw new ImportConflict('ignored_rows_already_confirmed');
+            }
+            $ignored = DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('disposition', 'IGNORED')->count();
+            $restored = DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('disposition', 'RESTORED')->count();
+            (new PilotImportAudit)->record($fresh, $upload->id, 'pilot_ignored_rows_confirmed', [
+                'ignored_customer_code_rows' => $ignored,
+                'restored_customer_code_rows' => $restored,
+                'source_manifest_hash' => $upload->source_manifest_hash,
+                'upload_epoch' => (int) $upload->epoch,
+            ], command: $command);
+        }, 3);
+    }
 
     public function upload(User $actor, UploadedFile $file, ExportOrder $order, string $confirmation, string $command, ?string $predecessor = null, ?string $reason = null, ?string $replacementConfirmation = null): array
     {
@@ -34,7 +121,7 @@ final class PilotImportWorkflow
                 DB::table('wald_import_streams')->insertOrIgnore(['identity_hash' => $streamKey, 'source_namespace' => $namespace, 'workbook_family' => $family]);
                 $stream = DB::table('wald_import_streams')->where('identity_hash', $streamKey)->lockForUpdate()->firstOrFail();
                 $latest = DB::table('wald_pilot_uploads')->where('stream_id', $stream->id)->where('export_order', $order->key())->orderByDesc('revision')->lockForUpdate()->first();
-                if ($latest && hash_equals($latest->workbook_hash, $artifact['workbook_hash'])) {
+                if ($latest && $latest->state !== 'FAILED' && hash_equals($latest->workbook_hash, $artifact['workbook_hash'])) {
                     throw new IdenticalPilotImportConflict($latest->uuid);
                 }
 
@@ -149,12 +236,33 @@ final class PilotImportWorkflow
                 throw new ImportConflict('pilot_upload_not_selectable');
             }
             $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
+            if (($manifest['schema'] ?? null) !== PilotWorkbookDiscovery::SCHEMA
+                || ($manifest['knowledge_policy'] ?? null) !== KnowledgeIdentity::POLICY
+                || ($manifest['resolver_version'] ?? null) !== MasterSourceResolver::VERSION) {
+                throw new ImportConflict('pilot_source_manifest_stale');
+            }
             $source = collect($manifest['sources'])->firstWhere('hash', $sourceHash);
-            if (! $source) {
+            if (! $source || (int) ($source['rows'] ?? 0) < 1) {
                 throw new ImportConflict('source_identity_not_found');
             }
+            $source = (new HierarchyClarifications)->resolve($source, (new HierarchyClarifications)->all($upload->id)[$sourceHash] ?? []);
             $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
+            $resolution = (new MasterSourceResolver)->resolve([$source], $stream->source_namespace)[$sourceHash];
+            if (($source['hierarchy_mode'] ?? null) === 'COMPOSITE'
+                && (! in_array($resolution['state'], ['EXACT_EXISTING_BINDING', 'EXACT_CUSTOMER_EXACT_SITE'], true)
+                    || $resolution['site_uuid'] !== $site->uuid)) {
+                throw new ImportConflict('source_binding_customer_ownership_conflict');
+            }
+            (new PilotImportPolicy)->authorize($fresh, true);
+            $currentSite = DB::table('sites')->where('id', $site->id)->where('is_active', true)->lockForUpdate()->first();
+            if (! $currentSite || ! DB::table('customer_organisations')->where('id', $site->customer_organisation_id)->where('is_active', true)->exists()) {
+                throw new ImportConflict('source_site_no_longer_active');
+            }
             $binding = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]))->lockForUpdate()->first();
+            if ($resolution['state'] === 'EXACT_CUSTOMER_EXACT_SITE' && ! $binding) {
+                $binding = (new CreateExactSourceBinding)->handle($fresh, $upload, $stream, $source, $site,
+                    'Exact customer and site matched from the reviewed master source hierarchy.', 'EXACT_CUSTOMER_EXACT_SITE');
+            }
             $version = $binding?->active_version
                 ? DB::table('wald_binding_versions')->where('binding_id', $binding->id)->where('version', $binding->active_version)->first()
                 : null;
@@ -238,10 +346,13 @@ final class PilotImportWorkflow
         $upload = DB::table('wald_pilot_uploads')->where('uuid', $uuid)->firstOrFail();
         $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
         $manifest = $upload->source_manifest ? json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR) : ['sources' => []];
-        $sources = array_map(
-            fn (array $source): array => $this->presentSource($stream->source_namespace, $source),
+        $hierarchyAnswers = (new HierarchyClarifications)->all($upload->id);
+        $rawSources = array_map(
+            fn (array $source): array => (new HierarchyClarifications)->resolve($source, $hierarchyAnswers[$source['hash']] ?? []),
             $manifest['sources'] ?? [],
         );
+        $resolutions = (new MasterSourceResolver)->resolve($rawSources, $stream->source_namespace);
+        $sources = array_map(fn (array $source): array => $this->presentSource($source, $resolutions[$source['hash']]), $rawSources);
         $legacySourceHashes = array_fill_keys(array_column(array_filter(
             $sources,
             fn (array $source): bool => $source['legacy_pre_customer_code'],
@@ -283,16 +394,23 @@ final class PilotImportWorkflow
             'export_date' => $upload->export_date,
             'export_slot' => $upload->export_slot,
             'revision' => (int) $upload->revision,
+            'epoch' => (int) $upload->epoch,
+            'source_manifest_hash' => $upload->source_manifest_hash,
             'mode' => $upload->mode,
             'failure_code' => $upload->failure_code,
             'manifest' => $manifest,
+            'ignored_code_count' => DB::table('wald_pilot_ignored_rows')->where('pilot_upload_id', $upload->id)
+                ->where('disposition', 'IGNORED')->count(),
+            'ignored_confirmed' => DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
+                ->where('action', 'pilot_ignored_rows_confirmed')->exists(),
             'sources' => $sources,
+            'resolution_summary' => $this->resolutionSummary($sources, $manifest),
             'selections' => $selections,
             'revisions' => $revisions,
         ];
     }
 
-    private function presentSource(string $namespace, array $source): array
+    private function presentSource(array $source, array $resolution): array
     {
         $customerCode = is_string($source['customer_code'] ?? null) && trim($source['customer_code']) !== ''
             ? $source['customer_code']
@@ -319,10 +437,48 @@ final class PilotImportWorkflow
             'site_name' => $siteName,
             'observed_site_names' => $observedSiteNames,
             'warnings' => $warnings,
+            ...($source['hierarchy_mode'] ?? null ? [
+                'hierarchy' => $source['hierarchy'] ?? null,
+                'hierarchy_mode' => $source['hierarchy_mode'],
+                'hierarchy_proposal' => $this->legacyProposal($resolution),
+                'hierarchy_issues' => $source['hierarchy_issues'] ?? [],
+            ] : []),
+            ...(($source['hierarchy_mode'] ?? null) === 'COMPOSITE' ? ['resolution' => $resolution] : []),
             'legacy_pre_customer_code' => $legacy,
             'identity_label' => $legacy ? 'Legacy source identity' : 'CustomerCode',
-            ...$this->binding($namespace, $source),
+            'binding' => $resolution['binding'],
+            'draft' => $resolution['draft'],
         ];
+    }
+
+    private function legacyProposal(array $resolution): array
+    {
+        $state = match ($resolution['state']) {
+            'NEW_CUSTOMER_AND_SITE' => 'NEW_CUSTOMER_FOUND',
+            'EXACT_CUSTOMER_NEW_SITE' => 'NEW_SITE_FOUND',
+            'EXACT_EXISTING_BINDING', 'EXACT_CUSTOMER_EXACT_SITE' => 'EXACT_SITE_FOUND',
+            'LEGACY_SOURCE' => 'LEGACY_SOURCE',
+            default => 'HIERARCHY_REVIEW_REQUIRED',
+        };
+
+        return ['state' => $state, ...array_intersect_key($resolution,
+            array_flip(['customer', 'customer_uuid', 'site', 'site_uuid']))];
+    }
+
+    private function resolutionSummary(array $sources, array $manifest): array
+    {
+        $states = array_count_values(array_map(fn (array $source): string => $source['resolution']['state'] ?? 'LEGACY_SOURCE', $sources));
+
+        return ['total_rows' => (int) ($manifest['record_count'] ?? 0),
+            'included_rows' => (int) ($manifest['included_count'] ?? 0),
+            'excluded_rows' => (int) ($manifest['excluded_count'] ?? 0),
+            'source_sites' => count($sources), 'outcomes' => $states,
+            'automatically_matched_sites' => ($states['EXACT_EXISTING_BINDING'] ?? 0) + ($states['EXACT_CUSTOMER_EXACT_SITE'] ?? 0),
+            'plots_reuse' => array_sum(array_map(fn (array $source): int => $source['resolution']['plots_reuse'] ?? 0, $sources)),
+            'plots_create' => array_sum(array_map(fn (array $source): int => $source['resolution']['plots_create'] ?? 0, $sources)),
+            'blockers' => ($states['BINDING_CONFLICT'] ?? 0) + ($states['SOURCE_HIERARCHY_CONFLICT'] ?? 0)
+                + ($states['MALFORMED_HIERARCHY'] ?? 0),
+            'resolver' => MasterSourceResolver::VERSION];
     }
 
     private function presentSelection(array $selection, bool $legacyManifestSource): array
@@ -343,7 +499,28 @@ final class PilotImportWorkflow
             $manifest = (new PilotWorkbookDiscovery)->inspect($upload);
             DB::transaction(function () use ($actor, $upload, $manifest): void {
                 $locked = DB::table('wald_pilot_uploads')->where('id', $upload->id)->lockForUpdate()->firstOrFail();
+                $ignoredRows = $manifest['ignored_rows'];
+                $reviewRows = $manifest['review_rows'];
+                unset($manifest['ignored_rows'], $manifest['review_rows']);
                 $payload = Canonical::json($manifest);
+                foreach (array_chunk($ignoredRows, 250) as $chunk) {
+                    DB::table('wald_pilot_ignored_rows')->insert(array_map(fn (array $row): array => [
+                        ...$row,
+                        'pilot_upload_id' => $locked->id,
+                        'disposition' => 'IGNORED',
+                        'created_at' => now('UTC'),
+                        'updated_at' => now('UTC'),
+                    ], $chunk));
+                }
+                foreach (array_chunk($reviewRows, 250) as $chunk) {
+                    DB::table('wald_pilot_review_rows')->insert(array_map(fn (array $row): array => [
+                        ...$row,
+                        'pilot_upload_id' => $locked->id,
+                        'disposition' => $row['source_identity_hash'] === null ? 'UNKNOWN' : 'ACTIVE',
+                        'created_at' => now('UTC'),
+                        'updated_at' => now('UTC'),
+                    ], $chunk));
+                }
                 DB::table('wald_pilot_uploads')->where('id', $locked->id)->update([
                     'source_manifest' => $payload,
                     'source_manifest_hash' => Canonical::hash($manifest),
@@ -363,35 +540,6 @@ final class PilotImportWorkflow
             DB::table('wald_pilot_uploads')->where('id', $upload->id)->update(['state' => 'FAILED', 'failure_code' => $exception instanceof ImportConflict ? $exception->getMessage() : 'pilot_analysis_failed', 'updated_at' => now('UTC')]);
             throw $exception;
         }
-    }
-
-    private function binding(string $namespace, array $source): array
-    {
-        $root = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([$namespace, $source['kind'], $source['identity']]))->first();
-        if (! $root) {
-            return ['binding' => null, 'draft' => null];
-        }
-        $present = function (?object $version) use ($root): ?array {
-            if (! $version) {
-                return null;
-            }
-            $site = DB::table('sites')->where('id', $version->site_id)->where('is_active', true)->first();
-            $customer = $site ? DB::table('customer_organisations')->where('id', $site->customer_organisation_id)->where('is_active', true)->first() : null;
-
-            return $site && $customer ? [
-                'uuid' => $root->uuid,
-                'epoch' => (int) $root->epoch,
-                'version' => (int) $version->version,
-                'definition_hash' => $version->definition_hash,
-                'site_uuid' => $site->uuid,
-                'site_name' => $site->name,
-                'customer_name' => $customer->name,
-            ] : null;
-        };
-        $active = $root->active_version ? DB::table('wald_binding_versions')->where('binding_id', $root->id)->where('version', $root->active_version)->first() : null;
-        $latest = DB::table('wald_binding_versions')->where('binding_id', $root->id)->where('version', $root->latest_version)->first();
-
-        return ['binding' => $present($active), 'draft' => $present($latest)];
     }
 
     private function command(string $command): void

@@ -3,8 +3,11 @@
 namespace App\Http\Controllers;
 
 use App\Services\OfficeImportsWorkspaceQuery;
+use App\SourceImport\Integration\ApproveMasterHierarchyProposal;
 use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
+use App\SourceImport\Integration\HierarchyClarifications;
+use App\SourceImport\Integration\HierarchyTarget;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
 use App\SourceImport\Integration\ImportAnalysis;
 use App\SourceImport\Integration\ImportConflict;
@@ -123,6 +126,9 @@ final class OfficePilotImportController extends Controller
         return view('office.pilot-import.show', [
             'import' => $summary,
             'details' => $details,
+            'ignoredRows' => DB::table('wald_pilot_ignored_rows')
+                ->where('pilot_upload_id', $artifact->id)->orderBy('row_number')
+                ->paginate(25, ['*'], 'ignored_page')->withQueryString(),
             'uploadRecord' => ['uploader' => $artifact->uploader_name, 'created_at' => $artifact->created_at,
                 'replacement_reason' => $artifact->replacement_reason, 'workbook_available' => $workbookAvailable],
             'sites' => DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
@@ -145,6 +151,84 @@ final class OfficePilotImportController extends Controller
         return back()->with('status', 'Detected structure confirmed. This did not assign business meaning.');
     }
 
+    public function restoreIgnoredRow(Request $request, string $upload, int $rowNumber, PilotImportWorkflow $workflow): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate(['command_uuid' => ['required', 'uuid'],
+            'confirmation' => ['required', Rule::in(['MOVE TO APPROVED REVIEW'])]]);
+        try {
+            $workflow->restoreIgnoredRow($request->user(), $upload, $rowNumber, $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['import' => $this->message($exception)]);
+        }
+
+        return redirect()->route('office.workspace.pilot-import.show', ['upload' => $upload, 'tab' => 'ignored'])
+            ->with('status', 'Row moved to the approved review list. Its site and plot still need normal review before Apply.');
+    }
+
+    public function confirmIgnoredRows(Request $request, string $upload, PilotImportWorkflow $workflow): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate(['command_uuid' => ['required', 'uuid'],
+            'confirmation' => ['required', Rule::in(['CONFIRM IGNORED CUSTOMER CODE ROWS'])]]);
+        try {
+            $workflow->confirmIgnoredRows($request->user(), $upload, $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['import' => $this->message($exception)]);
+        }
+
+        return redirect()->route('office.workspace.pilot-import.show', ['upload' => $upload, 'tab' => 'ignored'])
+            ->with('status', 'Ignored CustomerCode rows confirmed for this upload. This did not apply any site.');
+    }
+
+    public function confirmHierarchy(Request $request, string $upload): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate([
+            'source_hash' => ['required', 'size:64'], 'raw_hash' => ['required', 'size:64'],
+            'customer' => ['required', 'string', 'max:200'], 'site' => ['required', 'string', 'max:200'],
+            'plot' => ['required', 'string', 'max:200'], 'command_uuid' => ['required', 'uuid'],
+        ]);
+        try {
+            (new HierarchyClarifications)->answer(
+                $request->user(), $upload, $data['source_hash'], $data['raw_hash'],
+                trim($data['customer']), trim($data['site']), trim($data['plot']), $data['command_uuid'],
+            );
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['hierarchy' => $this->message($exception)]);
+        }
+
+        return back()->with('status', 'Customer, site and plot confirmed for this source value. Review the remaining exceptions.');
+    }
+
+    public function approveHierarchyProposal(Request $request, string $upload, ApproveMasterHierarchyProposal $approval): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate([
+            'source_hash' => ['required', 'size:64'],
+            'source_manifest_hash' => ['required', 'size:64'],
+            'expected_epoch' => ['required', 'integer', 'min:0'],
+            'expected_outcome' => ['required', Rule::in(['EXACT_CUSTOMER_NEW_SITE', 'NEW_CUSTOMER_AND_SITE'])],
+            'expected_customer' => ['required', 'string', 'max:255'],
+            'expected_site' => ['required', 'string', 'max:255'],
+            'confirmation' => ['required', 'in:APPROVE EXACT CUSTOMER AND SITE'],
+            'return_to' => ['nullable', Rule::in(['customer-code-review'])],
+            'command_uuid' => ['required', 'uuid'],
+        ]);
+        try {
+            $approval->handle($request->user(), $upload, $data['source_hash'], $data['source_manifest_hash'],
+                (int) $data['expected_epoch'], $data['expected_outcome'], $data['expected_customer'],
+                $data['expected_site'], $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['hierarchy' => $this->message($exception)]);
+        }
+
+        return redirect()->route(($data['return_to'] ?? null) === 'customer-code-review'
+            ? 'office.workspace.pilot-import.customer-codes.review' : 'office.workspace.pilot-import.show', $upload)
+            ->withFragment(($data['return_to'] ?? null) === 'customer-code-review' ? 'code-title' : 'detected-sites-title')
+            ->with('status', 'Customer and site approved. Wald has refreshed the source matches; plots are ready for later site review and Apply.');
+    }
+
     public function draftBinding(Request $request, string $upload, PilotImportWorkflow $workflow): RedirectResponse
     {
         $this->enabled();
@@ -153,6 +237,7 @@ final class OfficePilotImportController extends Controller
             $summary = $workflow->summary($request->user(), $upload);
             $source = collect($summary['sources'])->firstWhere('hash', $data['source_hash']) ?? throw new ImportConflict('source_identity_not_found');
             $site = (new PilotImportPolicy)->activeSite($request->user(), $data['site_uuid']);
+            (new HierarchyTarget)->assertMatches($source, $site);
             $scope = new KnowledgeScope($site->customer_organisation_id, $site->id, 'redzebra', 'call-offs');
             (new SourceBindingService)->draft($request->user(), $scope, $source['kind'], $source['identity'], $data['reason'], $data['command_uuid']);
         } catch (ImportConflict $exception) {
@@ -171,7 +256,7 @@ final class OfficePilotImportController extends Controller
         ]);
         try {
             $summary = $workflow->summary($request->user(), $upload);
-            $belongsToUpload = collect($summary['sources'])->contains(function (array $source) use ($data): bool {
+            $matchingSource = collect($summary['sources'])->first(function (array $source) use ($data): bool {
                 $draft = $source['draft'] ?? null;
 
                 return $draft
@@ -181,10 +266,11 @@ final class OfficePilotImportController extends Controller
                     && (int) $draft['epoch'] === (int) $data['epoch']
                     && hash_equals((string) $draft['site_uuid'], $data['site_uuid']);
             });
-            if (! $belongsToUpload) {
+            if (! $matchingSource) {
                 throw new ImportConflict('binding_draft_not_in_upload');
             }
             $site = (new PilotImportPolicy)->activeSite($request->user(), $data['site_uuid']);
+            (new HierarchyTarget)->assertMatches($matchingSource, $site);
             $scope = new KnowledgeScope($site->customer_organisation_id, $site->id, 'redzebra', 'call-offs');
             (new SourceBindingService)->activate($request->user(), $scope, $data['binding'], (int) $data['version'], $data['definition_hash'], (int) $data['epoch'], $data['reason'], $data['command_uuid']);
         } catch (ImportConflict $exception) {
@@ -377,6 +463,10 @@ final class OfficePilotImportController extends Controller
             'pilot_replacement_confirmation_required' => 'An import already exists for this date and slot. Confirm the retained-history replacement before continuing.',
             'duplicate_call_number' => 'The workbook contains a duplicate Call No. Nothing was staged.',
             'stale_preview', 'stale_preview_generation', 'stale_source_stream', 'stale_source_binding', 'stale_projection' => 'The preview is stale. Analyse and review this site again.',
+            'proposal_stale_refresh' => 'This proposal changed. Refresh the import and review its current customer and site before approving.',
+            'ignored_row_requires_dictionary_review' => 'This row needs a separate Call Type or workbook exception decision before it can enter the approved review list.',
+            'ignored_row_review_not_available' => 'This import has already begun site review or has been superseded. Start a new revision to change ignored rows.',
+            'ignored_rows_already_confirmed' => 'The ignored rows have already been confirmed for this upload.',
             default => 'The supervised pilot stopped safely: '.Str::headline($exception->getMessage()).'.',
         };
     }

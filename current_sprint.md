@@ -1,5 +1,39 @@
 # Current Sprint
 
+## Wald CustomerCode review and Unknown queue candidate — 24 September 2026
+
+CUSTOMER-WALD-MASTER04 builds on the committed dry-run and DEC-080
+CustomerCode exclusion work. It adds a one-code-at-a-time Office review
+wizard, guarded row selection, exact Customer/Site confirmation and a final
+Unknown / Unclassified queue. This remains local feature-branch work; it has
+not been pushed, deployed or used to apply the genuine workbook.
+See `documentation/wald-master04-customer-code-review-2026-09-24.md` for local
+qualification. A malformed group may be deferred to Unknown without an
+invented target; approved new structures still return to row confirmation.
+
+## Wald Office structural approval candidate — 24 September 2026
+
+CUSTOMER-WALD-MASTER03 continues directly from the clean MASTER02 resolver
+commit. Office can approve one current new-site or new-customer-and-site
+proposal; normal CustomerApp administration actions create records and the
+shared exact binding action activates source identity in one transaction.
+The import summary refreshes immediately. User assignment, plot projection,
+bulk approval and multi-site commit are unchanged. No push or deployment.
+See `documentation/wald-master03-office-creation-2026-09-24.md` for evidence.
+
+## Wald automatic resolution candidate — 24 September 2026
+
+CUSTOMER-WALD-MASTER02 is a local branch from `main` with the qualified
+MASTER01 hierarchy commit deliberately integrated. Workbook-wide resolution
+classifies exact bindings, exact sites without bindings, customer/site creation
+proposals, and source/binding blockers. Office selected-site review can activate
+an exact binding atomically; customer/site creation and multi-site commit remain
+separate work. The genuine XLS was qualified only on a disposable database.
+No push, deployment or production master import occurred. The full SQLite
+suite and selected disposable MySQL 8.4 checks passed. See
+`documentation/wald-master02-automatic-resolution-2026-09-24.md` for fixture
+counts and verification evidence.
+
 ## Second-wave integration candidate — 23 September 2026
 
 The Plot/live amendments, Office Amendments, Wald reconciliation and Site

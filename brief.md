@@ -676,6 +676,7 @@ The source workbook may currently expose this field as:
 
 - `CustomerNo`
 - `CustomerCode`
+- `Customer Number`
 
 where explicitly approved in the dictionary.
 
@@ -708,7 +709,20 @@ text changed.
 
 ### Unknown CustomerCode
 
-Require explicit Office binding to an existing CustomerApp customer/site.
+Resolve the parsed composite `Plot Ref` customer and site by exact names. If
+either does not exist, propose its creation for explicit Office approval,
+then require an exact source binding before projection.
+When both the customer and its site exist exactly and no source binding exists,
+the Office selected-site action creates the audited binding in the same transaction.
+Office need not make a separate binding draft for that exact match. Matching permits
+only controlled case and whitespace normalization. A conflicting or inactive binding
+blocks; Wald does not create a customer or site from its own proposal.
+For a current exact new-site or new-customer-and-site proposal, Office may
+explicitly approve one source unit. The action rechecks the live proposal and
+atomically creates the normal CustomerApp customer/site records needed plus the
+exact source binding. It records the actor and source evidence, then refreshes
+the import resolution. It does not create plots or assign users. Stale or
+conflicting proposals remain unresolved until reviewed again.
 
 Do not:
 
@@ -754,6 +768,7 @@ The UI should clearly show:
 
 - CustomerCode;
 - Source Site Name;
+- parsed source customer and site;
 - bound CustomerApp customer;
 - bound CustomerApp site.
 
@@ -773,7 +788,44 @@ Plot identity is:
 
 **resolved site + normalized Plot Ref**
 
-When an export contains both `Plot Ref` and `Plot number`, Wald may select
+In the current RedZebra master export, the recognized `Plot Ref` header carries
+exactly three nonempty components: Customer – Site – Plot. Separators may be
+spaced ASCII hyphen, en dash or em dash; the approved compact variant uses
+exactly two unspaced ASCII hyphens. The final component starts with
+`Plot `; the nonempty remainder is the canonical string plot identity. For
+example, `Vistry – Countryside 2D – Plot 776` resolves to Vistry,
+Countryside 2D and plot `776`; `Plot Com 4` resolves to plot `Com 4`.
+The confirmed FNA2561 form `Vistry - Northam PH3-{digits}` is a scoped
+exception: the first hyphen is spaced, the final hyphen is unspaced, and all
+final digits are the plot reference.
+Site Name remains descriptive. Included malformed or conflicting hierarchy
+blocks the affected selected-site import. Exact CustomerCode binding and site
+ownership must agree with the parsed hierarchy. Approved excluded Call Type
+rows do not contribute hierarchy blockers.
+
+The current master export also ignores exact normalized CustomerCodes `XXTrade`,
+`XXTEST` and `83`, even when their Call Type is approved. An Office-only Ignored
+CustomerCodes tab shows those rows, separate from Call Type exclusions. Office
+may restore one to normal guarded review before selecting a site; this does not
+bypass hierarchy, binding, semantic, preview or Apply checks. Office confirms
+once per upload the CustomerCode rows left ignored. That confirmation is
+audited and does not itself apply any site.
+
+Office reviews unresolved composite master source units one CustomerCode at a
+time. Fully resolved units are skipped. Included rows start selected; Office
+may untick exceptions, choose one exact Customer and Site, inspect proposed
+string Plot Refs, and confirm the group. Wald may derive the Plot only after
+exactly identifying the chosen Customer and Site text with approved separators
+and one meaningful remaining value. Uncertain or unticked rows wait in a final
+Unknown / Unclassified queue; Office may resolve them manually, explicitly
+exclude them for this upload or leave them unresolved. A missing CustomerCode
+remains outside projection. Group and unknown decisions retain actor, time and
+source row evidence. These decisions do not create plots or bypass selected-site
+preview and Apply.
+If no exact target exists yet, Office may defer the entire CustomerCode group
+to the Unknown queue; this records no invented Customer/Site mapping.
+
+For an older applicable workbook with both `Plot Ref` and `Plot number`, Wald may select
 `Plot number` as the customer-facing plot identifier without asking Office
 only when its value agrees exactly with the trailing `Plot N` in `Plot Ref`
 for every included row. Keep the full `Plot Ref` as private source evidence.

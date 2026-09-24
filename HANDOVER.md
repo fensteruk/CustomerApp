@@ -1,5 +1,37 @@
 # Fenster Customer Portal Handover
 
+## Wald CustomerCode review and Unknown queue — 24 September 2026
+
+The local MASTER04 candidate adds one-code-at-a-time Office row confirmation,
+all-selected-by-default review, deterministic string plot proposals and a
+final Unknown queue. Malformed groups can be deferred without fabricating a
+Customer/Site; Office can later resolve or exclude individual rows. Genuine
+XLS and XLSX sources were qualified only in disposable MySQL, with no
+customer-facing Apply, push or deployment. See
+`documentation/wald-master04-customer-code-review-2026-09-24.md` for counts,
+verification and safety boundaries.
+
+## Wald Office structural approval — 24 September 2026
+
+The local MASTER03 continuation adds explicit Office approval for new
+customer/site structures found by the workbook resolver. The action uses
+normal administration creation, one canonical exact binding action and an
+atomic audit trail. Approved units immediately resolve to the active binding;
+other proposals refresh, while conflicts remain blocked. No users or plots
+are created by structural approval. No push or deployment occurred. See
+`documentation/wald-master03-office-creation-2026-09-24.md` for QA evidence.
+
+## Wald automatic resolution — 24 September 2026
+
+The local `codex/wald-master02` candidate integrates the qualified hierarchy
+parser and adds one grouped operational resolver per included CustomerCode.
+Exact existing customer/site matches can acquire an audited binding during
+Office selected-site review; new customer/site relationships remain proposals.
+The genuine XLS qualification used a disposable test dataset, with no
+production import or data change. The existing one-site commit boundary remains.
+See `documentation/wald-master02-automatic-resolution-2026-09-24.md` for exact
+counts and verification status. No push or deployment occurred.
+
 ## Second-wave UI and amendment integration — 23 September 2026
 
 The four accepted second-wave branch tips are merged in order on the isolated
