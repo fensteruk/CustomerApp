@@ -3,6 +3,7 @@
 namespace App\SourceImport\Integration;
 
 use App\SourceImport\Knowledge\Canonical;
+use App\SourceImport\Knowledge\KnowledgeIdentity;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 
 /** Structural discovery only; the controlled dictionary remains the sole meaning authority. */
@@ -193,6 +194,8 @@ final class PilotWorkbookDiscovery
 
         return [
             'schema' => 'customerapp.wald-pilot-discovery.v5',
+            'knowledge_policy' => KnowledgeIdentity::POLICY,
+            'resolver_version' => MasterSourceResolver::VERSION,
             'analysis_hash' => $data['analysis_hash'],
             'requires_confirmation' => in_array('no_clear_header', $table['warnings'], true),
             'sheet' => $sheet->id,

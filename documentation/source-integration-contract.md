@@ -54,6 +54,24 @@ the current source revision at persistence. Other binding states remain guarded.
 The selected-site preview and explicit commit boundary are unchanged. Discovery
 schema v5 and knowledge policy v2 stale older uncommitted interpretations.
 
+## CUSTOMER-WALD-MASTER03 Office structural approval — 24 September 2026
+
+An active Office Staff member may approve one `EXACT_CUSTOMER_NEW_SITE` or
+`NEW_CUSTOMER_AND_SITE` proposal from the current, non-superseded upload.
+Its discovery manifest pins knowledge policy v2 and resolver version v1;
+older manifests lacking these pins cannot approve structural creation.
+The existing-site selected-site binding path checks the same pins before
+creating a new exact binding.
+The action pins the discovery manifest and upload epoch, re-resolves the
+source under a transaction, uses the normal administration creation actions,
+and creates an exact active CustomerCode binding through the same binding
+action as the existing-site selection. The site is created under the exact
+customer; no source-derived address, contacts, user assignment or plot rows
+are manufactured. One immutable pilot event records source, revision,
+discovery generation, actor, created IDs, binding and resulting resolution.
+Competing or stale proposals return for review. Approval refreshes the
+workbook summary; one-site selection, preview and apply remain separate.
+
 ## CUSTOMER-WALD-CUSTAPP2-01 addendum — 15 September 2026
 
 DEC-064 supersedes three narrow assumptions below wherever they conflict: the source record need

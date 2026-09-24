@@ -4,6 +4,7 @@ namespace App\SourceImport\Integration;
 
 use App\Models\User;
 use App\SourceImport\Knowledge\Canonical;
+use App\SourceImport\Knowledge\KnowledgeIdentity;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -149,7 +150,9 @@ final class PilotImportWorkflow
                 throw new ImportConflict('pilot_upload_not_selectable');
             }
             $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
-            if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v5') {
+            if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v5'
+                || ($manifest['knowledge_policy'] ?? null) !== KnowledgeIdentity::POLICY
+                || ($manifest['resolver_version'] ?? null) !== MasterSourceResolver::VERSION) {
                 throw new ImportConflict('pilot_source_manifest_stale');
             }
             $source = collect($manifest['sources'])->firstWhere('hash', $sourceHash);
@@ -171,7 +174,8 @@ final class PilotImportWorkflow
             }
             $binding = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]))->lockForUpdate()->first();
             if ($resolution['state'] === 'EXACT_CUSTOMER_EXACT_SITE' && ! $binding) {
-                $binding = $this->createExactBinding($fresh, $upload, $stream, $source, $site);
+                $binding = (new CreateExactSourceBinding)->handle($fresh, $upload, $stream, $source, $site,
+                    'Exact customer and site matched from the reviewed master source hierarchy.', 'EXACT_CUSTOMER_EXACT_SITE');
             }
             $version = $binding?->active_version
                 ? DB::table('wald_binding_versions')->where('binding_id', $binding->id)->where('version', $binding->active_version)->first()
@@ -250,43 +254,6 @@ final class PilotImportWorkflow
         }, 3);
     }
 
-    private function createExactBinding(User $actor, object $upload, object $stream, array $source, object $site): object
-    {
-        $identityHash = Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]);
-        DB::table('wald_source_bindings')->insertOrIgnore([
-            'uuid' => (string) Str::uuid(), 'identity_hash' => $identityHash,
-            'source_namespace' => $stream->source_namespace, 'identity_kind' => $source['kind'],
-            'source_identity' => $source['identity'], 'created_at' => now('UTC'), 'updated_at' => now('UTC'),
-        ]);
-        $root = DB::table('wald_source_bindings')->where('identity_hash', $identityHash)->lockForUpdate()->firstOrFail();
-        if ($root->latest_version !== 0 || $root->active_version !== null
-            || $root->source_identity !== $source['identity'] || $root->identity_kind !== $source['kind']) {
-            throw new ImportConflict('source_site_binding_changed');
-        }
-        $definition = ['identity_hash' => $identityHash, 'version' => 1,
-            'organisation' => $site->customer_organisation_id, 'site' => $site->id];
-        $digest = Canonical::hash($definition);
-        DB::table('wald_binding_versions')->insert([
-            'uuid' => (string) Str::uuid(), 'binding_id' => $root->id, 'version' => 1,
-            'customer_organisation_id' => $site->customer_organisation_id, 'site_id' => $site->id,
-            'actor_id' => $actor->id, 'actor_name' => $actor->name,
-            'reason' => 'Exact customer and site matched from the reviewed master source hierarchy.',
-            'definition_hash' => $digest, 'created_at' => now('UTC'),
-        ]);
-        DB::table('wald_source_bindings')->where('id', $root->id)->update([
-            'latest_version' => 1, 'active_version' => 1, 'epoch' => 1, 'updated_at' => now('UTC'),
-        ]);
-        (new PilotImportAudit)->record($actor, $upload->id, 'pilot_exact_binding_activated', [
-            'source_customer_code' => $source['customer_code'],
-            'parsed_customer' => $source['hierarchy']['customer'], 'parsed_site' => $source['hierarchy']['site'],
-            'matched_customer_id' => $site->customer_organisation_id, 'matched_site_id' => $site->id,
-            'resolution_reason' => 'EXACT_CUSTOMER_EXACT_SITE', 'binding' => $root->uuid,
-            'definition_hash' => $digest,
-        ]);
-
-        return DB::table('wald_source_bindings')->where('id', $root->id)->firstOrFail();
-    }
-
     public function summary(User $actor, string $uuid): array
     {
         (new PilotImportPolicy)->authorize($actor);
@@ -341,6 +308,8 @@ final class PilotImportWorkflow
             'export_date' => $upload->export_date,
             'export_slot' => $upload->export_slot,
             'revision' => (int) $upload->revision,
+            'epoch' => (int) $upload->epoch,
+            'source_manifest_hash' => $upload->source_manifest_hash,
             'mode' => $upload->mode,
             'failure_code' => $upload->failure_code,
             'manifest' => $manifest,

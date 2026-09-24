@@ -2,6 +2,14 @@
 
 Last updated: 24 September 2026. Owner: Product and Architecture.
 
+CustomerApp-only WD-62 implements DEC-079's Office-approved structural
+creation from current Wald proposals. Normal CustomerApp administration
+actions create the customer/site within one transaction with the exact source
+binding and immutable audit. It grants no site-user access or plot projection.
+The resolver refreshes after approval; multi-site commit remains deferred.
+This is a local feature-branch candidate with no SiteApp backport or production
+release implied.
+
 CustomerApp-only WD-61 implements DEC-078's exact workbook-wide customer/site
 resolution and audited binding at Office selected-site action. It returns
 customer/site creation proposals without mutating them and preserves the

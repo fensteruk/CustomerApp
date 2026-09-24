@@ -1,5 +1,15 @@
 # Current Sprint
 
+## Wald Office structural approval candidate — 24 September 2026
+
+CUSTOMER-WALD-MASTER03 continues directly from the clean MASTER02 resolver
+commit. Office can approve one current new-site or new-customer-and-site
+proposal; normal CustomerApp administration actions create records and the
+shared exact binding action activates source identity in one transaction.
+The import summary refreshes immediately. User assignment, plot projection,
+bulk approval and multi-site commit are unchanged. No push or deployment.
+See `documentation/wald-master03-office-creation-2026-09-24.md` for evidence.
+
 ## Wald automatic resolution candidate — 24 September 2026
 
 CUSTOMER-WALD-MASTER02 is a local branch from `main` with the qualified

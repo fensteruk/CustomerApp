@@ -4,6 +4,7 @@ use App\Models\CustomerOrganisation;
 use App\Models\PortalRole;
 use App\Models\Site;
 use App\Models\User;
+use App\SourceImport\Integration\ApproveMasterHierarchyProposal;
 use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\HierarchyClarifications;
@@ -15,6 +16,7 @@ use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\PilotReplacementConfirmationRequired;
 use App\SourceImport\Integration\SourceBindingService;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
+use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeQueries;
 use App\SourceImport\Knowledge\KnowledgeScope;
 use App\SourceImport\Knowledge\Models\KnowledgeContext;
@@ -129,6 +131,192 @@ function source02Analyse(User $office, KnowledgeScope $scope, object $run): obje
 
     return DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
 }
+
+function source02Approve(User $office, array $pilot, array $source, string $outcome, ?string $command = null): array
+{
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    return app(ApproveMasterHierarchyProposal::class)->handle($office, $pilot['upload'], $source['hash'],
+        $upload->source_manifest_hash, (int) $upload->epoch, $outcome,
+        $source['resolution']['customer'], $source['resolution']['site'], $command ?? (string) Str::uuid());
+}
+
+it('approves a new customer and site atomically then reuses them on repeat import', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2473', 'call' => '9001', 'site' => 'Descriptive', 'plot' => 'Lovell - Barne Barton - Plot 1'],
+        ['code' => 'FNA2473', 'call' => '9002', 'site' => 'Descriptive', 'plot' => 'Lovell - Barne Barton - Plot 2'],
+    ], '2099-11-01');
+    $source = $pilot['sources'][0];
+    $command = (string) Str::uuid();
+    $result = source02Approve($office, $pilot, $source, 'NEW_CUSTOMER_AND_SITE', $command);
+    expect($result['customer_created'])->toBeTrue()
+        ->and($result['resulting_resolution'])->toBe('EXACT_EXISTING_BINDING')
+        ->and(CustomerOrganisation::query()->where('name', 'Lovell')->count())->toBe(1)
+        ->and(Site::query()->where('name', 'Barne Barton')->count())->toBe(1)
+        ->and(DB::table('wald_source_bindings')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_events')->where('action', 'pilot_hierarchy_creation_approved')->count())->toBe(1)
+        ->and(DB::table('site_user_assignments')->count())->toBe(0)
+        ->and(DB::table('projected_plots')->count())->toBe(0);
+    expect(source02Approve($office, $pilot, $source, 'NEW_CUSTOMER_AND_SITE', $command)['binding_uuid'])
+        ->toBe($result['binding_uuid']);
+    expect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'][0]['resolution']['state'])
+        ->toBe('EXACT_EXISTING_BINDING');
+    $later = source02Upload($office, [
+        ['code' => 'FNA2473', 'call' => '9003', 'site' => 'Changed description', 'plot' => 'Lovell - Barne Barton - Plot 3'],
+    ], '2099-11-02');
+    expect($later['sources'][0]['resolution']['state'])->toBe('EXACT_EXISTING_BINDING');
+});
+
+it('approves a new site beneath one exact existing customer and refreshes sibling proposals', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'CODE-A', 'call' => '9101', 'site' => 'A', 'plot' => 'Vistry - Site A - Plot 1'],
+        ['code' => 'CODE-B', 'call' => '9102', 'site' => 'B', 'plot' => 'Vistry - Site B - Plot 2'],
+    ], '2099-11-03');
+    $first = collect($pilot['sources'])->firstWhere('identity', 'CODE-A');
+    $second = collect($pilot['sources'])->firstWhere('identity', 'CODE-B');
+    $result = source02Approve($office, $pilot, $first, 'NEW_CUSTOMER_AND_SITE');
+    $updated = (new PilotImportWorkflow)->summary($office, $pilot['upload']);
+    expect(collect($updated['sources'])->firstWhere('identity', 'CODE-B')['resolution']['state'])
+        ->toBe('EXACT_CUSTOMER_NEW_SITE');
+    expect(fn () => source02Approve($office, $pilot, $second, 'NEW_CUSTOMER_AND_SITE'))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    $secondResult = source02Approve($office, $pilot, collect($updated['sources'])->firstWhere('identity', 'CODE-B'), 'EXACT_CUSTOMER_NEW_SITE');
+    expect($result['customer_id'])->toBe($secondResult['customer_id'])
+        ->and($secondResult['customer_created'])->toBeFalse()
+        ->and(CustomerOrganisation::query()->where('name', 'Vistry')->count())->toBe(1)
+        ->and(Site::query()->where('customer_organisation_id', $result['customer_id'])->count())->toBe(2)
+        ->and(DB::table('wald_source_bindings')->count())->toBe(2);
+});
+
+it('rejects stale, conflicting and unauthorised hierarchy approvals without creating records', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'SAFE', 'call' => '9201', 'site' => 'A', 'plot' => 'New Customer - New Site - Plot 1'],
+        ['code' => 'CONFLICT', 'call' => '9202', 'site' => 'B', 'plot' => 'Baker - Site A - Plot 2'],
+        ['code' => 'CONFLICT', 'call' => '9203', 'site' => 'B', 'plot' => 'Baker Estates LTD - Site A - Plot 3'],
+    ], '2099-11-04');
+    $safe = collect($pilot['sources'])->firstWhere('identity', 'SAFE');
+    $conflict = collect($pilot['sources'])->firstWhere('identity', 'CONFLICT');
+    expect(fn () => source02Approve($office, $pilot, $conflict, 'NEW_CUSTOMER_AND_SITE'))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(fn () => app(ApproveMasterHierarchyProposal::class)->handle($office, $pilot['upload'], $safe['hash'],
+        str_repeat('0', 64), (int) $upload->epoch, 'NEW_CUSTOMER_AND_SITE', 'New Customer', 'New Site', (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    expect(fn () => app(ApproveMasterHierarchyProposal::class)->handle($office, $pilot['upload'], $safe['hash'],
+        $upload->source_manifest_hash, (int) $upload->epoch, 'NEW_CUSTOMER_AND_SITE', 'Different Customer', 'New Site', (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    $siteUser = User::factory()->create(['portal_role_id' => PortalRole::query()->where('identifier', 'site_manager')->value('id')]);
+    expect(fn () => source02Approve($siteUser, $pilot, $safe, 'NEW_CUSTOMER_AND_SITE'))
+        ->toThrow(AuthorizationException::class);
+    expect(CustomerOrganisation::query()->where('name', 'New Customer')->count())->toBe(0)
+        ->and(DB::table('wald_source_bindings')->count())->toBe(0);
+});
+
+it('rolls back customer or site creation when later approval steps fail', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'ROLLBACK-A', 'call' => '9301', 'site' => 'A', 'plot' => 'Rollback Customer - Rollback Site - Plot 1'],
+    ], '2099-11-05');
+    DB::statement("CREATE TRIGGER fail_site BEFORE INSERT ON sites BEGIN SELECT RAISE(ABORT, 'forced site failure'); END");
+    expect(fn () => source02Approve($office, $pilot, $pilot['sources'][0], 'NEW_CUSTOMER_AND_SITE'))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    DB::statement('DROP TRIGGER fail_site');
+    expect(CustomerOrganisation::query()->where('name', 'Rollback Customer')->count())->toBe(0);
+
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Existing Customer', 'is_active' => true]);
+    $sitePilot = source02Upload($office, [
+        ['code' => 'ROLLBACK-B', 'call' => '9302', 'site' => 'B', 'plot' => 'Existing Customer - Rollback Site - Plot 2'],
+    ], '2099-11-06');
+    DB::statement("CREATE TRIGGER fail_binding BEFORE INSERT ON wald_binding_versions BEGIN SELECT RAISE(ABORT, 'forced binding failure'); END");
+    expect(fn () => source02Approve($office, $sitePilot, $sitePilot['sources'][0], 'EXACT_CUSTOMER_NEW_SITE'))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    DB::statement('DROP TRIGGER fail_binding');
+    expect(Site::query()->where('customer_organisation_id', $customer->id)->count())->toBe(0)
+        ->and(DB::table('wald_source_bindings')->count())->toBe(0)
+        ->and(DB::table('wald_pilot_events')->where('action', 'pilot_hierarchy_creation_approved')->count())->toBe(0);
+});
+
+it('shows grouped Office proposals and approves one through the guarded HTTP action', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'HTTP-NEW', 'call' => '9401', 'site' => 'A', 'plot' => 'HTTP Customer - HTTP Site - Plot 1'],
+    ], '2099-11-07');
+    $source = $pilot['sources'][0];
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+        ->assertOk()->assertSee('New customers')->assertSee('Create customer and site')
+        ->assertSee('HTTP Customer')->assertSee('HTTP Site');
+    $this->post(route('office.workspace.pilot-import.approve-hierarchy', $pilot['upload']), [
+        'source_hash' => $source['hash'],
+        'source_manifest_hash' => $upload->source_manifest_hash,
+        'expected_epoch' => $upload->epoch,
+        'expected_outcome' => 'NEW_CUSTOMER_AND_SITE',
+        'expected_customer' => 'HTTP Customer',
+        'expected_site' => 'HTTP Site',
+        'confirmation' => 'APPROVE EXACT CUSTOMER AND SITE',
+        'command_uuid' => (string) Str::uuid(),
+    ])->assertRedirect()->assertSessionHasNoErrors();
+    $this->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+        ->assertOk()->assertSee('Select this one site');
+    $customer = CustomerOrganisation::query()->where('name', 'HTTP Customer')->firstOrFail();
+    $site = Site::query()->where('customer_organisation_id', $customer->id)->where('name', 'HTTP Site')->firstOrFail();
+    $this->get(route('office.workspace.customers.show', $customer))->assertOk();
+    $this->get(route('office.workspace.sites.show', [$customer, $site]))->assertOk();
+    expect(DB::table('projected_plots')->count())->toBe(0);
+});
+
+it('denies inactive and preview Office accounts from structural approval', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'DENY', 'call' => '9501', 'site' => 'A', 'plot' => 'Denied Customer - Denied Site - Plot 1'],
+    ], '2099-11-08');
+    $source = $pilot['sources'][0];
+    $preview = source02Office(['is_preview_user' => true]);
+    $inactive = source02Office(['is_active' => false]);
+    foreach ([$preview, $inactive] as $denied) {
+        expect(fn () => source02Approve($denied, $pilot, $source, 'NEW_CUSTOMER_AND_SITE'))
+            ->toThrow(AuthorizationException::class);
+    }
+    expect(CustomerOrganisation::query()->where('name', 'Denied Customer')->count())->toBe(0);
+});
+
+it('does not create hierarchy from a superseded source revision', function (): void {
+    $office = source02Office();
+    $first = source02Upload($office, [
+        ['code' => 'STALE-REV', 'call' => '9601', 'site' => 'A', 'plot' => 'Old Customer - Old Site - Plot 1'],
+    ], '2099-11-09');
+    source02Upload($office, [
+        ['code' => 'STALE-REV', 'call' => '9602', 'site' => 'A', 'plot' => 'New Customer - New Site - Plot 2'],
+    ], '2099-11-09', 'MORNING', $first['upload'], PilotImportWorkflow::REPLACEMENT_CONFIRMATION);
+    expect(fn () => source02Approve($office, $first, $first['sources'][0], 'NEW_CUSTOMER_AND_SITE'))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    expect(CustomerOrganisation::query()->where('name', 'Old Customer')->count())->toBe(0);
+});
+
+it('rejects a discovery manifest without the current policy and resolver pins', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'OLD-PINS', 'call' => '9701', 'site' => 'A', 'plot' => 'Pinned Customer - Pinned Site - Plot 1'],
+    ], '2099-11-10');
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
+    unset($manifest['knowledge_policy'], $manifest['resolver_version']);
+    DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
+        'source_manifest' => Canonical::json($manifest),
+        'source_manifest_hash' => Canonical::hash($manifest),
+    ]);
+    expect(fn () => source02Approve($office, $pilot, $pilot['sources'][0], 'NEW_CUSTOMER_AND_SITE'))
+        ->toThrow(ImportConflict::class, 'proposal_stale_refresh');
+    expect(CustomerOrganisation::query()->where('name', 'Pinned Customer')->count())->toBe(0);
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Pinned Customer', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Pinned Site', 'is_active' => true]);
+    expect(fn () => (new PilotImportWorkflow)->select($office, $pilot['upload'], $pilot['sources'][0]['hash'],
+        $site->uuid, (string) Str::uuid()))->toThrow(ImportConflict::class, 'pilot_source_manifest_stale');
+    expect(DB::table('wald_source_bindings')->count())->toBe(0);
+});
 
 it('classifies all seven master source outcomes in one grouped read-only resolution', function (): void {
     $office = source02Office();

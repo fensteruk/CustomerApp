@@ -1,5 +1,15 @@
 # Fenster Customer Portal Handover
 
+## Wald Office structural approval — 24 September 2026
+
+The local MASTER03 continuation adds explicit Office approval for new
+customer/site structures found by the workbook resolver. The action uses
+normal administration creation, one canonical exact binding action and an
+atomic audit trail. Approved units immediately resolve to the active binding;
+other proposals refresh, while conflicts remain blocked. No users or plots
+are created by structural approval. No push or deployment occurred. See
+`documentation/wald-master03-office-creation-2026-09-24.md` for QA evidence.
+
 ## Wald automatic resolution — 24 September 2026
 
 The local `codex/wald-master02` candidate integrates the qualified hierarchy

@@ -711,6 +711,12 @@ the Office selected-site action creates the audited binding in the same transact
 Office need not make a separate binding draft for that exact match. Matching permits
 only controlled case and whitespace normalization. A conflicting or inactive binding
 blocks; Wald does not create a customer or site from its own proposal.
+For a current exact new-site or new-customer-and-site proposal, Office may
+explicitly approve one source unit. The action rechecks the live proposal and
+atomically creates the normal CustomerApp customer/site records needed plus the
+exact source binding. It records the actor and source evidence, then refreshes
+the import resolution. It does not create plots or assign users. Stale or
+conflicting proposals remain unresolved until reviewed again.
 
 Do not:
 

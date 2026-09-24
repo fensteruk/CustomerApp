@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Services\OfficeImportsWorkspaceQuery;
+use App\SourceImport\Integration\ApproveMasterHierarchyProposal;
 use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\HierarchyClarifications;
@@ -165,6 +166,32 @@ final class OfficePilotImportController extends Controller
         }
 
         return back()->with('status', 'Customer, site and plot confirmed for this source value. Review the remaining exceptions.');
+    }
+
+    public function approveHierarchyProposal(Request $request, string $upload, ApproveMasterHierarchyProposal $approval): RedirectResponse
+    {
+        $this->enabled();
+        $data = $request->validate([
+            'source_hash' => ['required', 'size:64'],
+            'source_manifest_hash' => ['required', 'size:64'],
+            'expected_epoch' => ['required', 'integer', 'min:0'],
+            'expected_outcome' => ['required', Rule::in(['EXACT_CUSTOMER_NEW_SITE', 'NEW_CUSTOMER_AND_SITE'])],
+            'expected_customer' => ['required', 'string', 'max:255'],
+            'expected_site' => ['required', 'string', 'max:255'],
+            'confirmation' => ['required', 'in:APPROVE EXACT CUSTOMER AND SITE'],
+            'command_uuid' => ['required', 'uuid'],
+        ]);
+        try {
+            $approval->handle($request->user(), $upload, $data['source_hash'], $data['source_manifest_hash'],
+                (int) $data['expected_epoch'], $data['expected_outcome'], $data['expected_customer'],
+                $data['expected_site'], $data['command_uuid']);
+        } catch (ImportConflict $exception) {
+            return back()->withErrors(['hierarchy' => $this->message($exception)]);
+        }
+
+        return redirect()->route('office.workspace.pilot-import.show', $upload)
+            ->withFragment('detected-sites-title')
+            ->with('status', 'Customer and site approved. Wald has refreshed the source matches; plots are ready for later site review and Apply.');
     }
 
     public function draftBinding(Request $request, string $upload, PilotImportWorkflow $workflow): RedirectResponse
@@ -401,6 +428,7 @@ final class OfficePilotImportController extends Controller
             'pilot_replacement_confirmation_required' => 'An import already exists for this date and slot. Confirm the retained-history replacement before continuing.',
             'duplicate_call_number' => 'The workbook contains a duplicate Call No. Nothing was staged.',
             'stale_preview', 'stale_preview_generation', 'stale_source_stream', 'stale_source_binding', 'stale_projection' => 'The preview is stale. Analyse and review this site again.',
+            'proposal_stale_refresh' => 'This proposal changed. Refresh the import and review its current customer and site before approving.',
             default => 'The supervised pilot stopped safely: '.Str::headline($exception->getMessage()).'.',
         };
     }

@@ -2074,3 +2074,25 @@ uncommitted analyses and previews.
 
 Reason: The qualified hierarchy should remove repetitive binding work for existing
 sites while preserving exact identity, Office approval and the single-site commit gate.
+
+---
+
+## DEC-079
+
+Date: 24 September 2026
+
+Decision: An active Fenster Office Staff member may approve one current, exact
+Wald creation proposal at a time. For an existing exact customer, approval
+creates only the missing site and exact CustomerCode binding. For a genuinely
+new customer, approval atomically creates customer, site and binding. Use normal
+CustomerApp administration actions/defaults, current workbook discovery and
+source revision evidence, one shared binding action, and immutable Office audit.
+Re-resolve after approval; concurrent or stale proposals must refresh rather
+than create duplicates. No user assignment or plot projection occurs during
+structural approval. Binding/source/malformed conflicts remain blockers.
+Existing one-site preview and explicit apply continue; no bulk approval or
+multi-site commit is authorised. This is a feature-branch decision, not a
+production push, deployment or import approval.
+
+Reason: MASTER02 identifies new relationships but Office needs a safe action
+to turn approved source-backed structures into normal CustomerApp records.
