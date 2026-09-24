@@ -2004,3 +2004,24 @@ with concurrent branches based on the same decision ledger.
 
 Reason: Management confirmed that Site Managers must be able to correct a call-off
 immediately and repeatedly without reverting to phone calls while awaiting Office.
+
+---
+
+## CUSTOMER-CALLOFF-UX01 — Submit confirmation modal
+
+Date: 24 September 2026
+
+Decision: The normal Site User call-off journey is selection → Submit →
+confirmation modal → Confirm call-off. Submit shows the exact included
+plot/service/date combinations, relevant product and early-date context, and
+the Early Date Reason without creating requests. Cancel or Escape returns to
+selection. Final confirmation retains the existing signed server review,
+current-state revalidation and atomic submission. The separate matrix and
+review routes remain available for the HTML fallback, but are bypassed in the
+normal interactive journey. Service eligibility, lead times, request states,
+amendments, Office authority and site/customer permissions do not change.
+This decision does not authorise a production push or deployment.
+
+Reason: Management confirmed that the separate double-check page made normal
+site call-offs too slow and requested one clear Submit action followed by an
+accessible final confirmation.

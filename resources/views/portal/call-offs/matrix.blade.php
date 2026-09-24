@@ -14,7 +14,7 @@
                     @if ($row['available'] && $row['is_early_exception'])<div class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-4">@if($row['service'] === App\Enums\CallOffServiceType::CavityClosers->value)<p class="text-sm text-amber-950"><strong>Early date request.</strong> Cavity Closers require 15 working days' notice. You selected {{ \Carbon\CarbonImmutable::parse($row['requested_date'])->format('l j F Y') }}; the earliest standard date is {{ \Carbon\CarbonImmutable::parse($row['normal_earliest_date'])->format('l j F Y') }}. This is <strong>{{ $row['working_days_early'] }} working {{ str('day')->plural($row['working_days_early']) }} early</strong>.</p>@endif<label for="reason-{{ md5($row['key']) }}" class="form-label mt-3">Early Date Reason</label><textarea id="reason-{{ md5($row['key']) }}" name="early_reasons[{{ $row['key'] }}]" rows="3" maxlength="2000" class="form-input">{{ old('early_reasons.'.$row['key'], $row['service'] === App\Enums\CallOffServiceType::CavityClosers->value ? $cavityEarlyReason : '') }}</textarea><p class="mt-2 text-sm text-amber-900">A reason is required if this combination remains included.</p></div>@endif
                 </article>
             @endforeach
-            <div class="flex justify-end"><button type="submit" class="primary-button">Review call off</button></div>
+            <div class="flex justify-end"><button type="submit" class="primary-button">Submit</button></div>
         </form>
     </section>
 </x-layouts.portal>

@@ -9,6 +9,7 @@ use App\Http\Requests\DashboardCallOffSelectionRequest;
 use App\Http\Requests\SubmitCallOffConfirmationRequest;
 use App\Models\ProjectedPlot;
 use App\Models\Site;
+use App\Presenters\CustomerProductPresenter;
 use App\Services\CallOffLeadTimeService;
 use App\Services\CallOffSubmissionWorkflow;
 use Carbon\CarbonImmutable;
@@ -68,7 +69,7 @@ class NewCallOffController extends Controller
         return redirect()->route('portal.call-offs.create', ['plots' => $plots]);
     }
 
-    public function matrix(BuildCallOffMatrixRequest $request, BuildCallOffMatrixAction $matrix): View|RedirectResponse
+    public function matrix(BuildCallOffMatrixRequest $request, BuildCallOffMatrixAction $matrix, CustomerProductPresenter $products): View|RedirectResponse|JsonResponse
     {
         $site = $this->activeSite($request);
         $data = $request->validated();
@@ -80,7 +81,27 @@ class NewCallOffController extends Controller
                 throw ValidationException::withMessages(['cavity_early_reason' => 'Give an Early Date Reason for Cavity Closers.']);
             }
         } catch (ValidationException $exception) {
+            if ($request->expectsJson()) {
+                throw $exception;
+            }
+
             return redirect()->route('portal.call-offs.create')->withErrors($exception->errors())->withInput();
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json([
+                'rows' => collect($rows)->map(function (array $row) use ($products): array {
+                    $visibleProducts = $products->present($row['products']);
+
+                    return collect($row)->except(['plot_service_id', 'products', 'plot_uuid'])->all() + [
+                        'service_label' => CallOffServiceType::from($row['service'])->label(),
+                        'requested_display' => CarbonImmutable::parse($row['requested_date'])->format('j F Y'),
+                        'earliest_display' => $row['normal_earliest_date'] ? CarbonImmutable::parse($row['normal_earliest_date'])->format('j F Y') : null,
+                        'products_summary' => $visibleProducts->map(fn (array $product): string => $product['label'].' × '.$product['quantity'])->join(', '),
+                    ];
+                })->all(),
+                'preview_signature' => $this->previewSignature($request->user()->id, $site->id, $rows, $data['customer_response'] ?? ''),
+            ])->header('Cache-Control', 'no-store');
         }
 
         return view('portal.call-offs.matrix', [
@@ -93,7 +114,7 @@ class NewCallOffController extends Controller
         ]);
     }
 
-    public function review(BuildCallOffMatrixRequest $request, CallOffSubmissionWorkflow $workflow): View|RedirectResponse
+    public function review(BuildCallOffMatrixRequest $request, CallOffSubmissionWorkflow $workflow): View|RedirectResponse|JsonResponse
     {
         $site = $this->activeSite($request);
         $data = $request->validated();
@@ -109,8 +130,23 @@ class NewCallOffController extends Controller
                 $data['customer_response'] ?? null,
                 $request->session(),
             );
+            if ($request->expectsJson() && ! hash_equals(
+                $this->previewSignature($request->user()->id, $site->id, $payload['rows'], $data['customer_response'] ?? ''),
+                (string) $request->input('preview_signature'),
+            )) {
+                $request->session()->forget(CallOffSubmissionWorkflow::SESSION_KEY);
+                throw ValidationException::withMessages(['request' => 'Call-off details changed. Close this window and press Submit again to check the latest details.']);
+            }
         } catch (ValidationException $exception) {
+            if ($request->expectsJson()) {
+                throw $exception;
+            }
+
             return redirect()->route('portal.call-offs.create')->withErrors($exception->errors())->withInput();
+        }
+
+        if ($request->expectsJson()) {
+            return response()->json(['confirmation_signature' => $payload['signature']])->header('Cache-Control', 'no-store');
         }
 
         return view('portal.call-offs.confirm', [
@@ -120,22 +156,33 @@ class NewCallOffController extends Controller
         ]);
     }
 
-    public function store(SubmitCallOffConfirmationRequest $request, CallOffSubmissionWorkflow $workflow): RedirectResponse
+    public function store(SubmitCallOffConfirmationRequest $request, CallOffSubmissionWorkflow $workflow): RedirectResponse|JsonResponse
     {
         $site = $this->activeSite($request);
 
         try {
             $batch = $workflow->submit($request->user(), $site, (string) $request->validated('confirmation_signature'), $request->session());
         } catch (ValidationException $exception) {
+            if ($request->expectsJson()) {
+                throw $exception;
+            }
+
             return redirect()->route('portal.call-offs.create')->withErrors($exception->errors());
         }
 
         $requestCount = $batch->requests->count();
         $plotCount = $batch->requests->pluck('projected_plot_id')->unique()->count();
+        $status = 'Call-off submitted for '.$plotCount.' '.str('plot')->plural($plotCount).' / '.$requestCount.' service '.str('request')->plural($requestCount).'.';
+
+        if ($request->expectsJson()) {
+            $request->session()->flash('status', $status);
+
+            return response()->json(['redirect' => route('portal.site-dashboard'), 'status' => $status])->header('Cache-Control', 'no-store');
+        }
 
         return redirect()
             ->route('portal.site-dashboard')
-            ->with('status', 'Call-off submitted for '.$plotCount.' '.str('plot')->plural($plotCount).' / '.$requestCount.' service '.str('request')->plural($requestCount).'.');
+            ->with('status', $status);
     }
 
     private function activeSite(Request $request): Site
@@ -161,5 +208,18 @@ class NewCallOffController extends Controller
             'request_count' => $payload['request_count'],
             'rows' => collect($payload['rows'])->map(fn (array $row): array => collect($row)->except(['plot_service_id'])->all())->all(),
         ];
+    }
+
+    /** @param array<int, array<string, mixed>> $rows */
+    private function previewSignature(int $userId, int $siteId, array $rows, string $message): string
+    {
+        $facts = collect($rows)->map(fn (array $row): array => collect($row)->except(['included', 'early_reason'])->all())->all();
+
+        return hash_hmac('sha256', json_encode([
+            'user_id' => $userId,
+            'site_id' => $siteId,
+            'message' => $message,
+            'rows' => $facts,
+        ], JSON_THROW_ON_ERROR), (string) config('app.key'));
     }
 }

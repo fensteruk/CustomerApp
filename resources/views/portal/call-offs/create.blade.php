@@ -1,13 +1,13 @@
 <x-layouts.portal title="New Call Off | Fenster Customer Portal">
-    <section class="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:px-8" aria-labelledby="page-title">
+    <section class="mx-auto max-w-5xl px-4 py-7 sm:px-6 lg:px-8" aria-labelledby="page-title" x-data="callOffSubmission(@js(route('portal.call-offs.matrix')), @js(route('portal.call-offs.review')), @js(route('portal.call-offs.store')))" x-init="selectedServices = @js(array_keys(old('service_dates', []))); selectedPlots = @js(old('plots', $selectedPlotUuids))">
         <div class="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div><p class="eyebrow">{{ $activeSite->name }}</p><h1 id="page-title" class="page-title">New Call Off</h1><p class="page-intro">Choose plots, then one or more services and a requested date for each service.</p></div>
             <a href="{{ route('portal.site-dashboard') }}" class="secondary-button">Back to dashboard</a>
         </div>
         @if ($errors->any())<div class="mt-6 rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-900" role="alert">{{ $errors->first() }} @if($errors->has('cavity_early_reason'))<a href="#cavity-early-reason" class="underline focus-visible:outline-2">Go to Early Date Reason</a>@endif</div>@endif
         @php($oldServiceDates = old('service_dates', []))
-        <ol class="mt-7 grid gap-2 text-sm font-bold text-slate-700 sm:grid-cols-4" aria-label="Call off progress"><li class="rounded bg-sky-700 px-3 py-2 text-white">1. Select plots</li><li class="rounded bg-slate-100 px-3 py-2">2. Dates</li><li class="rounded bg-slate-100 px-3 py-2">3. Check</li><li class="rounded bg-slate-100 px-3 py-2">4. Submit</li></ol>
-        <form method="POST" action="{{ route('portal.call-offs.matrix') }}" class="mt-8 space-y-8" x-data="{ selectedServices: @js(array_keys($oldServiceDates)), selectedPlots: @js(old('plots', $selectedPlotUuids)) }">
+        <ol class="mt-7 grid gap-2 text-sm font-bold text-slate-700 sm:grid-cols-2" aria-label="Call off progress"><li class="rounded bg-sky-700 px-3 py-2 text-white">1. Select combinations</li><li class="rounded bg-slate-100 px-3 py-2">2. Confirm call-off</li></ol>
+        <form method="POST" action="{{ route('portal.call-offs.matrix') }}" class="mt-8 space-y-8" x-ref="selectionForm" @submit.prevent="openConfirmation()">
             @csrf
             <fieldset class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><legend class="text-lg font-bold text-slate-900">Plots</legend><p class="mt-1 text-sm text-slate-600">Selection is limited to this page and this assigned site.</p>
                 <div class="mt-5 grid gap-3 sm:grid-cols-2">
@@ -33,7 +33,37 @@
                 </div>
                 <div class="mt-5"><label for="customer_response" class="form-label">Message to Fenster</label><textarea id="customer_response" name="customer_response" rows="4" class="form-input">{{ old('customer_response') }}</textarea></div>
             </fieldset>
-            <div class="flex justify-end"><button type="submit" class="primary-button">Check selected combinations</button></div>
+            <div x-show="error" x-cloak class="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-950" role="alert" x-text="error"></div>
+            <div class="flex justify-end"><button type="submit" class="primary-button min-w-32" x-ref="submitButton" :disabled="loading"><span x-show="!loading">Submit</span><span x-show="loading" x-cloak>Checking…</span></button></div>
         </form>
+
+        <dialog x-ref="confirmation" @close="restoreFocus()" @cancel="if (confirming) $event.preventDefault()" aria-labelledby="call-off-confirmation-title" aria-describedby="call-off-confirmation-intro" class="w-[calc(100vw-2rem)] max-w-2xl max-h-[calc(100dvh-2rem)] overflow-hidden rounded-2xl border border-slate-200 p-0 text-slate-900 shadow-2xl backdrop:bg-slate-950/70">
+            <div class="flex max-h-[calc(100dvh-2rem)] min-h-0 flex-col">
+                <div class="shrink-0 border-b border-slate-200 bg-white px-5 py-4 sm:px-6"><p class="eyebrow">Final check</p><h2 id="call-off-confirmation-title" x-ref="confirmationTitle" tabindex="-1" class="mt-1 text-xl font-bold focus:outline-none">Confirm call-off</h2><p id="call-off-confirmation-intro" class="mt-2 text-sm text-slate-700">You are about to call off:</p></div>
+                <div class="min-h-0 flex-1 space-y-4 overflow-y-auto px-5 py-4 sm:px-6">
+                    <p class="text-sm font-semibold text-slate-700" aria-live="polite"><span x-text="selectedRows.length"></span> <span x-text="selectedRows.length === 1 ? 'combination selected' : 'combinations selected'"></span></p>
+                    <template x-for="row in selectedRows" :key="row.key">
+                        <article class="min-w-0 rounded-xl border border-slate-200 p-4">
+                            <h3 class="font-bold text-slate-950 [overflow-wrap:anywhere]" x-text="row.plot_reference"></h3>
+                            <p class="mt-1 font-semibold text-slate-800" x-text="row.service_label"></p>
+                            <p class="mt-1 text-sm text-slate-700">Requested: <time :datetime="row.requested_date" x-text="row.requested_display"></time></p>
+                            <p x-show="row.products_summary" class="mt-2 text-sm leading-6 text-slate-700 [overflow-wrap:anywhere]">Products: <span x-text="row.products_summary"></span></p>
+                            <div x-show="row.is_early_exception" class="mt-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm leading-6 text-amber-950">
+                                <p class="font-bold">Early date request</p><p>Standard earliest date: <span x-text="row.earliest_display"></span>.</p>
+                                <p x-show="row.working_days_early"><strong x-text="row.working_days_early"></strong> working <span x-text="row.working_days_early === 1 ? 'day' : 'days'"></span> early.</p>
+                                <label class="mt-2 block font-semibold">Early Date Reason <span class="font-normal">(required)</span><textarea rows="2" maxlength="2000" class="form-input mt-1" x-model="reasons[row.key]" :aria-label="'Early Date Reason for ' + row.plot_reference + ' ' + row.service_label"></textarea></label>
+                            </div>
+                        </article>
+                    </template>
+                    <p x-show="selectedRows.length === 0" class="rounded-lg bg-amber-50 p-4 text-sm text-amber-950">Choose at least one combination to submit.</p>
+                    <div x-show="message" class="rounded-lg bg-slate-50 p-4 text-sm text-slate-700"><h3 class="font-bold text-slate-900">Message to Fenster</h3><p class="mt-1 whitespace-pre-line [overflow-wrap:anywhere]" x-text="message"></p></div>
+                    <details x-show="availableRows.length > 1" class="rounded-lg border border-slate-200 p-4"><summary class="cursor-pointer font-semibold text-slate-900">Change included combinations</summary><p class="mt-2 text-sm text-slate-600">Uncheck a combination to leave it out of this call-off.</p><div class="mt-3 space-y-2"><template x-for="row in availableRows" :key="row.key"><label class="flex min-h-11 items-center gap-3 rounded-lg border border-slate-200 p-3 text-sm"><input type="checkbox" class="h-5 w-5 shrink-0" x-model="includedKeys" :value="row.key"><span class="[overflow-wrap:anywhere]" x-text="row.plot_reference + ' · ' + row.service_label"></span></label></template></div></details>
+                    <details x-show="unavailableRows.length" class="rounded-lg border border-slate-200 p-4"><summary class="cursor-pointer text-sm font-semibold text-slate-700"><span x-text="unavailableRows.length"></span> unavailable <span x-text="unavailableRows.length === 1 ? 'combination' : 'combinations'"></span> will not be submitted</summary><div class="mt-3 space-y-2"><template x-for="row in unavailableRows" :key="row.key"><p class="text-sm text-slate-700 [overflow-wrap:anywhere]"><strong x-text="row.plot_reference + ' · ' + row.service_label"></strong>: <span x-text="row.reason"></span></p></template></div></details>
+                    <p class="text-sm font-semibold text-slate-800">Please confirm these details are correct.</p>
+                    <p x-show="modalError" x-cloak x-ref="modalError" tabindex="-1" class="rounded-lg border border-rose-300 bg-rose-50 p-4 text-sm font-semibold text-rose-950" role="alert" x-text="modalError"></p>
+                </div>
+                <div class="flex shrink-0 flex-col-reverse gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:flex-row sm:justify-end sm:px-6"><button type="button" class="secondary-button" @click="closeConfirmation()" :disabled="confirming">Cancel</button><button type="button" class="primary-button" @click="confirm()" :disabled="confirming || !readyToConfirm"><span x-show="!confirming">Confirm call-off</span><span x-show="confirming" x-cloak>Submitting…</span></button></div>
+            </div>
+        </dialog>
     </section>
 </x-layouts.portal>

@@ -354,6 +354,12 @@ A Site User may submit one or more eligible plot/service call-offs.
 
 One submission may include multiple plots/services.
 
+The Site User selects plots, services and dates, presses Submit, reviews every
+included combination in a confirmation modal, then presses Confirm call-off.
+The first Submit does not create requests. The final action rechecks current
+server-side eligibility and rejects stale selections. Early-date context and
+the required reason are visible before final confirmation.
+
 Each request owns its own:
 
 - service;

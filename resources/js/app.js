@@ -2,11 +2,13 @@ import '@fontsource-variable/inter';
 import Alpine from 'alpinejs';
 import { importStudioDemo } from './import-studio-demo';
 import { officeAdminForm } from './office-admin-form';
+import { callOffSubmission } from './call-off-submission';
 
 window.Alpine = Alpine;
 
 document.addEventListener('alpine:init', () => {
     Alpine.data('officeAdminForm', officeAdminForm);
+    Alpine.data('callOffSubmission', callOffSubmission);
     Alpine.data('importStudioDemo', importStudioDemo);
     Alpine.data('portalShell', () => ({
         sidebarOpen: false,
