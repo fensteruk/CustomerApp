@@ -2181,3 +2181,26 @@ This decision does not authorise a production push or deployment.
 Reason: Management confirmed that the separate double-check page made normal
 site call-offs too slow and requested one clear Submit action followed by an
 accessible final confirmation.
+
+---
+
+## DEC-082
+
+Date: 24 September 2026
+
+Decision: An active CustomerCode-to-site binding that conflicts with current
+source evidence may be corrected for any CustomerCode through explicit Office
+review of a stored import. Office chooses an existing active Customer and one
+of its active Sites; exact, consistent source customer/site evidence must
+support the selected rows. The prior immutable binding version remains in
+history and a new version becomes active. Unselected rows remain Unknown,
+and the same upload is re-resolved without re-uploading. Existing selected-site
+history, stale upload state and stale binding epoch block correction. Genuine
+source hierarchy conflicts are not resolved automatically. Normal site
+preview and explicit Apply remain required. This decision does not authorise
+a production push or live data correction.
+
+Reason: The existing Lovell / Barne Barton target for FNA2473 could not be
+used while a stale active binding pointed elsewhere. A controlled correction
+must remain available for any CustomerCode with the same evidence and review
+conditions.

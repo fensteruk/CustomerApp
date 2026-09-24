@@ -60,7 +60,7 @@ final class CustomerCodeReviewWorkflow
 
     public function confirm(User $actor, string $uploadUuid, string $sourceHash, ?string $customerUuid,
         ?string $siteUuid, string $excludedCsv, string $manifestHash, int $epoch, string $command,
-        bool $deferAll = false): void
+        bool $deferAll = false, bool $confirmBinding = false): void
     {
         if (! Str::isUuid($command) || ! preg_match('/^[a-f0-9]{64}$/D', $sourceHash)
             || ! preg_match('/^[a-f0-9]{64}$/D', $manifestHash)) {
@@ -68,7 +68,7 @@ final class CustomerCodeReviewWorkflow
         }
         $excluded = $this->excludedRows($excludedCsv);
         DB::transaction(function () use ($actor, $uploadUuid, $sourceHash, $customerUuid, $siteUuid,
-            $excluded, $manifestHash, $epoch, $command, $deferAll): void {
+            $excluded, $manifestHash, $epoch, $command, $deferAll, $confirmBinding): void {
             $fresh = (new PilotImportPolicy)->authorize($actor, true);
             $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
             if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION'], true)
@@ -113,6 +113,11 @@ final class CustomerCodeReviewWorkflow
             $knownRows = array_fill_keys($rows->pluck('row_number')->map(fn ($value): int => (int) $value)->all(), true);
             if (array_diff_key($excluded, $knownRows)) {
                 throw new ImportConflict('review_rows_invalid');
+            }
+            if (! $deferAll) {
+                (new OfficeBindingCorrection)->confirm($fresh, $upload, $manifest['sources'][$sourceIndex],
+                    $rows->reject(fn (object $row): bool => isset($excluded[(int) $row->row_number])),
+                    $site, $confirmBinding, $command);
             }
             $plots = [];
             $selectedNumbers = [];

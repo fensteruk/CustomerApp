@@ -1086,6 +1086,108 @@ it('can defer a malformed CustomerCode without inventing a target and review it 
         ->and(DB::table('wald_pilot_review_rows')->value('confirmed_plot'))->toBe('222');
 });
 
+it('corrects a conflicting CustomerCode binding in the same stored import without reuploading', function (): void {
+    $office = source02Office();
+    $lovell = CustomerOrganisation::factory()->create(['name' => 'Lovell', 'is_active' => true]);
+    $barne = Site::factory()->create(['customer_organisation_id' => $lovell->id, 'name' => 'Barne Barton', 'is_active' => true]);
+    $oldCustomer = CustomerOrganisation::factory()->create(['name' => 'Old Customer', 'is_active' => true]);
+    $oldSite = Site::factory()->create(['customer_organisation_id' => $oldCustomer->id, 'name' => 'Old Site', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2473', 'call' => '24731', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - Plot 12'],
+        ['code' => 'FNA2473', 'call' => '24732', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - 033'],
+        ['code' => 'FNA2473', 'call' => '24733', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - Com 4'],
+    ], '2099-03-01');
+    source02Bind($office, $pilot['sources'][0], $oldSite);
+    $workflow = new CustomerCodeReviewWorkflow;
+    $source = $workflow->overview($office, $pilot['upload'])['pending'][0];
+    expect($source['resolution']['state'])->toBe('MALFORMED_HIERARCHY')
+        ->and($source['resolution']['binding']['site_uuid'])->toBe($oldSite->uuid);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $workflow->confirm($office, $pilot['upload'], $source['hash'], null, null, '',
+        $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid(), true);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(fn () => (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2473',
+        $lovell->uuid, $barne->uuid, $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'binding_confirmation_required');
+    expect(DB::table('wald_binding_versions')->count())->toBe(1);
+    $response = $this->actingAs($office)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']));
+    $response->assertOk()->assertSee('Lovell')->assertSee('Barne Barton')->assertSee('Binding conflict');
+    $result = (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2473',
+        $lovell->uuid, $barne->uuid, $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid(), true, '4');
+    expect($result)->toBe(['resolved' => 2, 'unknown' => 1]);
+    $binding = DB::table('wald_source_bindings')->firstOrFail();
+    expect((int) $binding->active_version)->toBe(2)
+        ->and(DB::table('wald_binding_versions')->where('binding_id', $binding->id)->count())->toBe(2)
+        ->and((int) DB::table('wald_binding_versions')->where('binding_id', $binding->id)->where('version', 1)->value('site_id'))->toBe($oldSite->id)
+        ->and((int) DB::table('wald_binding_versions')->where('binding_id', $binding->id)->where('version', 2)->value('site_id'))->toBe($barne->id)
+        ->and(DB::table('wald_pilot_review_rows')->orderBy('row_number')->pluck('confirmed_plot')->all())->toBe(['12', '033', null])
+        ->and(DB::table('wald_pilot_review_rows')->where('site_id', $barne->id)->count())->toBe(2)
+        ->and(DB::table('wald_pilot_review_rows')->where('row_number', 4)->value('disposition'))->toBe('UNKNOWN')
+        ->and(CustomerOrganisation::where('name', 'Lovell')->count())->toBe(1)
+        ->and(Site::where('name', 'Barne Barton')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_uploads')->count())->toBe(1);
+    $resolution = collect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'])->firstWhere('customer_code', 'FNA2473');
+    expect($resolution['resolution']['state'])->toBe('EXACT_EXISTING_BINDING');
+    expect(fn () => (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2473',
+        $lovell->uuid, $barne->uuid, $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid(), true))->toThrow(ImportConflict::class, 'unknown_review_not_available');
+    $siteUser = User::factory()->create(['customer_organisation_id' => $lovell->id,
+        'portal_role_id' => PortalRole::where('identifier', 'site_manager')->value('id'),
+        'is_active' => true, 'is_preview_user' => false]);
+    $this->actingAs($siteUser)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))->assertForbidden();
+});
+
+it('blocks binding correction when selected source rows disagree with the target', function (): void {
+    $office = source02Office();
+    $lovell = CustomerOrganisation::factory()->create(['name' => 'Lovell', 'is_active' => true]);
+    $barne = Site::factory()->create(['customer_organisation_id' => $lovell->id, 'name' => 'Barne Barton', 'is_active' => true]);
+    $old = Site::factory()->create(['customer_organisation_id' => $lovell->id, 'name' => 'Old Site', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2439', 'call' => '24391', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - Plot 1'],
+        ['code' => 'FNA2439', 'call' => '24392', 'site' => 'Barne Barton', 'plot' => 'Other - Barne Barton - Plot 2'],
+    ], '2099-03-02');
+    source02Bind($office, $pilot['sources'][0], $old);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(fn () => (new CustomerCodeReviewWorkflow)->confirm($office, $pilot['upload'], $pilot['sources'][0]['hash'],
+        $lovell->uuid, $barne->uuid, '', $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid(), false, true))->toThrow(ImportConflict::class, 'binding_source_evidence_conflict');
+    expect(DB::table('wald_binding_versions')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_review_decisions')->count())->toBe(0);
+});
+
+it('preselects an exact existing site and corrects only selected CustomerCode rows', function (): void {
+    $office = source02Office();
+    $lovell = CustomerOrganisation::factory()->create(['name' => 'Lovell', 'is_active' => true]);
+    $barne = Site::factory()->create(['customer_organisation_id' => $lovell->id, 'name' => 'Barne Barton', 'is_active' => true]);
+    $old = Site::factory()->create(['customer_organisation_id' => $lovell->id, 'name' => 'Old Site', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2473', 'call' => '24741', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - Plot 12'],
+        ['code' => 'FNA2473', 'call' => '24742', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - Plot 033'],
+        ['code' => 'FNA2473', 'call' => '24743', 'site' => 'Barne Barton', 'plot' => 'Lovell - Barne Barton - Plot Com 4'],
+    ], '2099-03-03');
+    source02Bind($office, $pilot['sources'][0], $old);
+    $source = (new CustomerCodeReviewWorkflow)->overview($office, $pilot['upload'])['pending'][0];
+    expect($source['resolution']['state'])->toBe('BINDING_CONFLICT');
+    $page = $this->actingAs($office)->get(route('office.workspace.pilot-import.customer-codes.review', $pilot['upload']));
+    $page->assertOk()->assertSee('Binding conflict')->assertSee('Barne Barton')
+        ->assertSee($barne->uuid)->assertSee('confirm_binding');
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(fn () => (new CustomerCodeReviewWorkflow)->confirm($office, $pilot['upload'], $source['hash'],
+        $lovell->uuid, $barne->uuid, '4', $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid()))->toThrow(ImportConflict::class, 'binding_confirmation_required');
+    (new CustomerCodeReviewWorkflow)->confirm($office, $pilot['upload'], $source['hash'],
+        $lovell->uuid, $barne->uuid, '4', $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid(), false, true);
+    expect(DB::table('wald_pilot_review_rows')->where('site_id', $barne->id)->count())->toBe(2)
+        ->and(DB::table('wald_pilot_review_rows')->where('row_number', 4)->value('disposition'))->toBe('UNKNOWN')
+        ->and(DB::table('wald_pilot_review_rows')->where('row_number', 4)->value('issue'))->toBe('OFFICE_UNTICKED')
+        ->and(DB::table('wald_source_bindings')->value('active_version'))->toBe(2)
+        ->and(DB::table('wald_pilot_events')->where('action', 'pilot_source_binding_corrected')->count())->toBe(1);
+    $resolution = collect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'])->firstWhere('customer_code', 'FNA2473');
+    expect($resolution['resolution']['state'])->toBe('EXACT_EXISTING_BINDING');
+});
+
 it('keeps an unresolved row outside the selected-site preview while a safe sibling proceeds', function (): void {
     $office = source02Office();
     $customer = CustomerOrganisation::factory()->create(['name' => 'Baker', 'is_active' => true]);

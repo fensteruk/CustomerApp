@@ -18,16 +18,19 @@
             <section class="wald-panel" aria-labelledby="matching-code-title">
                 <h2 id="matching-code-title" class="section-title">Review matching CustomerCode rows together</h2>
                 <p>Choose one CustomerCode and its exact existing Customer and Site. Wald will resolve only rows with a safe plot pattern; the others stay in this queue.</p>
-                <form method="POST" action="{{ route('office.workspace.pilot-import.unknown.resolve-code', $overview['import']['upload']) }}" x-data="{customer:'', site:'', customers:@js($customerData), sites:@js($siteData), get choices(){const chosen=this.customers.find(item => item.uuid === this.customer); return chosen ? this.sites.filter(item => item.customer_id === chosen.id) : []}}" class="grid gap-3 md:grid-cols-3">
+                <form method="POST" action="{{ route('office.workspace.pilot-import.unknown.resolve-code', $overview['import']['upload']) }}" x-data="unknownCodeReview(@js($customerData), @js($siteData), @js($recommendations), @js($rowsByCode))" class="grid gap-3 md:grid-cols-3">
                     @csrf
                     <input type="hidden" name="source_manifest_hash" value="{{ $overview['import']['source_manifest_hash'] }}">
                     <input type="hidden" name="expected_epoch" value="{{ $overview['import']['epoch'] }}">
                     <input type="hidden" name="command_uuid" value="{{ (string) Illuminate\Support\Str::uuid() }}">
-                    <label class="form-label">CustomerCode<select name="customer_code" class="form-input" required><option value="">Choose one code</option>@foreach($unknownCodes as $item)<option value="{{ $item->customer_code }}">{{ $item->customer_code }} · {{ $item->row_count }} rows</option>@endforeach</select></label>
+                    <input type="hidden" name="excluded_rows_csv" :value="Array.from(excluded).sort((a,b) => a-b).join(',')">
+                    <label class="form-label">CustomerCode<select name="customer_code" class="form-input" x-model="code" x-on:change="chooseCode()" required><option value="">Choose one code</option>@foreach($unknownCodes as $item)<option value="{{ $item->customer_code }}">{{ $item->customer_code }} · {{ $item->row_count }} rows</option>@endforeach</select></label>
                     <label class="form-label">Customer<select name="customer_uuid" class="form-input" x-model="customer" x-on:change="site = ''" required><option value="">Choose customer</option>@foreach($customers as $customer)<option value="{{ $customer->uuid }}">{{ $customer->name }}</option>@endforeach</select></label>
-                    <label class="form-label">Site<select name="site_uuid" class="form-input" x-model="site" required><option value="">Choose site</option><template x-for="item in choices" :key="item.uuid"><option :value="item.uuid" x-text="item.name"></option></template></select></label>
+                    <label class="form-label">Site<select name="site_uuid" class="form-input" x-model="site" x-ref="bulkSite" x-effect="$nextTick(() => { if (site) $el.value = site })" required><option value="">Choose site</option><template x-for="item in choices" :key="item.uuid"><option :value="item.uuid" x-text="item.name"></option></template></select></label>
+                    <div class="md:col-span-3 rounded-lg border border-slate-200 p-3" x-show="code" x-cloak><div class="flex flex-wrap items-center justify-between gap-2"><strong>Rows to review: <span x-text="rowOptions.length - excluded.size"></span> of <span x-text="rowOptions.length"></span></strong><div class="flex gap-2"><button type="button" class="secondary-button" x-on:click="excluded = new Set()">Select all</button><button type="button" class="secondary-button" x-on:click="excluded = new Set(rowOptions.map(item => item.row))">Clear all</button></div></div><div class="mt-3 max-h-64 space-y-2 overflow-y-auto"><template x-for="item in rowOptions" :key="item.row"><label class="flex items-start gap-2 rounded border border-slate-100 p-2 text-sm"><input type="checkbox" class="mt-1 h-5 w-5" :checked="!excluded.has(item.row)" x-on:change="setSelected(item.row, $event.target.checked)" :aria-label="`Include workbook row ${item.row}`"><span><strong x-text="`Row ${item.row}`"></strong> · <span x-text="item.raw || 'Blank Plot Ref'"></span></span></label></template></div></div>
+                    <div class="wald-notice wald-danger md:col-span-3" x-show="bindingConflict" x-cloak><strong>Binding conflict</strong><p>RedZebra says: <span x-text="recommendation.source_customer || 'Needs source review'"></span> → <span x-text="recommendation.source_site || 'Needs source review'"></span></p><p>Current binding says: <span x-text="recommendation.binding_customer"></span> → <span x-text="recommendation.binding_site"></span></p><label class="wald-check"><input type="checkbox" name="confirm_binding" value="1" :required="bindingConflict"><span>Confirm binding to the Customer and Site selected above. The old binding will be retained in history.</span></label></div>
                     <label class="wald-check md:col-span-3"><input type="checkbox" name="confirmation" value="REVIEW MATCHING CUSTOMER CODE ROWS" required><span>Review all currently unknown rows for this one CustomerCode using this Customer and Site.</span></label>
-                    <button class="secondary-button md:col-span-3 md:justify-self-start" type="submit">Review matching rows</button>
+                    <button class="secondary-button md:col-span-3 md:justify-self-start" type="submit" :disabled="!code || rowOptions.length === excluded.size" x-text="bindingConflict ? 'Confirm binding and review selected rows' : 'Review selected rows'">Review selected rows</button>
                 </form>
             </section>
         @endif
@@ -73,4 +76,29 @@
             <p>{{ $counts['resolved_manually'] }} Unknown rows resolved · {{ $counts['excluded'] }} Unknown rows excluded · {{ $counts['unresolved'] }} still unresolved · {{ $overview['import']['resolution_summary']['blockers'] }} source units with hierarchy blockers.</p>
             <p>Unresolved rows stay outside Apply. Continue to the existing one-site analysis, preview and Apply for safe source units.</p><a class="primary-button" href="{{ route('office.workspace.pilot-import.show', $overview['import']['upload']) }}">Continue to site review →</a></section>
     </div>
+    <script>
+        function unknownCodeReview(customers, sites, recommendations, rowsByCode) {
+            return {
+                code: '', customer: '', site: '', customers, sites, recommendations, rowsByCode, excluded: new Set(),
+                get recommendation() { return this.recommendations[this.code] || {}; },
+                get rowOptions() { return this.rowsByCode[this.code] || []; },
+                get bindingConflict() { return !!this.recommendation.binding_site_uuid && !!this.site && this.recommendation.binding_site_uuid !== this.site; },
+                get choices() {
+                    const chosen = this.customers.find(item => item.uuid === this.customer);
+                    return chosen ? this.sites.filter(item => item.customer_id === chosen.id) : [];
+                },
+                chooseCode() {
+                    this.customer = this.recommendation.customer || '';
+                    this.site = this.recommendation.site || '';
+                    this.excluded = new Set();
+                    this.$nextTick(() => { this.$refs.bulkSite.value = this.site; });
+                },
+                setSelected(row, selected) {
+                    const next = new Set(this.excluded);
+                    if (selected) next.delete(row); else next.add(row);
+                    this.excluded = next;
+                },
+            };
+        }
+    </script>
 </x-layouts.portal>

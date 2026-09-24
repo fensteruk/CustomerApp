@@ -1,5 +1,14 @@
 # Current Sprint
 
+## Wald existing-site binding correction — 24 September 2026
+
+The local `main` candidate adds explicit Office correction of stale active
+CustomerCode bindings against existing Customer/Site records in the same
+stored import. It preserves binding versions, requires consistent selected-row
+source evidence and leaves unticked Unknown rows untouched. FNA2473 is the
+regression case; the workflow applies to any CustomerCode. Production remains
+unchanged pending release approval and deployment evidence.
+
 ## Wald CustomerCode review and Unknown queue candidate — 24 September 2026
 
 CUSTOMER-WALD-MASTER04 builds on the committed dry-run and DEC-080

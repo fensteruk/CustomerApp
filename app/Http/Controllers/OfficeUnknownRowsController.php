@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\SourceImport\Integration\CustomerCodeReviewWorkflow;
 use App\SourceImport\Integration\ImportConflict;
+use App\SourceImport\Integration\MasterSourceResolver;
 use App\SourceImport\Integration\UnknownRowsWorkflow;
 use App\SourceImport\Integration\WaldPilotAvailability;
 use Illuminate\Http\RedirectResponse;
@@ -51,9 +52,34 @@ final class OfficeUnknownRowsController extends Controller
             ->orderBy('name')->get(['id', 'uuid', 'name']);
         $sites = DB::table('sites')->where('is_active', true)->orderBy('name')
             ->get(['uuid', 'name', 'customer_organisation_id']);
+        $recommendations = [];
+        $codeRows = (clone $query)->where('disposition', 'UNKNOWN')->whereNotNull('customer_code')
+            ->get(['customer_code', 'row_number', 'raw_plot_ref', 'parsed_customer', 'parsed_site']);
+        $rowsByCode = $codeRows->groupBy('customer_code')->map(fn ($group) => $group->map(fn (object $row): array => ['row' => (int) $row->row_number, 'raw' => $row->raw_plot_ref])->all())->all();
+        foreach ($unknownCodes as $item) {
+            $evidence = $codeRows->where('customer_code', $item->customer_code)
+                ->filter(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null);
+            $first = $evidence->first();
+            $consistent = $first && ! $evidence->contains(fn (object $row): bool => ! MasterSourceResolver::sameName($row->parsed_customer, $first->parsed_customer)
+                || ! MasterSourceResolver::sameName($row->parsed_site, $first->parsed_site));
+            $customerMatches = $consistent ? $customers->filter(fn (object $candidate): bool => MasterSourceResolver::sameName($candidate->name, $first->parsed_customer)) : collect();
+            $customer = $customerMatches->count() === 1 ? $customerMatches->first() : null;
+            $siteMatches = $customer ? $sites->filter(fn (object $candidate): bool => (int) $candidate->customer_organisation_id === (int) $customer->id
+                && MasterSourceResolver::sameName($candidate->name, $first->parsed_site)) : collect();
+            $site = $siteMatches->count() === 1 ? $siteMatches->first() : null;
+            $source = collect($overview['import']['sources'])->firstWhere('customer_code', $item->customer_code);
+            $binding = $source['resolution']['binding'] ?? null;
+            $recommendations[$item->customer_code] = [
+                'customer' => $site ? $customer->uuid : '', 'site' => $site?->uuid ?? '',
+                'source_customer' => $first?->parsed_customer ?? '', 'source_site' => $first?->parsed_site ?? '',
+                'binding_customer' => $binding['customer_name'] ?? '',
+                'binding_site' => $binding['site_name'] ?? '',
+                'binding_site_uuid' => $binding['site_uuid'] ?? '',
+            ];
+        }
 
         return view('office.pilot-import.unknown-rows', compact('overview', 'rows', 'counts', 'unknownCodes', 'customers', 'sites',
-            'createdCustomers', 'createdSites'));
+            'createdCustomers', 'createdSites', 'recommendations', 'rowsByCode'));
     }
 
     public function resolveCode(Request $request, string $upload, UnknownRowsWorkflow $workflow): RedirectResponse
@@ -66,11 +92,14 @@ final class OfficeUnknownRowsController extends Controller
             'source_manifest_hash' => ['required', 'regex:/^[a-f0-9]{64}$/D'],
             'expected_epoch' => ['required', 'integer', 'min:0'],
             'command_uuid' => ['required', 'uuid'],
+            'confirm_binding' => ['sometimes', 'accepted'],
+            'excluded_rows_csv' => ['nullable', 'string', 'max:30000'],
         ]);
         try {
             $result = $workflow->resolveCode($request->user(), $upload, $data['customer_code'],
                 $data['customer_uuid'], $data['site_uuid'], $data['source_manifest_hash'],
-                (int) $data['expected_epoch'], $data['command_uuid']);
+                (int) $data['expected_epoch'], $data['command_uuid'], isset($data['confirm_binding']),
+                $data['excluded_rows_csv'] ?? '');
         } catch (ImportConflict $exception) {
             return back()->withErrors(['unknown' => 'The matching rows could not be reviewed: '.str_replace('_', ' ', $exception->getMessage()).'.']);
         }

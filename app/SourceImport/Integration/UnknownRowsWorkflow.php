@@ -11,13 +11,18 @@ use Illuminate\Support\Str;
 final class UnknownRowsWorkflow
 {
     public function resolveCode(User $actor, string $uploadUuid, string $code, string $customerUuid,
-        string $siteUuid, string $manifestHash, int $epoch, string $command): array
+        string $siteUuid, string $manifestHash, int $epoch, string $command, bool $confirmBinding = false,
+        string $excludedCsv = ''): array
     {
         if (! Str::isUuid($command) || trim($code) === '') {
             throw new ImportConflict('review_command_invalid');
         }
+        if ($excludedCsv !== '' && ! preg_match('/^\d+(,\d+)*$/D', $excludedCsv)) {
+            throw new ImportConflict('review_rows_invalid');
+        }
+        $excluded = $excludedCsv === '' ? [] : array_fill_keys(array_map('intval', explode(',', $excludedCsv)), true);
 
-        return DB::transaction(function () use ($actor, $uploadUuid, $code, $customerUuid, $siteUuid, $manifestHash, $epoch, $command): array {
+        return DB::transaction(function () use ($actor, $uploadUuid, $code, $customerUuid, $siteUuid, $manifestHash, $epoch, $command, $confirmBinding, $excluded): array {
             $fresh = (new PilotImportPolicy)->authorize($actor, true);
             $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
             if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION'], true)
@@ -36,6 +41,11 @@ final class UnknownRowsWorkflow
                 || $row->source_identity_hash !== $rows[0]->source_identity_hash)) {
                 throw new ImportConflict('bulk_unknown_code_mismatch');
             }
+            $knownRows = array_fill_keys($rows->pluck('row_number')->map(fn ($number): int => (int) $number)->all(), true);
+            if (array_diff_key($excluded, $knownRows) || count($excluded) === $rows->count()) {
+                throw new ImportConflict('review_rows_invalid');
+            }
+            $selectedRows = $rows->reject(fn (object $row): bool => isset($excluded[(int) $row->row_number]));
             $site = DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
                 ->where('sites.uuid', $siteUuid)->where('customer_organisations.uuid', $customerUuid)
                 ->where('sites.is_active', true)->where('customer_organisations.is_active', true)
@@ -47,8 +57,14 @@ final class UnknownRowsWorkflow
                 || (int) $group->customer_organisation_id !== (int) $site->customer_id))) {
                 throw new ImportConflict('unknown_target_must_match_customer_code');
             }
+            $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
+            $source = collect($manifest['sources'])->firstWhere('hash', $rows[0]->source_identity_hash);
+            if (! $source || $source['customer_code'] !== $code) {
+                throw new ImportConflict('review_source_not_found');
+            }
+            (new OfficeBindingCorrection)->confirm($fresh, $upload, $source, $selectedRows, $site, $confirmBinding, $command);
             $resolved = 0;
-            foreach ($rows as $row) {
+            foreach ($selectedRows as $row) {
                 $result = (new ReviewedPlotDerivation)->derive($row->raw_plot_ref, $site->customer_name, $site->site_name);
                 $plot = $result['plot'];
                 $reason = $result['issue'];
@@ -76,7 +92,6 @@ final class UnknownRowsWorkflow
                     'created_at' => now('UTC'),
                 ]);
             }
-            $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
             if ($resolved > 0) {
                 $this->refreshSource($upload, $manifest, $rows[0]->source_identity_hash, $site);
             }
@@ -91,6 +106,7 @@ final class UnknownRowsWorkflow
                 'customer_code' => $code, 'source_identity_hash' => $rows[0]->source_identity_hash,
                 'customer_id' => $site->customer_id, 'site_id' => $site->id,
                 'resolved_rows' => $resolved, 'still_unknown_rows' => $rows->count() - $resolved,
+                'office_unticked_rows' => array_keys($excluded),
                 'source_manifest_hash' => $hash,
             ], command: $command);
 

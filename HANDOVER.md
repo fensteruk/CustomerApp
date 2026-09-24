@@ -1,5 +1,15 @@
 # Fenster Customer Portal Handover
 
+## Wald existing-site binding correction — 24 September 2026
+
+The local `main` candidate lets Office correct a conflicting active
+CustomerCode binding while reviewing the current stored upload. Choose the
+existing active Customer and Site, confirm the binding conflict, select the
+rows to include and continue to site preview and Apply. The prior binding
+version and source audit remain; no new upload is needed. This is a general
+CustomerCode workflow. No production data was changed or deployed in this
+task.
+
 ## Wald CustomerCode review and Unknown queue — 24 September 2026
 
 The local MASTER04 candidate adds one-code-at-a-time Office row confirmation,

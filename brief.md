@@ -824,6 +824,13 @@ source row evidence. These decisions do not create plots or bypass selected-site
 preview and Apply.
 If no exact target exists yet, Office may defer the entire CustomerCode group
 to the Unknown queue; this records no invented Customer/Site mapping.
+For a current stored import whose active CustomerCode binding points to the
+wrong site, Office may explicitly confirm a different existing active Customer
+and one of its active Sites. The selected rows must contain exact, consistent
+source customer/site evidence for that target. Wald retains the old binding
+version, activates a new exact version, refreshes that same upload and leaves
+unticked rows Unknown. Existing selected-site history prevents retargeting.
+Stale review state blocks a second confirmation. No re-upload is required.
 
 For an older applicable workbook with both `Plot Ref` and `Plot number`, Wald may select
 `Plot number` as the customer-facing plot identifier without asking Office

@@ -29,8 +29,14 @@
             @php($reviewMode = true)
             @php($position = collect($overview['manual'])->search(fn (array $item): bool => $item['hash'] === $current['hash']) + 1)
             @php($previous = $position > 1 ? $overview['manual'][$position - 2] : null)
-            @php($initialCustomer = $resolution['customer_uuid'] ?? null)
-            @php($initialSite = $resolution['site_uuid'] ?? ($current['binding']['site_uuid'] ?? null))
+            @php($sourceCustomerName = $rows->first(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null)?->parsed_customer ?? ($resolution['customer'] ?? null))
+            @php($sourceSiteName = $rows->first(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null)?->parsed_site ?? ($resolution['site'] ?? null))
+            @php($exactCustomers = $sourceCustomerName ? $customers->filter(fn (object $item): bool => App\SourceImport\Integration\MasterSourceResolver::sameName($item->name, $sourceCustomerName)) : collect())
+            @php($exactCustomer = $exactCustomers->count() === 1 ? $exactCustomers->first() : null)
+            @php($exactSites = $exactCustomer && $sourceSiteName ? $sites->filter(fn (object $item): bool => (int) $item->customer_organisation_id === (int) $exactCustomer->id && App\SourceImport\Integration\MasterSourceResolver::sameName($item->name, $sourceSiteName)) : collect())
+            @php($exactSite = $exactSites->count() === 1 ? $exactSites->first() : null)
+            @php($initialCustomer = $exactSite ? $exactCustomer->uuid : ($resolution['customer_uuid'] ?? null))
+            @php($initialSite = $exactSite?->uuid ?? ($resolution['state'] === 'BINDING_CONFLICT' ? null : ($resolution['site_uuid'] ?? ($current['binding']['site_uuid'] ?? null))))
             @php($rowData = $rows->map(fn (object $row): array => ['row' => (int) $row->row_number, 'code' => $row->customer_code, 'raw' => $row->raw_plot_ref, 'type' => $row->call_type, 'parsed_customer' => $row->parsed_customer, 'parsed_site' => $row->parsed_site, 'parsed_plot' => $row->parsed_plot, 'suggestion' => (new App\SourceImport\Integration\HierarchySuggestion)->forIssue((string) $row->customer_code, $row->raw_plot_ref), 'issue' => $row->issue, 'excluded' => $row->issue === 'OFFICE_UNTICKED'])->all())
             @php($customerData = $customers->map(fn (object $customer): array => ['id' => $customer->id, 'uuid' => $customer->uuid, 'name' => $customer->name])->all())
             @php($siteData = $sites->map(fn (object $site): array => ['uuid' => $site->uuid, 'name' => $site->name, 'customer_id' => $site->customer_organisation_id])->all())
@@ -54,7 +60,7 @@
                     </form>
                 </details>
             </section>
-            <div x-data="reviewWizard(@js($rowData), @js($customerData), @js($siteData), @js($initialCustomer), @js($initialSite))" class="wald-review-grid">
+            <div x-data="reviewWizard(@js($rowData), @js($customerData), @js($siteData), @js($initialCustomer), @js($initialSite), @js($current['binding']['site_uuid'] ?? null))" class="wald-review-grid">
                 <section class="wald-panel" aria-labelledby="rows-title">
                     <div class="wald-section-heading"><div><h2 id="rows-title" class="section-title">Source rows for {{ $current['customer_code'] }}</h2><p x-text="`${selectedCount} of ${rows.length} selected`" aria-live="polite"></p></div><div class="wald-links"><button type="button" class="secondary-button" x-on:click="selectAll()">Select all</button><button type="button" class="secondary-button" x-on:click="clearAll()">Clear all</button></div></div>
                     <div class="space-y-2">
@@ -82,9 +88,10 @@
                         <select id="review-customer" class="form-input" name="customer_uuid" x-model="customer" x-on:change="site = ''" required><option value="">Choose customer</option>@foreach($customers as $customer)<option value="{{ $customer->uuid }}">{{ $customer->name }}</option>@endforeach</select>
                         <label class="form-label" for="review-site">Site</label>
                         <select id="review-site" class="form-input" name="site_uuid" x-model="site" x-effect="$nextTick(() => { if (site) $el.value = site })" required><option value="">Choose site</option><template x-for="item in availableSites" :key="item.uuid"><option :value="item.uuid" x-text="item.name"></option></template></select>
+                        <div class="wald-notice wald-danger" x-show="bindingConflict" x-cloak><strong>Binding conflict</strong><p>RedZebra says: {{ $sourceCustomerName ?: 'Needs source review' }} → {{ $sourceSiteName ?: 'Needs source review' }}</p><p>Current binding says: {{ $current['binding']['customer_name'] ?? 'Unknown' }} → {{ $current['binding']['site_name'] ?? 'Unknown' }}</p><label class="wald-check"><input type="checkbox" name="confirm_binding" value="1" :required="bindingConflict"><span>Confirm binding to the selected Customer and Site. The previous version stays in history.</span></label></div>
                         <div class="wald-preview" role="status" aria-live="polite"><h3 class="wald-subtitle">What will happen</h3><p><strong x-text="selectedCount"></strong> rows selected · <strong x-text="safeCount"></strong> proposed plots · <strong x-text="reviewCount"></strong> rows to Unknown review</p><p class="text-sm">Proposed plots: <span x-text="proposedPlots"></span></p><p class="text-sm">No plot or service is created by this confirmation.</p></div>
                         <label class="wald-check"><input type="checkbox" name="confirmation" value="CONFIRM CUSTOMER CODE ROWS" required><span>I have checked this CustomerCode's target and selected rows.</span></label>
-                        <button class="primary-button w-full wald-review-desktop-action" type="submit">Confirm &amp; Next CustomerCode →</button>
+                        <button class="primary-button w-full wald-review-desktop-action" type="submit" x-text="bindingConflict ? 'Confirm binding & Next CustomerCode →' : 'Confirm & Next CustomerCode →'">Confirm &amp; Next CustomerCode →</button>
                     </form>
                 </section>
             </div>
@@ -94,9 +101,10 @@
         @endif
     </div>
     <script>
-        function reviewWizard(rows, customers, sites, initialCustomer, initialSite) {
+        function reviewWizard(rows, customers, sites, initialCustomer, initialSite, bindingSiteUuid) {
             return {
-                rows, customers, sites, customer: initialCustomer || '', site: initialSite || '', page: 1,
+                rows, customers, sites, bindingSiteUuid, customer: initialCustomer || '', site: initialSite || '', page: 1,
+                get bindingConflict() { return !!this.bindingSiteUuid && !!this.site && this.bindingSiteUuid !== this.site; },
                 excluded: new Set(rows.filter(row => row.excluded).map(row => row.row)),
                 get pageCount() { return Math.max(1, Math.ceil(this.rows.length / 20)); },
                 get pageRows() { return this.rows.slice((this.page - 1) * 20, this.page * 20); },

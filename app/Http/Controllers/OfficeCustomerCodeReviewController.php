@@ -48,11 +48,13 @@ final class OfficeCustomerCodeReviewController extends Controller
             'expected_epoch' => ['required', 'integer', 'min:0'],
             'confirmation' => ['required', Rule::in(['CONFIRM CUSTOMER CODE ROWS'])],
             'command_uuid' => ['required', 'uuid'],
+            'confirm_binding' => ['sometimes', 'accepted'],
         ]);
         try {
             $workflow->confirm($request->user(), $upload, $sourceHash,
                 $data['customer_uuid'], $data['site_uuid'], $data['excluded_rows_csv'] ?? '',
-                $data['source_manifest_hash'], (int) $data['expected_epoch'], $data['command_uuid']);
+                $data['source_manifest_hash'], (int) $data['expected_epoch'], $data['command_uuid'],
+                false, isset($data['confirm_binding']));
         } catch (ImportConflict $exception) {
             return back()->withErrors(['review' => 'The review could not be saved: '.str_replace('_', ' ', $exception->getMessage()).'.']);
         }

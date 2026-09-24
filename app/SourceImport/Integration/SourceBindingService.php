@@ -85,6 +85,55 @@ final class SourceBindingService
         });
     }
 
+    /** Replace an uncommitted incorrect target while retaining every immutable binding version. */
+    public function correct(User $actor, KnowledgeScope $scope, string $kind, string $identity,
+        string $binding, int $expectedEpoch, array $evidence, string $command): array
+    {
+        $this->validateIdentity($kind, $identity);
+        $key = Canonical::hash([$scope->namespace, $kind, $identity]);
+
+        return (new ImportStore)->run($actor, $scope, 'binding_correct', $command,
+            [$kind, $identity, $binding, $expectedEpoch, $evidence],
+            function (User $fresh) use ($scope, $kind, $identity, $key, $binding, $expectedEpoch, $evidence): array {
+                $root = DB::table('wald_source_bindings')->where('identity_hash', $key)->lockForUpdate()->first();
+                if (! $root || $root->uuid !== $binding || (int) $root->epoch !== $expectedEpoch
+                    || $root->active_version === null || $root->source_namespace !== $scope->namespace
+                    || $root->identity_kind !== $kind || $root->source_identity !== $identity) {
+                    throw new ImportConflict('binding_correction_stale');
+                }
+                if (DB::table('wald_pilot_selections')->where('binding_id', $root->id)->exists()) {
+                    throw new ImportConflict('binding_has_selected_site_history');
+                }
+                $previous = DB::table('wald_binding_versions')->where('binding_id', $root->id)
+                    ->where('version', $root->active_version)->firstOrFail();
+                if ((int) $previous->site_id === $scope->siteId
+                    && (int) $previous->customer_organisation_id === $scope->organisationId) {
+                    throw new ImportConflict('binding_correction_stale');
+                }
+                $version = (int) $root->latest_version + 1;
+                $digest = Canonical::hash(['identity_hash' => $key, 'version' => $version,
+                    'organisation' => $scope->organisationId, 'site' => $scope->siteId]);
+                DB::table('wald_binding_versions')->insert(['uuid' => (string) Str::uuid(),
+                    'binding_id' => $root->id, 'version' => $version,
+                    'customer_organisation_id' => $scope->organisationId, 'site_id' => $scope->siteId,
+                    'actor_id' => $fresh->id, 'actor_name' => $fresh->name,
+                    'reason' => 'Office confirmed source-site binding correction for stored import '.$evidence['upload'],
+                    'definition_hash' => $digest, 'created_at' => now('UTC')]);
+                DB::table('wald_source_bindings')->where('id', $root->id)->update([
+                    'latest_version' => $version, 'active_version' => $version,
+                    'epoch' => $expectedEpoch + 1, 'updated_at' => now('UTC'),
+                ]);
+                $before = ['active_version' => (int) $root->active_version, 'epoch' => $expectedEpoch,
+                    'customer_id' => (int) $previous->customer_organisation_id, 'site_id' => (int) $previous->site_id];
+                $after = ['active_version' => $version, 'epoch' => $expectedEpoch + 1,
+                    'customer_id' => $scope->organisationId, 'site_id' => $scope->siteId,
+                    'source_evidence' => $evidence];
+
+                return [['binding' => $binding, 'version' => $version, 'epoch' => $expectedEpoch + 1,
+                    'state' => 'ACTIVE'], $before, $after];
+            });
+    }
+
     public function resolve(User $actor, KnowledgeScope $scope, string $kind, string $identity, bool $lock = false): array
     {
         if ($lock && DB::transactionLevel() === 0) {
