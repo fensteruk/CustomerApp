@@ -170,6 +170,15 @@ unrelated site units remain; user accounts and the minimal purge audit remain.
 Customer purge blocks while users still belong to that customer. Portal request,
 batch, date and notification history is shown and blocks purge until separately
 handled. No record is classified as demo by its name.
+For the management-approved old FNA2563 demo customer only, Office may explicitly
+include that customer's Portal request, batch, date, decision and notification
+history after reviewing the full impact and typing the exact customer name.
+Users belonging to the customer are deactivated and detached; their accounts
+and attribution remain. A shared source binding must first have its active and
+latest version on a retained site. The shared root and retained-site versions
+survive while versions tied to the purged customer may be removed under the
+audited purge gate. Master uploads and unrelated site units stay intact.
+A verified recovery point is required before production execution.
 
 ### Site administration
 
@@ -831,6 +840,15 @@ source customer/site evidence for that target. Wald retains the old binding
 version, activates a new exact version, refreshes that same upload and leaves
 unticked rows Unknown. Existing selected-site history prevents retargeting.
 Stale review state blocks a second confirmation. No re-upload is required.
+When selected Unknown rows have one consistent parsed source site name that
+differs from the chosen existing CustomerApp site name, Office may explicitly
+confirm that source-name mapping for this CustomerCode and upload. The parsed
+source customer must match the chosen customer exactly; mixed source site names
+block bulk confirmation. Plot Refs still come from each row's approved parse.
+The original source name, chosen target and Office decision remain audited.
+A conflicting existing binding requires a separate confirmation and retains
+its prior version. This does not create a global alias or permit deleting
+retained customer/source history.
 
 For an older applicable workbook with both `Plot Ref` and `Plot number`, Wald may select
 `Plot number` as the customer-facing plot identifier without asking Office

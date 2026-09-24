@@ -33,27 +33,39 @@ final class PurgeDemoCustomerOrSiteAction
             $this->ensureEligible($impact, $fingerprint);
             $this->scheduleUnreferencedWorkbooks($impact['ids']['wald_import_runs']);
             $this->openGate($freshActor, $lockedSite->uuid);
-            $this->purgeSite($lockedSite, $impact);
+            $this->purgeSite($lockedSite, $impact, [$lockedSite->getKey()]);
             $this->closeGate();
             $this->recordSiteAudit($freshActor, $lockedCustomer, $lockedSite, $impact);
         }, 3);
     }
 
-    public function customer(User $actor, CustomerOrganisation $customer, string $fingerprint): void
+    public function customer(User $actor, CustomerOrganisation $customer, string $fingerprint,
+        bool $includePortalHistory = false): void
     {
-        DB::transaction(function () use ($actor, $customer, $fingerprint): void {
+        DB::transaction(function () use ($actor, $customer, $fingerprint, $includePortalHistory): void {
             $freshActor = $this->policy->authorize($actor, 'demo_purge', true);
             $lockedCustomer = CustomerOrganisation::query()->whereKey($customer->getKey())->lockForUpdate()->firstOrFail();
             $sites = Site::query()->where('customer_organisation_id', $lockedCustomer->getKey())->orderBy('id')->lockForUpdate()->get();
+            $users = User::query()->where('customer_organisation_id', $lockedCustomer->getKey())
+                ->orderBy('id')->lockForUpdate()->get();
             $this->lockImportRoots($sites->pluck('id')->all());
-            $impact = $this->impacts->customer($lockedCustomer);
+            $impact = $this->impacts->customer($lockedCustomer, $includePortalHistory);
             $this->ensureEligible($impact, $fingerprint);
             $this->scheduleUnreferencedWorkbooks(array_merge(...array_map(fn (array $unit): array => $unit['ids']['wald_import_runs'], $impact['sites'])));
             $this->openGate($freshActor, $lockedCustomer->uuid);
             foreach ($sites as $site) {
                 $unit = collect($impact['sites'])->firstWhere('uuid', $site->uuid);
-                $this->purgeSite($site, $unit);
+                $this->purgeSite($site, $unit, $sites->pluck('id')->all(), $includePortalHistory);
                 $this->recordSiteAudit($freshActor, $lockedCustomer, $site, $unit);
+            }
+            if ($includePortalHistory) {
+                foreach ($users as $user) {
+                    $before = ['customer_uuid' => $lockedCustomer->uuid, 'is_active' => $user->is_active];
+                    $user->forceFill(['customer_organisation_id' => null, 'is_active' => false])->save();
+                    $this->audit->handle($freshActor, AdministrativeEntityType::User, $user->uuid,
+                        AdministrativeAction::CustomerChanged, $before,
+                        ['customer_uuid' => null, 'is_active' => false], 'Demo customer and Portal history purge');
+                }
             }
             $lockedCustomer->delete();
             $this->closeGate();
@@ -64,6 +76,10 @@ final class PurgeDemoCustomerOrSiteAction
 
     private function lockImportRoots(array $siteIds): void
     {
+        $bindingIds = DB::table('wald_binding_versions')->whereIn('site_id', $siteIds)
+            ->distinct()->pluck('binding_id')->all();
+        DB::table('wald_source_bindings')->whereIn('id', $bindingIds)
+            ->orderBy('id')->lockForUpdate()->get(['id']);
         DB::table('wald_import_runs')->whereIn('site_id', $siteIds)->orderBy('id')->lockForUpdate()->get(['id']);
         DB::table('wald_binding_versions')->whereIn('site_id', $siteIds)->orderBy('id')->lockForUpdate()->get(['id']);
         DB::table('wald_pilot_selections')->whereIn('site_id', $siteIds)->orderBy('id')->lockForUpdate()->get(['id']);
@@ -89,7 +105,8 @@ final class PurgeDemoCustomerOrSiteAction
         DB::table('demo_purge_gate')->where('id', 1)->delete();
     }
 
-    private function purgeSite(Site $site, array $impact): void
+    private function purgeSite(Site $site, array $impact, array $scopeSiteIds,
+        bool $includePortalHistory = false): void
     {
         $ids = $impact['ids'];
 
@@ -115,9 +132,23 @@ final class PurgeDemoCustomerOrSiteAction
         $this->deleteIds('wald_knowledge_evidence', $ids['wald_knowledge_evidence']);
         $this->deleteIds('wald_knowledge_contexts', $ids['wald_knowledge_contexts']);
 
-        DB::table('wald_source_bindings')->whereIn('id', $ids['wald_source_bindings'])->update(['active_version' => null]);
+        $sharedRoots = DB::table('wald_binding_versions')->whereIn('binding_id', $ids['wald_source_bindings'])
+            ->whereNotIn('site_id', $scopeSiteIds)->distinct()->pluck('binding_id')->all();
+        DB::table('wald_source_bindings')->whereIn('id', array_diff($ids['wald_source_bindings'], $sharedRoots))
+            ->update(['active_version' => null]);
         $this->deleteIds('wald_binding_versions', $ids['wald_binding_versions']);
-        $this->deleteIds('wald_source_bindings', $ids['wald_source_bindings']);
+        foreach ($ids['wald_source_bindings'] as $bindingId) {
+            if (! DB::table('wald_binding_versions')->where('binding_id', $bindingId)->exists()) {
+                DB::table('wald_source_bindings')->where('id', $bindingId)->delete();
+            }
+        }
+        if ($includePortalHistory) {
+            foreach (['portal_notifications', 'call_off_batch_operation_items', 'call_off_status_histories',
+                'call_off_date_proposals', 'call_off_date_negotiations', 'call_off_batch_operations',
+                'call_off_requests', 'call_off_batches'] as $table) {
+                $this->deleteIds($table, $ids[$table]);
+            }
+        }
         $this->deleteIds('site_user_assignments', $ids['site_user_assignments']);
         $this->deleteIds('projected_plot_products', $ids['projected_plot_products']);
         $this->deleteIds('projected_plot_services', $ids['projected_plot_services']);

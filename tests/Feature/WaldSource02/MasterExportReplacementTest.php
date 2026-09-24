@@ -1141,6 +1141,106 @@ it('corrects a conflicting CustomerCode binding in the same stored import withou
     $this->actingAs($siteUser)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))->assertForbidden();
 });
 
+it('confirms an exact source site name alias and corrects an old binding on the same import', function (): void {
+    $office = source02Office();
+    $vistry = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $sherford = Site::factory()->create(['customer_organisation_id' => $vistry->id,
+        'name' => 'Sherford Countryside 2D', 'is_active' => true]);
+    $oldCustomer = CustomerOrganisation::factory()->create(['name' => 'Sherford Countryside 2D - Vistry PShips', 'is_active' => true]);
+    $oldSite = Site::factory()->create(['customer_organisation_id' => $oldCustomer->id,
+        'name' => 'FNA2563', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2563', 'call' => '25631', 'site' => 'Sherford C & K - Vistry Partnerships',
+            'plot' => 'Vistry - Countryside 2D - Plot 775'],
+        ['code' => 'FNA2563', 'call' => '25632', 'site' => 'Sherford Countryside 2D - Vistry PShips',
+            'plot' => 'Vistry - Countryside 2D - Plot Com 4'],
+    ], '2099-03-05');
+    source02Bind($office, $pilot['sources'][0], $oldSite);
+    $source = (new CustomerCodeReviewWorkflow)->overview($office, $pilot['upload'])['pending'][0];
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    (new CustomerCodeReviewWorkflow)->confirm($office, $pilot['upload'], $source['hash'], null, null, '',
+        $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid(), true);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $response = $this->actingAs($office)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']));
+    $response->assertOk()->assertSee('Source site name differs');
+    expect($response->viewData('recommendations')['FNA2563']['source_site'])->toBe('Countryside 2D')
+        ->and($response->viewData('recommendations')['FNA2563']['binding_site_uuid'])->toBe($oldSite->uuid);
+
+    $resolve = fn (bool $binding, bool $alias): array => (new UnknownRowsWorkflow)->resolveCode($office,
+        $pilot['upload'], 'FNA2563', $vistry->uuid, $sherford->uuid, $upload->source_manifest_hash,
+        (int) $upload->epoch, (string) Str::uuid(), $binding, '', $alias);
+    expect(fn () => $resolve(true, false))->toThrow(ImportConflict::class, 'source_site_name_confirmation_required');
+    expect(fn () => $resolve(false, true))->toThrow(ImportConflict::class, 'binding_confirmation_required');
+    expect(DB::table('wald_binding_versions')->count())->toBe(1);
+
+    $this->actingAs($office)->post(route('office.workspace.pilot-import.unknown.resolve-code', $pilot['upload']), [
+        'customer_code' => 'FNA2563', 'customer_uuid' => $vistry->uuid, 'site_uuid' => $sherford->uuid,
+        'confirmation' => 'REVIEW MATCHING CUSTOMER CODE ROWS',
+        'source_manifest_hash' => $upload->source_manifest_hash, 'expected_epoch' => (int) $upload->epoch,
+        'command_uuid' => (string) Str::uuid(), 'confirm_binding' => '1', 'confirm_source_site' => '1',
+    ])->assertRedirect(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))
+        ->assertSessionHasNoErrors();
+    expect(DB::table('wald_pilot_review_rows')->orderBy('row_number')->pluck('confirmed_plot')->all())->toBe(['775', 'Com 4'])
+        ->and(DB::table('wald_pilot_review_rows')->where('site_id', $sherford->id)->count())->toBe(2)
+        ->and((int) DB::table('wald_source_bindings')->value('active_version'))->toBe(2)
+        ->and((int) DB::table('wald_binding_versions')->where('version', 1)->value('site_id'))->toBe($oldSite->id)
+        ->and((int) DB::table('wald_binding_versions')->where('version', 2)->value('site_id'))->toBe($sherford->id)
+        ->and(DB::table('wald_pilot_uploads')->count())->toBe(1);
+    $audit = DB::table('wald_pilot_events')->where('action', 'pilot_unknown_code_bulk_reviewed')->firstOrFail();
+    expect(json_decode($audit->payload, true, flags: JSON_THROW_ON_ERROR)['source_site_alias'])->toBe('Countryside 2D');
+});
+
+it('activates an exact binding after Office confirms a source site name alias with no old binding', function (): void {
+    $office = source02Office();
+    $vistry = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $sherford = Site::factory()->create(['customer_organisation_id' => $vistry->id,
+        'name' => 'Sherford Countryside 2D', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2563', 'call' => '25634', 'site' => 'Source label',
+            'plot' => 'Vistry - Countryside 2D - Plot 776'],
+    ], '2099-03-07');
+    $source = (new CustomerCodeReviewWorkflow)->overview($office, $pilot['upload'])['pending'][0];
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    (new CustomerCodeReviewWorkflow)->confirm($office, $pilot['upload'], $source['hash'], null, null, '',
+        $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid(), true);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    $result = (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2563',
+        $vistry->uuid, $sherford->uuid, $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid(), false, '', true);
+    expect($result)->toBe(['resolved' => 1, 'unknown' => 0])
+        ->and(DB::table('wald_pilot_review_rows')->value('confirmed_plot'))->toBe('776')
+        ->and((int) DB::table('wald_binding_versions')->value('site_id'))->toBe($sherford->id)
+        ->and((int) DB::table('wald_source_bindings')->value('active_version'))->toBe(1)
+        ->and(DB::table('wald_pilot_uploads')->count())->toBe(1);
+});
+
+it('rejects a site name confirmation when the parsed customer differs', function (): void {
+    $office = source02Office();
+    $vistry = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $sherford = Site::factory()->create(['customer_organisation_id' => $vistry->id,
+        'name' => 'Sherford Countryside 2D', 'is_active' => true]);
+    $oldCustomer = CustomerOrganisation::factory()->create(['name' => 'Old Customer', 'is_active' => true]);
+    $oldSite = Site::factory()->create(['customer_organisation_id' => $oldCustomer->id,
+        'name' => 'Old Site', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2563', 'call' => '25633', 'site' => 'Source label',
+            'plot' => 'Other Customer - Countryside 2D - Plot 775'],
+    ], '2099-03-06');
+    source02Bind($office, $pilot['sources'][0], $oldSite);
+    $source = (new CustomerCodeReviewWorkflow)->overview($office, $pilot['upload'])['pending'][0];
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    (new CustomerCodeReviewWorkflow)->confirm($office, $pilot['upload'], $source['hash'], null, null, '',
+        $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid(), true);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+
+    expect(fn () => (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2563',
+        $vistry->uuid, $sherford->uuid, $upload->source_manifest_hash, (int) $upload->epoch,
+        (string) Str::uuid(), true, '', true))->toThrow(ImportConflict::class, 'source_customer_evidence_conflict');
+    expect(DB::table('wald_binding_versions')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_review_rows')->value('disposition'))->toBe('UNKNOWN');
+});
+
 it('blocks binding correction when selected source rows disagree with the target', function (): void {
     $office = source02Office();
     $lovell = CustomerOrganisation::factory()->create(['name' => 'Lovell', 'is_active' => true]);

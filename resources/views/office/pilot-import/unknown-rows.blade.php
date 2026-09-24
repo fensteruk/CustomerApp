@@ -29,8 +29,9 @@
                     <label class="form-label">Site<select name="site_uuid" class="form-input" x-model="site" x-ref="bulkSite" x-effect="$nextTick(() => { if (site) $el.value = site })" required><option value="">Choose site</option><template x-for="item in choices" :key="item.uuid"><option :value="item.uuid" x-text="item.name"></option></template></select></label>
                     <div class="md:col-span-3 rounded-lg border border-slate-200 p-3" x-show="code" x-cloak><div class="flex flex-wrap items-center justify-between gap-2"><strong>Rows to review: <span x-text="rowOptions.length - excluded.size"></span> of <span x-text="rowOptions.length"></span></strong><div class="flex gap-2"><button type="button" class="secondary-button" x-on:click="excluded = new Set()">Select all</button><button type="button" class="secondary-button" x-on:click="excluded = new Set(rowOptions.map(item => item.row))">Clear all</button></div></div><div class="mt-3 max-h-64 space-y-2 overflow-y-auto"><template x-for="item in rowOptions" :key="item.row"><label class="flex items-start gap-2 rounded border border-slate-100 p-2 text-sm"><input type="checkbox" class="mt-1 h-5 w-5" :checked="!excluded.has(item.row)" x-on:change="setSelected(item.row, $event.target.checked)" :aria-label="`Include workbook row ${item.row}`"><span><strong x-text="`Row ${item.row}`"></strong> · <span x-text="item.raw || 'Blank Plot Ref'"></span></span></label></template></div></div>
                     <div class="wald-notice wald-danger md:col-span-3" x-show="bindingConflict" x-cloak><strong>Binding conflict</strong><p>RedZebra says: <span x-text="recommendation.source_customer || 'Needs source review'"></span> → <span x-text="recommendation.source_site || 'Needs source review'"></span></p><p>Current binding says: <span x-text="recommendation.binding_customer"></span> → <span x-text="recommendation.binding_site"></span></p><label class="wald-check"><input type="checkbox" name="confirm_binding" value="1" :required="bindingConflict"><span>Confirm binding to the Customer and Site selected above. The old binding will be retained in history.</span></label></div>
+                    <div class="wald-notice md:col-span-3" x-show="sourceSiteMismatch" x-cloak><strong>Source site name differs</strong><p>RedZebra names this site <strong x-text="recommendation.source_site"></strong>. You selected <strong x-text="selectedSiteName"></strong>. Confirm that these names refer to the same site for the selected rows under this CustomerCode.</p><label class="wald-check"><input type="checkbox" name="confirm_source_site" value="1" :required="sourceSiteMismatch"><span>Use the selected CustomerApp site and retain the original source name in the audit.</span></label></div>
                     <label class="wald-check md:col-span-3"><input type="checkbox" name="confirmation" value="REVIEW MATCHING CUSTOMER CODE ROWS" required><span>Review all currently unknown rows for this one CustomerCode using this Customer and Site.</span></label>
-                    <button class="secondary-button md:col-span-3 md:justify-self-start" type="submit" :disabled="!code || rowOptions.length === excluded.size" x-text="bindingConflict ? 'Confirm binding and review selected rows' : 'Review selected rows'">Review selected rows</button>
+                    <button class="secondary-button md:col-span-3 md:justify-self-start" type="submit" :disabled="!code || rowOptions.length === excluded.size" x-text="bindingConflict || sourceSiteMismatch ? 'Confirm mapping and review selected rows' : 'Review selected rows'">Review selected rows</button>
                 </form>
             </section>
         @endif
@@ -83,6 +84,12 @@
                 get recommendation() { return this.recommendations[this.code] || {}; },
                 get rowOptions() { return this.rowsByCode[this.code] || []; },
                 get bindingConflict() { return !!this.recommendation.binding_site_uuid && !!this.site && this.recommendation.binding_site_uuid !== this.site; },
+                get selectedSiteName() { return this.sites.find(item => item.uuid === this.site)?.name || ''; },
+                get sourceSiteMismatch() {
+                    const normalize = value => value.trim().replace(/\s+/g, ' ').toLocaleLowerCase();
+                    return !!this.recommendation.source_site && !!this.selectedSiteName
+                        && normalize(this.recommendation.source_site) !== normalize(this.selectedSiteName);
+                },
                 get choices() {
                     const chosen = this.customers.find(item => item.uuid === this.customer);
                     return chosen ? this.sites.filter(item => item.customer_id === chosen.id) : [];

@@ -13,7 +13,7 @@ use Illuminate\Support\Str;
 final class OfficeBindingCorrection
 {
     public function confirm(User $actor, object $upload, array $source, Collection $selectedRows,
-        object $site, bool $confirmed, string $command): ?array
+        object $site, bool $confirmed, string $command, bool $confirmedSourceSite = false): ?array
     {
         $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
         $root = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([
@@ -33,10 +33,10 @@ final class OfficeBindingCorrection
         }
         if ($selectedRows->isEmpty() || $selectedRows->contains(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null
             && (! MasterSourceResolver::sameName($row->parsed_customer, $site->customer_name)
-                || ! MasterSourceResolver::sameName($row->parsed_site, $site->site_name)))
+                || (! $confirmedSourceSite && ! MasterSourceResolver::sameName($row->parsed_site, $site->site_name))))
             || ! $selectedRows->contains(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null
                 && MasterSourceResolver::sameName($row->parsed_customer, $site->customer_name)
-                && MasterSourceResolver::sameName($row->parsed_site, $site->site_name))) {
+                && ($confirmedSourceSite || MasterSourceResolver::sameName($row->parsed_site, $site->site_name)))) {
             throw new ImportConflict('binding_source_evidence_conflict');
         }
         $sourceRow = $selectedRows->first(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null);
@@ -47,6 +47,7 @@ final class OfficeBindingCorrection
             'source_identity_hash' => $source['hash'],
             'source_customer' => $sourceRow->parsed_customer, 'source_site' => $sourceRow->parsed_site,
             'target_customer' => $site->customer_name, 'target_site' => $site->site_name,
+            'source_site_alias_confirmed' => $confirmedSourceSite,
             'selected_rows' => $selectedRows->pluck('row_number')->map(fn ($number): int => (int) $number)->all()];
         $scope = new KnowledgeScope((int) $site->customer_id, (int) $site->id,
             $stream->source_namespace, $stream->workbook_family);

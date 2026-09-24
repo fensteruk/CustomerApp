@@ -5,7 +5,10 @@ use App\Enums\CallOffServiceType;
 use App\Enums\PortalRoleIdentifier;
 use App\Models\AdministrativeAudit;
 use App\Models\CallOffBatch;
+use App\Models\CallOffBatchOperation;
+use App\Models\CallOffBatchOperationItem;
 use App\Models\CallOffRequest;
+use App\Models\CallOffStatusHistory;
 use App\Models\CustomerOrganisation;
 use App\Models\ProjectedPlot;
 use App\Models\ProjectedPlotService;
@@ -92,6 +95,89 @@ it('discloses and blocks Portal requests, history and notifications', function (
     $this->post(route('office.workspace.sites.demo-purge', [$customer, $site]), demoConfirm($impact))
         ->assertSessionHasErrors('confirmation');
     expect(Site::query()->whereKey($site->id)->exists())->toBeTrue();
+});
+
+it('purges a certified demo customer with Portal history while preserving shared active binding and user attribution', function (): void {
+    $customer = CustomerOrganisation::factory()->create([
+        'uuid' => DemoPurgeImpact::COMPLETE_HISTORY_CUSTOMER_UUID, 'name' => 'Disposable Customer',
+    ]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id]);
+    $sibling = Site::factory()->create(['customer_organisation_id' => $customer->id]);
+    $targetCustomer = CustomerOrganisation::factory()->create(['name' => 'Correct Customer']);
+    $target = Site::factory()->create(['customer_organisation_id' => $targetCustomer->id]);
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create();
+    $external = User::factory()->role(PortalRoleIdentifier::SiteManager)->create([
+        'customer_organisation_id' => $customer->id, 'is_active' => true,
+    ]);
+    $external->assignedSites()->attach($site->id);
+    $plot = ProjectedPlot::factory()->create(['site_id' => $site->id]);
+    $batch = CallOffBatch::factory()->create(['site_id' => $site->id, 'submitted_by_user_id' => $external->id]);
+    $request = CallOffRequest::factory()->create(['call_off_batch_id' => $batch->id, 'projected_plot_id' => $plot->id]);
+    $operation = CallOffBatchOperation::factory()->create(['call_off_batch_id' => $batch->id,
+        'performed_by_user_id' => $external->id]);
+    CallOffBatchOperationItem::factory()->create(['call_off_batch_operation_id' => $operation->id,
+        'call_off_request_id' => $request->id]);
+    CallOffStatusHistory::factory()->create(['call_off_request_id' => $request->id,
+        'call_off_batch_id' => $batch->id, 'performed_by_user_id' => $external->id]);
+    $bindingId = demoBinding($customer, $site, $office);
+    DB::table('wald_binding_versions')->insert([
+        'uuid' => (string) Str::uuid(), 'binding_id' => $bindingId, 'version' => 2,
+        'customer_organisation_id' => $targetCustomer->id, 'site_id' => $target->id,
+        'actor_id' => $office->id, 'actor_name' => $office->name, 'reason' => 'Corrected target',
+        'definition_hash' => str_repeat('e', 64), 'created_at' => now(),
+    ]);
+    DB::table('wald_source_bindings')->where('id', $bindingId)->update(['latest_version' => 2]);
+    expect(app(DemoPurgeImpact::class)->customer($customer, true)['blockers'])
+        ->toHaveKey('active_shared_binding_to_customer');
+    DB::table('wald_source_bindings')->where('id', $bindingId)->update([
+        'latest_version' => 2, 'active_version' => 2, 'epoch' => 2,
+    ]);
+
+    $this->actingAs($office)->get(route('office.workspace.customers.demo-purge-preview', $customer))
+        ->assertOk()->assertSee('Cannot purge yet')->assertSee('Review complete demo customer purge');
+    $impact = app(DemoPurgeImpact::class)->customer($customer, true);
+    expect($impact['blockers'])->toBe([])
+        ->and($impact['counts']['call_off_requests'])->toBe(1)
+        ->and($impact['counts']['shared_binding_versions'] ?? null)->toBeNull();
+    $this->get(route('office.workspace.customers.demo-purge-preview', [
+        'customerOrganisation' => $customer, 'include_portal_history' => 1,
+    ]))->assertOk()->assertSee('Type the exact customer name to confirm');
+    $route = route('office.workspace.customers.demo-purge', $customer);
+    $submitted = [...demoConfirm($impact), 'include_portal_history' => 1,
+        'customer_name_confirmation' => $customer->name];
+    $this->post($route, $submitted)->assertSessionHasErrors('certified_portal_history');
+    $this->post($route, [...$submitted, 'certified_portal_history' => 1,
+        'customer_name_confirmation' => 'Wrong Customer'])->assertSessionHasErrors('customer_name_confirmation');
+    $this->post($route, [...$submitted, 'certified_portal_history' => 1])
+        ->assertRedirect(route('office.workspace.customers.index'));
+
+    expect(CustomerOrganisation::query()->whereKey($customer->id)->exists())->toBeFalse()
+        ->and(Site::query()->whereKey($site->id)->exists())->toBeFalse()
+        ->and(Site::query()->whereKey($sibling->id)->exists())->toBeFalse()
+        ->and(CallOffRequest::query()->whereKey($request->id)->exists())->toBeFalse()
+        ->and(CallOffBatch::query()->whereKey($batch->id)->exists())->toBeFalse()
+        ->and(DB::table('call_off_status_histories')->count())->toBe(0)
+        ->and(DB::table('call_off_batch_operation_items')->count())->toBe(0)
+        ->and(User::query()->whereKey($external->id)->value('customer_organisation_id'))->toBeNull()
+        ->and((bool) User::query()->whereKey($external->id)->value('is_active'))->toBeFalse()
+        ->and((int) DB::table('wald_source_bindings')->where('id', $bindingId)->value('active_version'))->toBe(2)
+        ->and(DB::table('wald_binding_versions')->where('binding_id', $bindingId)->pluck('version')->all())->toBe([2])
+        ->and(Site::query()->whereKey($target->id)->exists())->toBeTrue()
+        ->and(DB::table('demo_purge_gate')->count())->toBe(0);
+});
+
+it('denies complete Portal history purge for any other customer', function (): void {
+    $customer = CustomerOrganisation::factory()->create();
+    $office = User::factory()->role(PortalRoleIdentifier::FensterOfficeStaff)->create();
+    $this->actingAs($office)->get(route('office.workspace.customers.demo-purge-preview', [
+        'customerOrganisation' => $customer, 'include_portal_history' => 1,
+    ]))->assertForbidden();
+    $this->post(route('office.workspace.customers.demo-purge', $customer), [
+        ...demoConfirm(app(DemoPurgeImpact::class)->customer($customer)),
+        'include_portal_history' => 1, 'certified_portal_history' => 1,
+        'customer_name_confirmation' => $customer->name,
+    ])->assertForbidden();
+    expect(CustomerOrganisation::query()->whereKey($customer->id)->exists())->toBeTrue();
 });
 
 it('purges one committed and one uncommitted demo unit while retaining a shared master and sibling unit', function (): void {

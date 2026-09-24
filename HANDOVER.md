@@ -1,5 +1,27 @@
 # Fenster Customer Portal Handover
 
+## Wald disposable customer cleanup — 24 September 2026
+
+The local `main` candidate adds an advanced certified purge for the old
+`Sherford Countryside 2D - Vistry PShips` demo customer, including its Portal
+request history. First confirm FNA2563 against Vistry → Sherford Countryside
+2D in the existing import; the source-name and old-binding confirmations are
+separate. Then review the complete demo-customer purge impact. It blocks while
+a shared binding is still active or latest on a site to be removed. The
+customer's users are deactivated and detached, shared master uploads and
+active bindings elsewhere are retained. No production purge has been run.
+Verify a production recovery point and a fresh preview before execution.
+
+## Wald FNA2563 source-site name review — 24 September 2026
+
+The local `main` candidate lets Office confirm that FNA2563's source label
+`Countryside 2D` means the existing Vistry site `Sherford Countryside 2D`
+for selected rows in the stored upload. The page requires this confirmation
+and a separate confirmation to correct the old binding. Prior binding and
+customer/source history stay intact. No production data was changed; the
+candidate is not pushed or deployed. After deployment, reopen the existing
+Unknown rows page and continue to one-site preview and Apply.
+
 ## Wald existing-site binding correction — 24 September 2026
 
 The local `main` candidate lets Office correct a conflicting active

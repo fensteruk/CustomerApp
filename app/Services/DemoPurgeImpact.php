@@ -4,12 +4,15 @@ namespace App\Services;
 
 use App\Models\CustomerOrganisation;
 use App\Models\Site;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Database\Query\Builder;
 use Illuminate\Support\Facades\DB;
 
 /** Exact site-owned rows. Shared master uploads, streams and user accounts are retained. */
 final class DemoPurgeImpact
 {
+    public const COMPLETE_HISTORY_CUSTOMER_UUID = '8f1920b6-c741-4349-87d7-172437ff664c';
+
     public function site(Site $site): array
     {
         $site = Site::query()->whereKey($site->getKey())->lockForUpdate()->firstOrFail();
@@ -58,6 +61,24 @@ final class DemoPurgeImpact
             'customer_requests' => count($ids['call_off_requests']),
             'call_off_batches' => count($ids['call_off_batches']),
             'portal_notifications' => count($ids['portal_notifications']),
+            'other_site_request_batches' => DB::table('call_off_requests as requests')
+                ->join('call_off_batches as batches', 'batches.id', '=', 'requests.call_off_batch_id')
+                ->whereIn('requests.id', $ids['call_off_requests'])->where('batches.site_id', '!=', $siteId)->count(),
+            'other_site_batch_requests' => DB::table('call_off_requests as requests')
+                ->join('projected_plots as plots', 'plots.id', '=', 'requests.projected_plot_id')
+                ->whereIn('requests.call_off_batch_id', $ids['call_off_batches'])
+                ->where('plots.site_id', '!=', $siteId)->count(),
+            'other_site_request_operations' => DB::table('call_off_batch_operation_items as items')
+                ->join('call_off_batch_operations as operations', 'operations.id', '=', 'items.call_off_batch_operation_id')
+                ->join('call_off_batches as batches', 'batches.id', '=', 'operations.call_off_batch_id')
+                ->whereIn('items.call_off_request_id', $ids['call_off_requests'])
+                ->where('batches.site_id', '!=', $siteId)->count(),
+            'other_site_request_successors' => DB::table('call_off_requests')
+                ->whereIn('resubmitted_from_call_off_request_id', $ids['call_off_requests'])
+                ->whereNotIn('id', $ids['call_off_requests'])->count(),
+            'pilot_review_rows' => DB::table('wald_pilot_review_rows')->where('site_id', $siteId)->count(),
+            'pilot_review_decisions' => DB::table('wald_pilot_review_decisions')->where('site_id', $siteId)->count(),
+            'pilot_review_groups' => DB::table('wald_pilot_review_groups')->where('site_id', $siteId)->count(),
             'shared_binding_versions' => DB::table('wald_binding_versions')->whereIn('binding_id', $ids['wald_source_bindings'])->where('site_id', '!=', $siteId)->count(),
             'other_site_binding_selections' => DB::table('wald_pilot_selections')->whereIn('binding_id', $ids['wald_source_bindings'])->where('site_id', '!=', $siteId)->count(),
             'other_site_import_successors' => DB::table('wald_import_runs')->whereIn('predecessor_id', $ids['wald_import_runs'])->where('site_id', '!=', $siteId)->count(),
@@ -104,13 +125,18 @@ final class DemoPurgeImpact
         ];
     }
 
-    public function customer(CustomerOrganisation $customer): array
+    public function customer(CustomerOrganisation $customer, bool $includePortalHistory = false): array
     {
+        if ($includePortalHistory && $customer->uuid !== self::COMPLETE_HISTORY_CUSTOMER_UUID) {
+            throw new AuthorizationException('Complete demo history purge is limited to the approved customer.');
+        }
         $customer = CustomerOrganisation::query()->whereKey($customer->getKey())->lockForUpdate()->firstOrFail();
         $sites = Site::query()->where('customer_organisation_id', $customer->getKey())->orderBy('id')->lockForUpdate()->get();
         $units = $sites->map(fn (Site $site) => $this->site($site))->all();
         $counts = ['sites' => count($units)];
-        $blockers = ['customer_users' => DB::table('users')->where('customer_organisation_id', $customer->getKey())->count()];
+        $users = DB::table('users')->where('customer_organisation_id', $customer->getKey())
+            ->orderBy('id')->get(['id', 'uuid', 'is_active', 'lock_version']);
+        $blockers = ['customer_users' => $users->count()];
         foreach ($units as $unit) {
             foreach ($unit['counts'] as $key => $value) {
                 $counts[$key] = ($counts[$key] ?? 0) + $value;
@@ -119,12 +145,49 @@ final class DemoPurgeImpact
                 $blockers[$key] = ($blockers[$key] ?? 0) + $value;
             }
         }
+        if ($includePortalHistory) {
+            foreach (['customer_users', 'customer_requests', 'call_off_batches', 'portal_notifications',
+                'shared_binding_versions'] as $covered) {
+                unset($blockers[$covered]);
+            }
+            $siteIds = $sites->pluck('id')->all();
+            $userIds = $users->pluck('id')->all();
+            $blockers['pilot_review_records_without_customer_site'] = collect([
+                'wald_pilot_review_rows', 'wald_pilot_review_decisions', 'wald_pilot_review_groups',
+            ])->sum(fn (string $table): int => DB::table($table)
+                ->where('customer_organisation_id', $customer->getKey())
+                ->where(fn (Builder $query) => $query->whereNull('site_id')->orWhereNotIn('site_id', $siteIds))
+                ->count());
+            $blockers['user_assignments_outside_customer'] = DB::table('site_user_assignments as assignments')
+                ->join('sites', 'sites.id', '=', 'assignments.site_id')
+                ->whereIn('assignments.user_id', $userIds)
+                ->where('sites.customer_organisation_id', '!=', $customer->getKey())->count();
+            $bindingIds = collect($units)->flatMap(fn (array $unit): array => $unit['ids']['wald_source_bindings'])
+                ->unique()->values()->all();
+            $versions = DB::table('wald_binding_versions')->whereIn('binding_id', $bindingIds)
+                ->get(['binding_id', 'version', 'site_id'])->groupBy('binding_id');
+            $blockers['active_shared_binding_to_customer'] = DB::table('wald_source_bindings')
+                ->whereIn('id', $bindingIds)->get(['id', 'active_version', 'latest_version'])
+                ->filter(function (object $binding) use ($versions, $siteIds): bool {
+                    $records = $versions->get($binding->id, collect());
+                    if (! $records->contains(fn (object $version): bool => ! in_array($version->site_id, $siteIds))) {
+                        return false;
+                    }
+
+                    return $records->contains(fn (object $version): bool => in_array($version->site_id, $siteIds)
+                        && (int) $version->version === (int) $binding->active_version)
+                        || $records->contains(fn (object $version): bool => in_array($version->site_id, $siteIds)
+                            && (int) $version->version === (int) $binding->latest_version);
+                })->count();
+        }
 
         return [
             'uuid' => $customer->uuid, 'name' => $customer->name,
             'counts' => $counts, 'blockers' => array_filter($blockers), 'sites' => $units,
+            'include_portal_history' => $includePortalHistory,
             'retained_uploads' => collect($units)->flatMap(fn (array $unit) => $unit['retained_upload_ids'])->unique()->count(),
-            'fingerprint' => $this->fingerprint([$customer->uuid, (int) $customer->lock_version, $counts, $blockers, array_column($units, 'fingerprint')]),
+            'fingerprint' => $this->fingerprint([$customer->uuid, (int) $customer->lock_version,
+                $includePortalHistory, $users->all(), $counts, $blockers, array_column($units, 'fingerprint')]),
         ];
     }
 

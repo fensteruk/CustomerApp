@@ -1,5 +1,26 @@
 # Current Sprint
 
+## Wald disposable customer cleanup — 24 September 2026
+
+The local `main` candidate extends certified demo-customer purge to include
+that customer's Portal request and batch history after a separate exact-name
+confirmation. It deactivates and detaches the old customer's users, retains
+their accounts and audit attribution, and preserves shared active bindings and
+master uploads. A shared binding still active on the old customer blocks purge
+until the Office source mapping is corrected. Production cleanup remains
+pending a verified recovery point, fresh impact review, deployment and an
+explicit execution decision.
+
+## Wald source-site name confirmation — 24 September 2026
+
+Local `main` adds an explicit Office confirmation when the selected existing
+site has a different name from one consistent parsed source site under the
+same customer. FNA2563 is the regression case: source `Vistry → Countryside
+2D`, selected target `Vistry → Sherford Countryside 2D`. The old binding
+correction remains separate, and retained customer/request/Wald history is not
+deleted. The same stored upload can be reviewed after deployment; site preview
+and Apply remain separate. This candidate has not been pushed or deployed.
+
 ## Wald existing-site binding correction — 24 September 2026
 
 The local `main` candidate adds explicit Office correction of stale active

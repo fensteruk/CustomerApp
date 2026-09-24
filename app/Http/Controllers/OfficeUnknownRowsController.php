@@ -112,13 +112,14 @@ final class OfficeUnknownRowsController extends Controller
             'expected_epoch' => ['required', 'integer', 'min:0'],
             'command_uuid' => ['required', 'uuid'],
             'confirm_binding' => ['sometimes', 'accepted'],
+            'confirm_source_site' => ['sometimes', 'accepted'],
             'excluded_rows_csv' => ['nullable', 'string', 'max:30000'],
         ]);
         try {
             $result = $workflow->resolveCode($request->user(), $upload, $data['customer_code'],
                 $data['customer_uuid'], $data['site_uuid'], $data['source_manifest_hash'],
                 (int) $data['expected_epoch'], $data['command_uuid'], isset($data['confirm_binding']),
-                $data['excluded_rows_csv'] ?? '');
+                $data['excluded_rows_csv'] ?? '', isset($data['confirm_source_site']));
         } catch (ImportConflict $exception) {
             return back()->withErrors(['unknown' => 'The matching rows could not be reviewed: '.str_replace('_', ' ', $exception->getMessage()).'.']);
         }

@@ -2204,3 +2204,55 @@ Reason: The existing Lovell / Barne Barton target for FNA2473 could not be
 used while a stale active binding pointed elsewhere. A controlled correction
 must remain available for any CustomerCode with the same evidence and review
 conditions.
+
+---
+
+## DEC-083
+
+Date: 24 September 2026
+
+Decision: Office may explicitly confirm that one consistent parsed source site
+name for the selected rows of a CustomerCode refers to a differently named
+existing CustomerApp site under the same exact parsed customer. The Unknown row
+review must show both names and require a separate source-name confirmation.
+Mixed parsed source sites or a different parsed customer block bulk review.
+Use each row's approved parsed Plot Ref after confirmation; retain the original
+source label, target site, actor and selected rows in the import audit. This is
+an upload-scoped Office decision, not a global source dictionary alias. An
+existing conflicting CustomerCode binding still requires its own confirmation
+and a new immutable binding version. The stored import can be reviewed again
+without re-uploading. Preview and explicit one-site Apply remain mandatory.
+This decision does not authorise deleting retained customer/source history or
+a production push.
+
+Reason: The genuine FNA2563 Plot Refs name `Vistry → Countryside 2D`, while
+Office identified the existing target as `Vistry → Sherford Countryside 2D`.
+The old binding points to a separate demo customer/site with retained requests
+and Wald history, so deletion is not a safe way to make the mapping possible.
+
+---
+
+## DEC-084
+
+Date: 24 September 2026
+
+Decision: Management explicitly approved permanently removing only the old
+`Sherford Countryside 2D - Vistry PShips` demo customer
+(`8f1920b6-c741-4349-87d7-172437ff664c`) and its Portal request
+history after the FNA2563 source identity is correctly rebound. The complete
+demo-customer purge must show the exact site, source, request, batch and user
+impact, require separate certification for Portal history and the exact
+customer name, and run atomically. Users are deactivated and detached, with
+their accounts and attribution retained. A source binding still active or
+latest on a site being purged blocks removal when another site shares that
+binding. Once corrected, the shared binding root and its active target version
+remain; historical versions belonging to the purged customer may be removed
+under the existing audited purge gate. Shared master upload records and private
+workbooks remain because they may contain other customers' source data.
+Unrelated cross-site dependencies continue to block. Production execution
+requires a verified recovery point and fresh impact review.
+
+Reason: Deleting the import alone leaves a customer request, call-off batch,
+user and shared binding. The Office-approved goal is complete removal of this
+disposable customer and its own history without damaging the current Vistry
+binding or other source units.

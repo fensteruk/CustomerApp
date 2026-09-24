@@ -4,6 +4,7 @@ namespace App\SourceImport\Integration;
 
 use App\Models\User;
 use App\SourceImport\Knowledge\Canonical;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
@@ -12,7 +13,7 @@ final class UnknownRowsWorkflow
 {
     public function resolveCode(User $actor, string $uploadUuid, string $code, string $customerUuid,
         string $siteUuid, string $manifestHash, int $epoch, string $command, bool $confirmBinding = false,
-        string $excludedCsv = ''): array
+        string $excludedCsv = '', bool $confirmSourceSite = false): array
     {
         if (! Str::isUuid($command) || trim($code) === '') {
             throw new ImportConflict('review_command_invalid');
@@ -22,7 +23,7 @@ final class UnknownRowsWorkflow
         }
         $excluded = $excludedCsv === '' ? [] : array_fill_keys(array_map('intval', explode(',', $excludedCsv)), true);
 
-        return DB::transaction(function () use ($actor, $uploadUuid, $code, $customerUuid, $siteUuid, $manifestHash, $epoch, $command, $confirmBinding, $excluded): array {
+        return DB::transaction(function () use ($actor, $uploadUuid, $code, $customerUuid, $siteUuid, $manifestHash, $epoch, $command, $confirmBinding, $excluded, $confirmSourceSite): array {
             $fresh = (new PilotImportPolicy)->authorize($actor, true);
             $upload = DB::table('wald_pilot_uploads')->where('uuid', $uploadUuid)->lockForUpdate()->firstOrFail();
             if (! in_array($upload->state, ['READY', 'NEEDS_CLARIFICATION'], true)
@@ -50,6 +51,7 @@ final class UnknownRowsWorkflow
                 ->where('sites.uuid', $siteUuid)->where('customer_organisations.uuid', $customerUuid)
                 ->where('sites.is_active', true)->where('customer_organisations.is_active', true)
                 ->first(['sites.id', 'sites.uuid', 'sites.name as site_name', 'customer_organisations.id as customer_id',
+                    'customer_organisations.id as customer_organisation_id',
                     'customer_organisations.name as customer_name']);
             $group = DB::table('wald_pilot_review_groups')->where('pilot_upload_id', $upload->id)
                 ->where('source_identity_hash', $rows[0]->source_identity_hash)->orderByDesc('version')->first();
@@ -62,12 +64,29 @@ final class UnknownRowsWorkflow
             if (! $source || $source['customer_code'] !== $code) {
                 throw new ImportConflict('review_source_not_found');
             }
-            (new OfficeBindingCorrection)->confirm($fresh, $upload, $source, $selectedRows, $site, $confirmBinding, $command);
+            $sourceSiteAlias = $this->sourceSiteAlias($selectedRows, $site, $confirmSourceSite);
+            (new OfficeBindingCorrection)->confirm($fresh, $upload, $source, $selectedRows, $site,
+                $confirmBinding, $command, $sourceSiteAlias !== null);
+            $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
+            $identityHash = Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]);
+            if (! DB::table('wald_source_bindings')->where('identity_hash', $identityHash)->exists()) {
+                (new CreateExactSourceBinding)->handle($fresh, $upload, $stream, $source, $site,
+                    'Office confirmed the exact source CustomerCode and existing target site.',
+                    $sourceSiteAlias === null ? 'OFFICE_CONFIRMED_EXISTING_SITE' : 'OFFICE_CONFIRMED_SOURCE_SITE_ALIAS');
+            }
             $resolved = 0;
             foreach ($selectedRows as $row) {
-                $result = (new ReviewedPlotDerivation)->derive($row->raw_plot_ref, $site->customer_name, $site->site_name);
-                $plot = $result['plot'];
-                $reason = $result['issue'];
+                if ($row->parsed_plot !== null && $row->parsed_customer !== null && $row->parsed_site !== null
+                    && MasterSourceResolver::sameName($row->parsed_customer, $site->customer_name)
+                    && (MasterSourceResolver::sameName($row->parsed_site, $site->site_name)
+                        || ($sourceSiteAlias !== null && MasterSourceResolver::sameName($row->parsed_site, $sourceSiteAlias)))) {
+                    $plot = $row->parsed_plot;
+                    $reason = $sourceSiteAlias === null ? null : 'OFFICE_CONFIRMED_SOURCE_SITE_ALIAS';
+                } else {
+                    $result = (new ReviewedPlotDerivation)->derive($row->raw_plot_ref, $site->customer_name, $site->site_name);
+                    $plot = $result['plot'];
+                    $reason = $result['issue'];
+                }
                 if ($plot === null) {
                     $suggestion = (new HierarchySuggestion)->forIssue($code, $row->raw_plot_ref);
                     if ($suggestion && MasterSourceResolver::sameName($suggestion['customer'], $site->customer_name)
@@ -107,6 +126,8 @@ final class UnknownRowsWorkflow
                 'customer_id' => $site->customer_id, 'site_id' => $site->id,
                 'resolved_rows' => $resolved, 'still_unknown_rows' => $rows->count() - $resolved,
                 'office_unticked_rows' => array_keys($excluded),
+                'source_site_alias' => $sourceSiteAlias,
+                'target_site' => $site->site_name,
                 'source_manifest_hash' => $hash,
             ], command: $command);
 
@@ -259,6 +280,26 @@ final class UnknownRowsWorkflow
             || $resolution['site_uuid'] !== $site->uuid) {
             throw new ImportConflict('unknown_target_conflicts_with_binding');
         }
+    }
+
+    private function sourceSiteAlias(Collection $rows, object $site, bool $confirmed): ?string
+    {
+        $evidence = $rows->filter(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null);
+        if ($evidence->contains(fn (object $row): bool => ! MasterSourceResolver::sameName($row->parsed_customer, $site->customer_name))) {
+            throw new ImportConflict('source_customer_evidence_conflict');
+        }
+        $sourceSite = $evidence->first()?->parsed_site;
+        if ($sourceSite !== null && $evidence->contains(fn (object $row): bool => ! MasterSourceResolver::sameName($row->parsed_site, $sourceSite))) {
+            throw new ImportConflict('source_site_evidence_conflict');
+        }
+        if ($sourceSite === null || MasterSourceResolver::sameName($sourceSite, $site->site_name)) {
+            return null;
+        }
+        if (! $confirmed) {
+            throw new ImportConflict('source_site_name_confirmation_required');
+        }
+
+        return $sourceSite;
     }
 
     private function manualPlot(string $value): string
