@@ -33,17 +33,21 @@ final class HierarchyClarifications
                 continue;
             }
             $issue['answer'] = $answer;
+            $source['plots'][] = $answer['plot'];
+            $source['hierarchy_variants'][] = ['customer' => $answer['customer'], 'site' => $answer['site'], 'rows' => $issue['rows']];
             $count = count($issue['rows']);
             $source['hierarchy']['invalid_rows'] -= $count;
             $source['hierarchy']['valid_rows'] += $count;
             if ($source['hierarchy']['customer'] === null) {
                 $source['hierarchy']['customer'] = $answer['customer'];
                 $source['hierarchy']['site'] = $answer['site'];
-            } elseif ($source['hierarchy']['customer'] !== $answer['customer'] || $source['hierarchy']['site'] !== $answer['site']) {
+            } elseif (! MasterSourceResolver::sameName($source['hierarchy']['customer'], $answer['customer'])
+                || ! MasterSourceResolver::sameName($source['hierarchy']['site'], $answer['site'])) {
                 $source['hierarchy']['conflicting_rows'] += $count;
             }
         }
         unset($issue);
+        $source['plots'] = array_values(array_unique($source['plots'] ?? []));
 
         return $source;
     }

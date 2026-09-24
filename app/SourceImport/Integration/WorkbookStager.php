@@ -218,7 +218,8 @@ final class WorkbookStager
             if ($hierarchy !== null) {
                 if (! $hierarchy['valid']) {
                     $issues[] = $hierarchy['issue'];
-                } elseif ($hierarchy['customer'] !== $target->customer_name || $hierarchy['site'] !== $target->site_name) {
+                } elseif (! MasterSourceResolver::sameName($hierarchy['customer'], $target->customer_name)
+                    || ! MasterSourceResolver::sameName($hierarchy['site'], $target->site_name)) {
                     $issues[] = 'SOURCE_BINDING_CUSTOMER_OWNERSHIP_CONFLICT';
                 } else {
                     $plot = $hierarchy['plot'];

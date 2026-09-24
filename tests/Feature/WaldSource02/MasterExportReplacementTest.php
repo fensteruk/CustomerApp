@@ -130,6 +130,138 @@ function source02Analyse(User $office, KnowledgeScope $scope, object $run): obje
     return DB::table('wald_import_runs')->where('id', $run->id)->firstOrFail();
 }
 
+it('classifies all seven master source outcomes in one grouped read-only resolution', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $exactSite = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Countryside 2D', 'is_active' => true]);
+    $boundSite = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Barne Barton', 'is_active' => true]);
+    $otherCustomer = CustomerOrganisation::factory()->create(['name' => 'Another Customer', 'is_active' => true]);
+    Site::factory()->create(['customer_organisation_id' => $otherCustomer->id, 'name' => 'Countryside 2D', 'is_active' => true]);
+    DB::table('projected_plots')->insert(['uuid' => (string) Str::uuid(), 'site_id' => $exactSite->id,
+        'external_source' => 'test', 'external_identifier' => 'existing-exact-site-plot',
+        'plot_reference' => '1', 'created_at' => now('UTC'), 'updated_at' => now('UTC')]);
+    $pilot = source02Upload($office, [
+        ['code' => 'EXACT', 'call' => '5001', 'site' => 'Descriptive one', 'plot' => 'Vistry - Countryside 2D - Plot 1'],
+        ['code' => 'BOUND', 'call' => '5002', 'site' => 'Descriptive two', 'plot' => 'Vistry - Barne Barton - Plot 1'],
+        ['code' => 'NEW-SITE', 'call' => '5003', 'site' => 'Descriptive three', 'plot' => 'Vistry - Northam PH3 - Plot 7'],
+        ['code' => 'NEW-CUSTOMER', 'call' => '5004', 'site' => 'Descriptive four', 'plot' => 'Lovell - Barne Barton - Plot 1'],
+        ['code' => 'CONFLICT', 'call' => '5005', 'site' => 'Descriptive five', 'plot' => 'Vistry - Countryside 2D - Plot 2'],
+        ['code' => 'CONFLICT', 'call' => '5006', 'site' => 'Descriptive five', 'plot' => 'Vistry - Northam PH3 - Plot 3'],
+        ['code' => 'MALFORMED', 'call' => '5007', 'site' => 'Descriptive six', 'plot' => 'Unknown plot wording'],
+        ['code' => 'BAD-BINDING', 'call' => '5008', 'site' => 'Descriptive seven', 'plot' => 'Vistry - Countryside 2D - Plot 4'],
+        ['code' => 'EXCLUDED', 'call' => '5009', 'site' => 'Excluded only', 'plot' => 'No hierarchy', 'type' => 'CU4'],
+    ], '2099-10-01');
+    $sources = collect($pilot['sources'])->keyBy('customer_code');
+    source02Bind($office, $sources['BOUND'], $boundSite);
+    source02Bind($office, $sources['BAD-BINDING'], $boundSite);
+    $summary = (new PilotImportWorkflow)->summary($office, $pilot['upload']);
+    $resolved = collect($summary['sources'])->keyBy('customer_code');
+
+    expect($resolved['EXACT']['resolution']['state'])->toBe('EXACT_CUSTOMER_EXACT_SITE')
+        ->and($resolved['BOUND']['resolution']['state'])->toBe('EXACT_EXISTING_BINDING')
+        ->and($resolved['NEW-SITE']['resolution']['state'])->toBe('EXACT_CUSTOMER_NEW_SITE')
+        ->and($resolved['NEW-CUSTOMER']['resolution']['state'])->toBe('NEW_CUSTOMER_AND_SITE')
+        ->and($resolved['CONFLICT']['resolution']['state'])->toBe('SOURCE_HIERARCHY_CONFLICT')
+        ->and($resolved['CONFLICT']['resolution']['source_evidence'])->toHaveCount(2)
+        ->and($resolved['MALFORMED']['resolution']['state'])->toBe('MALFORMED_HIERARCHY')
+        ->and($resolved['BAD-BINDING']['resolution']['state'])->toBe('BINDING_CONFLICT')
+        ->and($summary['resolution_summary']['source_sites'])->toBe(7)
+        ->and($summary['resolution_summary']['excluded_rows'])->toBe(1)
+        ->and($summary['resolution_summary']['automatically_matched_sites'])->toBe(2)
+        ->and($summary['resolution_summary']['blockers'])->toBe(3)
+        ->and($resolved['EXACT']['resolution']['site_uuid'])->toBe($exactSite->uuid)
+        ->and($resolved['EXACT']['resolution']['plots_reuse'])->toBe(1)
+        ->and($resolved['BOUND']['resolution']['plots_create'])->toBe(1)
+        ->and($resolved['NEW-CUSTOMER']['resolution']['customer'])->toBe('Lovell');
+});
+
+it('resolves many exact sites without customer site binding or plot queries per source row', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $rows = [];
+    for ($i = 1; $i <= 40; $i++) {
+        Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => "Site $i", 'is_active' => true]);
+        $rows[] = ['code' => "CODE-$i", 'call' => (string) (6000 + $i),
+            'site' => "Description $i", 'plot' => "Vistry - Site $i - Plot $i"];
+    }
+    $pilot = source02Upload($office, $rows, '2099-10-02');
+    $queries = [];
+    DB::listen(function ($query) use (&$queries): void {
+        if (preg_match('/\b(customer_organisations|sites|wald_source_bindings|wald_binding_versions|projected_plots)\b/i', $query->sql)) {
+            $queries[] = $query->sql;
+        }
+    });
+    $summary = (new PilotImportWorkflow)->summary($office, $pilot['upload']);
+
+    expect($summary['resolution_summary']['automatically_matched_sites'])->toBe(40)
+        ->and($summary['resolution_summary']['plots_create'])->toBe(40)
+        ->and(count($queries))->toBeLessThanOrEqual(8);
+});
+
+it('creates an exact binding only inside the successful selected-site transaction', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $right = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Countryside 2D', 'is_active' => true]);
+    $wrong = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Different Site', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2563', 'call' => '7001', 'site' => 'Descriptive name', 'plot' => 'Vistry - Countryside 2D - Plot Com 4'],
+    ], '2099-10-03');
+    $source = $pilot['sources'][0];
+    expect(fn () => (new PilotImportWorkflow)->select($office, $pilot['upload'], $source['hash'], $wrong->uuid, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'source_binding_customer_ownership_conflict');
+    expect(DB::table('wald_source_bindings')->count())->toBe(0)
+        ->and(DB::table('wald_pilot_selections')->count())->toBe(0);
+
+    $selected = (new PilotImportWorkflow)->select($office, $pilot['upload'], $source['hash'], $right->uuid, (string) Str::uuid());
+    expect($selected['selection'])->toBeString()
+        ->and(DB::table('wald_source_bindings')->count())->toBe(1)
+        ->and(DB::table('wald_binding_versions')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_selections')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_events')->where('action', 'pilot_exact_binding_activated')->count())->toBe(1)
+        ->and((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'][0]['resolution']['state'])
+        ->toBe('EXACT_EXISTING_BINDING');
+});
+
+it('matches only controlled case and whitespace differences through staging', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Countryside 2D', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'NORMALIZED', 'call' => '7101', 'site' => 'Unrelated description', 'plot' => 'vistry - countryside  2d - Plot Com 4'],
+    ], '2099-10-04');
+    expect($pilot['sources'][0]['resolution']['state'])->toBe('EXACT_CUSTOMER_EXACT_SITE');
+    $selected = (new PilotImportWorkflow)->select($office, $pilot['upload'], $pilot['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
+    $run = source02Analyse($office, $selected['scope'], DB::table('wald_import_runs')->where('uuid', $selected['run'])->firstOrFail());
+    $plot = (new BackendStore)->payload(DB::table('wald_staged_rows')->where('stage_id', $run->stage_id)->firstOrFail())['facts']['plot'];
+    expect($plot)->toBe('Com 4');
+
+    $fuzzy = source02Upload($office, [
+        ['code' => 'FUZZY', 'call' => '7102', 'site' => 'Unrelated description', 'plot' => 'Vistry Partnerships - Countryside 2D - Plot 5'],
+    ], '2099-10-05');
+    expect($fuzzy['sources'][0]['resolution']['state'])->toBe('NEW_CUSTOMER_AND_SITE');
+});
+
+it('preserves an existing exact draft for Office activation', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Countryside 2D', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'DRAFT', 'call' => '7201', 'site' => 'Descriptive name', 'plot' => 'Vistry - Countryside 2D - Plot 8'],
+    ], '2099-10-06');
+    $scope = new KnowledgeScope($customer->id, $site->id, 'redzebra', 'call-offs');
+    $bindings = new SourceBindingService;
+    $draft = $bindings->draft($office, $scope, 'CUSTOMER_CODE', 'DRAFT', 'Existing reviewed draft.', (string) Str::uuid());
+    $summary = (new PilotImportWorkflow)->summary($office, $pilot['upload']);
+    expect($summary['sources'][0]['resolution']['state'])->toBe('EXACT_CUSTOMER_EXACT_SITE')
+        ->and($summary['sources'][0]['draft'])->not->toBeNull();
+    expect(fn () => (new PilotImportWorkflow)->select($office, $pilot['upload'], $pilot['sources'][0]['hash'], $site->uuid, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'source_site_binding_required');
+    $bindings->activate($office, $scope, $draft['binding'], $draft['version'], $draft['definition_hash'],
+        $draft['epoch'], 'Activate reviewed draft.', (string) Str::uuid());
+    expect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'][0]['resolution']['state'])
+        ->toBe('EXACT_EXISTING_BINDING');
+});
+
 it('resolves composite customer site and named plots after exact Office binding', function (): void {
     $office = source02Office();
     $pilot = source02Upload($office, [
@@ -277,12 +409,12 @@ it('accepts the exact Customer Number header as CustomerCode without relaxing bi
     $customer = CustomerOrganisation::factory()->create(['name' => 'Baker Estates Ltd']);
     $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Little Cotton Farm', 'is_active' => true]);
     $workflow = new PilotImportWorkflow;
-    expect(fn () => $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid()))
-        ->toThrow(ImportConflict::class, 'source_site_binding_required');
-
-    source02Bind($office, $source, $site);
+    expect($workflow->summary($office, $pilot['upload'])['sources'][0]['resolution']['state'])
+        ->toBe('EXACT_CUSTOMER_EXACT_SITE');
     $selection = $workflow->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
-    expect($selection['selection'])->toBeString();
+    expect($selection['selection'])->toBeString()
+        ->and(DB::table('wald_source_bindings')->count())->toBe(1)
+        ->and(DB::table('wald_pilot_events')->where('action', 'pilot_exact_binding_activated')->count())->toBe(1);
 
     expect(fn () => source02Upload($office, [
         ['code' => 'FNA2664', 'call' => '1002', 'site' => 'Little Cotton Farm', 'plot' => '2'],

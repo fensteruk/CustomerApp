@@ -35,6 +35,25 @@ This rule is scoped to FNA2561 and that exact text pattern. The exact FNA2664
 of Baker Estates Ltd, Little Cotton Farm 117-144 and the trailing plot digits, but still
 requires Office confirmation for each distinct value. It does not establish a global split rule.
 
+## CUSTOMER-WALD-MASTER02 operational resolution — 24 September 2026
+
+After included rows have been grouped by exact CustomerCode, resolve each source
+identity once against active CustomerApp customers, their own sites and active source
+bindings. Use exact names with controlled case and whitespace normalization only.
+Return one of `EXACT_EXISTING_BINDING`, `EXACT_CUSTOMER_EXACT_SITE`,
+`EXACT_CUSTOMER_NEW_SITE`, `NEW_CUSTOMER_AND_SITE`, `BINDING_CONFLICT`,
+`SOURCE_HIERARCHY_CONFLICT` or `MALFORMED_HIERARCHY`. Retained historical flat
+sources keep their separate legacy handling. Each result carries source evidence,
+row/plot counts, target identity where safe, and site-scoped plot reuse/create
+counts. New customer/site results are proposals, not mutations.
+
+The whole-workbook analysis is read-only. On the existing one-site Office selection,
+an exact existing customer/site without a binding may create its immutable, audited
+binding atomically with the selection. Recheck Office authority, site activity and
+the current source revision at persistence. Other binding states remain guarded.
+The selected-site preview and explicit commit boundary are unchanged. Discovery
+schema v5 and knowledge policy v2 stale older uncommitted interpretations.
+
 ## CUSTOMER-WALD-CUSTAPP2-01 addendum — 15 September 2026
 
 DEC-064 supersedes three narrow assumptions below wherever they conflict: the source record need

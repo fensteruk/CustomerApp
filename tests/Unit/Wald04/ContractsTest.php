@@ -26,7 +26,16 @@ it('fails closed when any compatibility pin changes', function ($key) {
     $pins = $identity->current();
     $pins[$key] = 'changed';
     expect($identity->compatible($pins))->toBe($key === 'fingerprint' ? Compatibility::Incompatible : Compatibility::Stale);
-})->with(['dictionary', 'fingerprint', 'core', 'reader_adapters', 'schema', 'signature', 'matcher', 'selector', 'semantic_executable', 'accepted_baseline', 'policy']);
+})->with(['dictionary', 'fingerprint', 'core', 'reader_adapters', 'schema', 'signature', 'matcher', 'selector', 'semantic_executable', 'accepted_baseline', 'policy', 'resolution']);
+
+it('stales knowledge pinned before workbook-wide source resolution', function () {
+    $identity = new KnowledgeIdentity;
+    $old = $identity->current();
+    unset($old['resolution']);
+    $old['policy'] = 'customerapp.wald-knowledge-policy.v1';
+
+    expect($identity->compatible($old))->toBe(Compatibility::Stale);
+});
 
 it('marks knowledge from the prior exact-header dictionary stale', function () {
     $identity = new KnowledgeIdentity;

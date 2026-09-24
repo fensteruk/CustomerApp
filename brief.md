@@ -706,6 +706,11 @@ text changed.
 Resolve the parsed composite `Plot Ref` customer and site by exact names. If
 either does not exist, propose its creation for explicit Office approval,
 then require an exact source binding before projection.
+When both the customer and its site exist exactly and no source binding exists,
+the Office selected-site action creates the audited binding in the same transaction.
+Office need not make a separate binding draft for that exact match. Matching permits
+only controlled case and whitespace normalization. A conflicting or inactive binding
+blocks; Wald does not create a customer or site from its own proposal.
 
 Do not:
 

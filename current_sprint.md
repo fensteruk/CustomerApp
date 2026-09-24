@@ -1,5 +1,18 @@
 # Current Sprint
 
+## Wald automatic resolution candidate — 24 September 2026
+
+CUSTOMER-WALD-MASTER02 is a local branch from `main` with the qualified
+MASTER01 hierarchy commit deliberately integrated. Workbook-wide resolution
+classifies exact bindings, exact sites without bindings, customer/site creation
+proposals, and source/binding blockers. Office selected-site review can activate
+an exact binding atomically; customer/site creation and multi-site commit remain
+separate work. The genuine XLS was qualified only on a disposable database.
+No push, deployment or production master import occurred. The full SQLite
+suite and selected disposable MySQL 8.4 checks passed. See
+`documentation/wald-master02-automatic-resolution-2026-09-24.md` for fixture
+counts and verification evidence.
+
 ## Second-wave integration candidate — 23 September 2026
 
 The Plot/live amendments, Office Amendments, Wald reconciliation and Site

@@ -1,6 +1,13 @@
 # Wald Distribution Divergence Register
 
-Last updated: 22 September 2026. Owner: Product and Architecture.
+Last updated: 24 September 2026. Owner: Product and Architecture.
+
+CustomerApp-only WD-61 implements DEC-078's exact workbook-wide customer/site
+resolution and audited binding at Office selected-site action. It returns
+customer/site creation proposals without mutating them and preserves the
+one-site commit gate. Knowledge policy v2 and discovery schema v5 stale older
+uncommitted interpretations. This is a local feature-branch candidate; no
+SiteApp backport, production push or deployment is implied.
 
 Current CustomerApp-only difference: WD-60 records DEC-071's current-scope
 exclusions, including temporary P04 treatment. WD-59/58 retain the earlier

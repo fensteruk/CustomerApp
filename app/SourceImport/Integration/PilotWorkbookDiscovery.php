@@ -117,6 +117,8 @@ final class PilotWorkbookDiscovery
                 'rows' => 0,
                 'hierarchy' => ['customer' => null, 'site' => null, 'valid_rows' => 0, 'invalid_rows' => 0, 'conflicting_rows' => 0],
                 'hierarchy_issues' => [],
+                'hierarchy_variants' => [],
+                'plots' => [],
             ];
             if ($plotColumn !== null) {
                 $parsed = (new CompositePlotHierarchy)->parse($rawPlot, $identityValue);
@@ -131,10 +133,18 @@ final class PilotWorkbookDiscovery
                 } else {
                     $hierarchy = &$sources[$hash]['hierarchy'];
                     $hierarchy['valid_rows']++;
+                    $variantHash = Canonical::hash([MasterSourceResolver::normalizedName($parsed['customer']),
+                        MasterSourceResolver::normalizedName($parsed['site'])]);
+                    $sources[$hash]['hierarchy_variants'][$variantHash] ??= [
+                        'customer' => $parsed['customer'], 'site' => $parsed['site'], 'rows' => [],
+                    ];
+                    $sources[$hash]['hierarchy_variants'][$variantHash]['rows'][] = (int) $rowNumber;
+                    $sources[$hash]['plots'][$parsed['plot']] = true;
                     if ($hierarchy['customer'] === null) {
                         $hierarchy['customer'] = $parsed['customer'];
                         $hierarchy['site'] = $parsed['site'];
-                    } elseif ($hierarchy['customer'] !== $parsed['customer'] || $hierarchy['site'] !== $parsed['site']) {
+                    } elseif (! MasterSourceResolver::sameName($hierarchy['customer'], $parsed['customer'])
+                        || ! MasterSourceResolver::sameName($hierarchy['site'], $parsed['site'])) {
                         $hierarchy['conflicting_rows']++;
                     }
                     unset($hierarchy);
@@ -158,8 +168,13 @@ final class PilotWorkbookDiscovery
             if (! $compositeMode) {
                 $source['hierarchy'] = null;
                 $source['hierarchy_issues'] = [];
+                $source['hierarchy_variants'] = [];
+                $source['plots'] = [];
             } else {
                 $source['hierarchy_issues'] = array_values($source['hierarchy_issues']);
+                $source['hierarchy_variants'] = array_values($source['hierarchy_variants']);
+                $source['plots'] = array_map('strval', array_keys($source['plots']));
+                sort($source['plots'], SORT_NATURAL);
             }
             $source['observed_site_names'] = array_keys($source['observed_site_names']);
             sort($source['observed_site_names'], SORT_NATURAL | SORT_FLAG_CASE);
@@ -177,7 +192,7 @@ final class PilotWorkbookDiscovery
         unset($source);
 
         return [
-            'schema' => 'customerapp.wald-pilot-discovery.v4',
+            'schema' => 'customerapp.wald-pilot-discovery.v5',
             'analysis_hash' => $data['analysis_hash'],
             'requires_confirmation' => in_array('no_clear_header', $table['warnings'], true),
             'sheet' => $sheet->id,

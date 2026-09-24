@@ -1,5 +1,16 @@
 # Fenster Customer Portal Handover
 
+## Wald automatic resolution — 24 September 2026
+
+The local `codex/wald-master02` candidate integrates the qualified hierarchy
+parser and adds one grouped operational resolver per included CustomerCode.
+Exact existing customer/site matches can acquire an audited binding during
+Office selected-site review; new customer/site relationships remain proposals.
+The genuine XLS qualification used a disposable test dataset, with no
+production import or data change. The existing one-site commit boundary remains.
+See `documentation/wald-master02-automatic-resolution-2026-09-24.md` for exact
+counts and verification status. No push or deployment occurred.
+
 ## Second-wave UI and amendment integration — 23 September 2026
 
 The four accepted second-wave branch tips are merged in order on the isolated

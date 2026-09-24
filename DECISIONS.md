@@ -2052,3 +2052,25 @@ format as a direct parse rule. The customer is Vistry, the site is Northam PH3,
 and every digit after the final unspaced hyphen is the plot reference. The first
 hyphen has spaces on both sides. This scoped rule supersedes the earlier plan to
 ask Office to confirm each Northam row. Other mixed separators remain review cases.
+
+---
+
+## DEC-078
+
+Date: 24 September 2026
+
+Decision: The approved Wald master hierarchy must feed an operational, workbook-wide
+source-site resolver. For each distinct included CustomerCode, classify exact active
+binding, exact existing customer/site without a binding, existing customer/new site,
+new customer/site, binding conflict, source hierarchy conflict or malformed hierarchy.
+Use only controlled case and whitespace normalization for exact names; resolve sites
+under the matched customer. Excluded rows have no customer/site/plot projection effect.
+An exact existing customer/site may receive an audited source binding atomically when
+Office selects that site for the existing one-site review. New customer/site records
+remain Office-approved proposals and are not created by Wald. A source conflict blocks
+only its own site unit. The workbook may be analysed as a whole; multi-site commit and
+unattended import remain outside this decision. The resolution model must stale older
+uncommitted analyses and previews.
+
+Reason: The qualified hierarchy should remove repetitive binding work for existing
+sites while preserving exact identity, Office approval and the single-site commit gate.

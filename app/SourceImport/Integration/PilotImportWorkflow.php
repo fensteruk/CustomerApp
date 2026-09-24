@@ -149,7 +149,7 @@ final class PilotImportWorkflow
                 throw new ImportConflict('pilot_upload_not_selectable');
             }
             $manifest = json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR);
-            if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v4') {
+            if (($manifest['schema'] ?? null) !== 'customerapp.wald-pilot-discovery.v5') {
                 throw new ImportConflict('pilot_source_manifest_stale');
             }
             $source = collect($manifest['sources'])->firstWhere('hash', $sourceHash);
@@ -157,9 +157,22 @@ final class PilotImportWorkflow
                 throw new ImportConflict('source_identity_not_found');
             }
             $source = (new HierarchyClarifications)->resolve($source, (new HierarchyClarifications)->all($upload->id)[$sourceHash] ?? []);
-            (new HierarchyTarget)->assertMatches($source, $site);
             $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
+            $resolution = (new MasterSourceResolver)->resolve([$source], $stream->source_namespace)[$sourceHash];
+            if (($source['hierarchy_mode'] ?? null) === 'COMPOSITE'
+                && (! in_array($resolution['state'], ['EXACT_EXISTING_BINDING', 'EXACT_CUSTOMER_EXACT_SITE'], true)
+                    || $resolution['site_uuid'] !== $site->uuid)) {
+                throw new ImportConflict('source_binding_customer_ownership_conflict');
+            }
+            (new PilotImportPolicy)->authorize($fresh, true);
+            $currentSite = DB::table('sites')->where('id', $site->id)->where('is_active', true)->lockForUpdate()->first();
+            if (! $currentSite || ! DB::table('customer_organisations')->where('id', $site->customer_organisation_id)->where('is_active', true)->exists()) {
+                throw new ImportConflict('source_site_no_longer_active');
+            }
             $binding = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]))->lockForUpdate()->first();
+            if ($resolution['state'] === 'EXACT_CUSTOMER_EXACT_SITE' && ! $binding) {
+                $binding = $this->createExactBinding($fresh, $upload, $stream, $source, $site);
+            }
             $version = $binding?->active_version
                 ? DB::table('wald_binding_versions')->where('binding_id', $binding->id)->where('version', $binding->active_version)->first()
                 : null;
@@ -237,6 +250,43 @@ final class PilotImportWorkflow
         }, 3);
     }
 
+    private function createExactBinding(User $actor, object $upload, object $stream, array $source, object $site): object
+    {
+        $identityHash = Canonical::hash([$stream->source_namespace, $source['kind'], $source['identity']]);
+        DB::table('wald_source_bindings')->insertOrIgnore([
+            'uuid' => (string) Str::uuid(), 'identity_hash' => $identityHash,
+            'source_namespace' => $stream->source_namespace, 'identity_kind' => $source['kind'],
+            'source_identity' => $source['identity'], 'created_at' => now('UTC'), 'updated_at' => now('UTC'),
+        ]);
+        $root = DB::table('wald_source_bindings')->where('identity_hash', $identityHash)->lockForUpdate()->firstOrFail();
+        if ($root->latest_version !== 0 || $root->active_version !== null
+            || $root->source_identity !== $source['identity'] || $root->identity_kind !== $source['kind']) {
+            throw new ImportConflict('source_site_binding_changed');
+        }
+        $definition = ['identity_hash' => $identityHash, 'version' => 1,
+            'organisation' => $site->customer_organisation_id, 'site' => $site->id];
+        $digest = Canonical::hash($definition);
+        DB::table('wald_binding_versions')->insert([
+            'uuid' => (string) Str::uuid(), 'binding_id' => $root->id, 'version' => 1,
+            'customer_organisation_id' => $site->customer_organisation_id, 'site_id' => $site->id,
+            'actor_id' => $actor->id, 'actor_name' => $actor->name,
+            'reason' => 'Exact customer and site matched from the reviewed master source hierarchy.',
+            'definition_hash' => $digest, 'created_at' => now('UTC'),
+        ]);
+        DB::table('wald_source_bindings')->where('id', $root->id)->update([
+            'latest_version' => 1, 'active_version' => 1, 'epoch' => 1, 'updated_at' => now('UTC'),
+        ]);
+        (new PilotImportAudit)->record($actor, $upload->id, 'pilot_exact_binding_activated', [
+            'source_customer_code' => $source['customer_code'],
+            'parsed_customer' => $source['hierarchy']['customer'], 'parsed_site' => $source['hierarchy']['site'],
+            'matched_customer_id' => $site->customer_organisation_id, 'matched_site_id' => $site->id,
+            'resolution_reason' => 'EXACT_CUSTOMER_EXACT_SITE', 'binding' => $root->uuid,
+            'definition_hash' => $digest,
+        ]);
+
+        return DB::table('wald_source_bindings')->where('id', $root->id)->firstOrFail();
+    }
+
     public function summary(User $actor, string $uuid): array
     {
         (new PilotImportPolicy)->authorize($actor);
@@ -244,11 +294,12 @@ final class PilotImportWorkflow
         $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
         $manifest = $upload->source_manifest ? json_decode($upload->source_manifest, true, flags: JSON_THROW_ON_ERROR) : ['sources' => []];
         $hierarchyAnswers = (new HierarchyClarifications)->all($upload->id);
-        $sources = array_map(
-            fn (array $source): array => $this->presentSource($stream->source_namespace,
-                (new HierarchyClarifications)->resolve($source, $hierarchyAnswers[$source['hash']] ?? [])),
+        $rawSources = array_map(
+            fn (array $source): array => (new HierarchyClarifications)->resolve($source, $hierarchyAnswers[$source['hash']] ?? []),
             $manifest['sources'] ?? [],
         );
+        $resolutions = (new MasterSourceResolver)->resolve($rawSources, $stream->source_namespace);
+        $sources = array_map(fn (array $source): array => $this->presentSource($source, $resolutions[$source['hash']]), $rawSources);
         $legacySourceHashes = array_fill_keys(array_column(array_filter(
             $sources,
             fn (array $source): bool => $source['legacy_pre_customer_code'],
@@ -294,12 +345,13 @@ final class PilotImportWorkflow
             'failure_code' => $upload->failure_code,
             'manifest' => $manifest,
             'sources' => $sources,
+            'resolution_summary' => $this->resolutionSummary($sources, $manifest),
             'selections' => $selections,
             'revisions' => $revisions,
         ];
     }
 
-    private function presentSource(string $namespace, array $source): array
+    private function presentSource(array $source, array $resolution): array
     {
         $customerCode = is_string($source['customer_code'] ?? null) && trim($source['customer_code']) !== ''
             ? $source['customer_code']
@@ -329,13 +381,45 @@ final class PilotImportWorkflow
             ...($source['hierarchy_mode'] ?? null ? [
                 'hierarchy' => $source['hierarchy'] ?? null,
                 'hierarchy_mode' => $source['hierarchy_mode'],
-                'hierarchy_proposal' => (new HierarchyTarget)->proposal($source),
+                'hierarchy_proposal' => $this->legacyProposal($resolution),
                 'hierarchy_issues' => $source['hierarchy_issues'] ?? [],
             ] : []),
+            ...(($source['hierarchy_mode'] ?? null) === 'COMPOSITE' ? ['resolution' => $resolution] : []),
             'legacy_pre_customer_code' => $legacy,
             'identity_label' => $legacy ? 'Legacy source identity' : 'CustomerCode',
-            ...$this->binding($namespace, $source),
+            'binding' => $resolution['binding'],
+            'draft' => $resolution['draft'],
         ];
+    }
+
+    private function legacyProposal(array $resolution): array
+    {
+        $state = match ($resolution['state']) {
+            'NEW_CUSTOMER_AND_SITE' => 'NEW_CUSTOMER_FOUND',
+            'EXACT_CUSTOMER_NEW_SITE' => 'NEW_SITE_FOUND',
+            'EXACT_EXISTING_BINDING', 'EXACT_CUSTOMER_EXACT_SITE' => 'EXACT_SITE_FOUND',
+            'LEGACY_SOURCE' => 'LEGACY_SOURCE',
+            default => 'HIERARCHY_REVIEW_REQUIRED',
+        };
+
+        return ['state' => $state, ...array_intersect_key($resolution,
+            array_flip(['customer', 'customer_uuid', 'site', 'site_uuid']))];
+    }
+
+    private function resolutionSummary(array $sources, array $manifest): array
+    {
+        $states = array_count_values(array_map(fn (array $source): string => $source['resolution']['state'] ?? 'LEGACY_SOURCE', $sources));
+
+        return ['total_rows' => (int) ($manifest['record_count'] ?? 0),
+            'included_rows' => (int) ($manifest['included_count'] ?? 0),
+            'excluded_rows' => (int) ($manifest['excluded_count'] ?? 0),
+            'source_sites' => count($sources), 'outcomes' => $states,
+            'automatically_matched_sites' => ($states['EXACT_EXISTING_BINDING'] ?? 0) + ($states['EXACT_CUSTOMER_EXACT_SITE'] ?? 0),
+            'plots_reuse' => array_sum(array_map(fn (array $source): int => $source['resolution']['plots_reuse'] ?? 0, $sources)),
+            'plots_create' => array_sum(array_map(fn (array $source): int => $source['resolution']['plots_create'] ?? 0, $sources)),
+            'blockers' => ($states['BINDING_CONFLICT'] ?? 0) + ($states['SOURCE_HIERARCHY_CONFLICT'] ?? 0)
+                + ($states['MALFORMED_HIERARCHY'] ?? 0),
+            'resolver' => MasterSourceResolver::VERSION];
     }
 
     private function presentSelection(array $selection, bool $legacyManifestSource): array
@@ -376,35 +460,6 @@ final class PilotImportWorkflow
             DB::table('wald_pilot_uploads')->where('id', $upload->id)->update(['state' => 'FAILED', 'failure_code' => $exception instanceof ImportConflict ? $exception->getMessage() : 'pilot_analysis_failed', 'updated_at' => now('UTC')]);
             throw $exception;
         }
-    }
-
-    private function binding(string $namespace, array $source): array
-    {
-        $root = DB::table('wald_source_bindings')->where('identity_hash', Canonical::hash([$namespace, $source['kind'], $source['identity']]))->first();
-        if (! $root) {
-            return ['binding' => null, 'draft' => null];
-        }
-        $present = function (?object $version) use ($root): ?array {
-            if (! $version) {
-                return null;
-            }
-            $site = DB::table('sites')->where('id', $version->site_id)->where('is_active', true)->first();
-            $customer = $site ? DB::table('customer_organisations')->where('id', $site->customer_organisation_id)->where('is_active', true)->first() : null;
-
-            return $site && $customer ? [
-                'uuid' => $root->uuid,
-                'epoch' => (int) $root->epoch,
-                'version' => (int) $version->version,
-                'definition_hash' => $version->definition_hash,
-                'site_uuid' => $site->uuid,
-                'site_name' => $site->name,
-                'customer_name' => $customer->name,
-            ] : null;
-        };
-        $active = $root->active_version ? DB::table('wald_binding_versions')->where('binding_id', $root->id)->where('version', $root->active_version)->first() : null;
-        $latest = DB::table('wald_binding_versions')->where('binding_id', $root->id)->where('version', $root->latest_version)->first();
-
-        return ['binding' => $present($active), 'draft' => $present($latest)];
     }
 
     private function command(string $command): void
