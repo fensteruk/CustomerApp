@@ -66,7 +66,7 @@
         @empty
             <section class="wald-panel"><h2 class="section-title">No unresolved rows</h2><p>All rows in this queue have been resolved or explicitly excluded.</p></section>
         @endforelse
-        <div class="mt-4">{{ $rows->links() }}</div>
+        <div class="mt-4 overflow-x-auto">{{ $rows->links() }}</div>
         <section class="wald-panel"><h2 class="section-title">Final review</h2>
             <p>{{ count($overview['automatic']) }} automatic source units · {{ $overview['reviewed_count'] - $overview['deferred_count'] }} manually confirmed CustomerCodes · {{ $overview['deferred_count'] }} deferred CustomerCodes · {{ $createdCustomers }} new customers approved · {{ $createdSites }} new sites approved.</p>
             <p>{{ $overview['import']['resolution_summary']['plots_create'] }} plots proposed for creation · {{ $overview['import']['resolution_summary']['plots_reuse'] }} same-site plots proposed for reuse.</p>

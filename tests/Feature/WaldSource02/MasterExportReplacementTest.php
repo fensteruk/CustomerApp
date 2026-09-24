@@ -929,6 +929,30 @@ it('reviews one conflicting CustomerCode and sends unmatched rows to the final q
         ->toThrow(ImportConflict::class, 'review_group_has_unknown_decisions');
 });
 
+it('keeps a newly approved exact site selected in the customer code review form', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2563', 'call' => '1251', 'site' => 'Countryside',
+            'plot' => 'Vistry - Countryside 2D - Plot 776'],
+    ], '2099-02-18');
+    $source = $pilot['sources'][0];
+    source02Approve($office, $pilot, $source, 'NEW_CUSTOMER_AND_SITE');
+
+    $customer = CustomerOrganisation::query()->where('name', 'Vistry')->firstOrFail();
+    $site = Site::query()->where('customer_organisation_id', $customer->id)
+        ->where('name', 'Countryside 2D')->firstOrFail();
+    $response = $this->actingAs($office)->get(route('office.workspace.pilot-import.customer-codes.review', [
+        'upload' => $pilot['upload'], 'source' => $source['hash'],
+    ]));
+
+    $response->assertOk()
+        ->assertViewHas('current', fn (array $current): bool => $current['resolution']['customer_uuid'] === $customer->uuid
+            && $current['resolution']['site_uuid'] === $site->uuid)
+        ->assertSee('x-effect="$nextTick(() => { if (site) $el.value = site })"', false)
+        ->assertSee('Countryside 2D');
+    expect(DB::table('projected_plots')->count())->toBe(0);
+});
+
 it('keeps a missing CustomerCode row in Unknown review and audits explicit exclusion', function (): void {
     $office = source02Office();
     $customer = CustomerOrganisation::factory()->create(['name' => 'Safe Customer', 'is_active' => true]);
