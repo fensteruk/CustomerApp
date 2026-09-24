@@ -7,6 +7,7 @@ use App\SourceImport\Integration\ImportConflict;
 use App\SourceImport\Integration\MasterSourceResolver;
 use App\SourceImport\Integration\UnknownRowsWorkflow;
 use App\SourceImport\Integration\WaldPilotAvailability;
+use App\SourceImport\Knowledge\Canonical;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -56,6 +57,25 @@ final class OfficeUnknownRowsController extends Controller
         $codeRows = (clone $query)->where('disposition', 'UNKNOWN')->whereNotNull('customer_code')
             ->get(['customer_code', 'row_number', 'raw_plot_ref', 'parsed_customer', 'parsed_site']);
         $rowsByCode = $codeRows->groupBy('customer_code')->map(fn ($group) => $group->map(fn (object $row): array => ['row' => (int) $row->row_number, 'raw' => $row->raw_plot_ref])->all())->all();
+        $namespace = DB::table('wald_pilot_uploads as uploads')
+            ->join('wald_import_streams as streams', 'streams.id', '=', 'uploads.stream_id')
+            ->where('uploads.id', $overview['import']['id'])->value('streams.source_namespace');
+        $sourcesByCode = collect($overview['import']['sources'])->keyBy('customer_code');
+        $identityHashes = $unknownCodes->mapWithKeys(function (object $item) use ($sourcesByCode, $namespace): array {
+            $source = $sourcesByCode->get($item->customer_code);
+
+            return $source ? [$item->customer_code => Canonical::hash([$namespace, $source['kind'], $source['identity']])] : [];
+        });
+        $bindings = DB::table('wald_source_bindings as bindings')
+            ->join('wald_binding_versions as versions', function ($join): void {
+                $join->on('versions.binding_id', '=', 'bindings.id')
+                    ->on('versions.version', '=', 'bindings.active_version');
+            })
+            ->join('sites as bound_sites', 'bound_sites.id', '=', 'versions.site_id')
+            ->join('customer_organisations as bound_customers', 'bound_customers.id', '=', 'versions.customer_organisation_id')
+            ->whereIn('bindings.identity_hash', $identityHashes->values()->all())
+            ->get(['bindings.identity_hash', 'bound_sites.uuid as site_uuid', 'bound_sites.name as site_name',
+                'bound_customers.name as customer_name'])->keyBy('identity_hash');
         foreach ($unknownCodes as $item) {
             $evidence = $codeRows->where('customer_code', $item->customer_code)
                 ->filter(fn (object $row): bool => $row->parsed_customer !== null && $row->parsed_site !== null);
@@ -67,14 +87,13 @@ final class OfficeUnknownRowsController extends Controller
             $siteMatches = $customer ? $sites->filter(fn (object $candidate): bool => (int) $candidate->customer_organisation_id === (int) $customer->id
                 && MasterSourceResolver::sameName($candidate->name, $first->parsed_site)) : collect();
             $site = $siteMatches->count() === 1 ? $siteMatches->first() : null;
-            $source = collect($overview['import']['sources'])->firstWhere('customer_code', $item->customer_code);
-            $binding = $source['resolution']['binding'] ?? null;
+            $binding = $bindings->get($identityHashes->get($item->customer_code));
             $recommendations[$item->customer_code] = [
                 'customer' => $site ? $customer->uuid : '', 'site' => $site?->uuid ?? '',
                 'source_customer' => $first?->parsed_customer ?? '', 'source_site' => $first?->parsed_site ?? '',
-                'binding_customer' => $binding['customer_name'] ?? '',
-                'binding_site' => $binding['site_name'] ?? '',
-                'binding_site_uuid' => $binding['site_uuid'] ?? '',
+                'binding_customer' => $binding?->customer_name ?? '',
+                'binding_site' => $binding?->site_name ?? '',
+                'binding_site_uuid' => $binding?->site_uuid ?? '',
             ];
         }
 

@@ -1110,8 +1110,11 @@ it('corrects a conflicting CustomerCode binding in the same stored import withou
         $lovell->uuid, $barne->uuid, $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid()))
         ->toThrow(ImportConflict::class, 'binding_confirmation_required');
     expect(DB::table('wald_binding_versions')->count())->toBe(1);
+    $oldSite->update(['is_active' => false]);
     $response = $this->actingAs($office)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']));
     $response->assertOk()->assertSee('Lovell')->assertSee('Barne Barton')->assertSee('Binding conflict');
+    expect($response->viewData('recommendations')['FNA2473']['binding_site_uuid'])->toBe($oldSite->uuid)
+        ->and($response->viewData('recommendations')['FNA2473']['binding_site'])->toBe('Old Site');
     $result = (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2473',
         $lovell->uuid, $barne->uuid, $upload->source_manifest_hash, (int) $upload->epoch,
         (string) Str::uuid(), true, '4');
