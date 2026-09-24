@@ -6,6 +6,7 @@ use App\Models\Site;
 use App\Models\User;
 use App\SourceImport\Integration\ApproveMasterHierarchyProposal;
 use App\SourceImport\Integration\BackendStore;
+use App\SourceImport\Integration\CustomerCodeReviewWorkflow;
 use App\SourceImport\Integration\ExportOrder;
 use App\SourceImport\Integration\HierarchyClarifications;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
@@ -15,7 +16,9 @@ use App\SourceImport\Integration\ImportReview;
 use App\SourceImport\Integration\PilotImportWorkflow;
 use App\SourceImport\Integration\PilotReplacementConfirmationRequired;
 use App\SourceImport\Integration\PilotWorkbookDiscovery;
+use App\SourceImport\Integration\ReviewedPlotDerivation;
 use App\SourceImport\Integration\SourceBindingService;
+use App\SourceImport\Integration\UnknownRowsWorkflow;
 use App\SourceImport\Knowledge\Actions\AnswerClarification;
 use App\SourceImport\Knowledge\Canonical;
 use App\SourceImport\Knowledge\KnowledgeQueries;
@@ -163,6 +166,12 @@ it('approves a new customer and site atomically then reuses them on repeat impor
         ->toBe($result['binding_uuid']);
     expect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'][0]['resolution']['state'])
         ->toBe('EXACT_EXISTING_BINDING');
+    $review = new CustomerCodeReviewWorkflow;
+    expect($review->overview($office, $pilot['upload'])['pending'])->toHaveCount(1);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $review->confirm($office, $pilot['upload'], $source['hash'], $result['customer_uuid'],
+        $result['site_uuid'], '', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect($review->overview($office, $pilot['upload'])['pending'])->toBe([]);
     $later = source02Upload($office, [
         ['code' => 'FNA2473', 'call' => '9003', 'site' => 'Changed description', 'plot' => 'Lovell - Barne Barton - Plot 3'],
     ], '2099-11-02');
@@ -867,6 +876,212 @@ it('lets Office restore an excluded CustomerCode row to guarded review and confi
             ->where('action', 'pilot_ignored_rows_confirmed')->count())->toBe(1);
     expect(fn () => (new PilotImportWorkflow)->restoreIgnoredRow($office, $pilot['upload'], 3, (string) Str::uuid()))
         ->toThrow(ImportConflict::class, 'ignored_row_review_not_available');
+});
+
+it('reviews one conflicting CustomerCode and sends unmatched rows to the final queue', function (): void {
+    $office = source02Office();
+    $vistry = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    Site::factory()->create(['customer_organisation_id' => $vistry->id, 'name' => 'Countryside 2D', 'is_active' => true]);
+    $baker = CustomerOrganisation::factory()->create(['name' => 'Baker', 'is_active' => true]);
+    $bakerSite = Site::factory()->create(['customer_organisation_id' => $baker->id, 'name' => 'Little Cotton Farm', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2563', 'call' => '1201', 'site' => 'Countryside', 'plot' => 'Vistry - Countryside 2D - Plot 776'],
+        ['code' => 'FNA2439', 'call' => '1202', 'site' => 'Cotton', 'plot' => 'Baker - Little Cotton Farm - Plot 033'],
+        ['code' => 'FNA2439', 'call' => '1203', 'site' => 'Cotton', 'plot' => 'Baker Estates LTD - Little Cotton Farm - Plot Com 4'],
+    ], '2099-02-11');
+    $workflow = new CustomerCodeReviewWorkflow;
+    $overview = $workflow->overview($office, $pilot['upload']);
+    expect($overview['automatic'])->toHaveCount(1)
+        ->and($overview['pending'])->toHaveCount(1)
+        ->and($overview['pending'][0]['customer_code'])->toBe('FNA2439');
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.customer-codes.review', $pilot['upload']))
+        ->assertOk()->assertSee('Confirm source rows')->assertSee('FNA2439')->assertSee('Select all')
+        ->assertSee('Clear all')->assertSee('Confirm &amp; Next CustomerCode', false);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $workflow->confirm($office, $pilot['upload'], $overview['pending'][0]['hash'], $baker->uuid,
+        $bakerSite->uuid, '', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    $after = $workflow->overview($office, $pilot['upload']);
+    expect($after['pending'])->toBe([])
+        ->and($after['reviewed_count'])->toBe(1)
+        ->and($after['unknown_count'])->toBe(1)
+        ->and(DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $upload->id)
+            ->where('row_number', 3)->value('confirmed_plot'))->toBe('033')
+        ->and(DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $upload->id)
+            ->where('row_number', 4)->value('disposition'))->toBe('UNKNOWN')
+        ->and(DB::table('wald_pilot_review_decisions')->count())->toBe(2);
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))
+        ->assertOk()->assertSee('Unknown / Unclassified rows')->assertSee('Baker Estates LTD');
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    (new UnknownRowsWorkflow)->resolve($office, $pilot['upload'], 4, $baker->uuid, $bakerSite->uuid,
+        'Com 4', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect(fn () => (new UnknownRowsWorkflow)->exclude($office, $pilot['upload'], 4, 'Out of scope',
+        $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'unknown_review_not_available');
+    $resolved = $workflow->overview($office, $pilot['upload']);
+    expect($resolved['unknown_count'])->toBe(0)
+        ->and(collect($resolved['import']['sources'])->firstWhere('customer_code', 'FNA2439')['resolution']['plot_count'])->toBe(2)
+        ->and(DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $upload->id)
+            ->where('row_number', 4)->value('confirmed_plot'))->toBe('Com 4');
+    $latest = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(fn () => $workflow->confirm($office, $pilot['upload'], $overview['pending'][0]['hash'],
+        $baker->uuid, $bakerSite->uuid, '', $latest->source_manifest_hash,
+        (int) $latest->epoch, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'review_group_has_unknown_decisions');
+});
+
+it('keeps a missing CustomerCode row in Unknown review and audits explicit exclusion', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Safe Customer', 'is_active' => true]);
+    Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Safe Site', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'SAFE', 'call' => '1301', 'site' => 'Safe', 'plot' => 'Safe Customer - Safe Site - Plot 1'],
+        ['code' => '', 'call' => '1302', 'site' => 'Unknown', 'plot' => 'Unknown Customer - Unknown Site - Plot 2'],
+    ], '2099-02-12');
+    $overview = (new CustomerCodeReviewWorkflow)->overview($office, $pilot['upload']);
+    expect($overview['unknown_count'])->toBe(1);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    (new UnknownRowsWorkflow)->exclude($office, $pilot['upload'], 3, 'Source identity unavailable.',
+        $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect(DB::table('wald_pilot_review_rows')->where('row_number', 3)->value('disposition'))->toBe('EXCLUDED')
+        ->and(DB::table('wald_pilot_events')->where('action', 'pilot_unknown_row_excluded')->count())->toBe(1);
+});
+
+it('derives string plots only after exact customer and site text is identified', function (): void {
+    $derivation = new ReviewedPlotDerivation;
+    expect($derivation->derive('Vistry – Countryside 2D – 033', 'Vistry', 'Countryside 2D')['plot'])->toBe('033')
+        ->and($derivation->derive('Vistry – Countryside 2D – Com 4', 'Vistry', 'Countryside 2D')['plot'])->toBe('Com 4')
+        ->and($derivation->derive('Vistry – Countryside 2D – Plot 776', 'Vistry', 'Countryside 2D')['plot'])->toBe('776')
+        ->and($derivation->derive('Lovell – Barne Barton – Block A', 'Lovell', 'Barne Barton')['plot'])->toBe('Block A')
+        ->and($derivation->derive('Vistry – Countryside 2D – Plot 18 - 23', 'Vistry', 'Countryside 2D')['plot'])->toBeNull()
+        ->and($derivation->derive('Vistry – Countryside 2D – 033', 'Unrelated', 'Countryside 2D')['plot'])->toBeNull();
+});
+
+it('rejects stale and cross-customer CustomerCode confirmations', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Baker', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Farm', 'is_active' => true]);
+    $other = CustomerOrganisation::factory()->create(['name' => 'Other', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2439', 'call' => '1401', 'site' => 'Farm', 'plot' => 'Baker - Farm - Plot 1'],
+        ['code' => 'FNA2439', 'call' => '1402', 'site' => 'Farm', 'plot' => 'Other - Farm - Plot 2'],
+    ], '2099-02-13');
+    $workflow = new CustomerCodeReviewWorkflow;
+    $hash = $pilot['sources'][0]['hash'];
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    expect(fn () => $workflow->confirm($office, $pilot['upload'], $hash, $other->uuid, $site->uuid,
+        '', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'review_target_invalid');
+    expect(fn () => $workflow->confirm($office, $pilot['upload'], $hash, $customer->uuid, $site->uuid,
+        '', str_repeat('0', 64), (int) $upload->epoch, (string) Str::uuid()))
+        ->toThrow(ImportConflict::class, 'review_stale_or_site_selected');
+    expect(DB::table('wald_pilot_review_decisions')->count())->toBe(0);
+});
+
+it('keeps Unknown review last while FNA2439 and FNA2538 need separate group decisions', function (): void {
+    $office = source02Office();
+    $baker = CustomerOrganisation::factory()->create(['name' => 'Baker', 'is_active' => true]);
+    $farm = Site::factory()->create(['customer_organisation_id' => $baker->id, 'name' => 'Farm', 'is_active' => true]);
+    $vistry = CustomerOrganisation::factory()->create(['name' => 'Vistry', 'is_active' => true]);
+    $haven = Site::factory()->create(['customer_organisation_id' => $vistry->id, 'name' => 'Mariners Haven (Phase 2)', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2439', 'call' => '1501', 'site' => 'Farm', 'plot' => 'Baker - Farm - Plot 1'],
+        ['code' => 'FNA2439', 'call' => '1502', 'site' => 'Farm', 'plot' => 'Baker Estates LTD - Farm - Plot 2'],
+        ['code' => 'FNA2538', 'call' => '1503', 'site' => 'Haven', 'plot' => 'Vistry - Mariners Haven (Phase 2) - Plot 3'],
+        ['code' => 'FNA2538', 'call' => '1504', 'site' => 'Haven', 'plot' => 'Vistry - Mariners Haven Phase 2 - Plot 4'],
+    ], '2099-02-14');
+    $workflow = new CustomerCodeReviewWorkflow;
+    $overview = $workflow->overview($office, $pilot['upload']);
+    expect(collect($overview['pending'])->pluck('customer_code')->all())->toBe(['FNA2439', 'FNA2538']);
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))
+        ->assertRedirect(route('office.workspace.pilot-import.customer-codes.review', $pilot['upload']));
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $workflow->confirm($office, $pilot['upload'], $overview['pending'][0]['hash'], $baker->uuid,
+        $farm->uuid, '', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    $next = $workflow->overview($office, $pilot['upload']);
+    expect($next['pending'])->toHaveCount(1)->and($next['pending'][0]['customer_code'])->toBe('FNA2538');
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $workflow->confirm($office, $pilot['upload'], $next['pending'][0]['hash'], $vistry->uuid,
+        $haven->uuid, '', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect($workflow->overview($office, $pilot['upload'])['pending'])->toBe([])
+        ->and($workflow->overview($office, $pilot['upload'])['unknown_count'])->toBe(2);
+    $this->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))->assertOk();
+});
+
+it('can bulk resolve exact matching unknown rows under one CustomerCode', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Baker Estates Ltd', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id,
+        'name' => 'Little Cotton Farm 117-144', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2664', 'call' => '1601', 'site' => 'Cotton', 'plot' => 'Little Cotton Farm 117-144...- Baker Estates Ltd222'],
+        ['code' => 'FNA2664', 'call' => '1602', 'site' => 'Cotton', 'plot' => 'Little Cotton Farm 117-144...- Baker Estates Ltd223'],
+    ], '2099-02-15');
+    $workflow = new CustomerCodeReviewWorkflow;
+    $overview = $workflow->overview($office, $pilot['upload']);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $workflow->confirm($office, $pilot['upload'], $overview['pending'][0]['hash'], $customer->uuid,
+        $site->uuid, '3', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect($workflow->overview($office, $pilot['upload'])['unknown_count'])->toBe(1);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $result = (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2664',
+        $customer->uuid, $site->uuid, $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect($result)->toBe(['resolved' => 1, 'unknown' => 0])
+        ->and(DB::table('wald_pilot_review_rows')->where('row_number', 3)->value('confirmed_plot'))->toBe('223')
+        ->and($workflow->overview($office, $pilot['upload'])['unknown_count'])->toBe(0);
+});
+
+it('can defer a malformed CustomerCode without inventing a target and review it later', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2664', 'call' => '1651', 'site' => 'Cotton',
+            'plot' => 'Little Cotton Farm 117-144...- Baker Estates Ltd222'],
+    ], '2099-02-17');
+    $workflow = new CustomerCodeReviewWorkflow;
+    $overview = $workflow->overview($office, $pilot['upload']);
+    expect($overview['pending'])->toHaveCount(1);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $this->actingAs($office)->post(route('office.workspace.pilot-import.customer-codes.defer',
+        ['upload' => $pilot['upload'], 'sourceHash' => $overview['pending'][0]['hash']]), [
+            'source_manifest_hash' => $upload->source_manifest_hash,
+            'expected_epoch' => (int) $upload->epoch,
+            'confirmation' => 'SEND CUSTOMER CODE TO UNKNOWN',
+            'command_uuid' => (string) Str::uuid(),
+        ])->assertRedirect(route('office.workspace.pilot-import.customer-codes.review', $pilot['upload']));
+    expect($workflow->overview($office, $pilot['upload'])['pending'])->toBe([])
+        ->and($workflow->overview($office, $pilot['upload'])['unknown_count'])->toBe(1)
+        ->and(DB::table('wald_pilot_review_groups')->value('site_id'))->toBeNull();
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.unknown.show', $pilot['upload']))->assertOk();
+
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Baker Estates Ltd', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id,
+        'name' => 'Little Cotton Farm 117-144', 'is_active' => true]);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $result = (new UnknownRowsWorkflow)->resolveCode($office, $pilot['upload'], 'FNA2664',
+        $customer->uuid, $site->uuid, $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    expect($result)->toBe(['resolved' => 1, 'unknown' => 0])
+        ->and(DB::table('wald_pilot_review_rows')->value('confirmed_plot'))->toBe('222');
+});
+
+it('keeps an unresolved row outside the selected-site preview while a safe sibling proceeds', function (): void {
+    $office = source02Office();
+    $customer = CustomerOrganisation::factory()->create(['name' => 'Baker', 'is_active' => true]);
+    $site = Site::factory()->create(['customer_organisation_id' => $customer->id, 'name' => 'Farm', 'is_active' => true]);
+    $pilot = source02Upload($office, [
+        ['code' => 'FNA2439', 'call' => '1701', 'site' => 'Farm', 'plot' => 'Baker - Farm - Plot 1'],
+        ['code' => 'FNA2439', 'call' => '1702', 'site' => 'Farm', 'plot' => 'Unknown - Farm - Plot 2'],
+    ], '2099-02-16');
+    $workflow = new CustomerCodeReviewWorkflow;
+    $overview = $workflow->overview($office, $pilot['upload']);
+    $upload = DB::table('wald_pilot_uploads')->where('uuid', $pilot['upload'])->firstOrFail();
+    $workflow->confirm($office, $pilot['upload'], $overview['pending'][0]['hash'], $customer->uuid,
+        $site->uuid, '', $upload->source_manifest_hash, (int) $upload->epoch, (string) Str::uuid());
+    $source = collect((new PilotImportWorkflow)->summary($office, $pilot['upload'])['sources'])->firstWhere('customer_code', 'FNA2439');
+    $selection = (new PilotImportWorkflow)->select($office, $pilot['upload'], $source['hash'], $site->uuid, (string) Str::uuid());
+    $run = source02Analyse($office, $selection['scope'], DB::table('wald_import_runs')->where('uuid', $selection['run'])->firstOrFail());
+    $preview = (new ImportReview)->preview($office, $selection['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
+    expect($preview['blockers'])->toBe([])
+        ->and(DB::table('wald_staged_rows')->where('stage_id', $run->stage_id)->count())->toBe(1)
+        ->and(DB::table('wald_pilot_review_rows')->where('row_number', 3)->value('disposition'))->toBe('UNKNOWN');
 });
 
 it('previews and commits a corrected successor after an uncommitted predecessor without fabricating a receipt', function (): void {

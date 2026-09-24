@@ -11,7 +11,7 @@ final class PilotWorkbookDiscovery
 {
     public const MAX_PARENT_ROWS = 5000;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v6';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v7';
 
     public function inspect(object $upload, array $restoredRows = []): array
     {
@@ -53,6 +53,7 @@ final class PilotWorkbookDiscovery
         $included = 0;
         $excluded = 0;
         $ignoredRows = [];
+        $reviewRows = [];
         $sawHierarchySignal = false;
         $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
         $dataEnd = (int) ($table['data_end_row'] ?? $table['range']['end_row']);
@@ -93,6 +94,14 @@ final class PilotWorkbookDiscovery
 
                 continue;
             }
+            if ($identity['kind'] === MasterExportSiteIdentity::KIND
+                && (! is_string($rawIdentity) && ! is_int($rawIdentity) || trim((string) $rawIdentity) === '')) {
+                $reviewRows[] = $this->reviewRow($rowNumber, $call, null, null,
+                    $plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null), $rawCallType,
+                    null, ['valid' => false, 'issue' => 'CUSTOMER_CODE_MISSING']);
+
+                continue;
+            }
             $identityValue = $identity['kind'] === MasterExportSiteIdentity::KIND
                 ? (new MasterExportSiteIdentity)->customerCode($rawIdentity)
                 : trim((string) $rawIdentity);
@@ -117,6 +126,11 @@ final class PilotWorkbookDiscovery
             }
             $hash = Canonical::hash([$identity['kind'], $identityValue]);
             $rawPlot = $plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null;
+            $parsed = $plotColumn !== null
+                ? (new CompositePlotHierarchy)->parse($rawPlot, $identityValue)
+                : ['valid' => false, 'issue' => 'PLOT_COLUMN_MISSING'];
+            $reviewRows[] = $this->reviewRow($rowNumber, $call, $identityValue, $siteName,
+                $rawPlot, $rawCallType, $hash, $parsed);
             $sawHierarchySignal = $sawHierarchySignal
                 || (is_string($rawPlot) && (preg_match('/\s[-\x{2013}\x{2014}]\s|[-\x{2013}\x{2014}]\s*Plot\s+/iu', $rawPlot) === 1
                     || (new HierarchySuggestion)->forIssue($identityValue, $rawPlot) !== null));
@@ -135,7 +149,6 @@ final class PilotWorkbookDiscovery
                 'plots' => [],
             ];
             if ($plotColumn !== null) {
-                $parsed = (new CompositePlotHierarchy)->parse($rawPlot, $identityValue);
                 if (! $parsed['valid']) {
                     $sources[$hash]['hierarchy']['invalid_rows']++;
                     $rawHash = Canonical::hash([$rawPlot]);
@@ -170,7 +183,7 @@ final class PilotWorkbookDiscovery
             $sources[$hash]['rows']++;
             $included++;
         }
-        if ($seen === [] || $sources === []) {
+        if ($seen === [] || ($sources === [] && $reviewRows === [])) {
             throw new ImportConflict('no_source_records');
         }
         $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
@@ -219,7 +232,30 @@ final class PilotWorkbookDiscovery
             'record_count' => count($seen),
             'included_count' => $included,
             'excluded_count' => $excluded,
+            'dictionary_excluded_count' => $excluded,
+            'office_excluded_count' => 0,
+            'unclassified_count' => count(array_filter($reviewRows,
+                fn (array $row): bool => $row['source_identity_hash'] === null)),
             'ignored_rows' => $ignoredRows,
+            'review_rows' => $reviewRows,
+        ];
+    }
+
+    private function reviewRow(int $rowNumber, string $call, ?string $code, ?string $site,
+        mixed $rawPlot, mixed $rawCallType, ?string $sourceHash, array $parsed): array
+    {
+        return [
+            'row_number' => $rowNumber,
+            'source_identity_hash' => $sourceHash,
+            'customer_code' => $code,
+            'call_no' => $call,
+            'call_type' => $rawCallType === null ? null : mb_substr(trim((string) $rawCallType), 0, 100),
+            'source_site_name' => $site,
+            'raw_plot_ref' => $rawPlot === null ? null : (string) $rawPlot,
+            'parsed_customer' => $parsed['valid'] ? $parsed['customer'] : null,
+            'parsed_site' => $parsed['valid'] ? $parsed['site'] : null,
+            'parsed_plot' => $parsed['valid'] ? $parsed['plot'] : null,
+            'issue' => $parsed['valid'] ? null : $parsed['issue'],
         ];
     }
 

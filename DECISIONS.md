@@ -2123,3 +2123,40 @@ Reason: The genuine workbook has six test/trade CustomerCode rows with otherwise
 approved PC1 or CC1 Call Types. Call Type filtering alone cannot identify them.
 Office needs a visible, auditable way to review and deliberately retain or
 restore those exact rows.
+
+---
+
+## DEC-081
+
+Date: 24 September 2026
+
+Decision: The supervised master import gains an Office CustomerCode review
+wizard above the existing exact resolver. Fully and safely resolved codes are
+skipped. Each remaining code is shown one at a time with all of its included
+rows selected by default; Office chooses the exact Customer and Site once,
+unticks exceptions, reviews proposed string Plot Refs and confirms the group.
+Customer and Site text may be removed from a raw Plot Ref only when their exact
+normalized words and approved separators are identifiable. A single remaining
+plot string may be proposed, including `033`, `Com 4` and `Block A`; an initial
+`Plot ` token is removed. Multiple or unexplained fragments are not guessed.
+Canonical MASTER03 creation remains the creation path for valid new-structure
+proposals. Confirming a group records source row membership and immutable Office
+decision history, refreshes the source resolver, and creates no plots or visits.
+
+Rows unticked or lacking safe plot/customer/site structure go to a final
+Unknown / Unclassified queue after normal groups. Office can resolve them
+manually against an exact existing Customer and Site, exclude them for this
+upload with a reason, or leave them unresolved. A missing CustomerCode cannot
+be manufactured by manual target choice; its row stays outside projection.
+Unknown rows left unresolved do not block other independently safe selected
+site units. One-site preview and explicit Apply remain mandatory, with no
+unattended multi-site commit. The DEC-080 three-code Ignored tab remains a
+separate exact-code disposition review.
+When no safe Customer/Site target exists yet, Office may defer the whole
+CustomerCode to Unknown review. This records every row as unresolved without
+fabricating a target. Later manual review must still resolve against an exact
+active target and pass source binding checks before projection.
+
+Reason: Group review removes repetitive row-by-row mapping while keeping
+uncertain rows visible, auditable and outside customer-facing projection until
+their source identity and Plot Ref are safely established.

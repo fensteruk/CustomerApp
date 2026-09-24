@@ -2,10 +2,12 @@
 
 use App\Http\Controllers\OfficeAdministrationPageController as Pages;
 use App\Http\Controllers\OfficeAmendmentsWorkspaceController;
+use App\Http\Controllers\OfficeCustomerCodeReviewController;
 use App\Http\Controllers\OfficeDemoPurgeController as DemoPurge;
 use App\Http\Controllers\OfficeImportReconciliationController;
 use App\Http\Controllers\OfficePermanentDeletionController as PermanentDeletion;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
+use App\Http\Controllers\OfficeUnknownRowsController;
 use App\Http\Controllers\OfficeUserPageController as UserPages;
 use App\Http\Controllers\OfficeWaldSettingsController as WaldSettings;
 use App\Models\CustomerOrganisation;
@@ -29,6 +31,20 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
         Route::post('/imports/pilot', [PilotImport::class, 'upload'])->name('pilot-import.upload');
         Route::prefix('/imports/pilot/{upload}')->whereUuid('upload')->group(function (): void {
+            Route::get('/customer-codes/review', [OfficeCustomerCodeReviewController::class, 'show'])
+                ->name('pilot-import.customer-codes.review');
+            Route::post('/customer-codes/{sourceHash}/confirm', [OfficeCustomerCodeReviewController::class, 'confirm'])
+                ->where('sourceHash', '[a-f0-9]{64}')->name('pilot-import.customer-codes.confirm');
+            Route::post('/customer-codes/{sourceHash}/defer', [OfficeCustomerCodeReviewController::class, 'defer'])
+                ->where('sourceHash', '[a-f0-9]{64}')->name('pilot-import.customer-codes.defer');
+            Route::get('/unknown-rows', [OfficeUnknownRowsController::class, 'show'])
+                ->name('pilot-import.unknown.show');
+            Route::post('/unknown-rows/resolve-code', [OfficeUnknownRowsController::class, 'resolveCode'])
+                ->name('pilot-import.unknown.resolve-code');
+            Route::post('/unknown-rows/{rowNumber}/resolve', [OfficeUnknownRowsController::class, 'resolve'])
+                ->whereNumber('rowNumber')->name('pilot-import.unknown.resolve');
+            Route::post('/unknown-rows/{rowNumber}/exclude', [OfficeUnknownRowsController::class, 'exclude'])
+                ->whereNumber('rowNumber')->name('pilot-import.unknown.exclude');
             Route::get('/reconciliation', [OfficeImportReconciliationController::class, 'show'])->name('pilot-import.reconciliation');
             Route::get('/', [PilotImport::class, 'show'])->name('pilot-import.show');
             Route::post('/ignored-rows/{rowNumber}/restore', [PilotImport::class, 'restoreIgnoredRow'])

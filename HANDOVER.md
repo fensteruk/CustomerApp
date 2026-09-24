@@ -1,5 +1,16 @@
 # Fenster Customer Portal Handover
 
+## Wald CustomerCode review and Unknown queue — 24 September 2026
+
+The local MASTER04 candidate adds one-code-at-a-time Office row confirmation,
+all-selected-by-default review, deterministic string plot proposals and a
+final Unknown queue. Malformed groups can be deferred without fabricating a
+Customer/Site; Office can later resolve or exclude individual rows. Genuine
+XLS and XLSX sources were qualified only in disposable MySQL, with no
+customer-facing Apply, push or deployment. See
+`documentation/wald-master04-customer-code-review-2026-09-24.md` for counts,
+verification and safety boundaries.
+
 ## Wald Office structural approval — 24 September 2026
 
 The local MASTER03 continuation adds explicit Office approval for new

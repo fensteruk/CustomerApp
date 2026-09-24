@@ -130,7 +130,10 @@ final class WorkbookStager
         $compositeMode = false;
         $hierarchyAnswers = [];
         $restoredRows = [];
+        $reviewRows = [];
         if ($run->pilot_upload_id ?? null) {
+            $reviewRows = DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $run->pilot_upload_id)
+                ->get()->keyBy('row_number')->all();
             $restoredRows = array_fill_keys(DB::table('wald_pilot_ignored_rows')
                 ->where('pilot_upload_id', $run->pilot_upload_id)->where('disposition', 'RESTORED')
                 ->pluck('row_number')->map(fn ($row): int => (int) $row)->all(), true);
@@ -160,6 +163,10 @@ final class WorkbookStager
                 continue;
             }
             if (! array_filter($cells, fn ($c) => isset($fragmentByColumn[$c->column]) && $c->hasContent())) {
+                continue;
+            }
+            $reviewRow = $reviewRows[(int) $rowNumber] ?? null;
+            if ($reviewRow && in_array($reviewRow->disposition, ['UNKNOWN', 'REVIEWED_MISSING_CODE', 'EXCLUDED'], true)) {
                 continue;
             }
             $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
@@ -218,6 +225,16 @@ final class WorkbookStager
             $excluded = $selection['excluded'];
             $rawPlot = $raw('plot_reference');
             $hierarchy = $excluded || ! $compositeMode ? null : (new CompositePlotHierarchy)->parse($rawPlot, $normalisedSite);
+            if ($hierarchy !== null && $reviewRow && $reviewRow->disposition === 'CONFIRMED') {
+                $hierarchy = ['valid' => true, 'customer' => $target->customer_name,
+                    'site' => $target->site_name, 'plot_source' => $rawPlot,
+                    'plot' => $reviewRow->confirmed_plot, 'raw' => $rawPlot,
+                    'office_confirmed' => true];
+                if ((int) $reviewRow->site_id !== (int) $run->site_id
+                    || (int) $reviewRow->customer_organisation_id !== (int) $run->customer_organisation_id) {
+                    $issues[] = 'SOURCE_BINDING_CUSTOMER_OWNERSHIP_CONFLICT';
+                }
+            }
             if ($hierarchy !== null && ! $hierarchy['valid'] && isset($hierarchyAnswers[Canonical::hash([$rawPlot])])) {
                 $answer = $hierarchyAnswers[Canonical::hash([$rawPlot])];
                 $hierarchy = ['valid' => true, 'customer' => $answer['customer'], 'site' => $answer['site'],

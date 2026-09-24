@@ -805,6 +805,20 @@ bypass hierarchy, binding, semantic, preview or Apply checks. Office confirms
 once per upload the CustomerCode rows left ignored. That confirmation is
 audited and does not itself apply any site.
 
+Office reviews unresolved composite master source units one CustomerCode at a
+time. Fully resolved units are skipped. Included rows start selected; Office
+may untick exceptions, choose one exact Customer and Site, inspect proposed
+string Plot Refs, and confirm the group. Wald may derive the Plot only after
+exactly identifying the chosen Customer and Site text with approved separators
+and one meaningful remaining value. Uncertain or unticked rows wait in a final
+Unknown / Unclassified queue; Office may resolve them manually, explicitly
+exclude them for this upload or leave them unresolved. A missing CustomerCode
+remains outside projection. Group and unknown decisions retain actor, time and
+source row evidence. These decisions do not create plots or bypass selected-site
+preview and Apply.
+If no exact target exists yet, Office may defer the entire CustomerCode group
+to the Unknown queue; this records no invented Customer/Site mapping.
+
 For an older applicable workbook with both `Plot Ref` and `Plot number`, Wald may select
 `Plot number` as the customer-facing plot identifier without asking Office
 only when its value agrees exactly with the trailing `Plot N` in `Plot Ref`

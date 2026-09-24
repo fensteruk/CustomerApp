@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Wald CustomerCode review and Unknown queue candidate — 24 September 2026
+
+CUSTOMER-WALD-MASTER04 builds on the committed dry-run and DEC-080
+CustomerCode exclusion work. It adds a one-code-at-a-time Office review
+wizard, guarded row selection, exact Customer/Site confirmation and a final
+Unknown / Unclassified queue. This remains local feature-branch work; it has
+not been pushed, deployed or used to apply the genuine workbook.
+See `documentation/wald-master04-customer-code-review-2026-09-24.md` for local
+qualification. A malformed group may be deferred to Unknown without an
+invented target; approved new structures still return to row confirmation.
+
 ## Wald Office structural approval candidate — 24 September 2026
 
 CUSTOMER-WALD-MASTER03 continues directly from the clean MASTER02 resolver

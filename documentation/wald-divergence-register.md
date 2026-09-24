@@ -9,6 +9,12 @@ records the rows left ignored for one upload. Existing Call Type exclusions
 remain outside this tab. This is local feature-branch work, not a SiteApp
 backport or production release.
 
+CustomerApp-only WD-64 records DEC-081's CustomerCode review wizard and final
+Unknown / Unclassified queue. Exact target selection, deterministic plot
+derivation, row membership and upload-scoped exclusions are audited and feed
+the existing selected-site preview/Apply boundary. This is a local feature
+branch only; no SiteApp backport or production deployment is implied.
+
 CustomerApp-only WD-62 implements DEC-079's Office-approved structural
 creation from current Wald proposals. Normal CustomerApp administration
 actions create the customer/site within one transaction with the exact source

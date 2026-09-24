@@ -26,6 +26,7 @@ final class PilotImportWorkflow
                 || (int) DB::table('wald_pilot_uploads')->where('stream_id', $upload->stream_id)
                     ->where('export_order', $upload->export_order)->max('revision') !== (int) $upload->revision
                 || DB::table('wald_pilot_selections')->where('pilot_upload_id', $upload->id)->exists()
+                || DB::table('wald_pilot_review_groups')->where('pilot_upload_id', $upload->id)->exists()
                 || DB::table('wald_pilot_events')->where('pilot_upload_id', $upload->id)
                     ->where('action', 'pilot_ignored_rows_confirmed')->exists()) {
                 throw new ImportConflict('ignored_row_review_not_available');
@@ -47,7 +48,17 @@ final class PilotImportWorkflow
                 ->where('pilot_upload_id', $upload->id)->where('disposition', 'RESTORED')
                 ->pluck('row_number')->map(fn ($value): int => (int) $value)->all(), true);
             $manifest = (new PilotWorkbookDiscovery)->inspect($upload, $restored);
-            unset($manifest['ignored_rows']);
+            $reviewRows = $manifest['review_rows'];
+            unset($manifest['ignored_rows'], $manifest['review_rows']);
+            foreach (array_chunk($reviewRows, 250) as $chunk) {
+                DB::table('wald_pilot_review_rows')->insertOrIgnore(array_map(fn (array $reviewRow): array => [
+                    ...$reviewRow,
+                    'pilot_upload_id' => $upload->id,
+                    'disposition' => 'ACTIVE',
+                    'created_at' => now('UTC'),
+                    'updated_at' => now('UTC'),
+                ], $chunk));
+            }
             DB::table('wald_pilot_uploads')->where('id', $upload->id)->update([
                 'source_manifest' => Canonical::json($manifest),
                 'source_manifest_hash' => Canonical::hash($manifest),
@@ -231,7 +242,7 @@ final class PilotImportWorkflow
                 throw new ImportConflict('pilot_source_manifest_stale');
             }
             $source = collect($manifest['sources'])->firstWhere('hash', $sourceHash);
-            if (! $source) {
+            if (! $source || (int) ($source['rows'] ?? 0) < 1) {
                 throw new ImportConflict('source_identity_not_found');
             }
             $source = (new HierarchyClarifications)->resolve($source, (new HierarchyClarifications)->all($upload->id)[$sourceHash] ?? []);
@@ -489,13 +500,23 @@ final class PilotImportWorkflow
             DB::transaction(function () use ($actor, $upload, $manifest): void {
                 $locked = DB::table('wald_pilot_uploads')->where('id', $upload->id)->lockForUpdate()->firstOrFail();
                 $ignoredRows = $manifest['ignored_rows'];
-                unset($manifest['ignored_rows']);
+                $reviewRows = $manifest['review_rows'];
+                unset($manifest['ignored_rows'], $manifest['review_rows']);
                 $payload = Canonical::json($manifest);
                 foreach (array_chunk($ignoredRows, 250) as $chunk) {
                     DB::table('wald_pilot_ignored_rows')->insert(array_map(fn (array $row): array => [
                         ...$row,
                         'pilot_upload_id' => $locked->id,
                         'disposition' => 'IGNORED',
+                        'created_at' => now('UTC'),
+                        'updated_at' => now('UTC'),
+                    ], $chunk));
+                }
+                foreach (array_chunk($reviewRows, 250) as $chunk) {
+                    DB::table('wald_pilot_review_rows')->insert(array_map(fn (array $row): array => [
+                        ...$row,
+                        'pilot_upload_id' => $locked->id,
+                        'disposition' => $row['source_identity_hash'] === null ? 'UNKNOWN' : 'ACTIVE',
                         'created_at' => now('UTC'),
                         'updated_at' => now('UTC'),
                     ], $chunk));

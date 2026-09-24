@@ -9,6 +9,7 @@
         </section>
         @php($activeTab = request()->query('tab') === 'ignored' ? 'ignored' : 'review')
         <nav class="wald-links" aria-label="Import review sections">
+            <a class="secondary-button" href="{{ route('office.workspace.pilot-import.customer-codes.review', $import['upload']) }}">Confirm CustomerCodes →</a>
             <a class="{{ $activeTab === 'review' ? 'primary-button' : 'secondary-button' }}" href="{{ route('office.workspace.pilot-import.show', $import['upload']) }}" @if($activeTab === 'review') aria-current="page" @endif>Approved list and site review</a>
             <a class="{{ $activeTab === 'ignored' ? 'primary-button' : 'secondary-button' }}" href="{{ route('office.workspace.pilot-import.show', ['upload' => $import['upload'], 'tab' => 'ignored']) }}" @if($activeTab === 'ignored') aria-current="page" @endif>Ignored CustomerCodes ({{ number_format($import['ignored_code_count']) }})</a>
         </nav>

@@ -212,6 +212,7 @@ final class OfficePilotImportController extends Controller
             'expected_customer' => ['required', 'string', 'max:255'],
             'expected_site' => ['required', 'string', 'max:255'],
             'confirmation' => ['required', 'in:APPROVE EXACT CUSTOMER AND SITE'],
+            'return_to' => ['nullable', Rule::in(['customer-code-review'])],
             'command_uuid' => ['required', 'uuid'],
         ]);
         try {
@@ -222,8 +223,9 @@ final class OfficePilotImportController extends Controller
             return back()->withErrors(['hierarchy' => $this->message($exception)]);
         }
 
-        return redirect()->route('office.workspace.pilot-import.show', $upload)
-            ->withFragment('detected-sites-title')
+        return redirect()->route(($data['return_to'] ?? null) === 'customer-code-review'
+            ? 'office.workspace.pilot-import.customer-codes.review' : 'office.workspace.pilot-import.show', $upload)
+            ->withFragment(($data['return_to'] ?? null) === 'customer-code-review' ? 'code-title' : 'detected-sites-title')
             ->with('status', 'Customer and site approved. Wald has refreshed the source matches; plots are ready for later site review and Apply.');
     }
 

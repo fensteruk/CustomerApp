@@ -44,6 +44,16 @@ does not include Call Type exclusions. Office can restore a row to normal
 guarded review before site selection, and confirms remaining ignored code rows
 once per upload in immutable audit. Confirmation does not apply a site.
 
+DEC-081 adds a manual exception layer after automatic resolution. Office
+reviews one CustomerCode group at a time with all rows selected by default,
+one exact Customer/Site target, deterministic remaining-string Plot derivation,
+and an audited group confirmation. Unticked or unresolved rows move to a final
+Unknown / Unclassified queue. They are not silently projected. Individual
+manual resolution or upload-scoped exclusion is audited; missing CustomerCode
+cannot be replaced by a guessed identity. The source manifest is versioned
+after a decision, and prior review pins become stale. Existing selected-site
+preview and explicit Apply remain the only Portal projection path.
+
 
 After included rows have been grouped by exact CustomerCode, resolve each source
 identity once against active CustomerApp customers, their own sites and active source

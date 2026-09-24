@@ -18,6 +18,7 @@
             <input type="hidden" name="expected_customer" value="{{ $resolution['customer'] }}">
             <input type="hidden" name="expected_site" value="{{ $resolution['site'] }}">
             <input type="hidden" name="command_uuid" value="{{ (string) Illuminate\Support\Str::uuid() }}">
+            @if($reviewMode ?? false)<input type="hidden" name="return_to" value="customer-code-review">@endif
             <label class="flex items-start gap-2"><input type="checkbox" name="confirmation" value="APPROVE EXACT CUSTOMER AND SITE" required class="mt-1"><span>I confirm this exact customer and site structure.</span></label>
             <button class="primary-button w-full sm:w-auto" type="submit">{{ $resolution['state'] === 'EXACT_CUSTOMER_NEW_SITE' ? 'Create site' : 'Create customer and site' }}</button>
         </form>

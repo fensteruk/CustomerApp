@@ -61,6 +61,15 @@ private Ignored CustomerCodes tab, restore one to ordinary guarded review, and
 confirm the remaining ignored rows once per upload. The tab does not list rows
 excluded solely by Call Type.
 
+DEC-081 permits Office-reviewed fallback Plot derivation after one exact
+Customer and Site are chosen for a CustomerCode group. Match only the chosen
+names with controlled case/whitespace normalization and approved dash
+separators; remove an initial `Plot ` token from the sole remaining value.
+`033`, `Com 4` and `Block A` are valid string Plot Refs. Do not join multiple
+unexplained fragments. Keep uncertain rows in the final Unknown queue for
+manual plot confirmation or upload-scoped exclusion; neither changes global
+Call Type meanings. Retain source row and Office decision evidence.
+
 For the CUSTAPP2 composite profile, only PC1, CC1 and CM1 are recognized. That workbook does not
 inherit checksum-scoped `CC!` correction or CM2 handling from an earlier approved artifact.
 
