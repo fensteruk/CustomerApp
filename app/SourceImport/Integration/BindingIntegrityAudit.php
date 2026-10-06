@@ -14,10 +14,21 @@ final class BindingIntegrityAudit
 
     public function run(): array
     {
+        return DB::transactionLevel() > 0 ? $this->inspect() : DB::transaction(fn (): array => $this->inspect());
+    }
+
+    private function inspect(): array
+    {
         $evidence = $this->evidence();
-        $duplicateKeys = DB::table('wald_source_bindings')->where('identity_kind', 'CUSTOMER_CODE')->whereNotNull('active_version')
-            ->select(['source_namespace', 'source_identity'])->groupBy('source_namespace', 'source_identity')->havingRaw('COUNT(*) > 1')->get()
-            ->mapWithKeys(fn ($root): array => [$root->source_namespace."\0".$root->source_identity => true])->all();
+        $counts = [];
+        DB::table('wald_source_bindings')->select(['id', 'source_namespace', 'source_identity'])->where('identity_kind', 'CUSTOMER_CODE')->whereNotNull('active_version')->orderBy('id')
+            ->chunkById(400, function ($roots) use (&$counts): void {
+                foreach ($roots as $root) {
+                    $key = $root->source_namespace."\0".$root->source_identity;
+                    $counts[$key] = ($counts[$key] ?? 0) + 1;
+                }
+            });
+        $duplicateKeys = array_filter($counts, fn ($count): bool => $count > 1);
         $items = [];
         DB::table('wald_source_bindings')->where('identity_kind', 'CUSTOMER_CODE')->orderBy('id')
             ->chunkById(200, function ($roots) use (&$items, $evidence, $duplicateKeys): void {
@@ -61,7 +72,7 @@ final class BindingIntegrityAudit
         DB::table('wald_binding_versions as versions')->leftJoin('wald_source_bindings as roots', 'roots.id', '=', 'versions.binding_id')
             ->whereNull('roots.id')->orderBy('versions.id')->chunk(200, function ($versions) use (&$items): void {
                 foreach ($versions as $version) {
-                    $items[] = ['customer_code' => 'Unavailable', 'binding_uuid' => null, 'customer' => null, 'site' => null,
+                    $items[] = ['customer_code' => 'Unavailable', 'namespace' => null, 'binding_uuid' => null, 'customer' => null, 'site' => null,
                         'source' => null, 'upload_uuid' => null, 'category' => 'ORPHAN_BINDING_VERSION', 'blocking' => true,
                         'reason' => 'A binding version has no retained binding root.', 'action' => 'Needs Office review'];
                 }
@@ -134,7 +145,7 @@ final class BindingIntegrityAudit
 
     private function item(object $root, ?object $site, ?object $customer, ?array $source, string $category, string $reason): array
     {
-        return ['customer_code' => $root->source_identity, 'binding_uuid' => $root->uuid,
+        return ['customer_code' => $root->source_identity, 'namespace' => $root->source_namespace, 'binding_uuid' => $root->uuid,
             'customer' => $customer?->name, 'site' => $site?->name, 'source' => $source['hierarchy'] ?? null,
             'upload_uuid' => $source['upload_uuid'] ?? null, 'category' => $category,
             'blocking' => in_array($category, self::BLOCKING, true), 'reason' => $reason,
