@@ -2311,3 +2311,50 @@ Reason: Management confirmed the three structural meanings for this known RedZeb
 layout. The repeated rows still lack an approved business grain, so deterministic
 header recognition can proceed while the existing duplicate guard preserves every row
 and prevents unsafe projection.
+
+---
+
+## DEC-086
+
+Date: 6 October 2026
+
+Decision: CUSTOMER-WALD-SOURCECONTRACT03 establishes the full plot register with
+optional call-off evidence. A CustomerApp Plot may exist without any RedZebra call-off.
+Valid CustomerCode and exact Customer → Site → Plot hierarchy establish a base plot
+row when Call Type is genuinely blank or absent. Call Number may also be blank or
+absent; it is never part of Plot identity. The controlled canonical hierarchy fields
+are sufficient for register-only analysis. The DEC-085 alternate XLSX signature may
+omit only Call and/or Call Type, preserving the remaining exact ordered headers.
+
+Plot identity remains exact resolved site binding plus normalized Plot Ref. A numbered
+Source Row retains namespace + CallNo identity, and a recognized visit additionally
+requires a recognized non-null Call Type. An unnumbered base row retains workbook,
+worksheet, cell and physical-row evidence in staging, and a minimal physical reference,
+target Plot ID and evidence hashes in the immutable committed receipt. It creates no
+invented CallNo or durable visit identity. Repeated base rows consolidate one site-scoped
+plot without dropping physical evidence. Every repeated nonblank Call remains blocking;
+DEC-085's repeated-date ambiguity is not resolved by this decision.
+
+Base rows may establish plot and approved product facts through the existing exact
+resolver, Office creation/review, preview and one-site atomic Apply. They make no service,
+request, date, completion, amendment, history or notification assertion. Missing products
+remain no assertion, explicit zero remains exact, and conflicting quantities block.
+Nonblank unknown Call Types remain in Office/Unknown review and cannot be reclassified
+as blank by choosing a target. Existing approved Call Type and CustomerCode exclusions
+still exclude the entire row, including its hierarchy; no plot is inferred solely from
+excluded evidence. All exports retain PARTIAL_FILTERED_EXPORT absence safety.
+
+A successful reviewed Apply records plot_register_established_at on each established
+plot. This source inventory fact permits an authorised assigned Site User to request a
+first service call-off before a source service exists, using the existing four services,
+lead times, early-date reasons, active-request uniqueness and date workflow. Service rows
+are created only by a recognised source visit or an explicit Portal request, never by
+base import. Existing source-missing/completed service guards still apply. A later source
+call-off reuses the same Plot and preserves Portal dates and history; genuine recognized
+source completion retains its existing precedence.
+
+Reason: Management confirmed that earlier exports covered called-off plots only, while
+CustomerApp must also let Site Managers initiate the first call-off for registered plots.
+Inventory and call-off evidence therefore need separate capabilities and persistence.
+This decision approves the bounded feature implementation and disposable qualification,
+not a main push, deployment or production import.

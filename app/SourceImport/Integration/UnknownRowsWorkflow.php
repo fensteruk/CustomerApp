@@ -47,6 +47,9 @@ final class UnknownRowsWorkflow
                 throw new ImportConflict('review_rows_invalid');
             }
             $selectedRows = $rows->reject(fn (object $row): bool => isset($excluded[(int) $row->row_number]));
+            if ($selectedRows->contains(fn (object $row): bool => $row->issue === 'UNKNOWN_CALL_TYPE' || PlotRegisterCapabilities::category($row->call_type) === 'UNKNOWN_NONBLANK_CALLOFF_ROW')) {
+                throw new ImportConflict('unknown_call_type_requires_dictionary_review');
+            }
             $site = DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
                 ->where('sites.uuid', $siteUuid)->where('customer_organisations.uuid', $customerUuid)
                 ->where('sites.is_active', true)->where('customer_organisations.is_active', true)
@@ -176,6 +179,9 @@ final class UnknownRowsWorkflow
             $disposition = 'EXCLUDED';
             $issue = $reason;
             if ($action === 'RESOLVE') {
+                if ($row->issue === 'UNKNOWN_CALL_TYPE' || PlotRegisterCapabilities::category($row->call_type) === 'UNKNOWN_NONBLANK_CALLOFF_ROW') {
+                    throw new ImportConflict('unknown_call_type_requires_dictionary_review');
+                }
                 $site = DB::table('sites')->join('customer_organisations', 'customer_organisations.id', '=', 'sites.customer_organisation_id')
                     ->where('sites.uuid', $siteUuid)->where('customer_organisations.uuid', $customerUuid)
                     ->where('sites.is_active', true)->where('customer_organisations.is_active', true)

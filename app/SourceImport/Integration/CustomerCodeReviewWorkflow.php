@@ -25,6 +25,8 @@ final class CustomerCodeReviewWorkflow
         }
         $manual = [];
         $automatic = [];
+        $unknownTypes = DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $summary['id'])
+            ->where('issue', 'UNKNOWN_CALL_TYPE')->pluck('source_identity_hash')->all();
         foreach ($summary['sources'] as $source) {
             if (($source['hierarchy_mode'] ?? null) !== 'COMPOSITE') {
                 continue;
@@ -32,7 +34,7 @@ final class CustomerCodeReviewWorkflow
             $hash = $source['hash'];
             $reviewed = isset($confirmed[$hash]);
             if (in_array($source['resolution']['state'], self::AUTOMATIC, true)
-                && ! $reviewed && ! isset($created[$hash])) {
+                && ! $reviewed && ! isset($created[$hash]) && ! in_array($hash, $unknownTypes, true)) {
                 $automatic[] = $source;
             } else {
                 $manual[] = [
@@ -125,7 +127,9 @@ final class CustomerCodeReviewWorkflow
             foreach ($rows as $row) {
                 $reason = null;
                 $plot = null;
-                if (isset($excluded[(int) $row->row_number])) {
+                if ($row->issue === 'UNKNOWN_CALL_TYPE' || PlotRegisterCapabilities::category($row->call_type) === 'UNKNOWN_NONBLANK_CALLOFF_ROW') {
+                    $reason = 'UNKNOWN_CALL_TYPE';
+                } elseif (isset($excluded[(int) $row->row_number])) {
                     $reason = 'OFFICE_UNTICKED';
                 } elseif ($row->parsed_plot !== null
                     && MasterSourceResolver::sameName($row->parsed_customer, $site->customer_name)

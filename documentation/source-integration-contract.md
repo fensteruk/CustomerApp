@@ -2,7 +2,53 @@
 
 _Sprint 3B — 20 August 2026; alternate RedZebra export profile updated 6 October 2026_
 
+## CUSTOMER-WALD-SOURCECONTRACT03 full plot register — 6 October 2026
+
+DEC-086 supersedes the requirement for Call Number/Call Type on every plot row.
+CustomerCode plus approved Customer → Site → Plot hierarchy are sufficient for a
+plot-register capability. Blank or missing Call Type is valid null/no call-off assertion;
+Call Number may also be blank or absent. Canonical controlled hierarchy headers work
+without either call column. The exact DEC-085 alternate XLSX profile now permits only
+those two columns to be omitted; the remaining five headers retain their exact order
+and meanings. Registry v2 records the selected signature and explicit capabilities.
+
+| Row category | Plot / product contribution | Call-off contribution |
+|---|---|---|
+| BASE_PLOT_ROW | Normal exact hierarchy resolution and approved quantities | None; no dates or completion |
+| RECOGNISED_CALLOFF_ROW | Normal exact hierarchy resolution and approved quantities | Requires valid Call Number and controlled type; approved facts only |
+| APPROVED_EXCLUDED_ROW | None under current entire-row exclusion rules | None |
+| UNKNOWN_NONBLANK_CALLOFF_ROW | Evidence retained for Office review | Blocks dependent projection; never treated as blank |
+
+Plot identity is exact site binding + normalized Plot Ref. Repeated base rows retain
+every physical observation but create/reuse one Plot. Numbered Source Row and Visit
+identities remain unchanged. An unnumbered base row is represented by staging provenance
+and minimal committed receipt evidence (target Plot ID, worksheet/physical row and fact/
+provenance hashes); no fake Call Number or persistent visit is created. The repeated
+nonblank-Call guard remains, including the unresolved date variants from SOURCECONTRACT02.
+
+Successful one-site Apply establishes plot_register_established_at, allowing the normal
+first Portal call-off for assigned authorised Site Users. It creates no source service
+or request from base evidence. Portal submission creates only the requested service,
+with source_present false. Normal active-request uniqueness, lead times, early-date
+reasons and Office/date negotiation remain. Later source service evidence reuses the
+Plot and preserves Portal-owned dates/history; real completion retains precedence.
+
+Register-only and mixed workbooks use the same review/preview/atomic Apply flow.
+Unknown nonblank types remain Unknown until approved dictionary semantics or explicit
+upload-scoped exclusion resolves them. Missing/ambiguous hierarchy remains guarded.
+Products consolidate per Plot with existing exact-value/conflict rules. No operational
+date or base completion value receives new meaning. PARTIAL_FILTERED_EXPORT remains
+the scope even when a register is intended to contain all plots; absence is no deletion.
+
+Knowledge policy v5, capability v1, profile registry v2, discovery v9 and backend/projection
+v5 stale old uncommitted interpretations. Committed history is not rewritten. The additive
+000026 migration records inventory evidence only; production is not changed by this task.
+
 ## CUSTOMER-WALD-SOURCECONTRACT02 addendum — 6 October 2026
+
+This qualification records the original seven-column profile. DEC-086 above supersedes
+only its requirement to retain both call headers; the scoped meanings and repeated-Call
+findings below remain applicable.
 
 The following exact, contiguous, single-header-row XLSX profile is controlled as
 `redzebra-seven-column.v1`, in this exact order:
@@ -278,7 +324,7 @@ Each transport adapter must convert its input into one `SourceRecord` containing
 
 | Field | Contract |
 |---|---|
-| Call No. | Required Source Row identity within the source namespace. A Visit exists only when the row has a recognized non-null Call Type. |
+| Call No. | Optional for base plot inventory (DEC-086); required for recognized Source Row/Visit evidence within the namespace. A Visit requires a recognized non-null Call Type. |
 | Site identity | Required source-specific identity. Use the future permanent source Site ID/reference when available; exact Site Name is a transitional explicit binding key only. |
 | Plot reference | Required customer-safe source plot reference. |
 | Call Type | Recognized operational code when a Visit exists. Genuine blank is valid null/no Visit; nonblank unknown remains blocking. Literal CC! remains unknown/likely typo evidence except under an explicit checksum-scoped rule. |

@@ -1,6 +1,6 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
-Last updated: 23 September 2026.
+Last updated: 6 October 2026.
 
 This document is the current product and integration contract for CustomerApp.
 
@@ -247,6 +247,13 @@ Never resolve Plot Ref globally across all customers/sites.
 
 Plots are source-managed/read-only unless a later approved product decision
 changes that.
+
+A CustomerApp Plot may exist without any RedZebra call-off. The master export may
+include the full plot register, with optional call-off data. Valid CustomerCode and
+Customer → Site → Plot hierarchy establish plot inventory even when Call Number and
+Call Type are blank or absent. Such rows make no call-off, date or completion assertion.
+After reviewed Apply, an assigned Site User can initiate the first call-off using the
+normal service eligibility, lead times and Portal request workflow (DEC-086).
 
 Office should be able to see clearly which plots belong to a site.
 
@@ -927,6 +934,10 @@ Exact resolved source-site binding + normalized Plot Ref.
 
 Source namespace + CallNo.
 
+This durable source reference applies when CallNo is supplied. An unnumbered base plot
+row retains physical workbook/cell/row provenance and committed receipt evidence without
+creating a numbered Source Row. Physical row position is not a durable visit identity.
+
 ### Visit
 
 Source Row + recognised non-null Call Type.
@@ -938,6 +949,12 @@ CallNo does not by itself prove a call-off visit exists.
 ## 26. Blank Call Type
 
 A genuinely blank Call Type is valid `null`.
+
+A missing Call Type column is also valid for an approved plot-register capability.
+Call Number is optional for these base rows; only recognised call-off/visit evidence
+requires it. The controlled CustomerCode and hierarchy fields are sufficient for a
+register-only workbook. The approved alternate RedZebra layout may omit Call and/or
+Call Type while retaining the other exact ordered profile fields.
 
 Meaning:
 
@@ -960,6 +977,14 @@ It must not:
 A later blank in a partial export does not erase an already committed visit.
 
 A nonblank unrecognised Call Type remains a blocking unknown.
+
+Repeated base evidence and recognised service rows for the same exact site/Plot Ref
+reuse one Plot. Every nonblank repeated Call remains blocking until its business grain
+is approved separately. Excluded rows retain their existing no-hierarchy/no-projection
+semantics. Valid product facts on base rows are preserved; operational dates and
+completion fields on them make no assertion. A reviewed Apply records source inventory
+evidence on the Plot, enabling its first Portal request without manufacturing a source
+service. Previously source-missing or completed services retain their guards.
 
 ---
 

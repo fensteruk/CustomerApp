@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Contracts\HolidayProvider;
 use App\Enums\CallOffServiceType;
+use App\Models\ProjectedPlot;
 use App\Models\ProjectedPlotService;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
@@ -25,9 +26,14 @@ class CallOffLeadTimeService
 
     public function earliestAmendmentDate(ProjectedPlotService $service, ?CarbonInterface $from = null): CarbonImmutable
     {
-
-        $from = CarbonImmutable::instance($from ?? now())->startOfDay();
         $plot = $service->projectedPlot;
+
+        return $this->earliestPlotDate($plot, $from);
+    }
+
+    public function earliestPlotDate(?ProjectedPlot $plot, ?CarbonInterface $from = null): CarbonImmutable
+    {
+        $from = CarbonImmutable::instance($from ?? now())->startOfDay();
         $products = $plot === null
             ? collect()
             : ($plot->relationLoaded('products') ? $plot->products : $plot->products()->get());

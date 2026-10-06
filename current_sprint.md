@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Full plot register candidate — 6 October 2026
+
+CUSTOMER-WALD-SOURCECONTRACT03 continues from SOURCECONTRACT02 commit
+`50be1f3d768fd006d2837e851ff682ab4893c7bd` on the bounded
+`codex/wald-sourcecontract03-2026-10-06` branch. DEC-086 separates plot inventory
+from optional Call Number/Call Type data. Base rows flow through exact review and
+Apply without visits; reviewed inventory permits the first Portal call-off.
+One additive migration records plot-register evidence. Current qualification and
+integration limits are in `documentation/wald-full-plot-register-2026-10-06.md`.
+This is feature work only; no push, deployment or genuine workbook Apply.
+
 ## Wald robustness 01 — 6 October 2026
 
 Feature branch `codex/wald-robustness01-2026-10-06` starts from approved

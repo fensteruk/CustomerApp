@@ -76,6 +76,7 @@ class SiteDashboardController extends Controller
             'missingSourceCount' => ProjectedPlotService::query()
                 ->whereHas('projectedPlot', fn ($query) => $query->where('site_id', $activeSite->id))
                 ->where('source_present', false)
+                ->where(fn ($query) => $query->whereNotNull('source_call_number')->orWhereNotNull('source_missing_since'))
                 ->count(),
             'signedInUser' => $user,
         ]);

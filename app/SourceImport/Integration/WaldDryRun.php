@@ -78,11 +78,13 @@ final class WaldDryRun
                 usort($units, fn ($a, $b): int => strcmp($a['customer_code'], $b['customer_code']));
                 $states = array_count_values(array_column($units, 'state'));
                 ksort($states, SORT_STRING);
-                $content = ['schema' => 'customerapp.wald-dry-run.v1', 'workbook_hash' => $artifact['workbook_hash'],
+                $content = ['schema' => 'customerapp.wald-dry-run.v2', 'workbook_hash' => $artifact['workbook_hash'],
                     'pins' => (new KnowledgeIdentity)->current(), 'analysis_hash' => $manifest['analysis_hash'],
                     'guarantee' => 'NO_BUSINESS_OR_BINDING_MUTATIONS', 'apply_approval' => false,
                     'current_state_hash' => $current['hash'],
-                    'summary' => ['total_rows' => $manifest['record_count'], 'included' => $manifest['included_count'],
+                    'capabilities' => $manifest['capabilities'],
+                    'summary' => [...$manifest['row_summary'], 'plots_discovered' => array_sum(array_column($units, 'plot_count')),
+                        'total_rows' => $manifest['record_count'], 'included' => $manifest['included_count'],
                         'excluded' => $manifest['excluded_count'], 'source_units' => count($units),
                         'automatic' => $automatic, 'manual_review' => count($units) - $automatic,
                         'blocking_units' => $blocked, 'unknown_rows' => $manifest['unclassified_count'],
@@ -137,6 +139,9 @@ final class WaldDryRun
             $type = $dictionary->callType($selection['canonical_override'] ?? $row['call_type'] ?? '',
                 ($snapshot->data['tables'][array_key_first($snapshot->data['tables'])]['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null);
             $issues = [];
+            if ($type->isResolved() && $type->value !== null && $row['call_no'] === '') {
+                $issues[] = 'MISSING_CALLOFF_REFERENCE';
+            }
             if (! $type->isResolved()) {
                 $issues[] = 'UNKNOWN_CALL_TYPE';
             }

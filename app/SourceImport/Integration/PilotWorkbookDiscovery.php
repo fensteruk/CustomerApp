@@ -11,7 +11,7 @@ final class PilotWorkbookDiscovery
 {
     public const MAX_PARENT_ROWS = 5000;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v8';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v9';
 
     public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null): array
     {
@@ -42,19 +42,22 @@ final class PilotWorkbookDiscovery
                 }
             }
         }
-        $callColumn = $this->single($roles, 'call_reference', 'required_call_column_unresolved');
-        $callTypeColumn = $this->single($roles, 'call_type', 'required_call_type_column_unresolved');
+        $capabilities = PlotRegisterCapabilities::forRoles($roles);
+        $callColumn = $this->single($roles, 'call_reference', 'required_call_column_unresolved', $capabilities['plot_register']);
+        $callTypeColumn = $this->single($roles, 'call_type', 'required_call_type_column_unresolved', $capabilities['plot_register']);
         $plotColumns = array_keys($roles['plot_reference'] ?? []);
         $plotColumn = count($plotColumns) === 1 ? (int) $plotColumns[0] : null;
         $identity = (new MasterExportSiteIdentity)->columns($roles, $upload->workbook_hash);
 
         $seen = [];
+        $physicalRows = 0;
         $sources = [];
         $included = 0;
         $excluded = 0;
         $ignoredRows = [];
         $reviewRows = [];
         $sawHierarchySignal = false;
+        $hasUnnumberedBaseRows = false;
         $dataStart = (int) ($table['data_start_row'] ?? ($table['header_range']['end_row'] + 1));
         $dataEnd = (int) ($table['data_end_row'] ?? $table['range']['end_row']);
         foreach ($sheet->cells as $rowNumber => $cells) {
@@ -62,7 +65,7 @@ final class PilotWorkbookDiscovery
                 || ! array_filter($cells, fn ($cell): bool => $cell->rawValue !== null && $cell->rawValue !== '')) {
                 continue;
             }
-            if (count($seen) >= self::MAX_PARENT_ROWS) {
+            if ($physicalRows++ >= self::MAX_PARENT_ROWS) {
                 throw new ImportConflict('pilot_workbook_row_limit_exceeded');
             }
             foreach ($cells as $cell) {
@@ -70,15 +73,19 @@ final class PilotWorkbookDiscovery
                     throw new ImportConflict('unsafe_source_cell');
                 }
             }
-            $call = (string) ($cells[$callColumn]->rawValue ?? '');
-            if (! preg_match('/^[0-9]{1,100}$/D', $call) || ! preg_match('/[1-9]/', $call)) {
+            $rawCall = $callColumn === null ? null : ($cells[$callColumn]->rawValue ?? null);
+            $emptyCall = $rawCall === null || is_string($rawCall) && trim($rawCall) === '';
+            $call = $emptyCall ? '' : (string) $rawCall;
+            if (! $emptyCall && ((! is_int($rawCall) && ! is_string($rawCall)) || ! preg_match('/^[0-9]{1,100}$/D', $call) || ! preg_match('/[1-9]/', $call))) {
                 throw new ImportConflict('invalid_call_number');
             }
-            if (isset($seen[$call])) {
+            if ($call !== '' && isset($seen[$call])) {
                 throw new ImportConflict('duplicate_call_number');
             }
-            $seen[$call] = true;
-            $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
+            if ($call !== '') {
+                $seen[$call] = true;
+            }
+            $rawCallType = $callTypeColumn === null ? null : ($cells[$callTypeColumn]->rawValue ?? null);
             $rawIdentity = $cells[$identity['identity_column']]->rawValue ?? null;
             if ($identity['kind'] === MasterExportSiteIdentity::KIND
                 && (is_string($rawIdentity) || is_int($rawIdentity))
@@ -124,6 +131,7 @@ final class PilotWorkbookDiscovery
 
                 continue;
             }
+            $hasUnnumberedBaseRows = $hasUnnumberedBaseRows || $call === '' && PlotRegisterCapabilities::category($rawCallType) === 'BASE_PLOT_ROW';
             $hash = Canonical::hash([$identity['kind'], $identityValue]);
             $rawPlot = $plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null;
             $parsed = $plotColumn !== null
@@ -183,11 +191,14 @@ final class PilotWorkbookDiscovery
             $sources[$hash]['rows']++;
             $included++;
         }
-        if ($seen === [] || ($sources === [] && $reviewRows === [])) {
+        if ($physicalRows === 0 || ($sources === [] && $reviewRows === [])) {
             throw new ImportConflict('no_source_records');
         }
         $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
-        $compositeMode = ! $identity['legacy'] && (($table['source_profile'] ?? null) === RedZebraExportProfile::ALTERNATE || $sawHierarchySignal
+        $plotHeader = $plotColumn === null ? null : ($sheet->cells[$table['header_range']['start_row']][$plotColumn]->rawValue ?? null);
+        $compositeMode = ! $identity['legacy'] && (in_array($table['source_profile'] ?? null, [RedZebraExportProfile::ALTERNATE, RedZebraExportProfile::PLOT_REGISTER], true) || $sawHierarchySignal
+            || is_string($plotHeader) && strcasecmp(trim($plotHeader), 'Plot Ref') === 0
+                && ($callColumn === null || $callTypeColumn === null || $hasUnnumberedBaseRows)
             || is_string($identityHeader) && trim($identityHeader) === 'Customer Number');
         ksort($sources, SORT_STRING);
         foreach ($sources as &$source) {
@@ -228,9 +239,11 @@ final class PilotWorkbookDiscovery
             'header' => [$table['header_range']['start_row'], $table['header_range']['end_row']],
             'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
             'source_profile' => $table['source_profile'] ?? null,
+            'capabilities' => $capabilities,
+            'row_summary' => PlotRegisterCapabilities::summary($reviewRows),
             'sources' => array_values($sources),
             'source_count' => count($sources),
-            'record_count' => count($seen),
+            'record_count' => $physicalRows,
             'included_count' => $included,
             'excluded_count' => $excluded,
             'dictionary_excluded_count' => $excluded,
@@ -256,7 +269,13 @@ final class PilotWorkbookDiscovery
             'parsed_customer' => $parsed['valid'] ? $parsed['customer'] : null,
             'parsed_site' => $parsed['valid'] ? $parsed['site'] : null,
             'parsed_plot' => $parsed['valid'] ? $parsed['plot'] : null,
-            'issue' => $parsed['valid'] ? null : $parsed['issue'],
+            'issue' => $parsed['valid']
+                ? match (true) {
+                    PlotRegisterCapabilities::category($rawCallType) === 'UNKNOWN_NONBLANK_CALLOFF_ROW' => 'UNKNOWN_CALL_TYPE',
+                    $call === '' && PlotRegisterCapabilities::category($rawCallType) === 'RECOGNISED_CALLOFF_ROW' => 'MISSING_CALLOFF_REFERENCE',
+                    default => null,
+                }
+                : $parsed['issue'],
         ];
     }
 
@@ -275,9 +294,12 @@ final class PilotWorkbookDiscovery
         ];
     }
 
-    private function single(array $roles, string $role, string $error): int
+    private function single(array $roles, string $role, string $error, bool $optional = false): ?int
     {
         $columns = array_keys($roles[$role] ?? []);
+        if ($optional && $columns === []) {
+            return null;
+        }
         if (count($columns) !== 1) {
             throw new ImportConflict($error);
         }

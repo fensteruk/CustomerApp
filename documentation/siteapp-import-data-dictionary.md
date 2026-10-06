@@ -4,6 +4,14 @@
 
 **Last updated:** 6 October 2026 (alternate RedZebra export profile approved under DEC-085)
 
+DEC-086 adds plot-register capabilities: Call Number and Call Type may be blank or
+absent for a base row with valid CustomerCode/hierarchy. The alternate signature may
+omit only Call and/or Call Type, retaining all other headers in their exact order.
+Recognized call-off rows still require valid Call Number evidence; every nonblank repeated
+Call remains blocking. Blank call data contributes no service, date or completion fact.
+Current entire-row exclusions still contribute no plot hierarchy. This refines required
+source capabilities without changing any Call Type, completion or product meaning.
+
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
 This document defines confirmed source meanings. It is not evidence that an import path is on
@@ -173,7 +181,7 @@ A filtered export cannot zero or delete values outside supplied records.
 | Field | Treatment |
 |---|---|
 | `CustomerNo` / `CustomerCode` / `Customer Number` | Exact approved headers for authoritative `customer_code`. Source namespace + exact code is the durable source-site binding key. Never fuzzy-match or fall back to Site Name. |
-| `Call No.` | Permanent Source Row reference within the source namespace. A recognized non-null Call Type establishes a Visit; CallNo alone does not. Every within-workbook duplicate still blocks; never merge or select first/last. |
+| `Call No.` | Optional for base plot inventory. When supplied, it is the permanent Source Row reference within the source namespace. A Visit requires a recognized non-null Call Type and valid CallNo. Every within-workbook nonblank duplicate still blocks; never merge or select first/last. |
 | `Site Name` | Descriptive source evidence under the new master-export contract. Retain changed/variant names for review, but do not use them to identify, create, split or rebind a CustomerCode. Exact Site Name remains only for explicitly bounded historical workbook compatibility. |
 | `Plot Ref` | Current composite master-export hierarchy: exact Customer – Site – Plot in three nonempty components, separated by spaced `-`, `–` or `—`, or by exactly two compact ASCII hyphens. The final component starts `Plot ` and the remaining nonempty text is the site-scoped plot reference, including named plots such as `Com 4`. Preserve the raw cell. Additional or mixed separators remain blocking ambiguity. |
 | Permanent Source Site ID/reference | Required durable site identity when the source provides it. Keep separate from the Portal primary key. |
@@ -236,7 +244,7 @@ rewriting retained history.
 - Site identity, source revision and authorised coverage must be explicit before live commit.
 - Imports must be idempotent and must not silently overwrite customer-owned Requested Date,
   alternative, Date Agreed, amendment or history.
-- Missing a required site, plot, Call No. or service meaning; Wald ambiguity; invalid mapping;
+- Missing a required site or plot, or Call No./service meaning for call-off evidence; Wald ambiguity; invalid mapping;
   duplicate Call No.; source-order conflict; or stale dependency blocks the whole reviewed unit.
   Ignored fields may remain. Partial-row commit is not permitted.
 - Source completion follows the approved domain transition; placeholder/source operational

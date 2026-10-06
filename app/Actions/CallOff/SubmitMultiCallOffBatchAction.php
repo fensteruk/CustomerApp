@@ -36,7 +36,7 @@ class SubmitMultiCallOffBatchAction
             }
 
             $missing = collect($items)->filter(fn (array $item): bool => $item['plot_service_id'] === null);
-            if ($missing->contains(fn (array $item): bool => ($item['service'] ?? null) !== CallOffServiceType::CavityClosers->value || empty($item['plot_uuid']))) {
+            if ($missing->contains(fn (array $item): bool => CallOffServiceType::tryFrom($item['service'] ?? '') === null || empty($item['plot_uuid']))) {
                 throw ValidationException::withMessages(['combinations' => 'One or more selected combinations are no longer available.']);
             }
             $plots = ProjectedPlot::query()->where('site_id', $site->id)->whereIn('uuid', $missing->pluck('plot_uuid'))
@@ -46,11 +46,17 @@ class SubmitMultiCallOffBatchAction
             }
 
             $this->eligibility->ensureCanSubmitForSite($user, $site);
+            foreach ($missing as $item) {
+                $plot = $plots->get($item['plot_uuid']);
+                if ($item['service'] !== CallOffServiceType::CavityClosers->value && ! $this->eligibility->canStartFromRegister($plot, null)) {
+                    throw ValidationException::withMessages(['combinations' => 'One or more selected combinations are no longer available.']);
+                }
+            }
             $resolved = [];
             foreach ($items as $index => $item) {
                 $service = $item['plot_service_id'] === null
                     ? $plots->get($item['plot_uuid'])->services()->firstOrCreate(
-                        ['service_identifier' => CallOffServiceType::CavityClosers->value], ['source_present' => false],
+                        ['service_identifier' => $item['service']], ['source_present' => false],
                     )
                     : $services->get($item['plot_service_id']);
                 if ($service === null || (isset($item['plot_uuid']) && $service->projectedPlot->uuid !== $item['plot_uuid'])

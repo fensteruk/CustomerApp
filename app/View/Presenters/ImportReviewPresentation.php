@@ -12,6 +12,10 @@ final class ImportReviewPresentation
         $included = array_filter($rows, fn ($row) => ! $row['excluded']);
 
         return ['rows' => count($rows), 'included' => count($included), 'excluded' => count($rows) - count($included),
+            'base_plot_rows' => count(array_filter($included, fn ($row) => ($row['provenance']['raw_call_type'] ?? null) === null
+                || is_string($row['provenance']['raw_call_type']) && trim($row['provenance']['raw_call_type']) === '')),
+            'recognised_calloff_rows' => count(array_filter($included, fn ($row) => $row['facts']['call_type'] !== null && $row['facts']['service'] !== null)),
+            'unknown_call_type_rows' => count(array_filter($included, fn ($row) => in_array('UNRESOLVED_CALL_TYPE', $row['issues'], true))),
             'plots' => count(array_unique(array_column(array_column($included, 'facts'), 'plot'))),
             'blocked' => count(array_filter($rows, fn ($row) => $row['issues'] !== [])),
             'customer_care' => count(array_filter($rows, fn ($row) => $row['excluded'] && strtoupper(trim($row['provenance']['raw_call_type'] ?? '')) === 'CU4'))];
@@ -85,6 +89,7 @@ final class ImportReviewPresentation
             'BLOCKED_STAGED_RECORDS' => 'Some source rows need correction before this site can be applied.',
             'PRODUCT_QUANTITY_CONFLICT' => 'This plot has different quantities for the same product. Check the source rows.',
             'UNKNOWN_CALL_TYPE' => 'A Call Type has no approved CustomerApp meaning.',
+            'MISSING_CALLOFF_REFERENCE' => 'A recognised call-off needs its source Call Number. Blank call data is valid only when no call-off is asserted.',
             'SOURCE_SITE_BINDING_REQUIRED', 'STALE_SOURCE_BINDING' => 'The exact site link needs reviewing.',
             'OLDER_EXPORT_REFUSED', 'STALE_SOURCE_STREAM' => 'A newer export is available. Review the current import.',
             'STALE_PROJECTION' => 'The site has changed since this preview. Create a fresh preview.',

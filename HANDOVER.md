@@ -1,5 +1,16 @@
 # Fenster Customer Portal Handover
 
+## Full plot register candidate — 6 October 2026
+
+The SOURCECONTRACT03 feature branch continues directly from SOURCECONTRACT02.
+Valid CustomerCode/hierarchy rows with blank or absent call fields can establish
+plot inventory under one-site review/Apply. Base import creates no service/request;
+an assigned Site User may initiate the first call-off through the normal Portal flow.
+Additive 000026 records reviewed inventory evidence. Policy/profile/capability pins
+stale older uncommitted analyses. Repeated nonblank Calls and entire-row exclusions
+remain guarded. No main merge, push, deployment or production action occurred.
+See `documentation/wald-full-plot-register-2026-10-06.md` for qualification and files.
+
 ## Wald robustness 01 — 6 October 2026
 
 The local robustness branch starts from `04e48b55c6178f4e2352cd06e7cd657d0b1f081b`.

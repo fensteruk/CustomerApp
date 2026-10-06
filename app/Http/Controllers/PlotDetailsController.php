@@ -30,7 +30,7 @@ class PlotDetailsController extends Controller
 
         $projectedPlot->load([
             'site:id,customer_organisation_id,name',
-            'services:id,projected_plot_id,service_identifier,source_completed_at,source_completion_observed_at,source_present,source_missing_since',
+            'services:id,projected_plot_id,service_identifier,source_completed_at,source_completion_observed_at,source_present,source_missing_since,source_call_number',
             'products:id,projected_plot_id,product_code,quantity',
             'callOffRequests' => fn ($query) => $query
                 ->whereNull('trashed_at')

@@ -110,6 +110,17 @@ final class AutoResolveClarifications
             }
         }
         $safety = $table['column_safety'][$column] ?? [];
+        $roles = [];
+        foreach ($snapshot['questions'] as $question) {
+            foreach (($question['type'] ?? null) === 'STRUCTURAL' ? $question['candidates'] : [] as $choice) {
+                if (($choice['table'] ?? null) === $tableId) {
+                    $roles[$choice['role']][$choice['column']] = true;
+                }
+            }
+        }
+        if (PlotRegisterCapabilities::forRoles($roles)['plot_register'] && in_array($role, ['call_reference', 'call_type'], true)) {
+            unset($safety['empty']);
+        }
         if (in_array(true, $safety, true)) {
             return false;
         }
@@ -124,7 +135,7 @@ final class AutoResolveClarifications
             return true;
         }
 
-        return $dictionary->field($header)->value === $role;
+        return ((new RedZebraExportProfile)->role($table['source_profile'] ?? null, $header) ?? $dictionary->field($header)->value) === $role;
     }
 
     private function matchingPlotNumber(array $candidates, array $snapshot, array $table, string $tableId, array $sheets): ?array

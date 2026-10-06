@@ -142,6 +142,22 @@ final readonly class AnalysisSnapshot
                     'warnings' => array_values(array_unique([...$sheet['warnings'], ...($region['headers']['warnings'] ?? [])])),
                     'data_start_row' => $hr['end_row'] + 1,
                     'data_end_row' => self::physicalDataEnd($sheet, $region)];
+                // All-text two-field registers lack generic type contrast. Exact controlled
+                // header roles provide authority only when no second such header row exists.
+                if ($sourceProfile === RedZebraExportProfile::PLOT_REGISTER && isset($observedSheets[$sheet['id']])) {
+                    $matchingHeaders = 0;
+                    foreach ($observedSheets[$sheet['id']]->cells as $cells) {
+                        $observedRoles = [];
+                        for ($column = $hr['start_column']; $column <= $hr['end_column']; $column++) {
+                            $raw = $cells[$column]->rawValue ?? null;
+                            $observedRoles[] = is_string($raw) ? $dictionary->field($raw)->value : null;
+                        }
+                        $matchingHeaders += in_array('source_customer_code', $observedRoles, true) && in_array('plot_reference', $observedRoles, true) ? 1 : 0;
+                    }
+                    if ($matchingHeaders === 1) {
+                        $tables[$id]['warnings'] = array_values(array_diff($tables[$id]['warnings'], ['ambiguous_header_candidates']));
+                    }
+                }
                 if ($sourceProfile !== null) {
                     $tables[$id]['source_profile'] = $sourceProfile;
                     $tables[$id]['descriptor']['source_profile'] = $sourceProfile;

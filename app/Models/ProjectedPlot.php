@@ -28,6 +28,7 @@ class ProjectedPlot extends Model
         'is_completed',
         'source_updated_at',
         'synchronised_at',
+        'plot_register_established_at',
     ];
 
     protected function casts(): array
@@ -36,6 +37,7 @@ class ProjectedPlot extends Model
             'is_completed' => 'boolean',
             'source_updated_at' => 'datetime',
             'synchronised_at' => 'datetime',
+            'plot_register_established_at' => 'datetime',
         ];
     }
 
@@ -74,5 +76,10 @@ class ProjectedPlot extends Model
     public function scopeOutstanding(Builder $query): Builder
     {
         return $query->where('is_completed', false);
+    }
+
+    public function hasPlotRegisterEvidence(): bool
+    {
+        return $this->plot_register_established_at !== null;
     }
 }

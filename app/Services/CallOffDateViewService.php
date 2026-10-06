@@ -30,7 +30,8 @@ class CallOffDateViewService
         $isCompleted = $request->projectedPlotService?->isSourceCompleted() ?? ($request->status === CallOffRequestStatus::Completed);
         $isClosedAfterReversal = $request->status === CallOffRequestStatus::Completed && ! $isCompleted;
         $isSourceAvailable = $request->projectedPlotService !== null
-            && ($request->effectiveServiceIdentifier() === CallOffServiceType::CavityClosers || $request->projectedPlotService->source_present);
+            && ($request->effectiveServiceIdentifier() === CallOffServiceType::CavityClosers || $request->projectedPlotService->source_present
+                || $this->eligibility->canStartFromRegister($request->projectedPlotService->projectedPlot, $request->projectedPlotService));
         $proposals = $request->dateNegotiations->flatMap(fn ($cycle) => $cycle->proposals)->sortBy([['proposed_at', 'asc'], ['id', 'asc']])->values();
         $currentProposal = $request->dateNegotiations->filter(fn ($cycle) => $cycle->status->isOpen())
             ->flatMap(fn ($cycle) => $cycle->proposals)

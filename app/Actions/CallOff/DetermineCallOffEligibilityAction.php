@@ -195,6 +195,7 @@ class DetermineCallOffEligibilityAction
         }
 
         if ($serviceType !== CallOffServiceType::CavityClosers
+            && ! $this->canStartFromRegister($plot, $projection)
             && (($requireProjection && $projection === null) || $projection?->source_present === false)) {
             return 'Source information is not available for this plot service.';
         }
@@ -204,6 +205,12 @@ class DetermineCallOffEligibilityAction
         }
 
         return null;
+    }
+
+    public function canStartFromRegister(ProjectedPlot $plot, ?ProjectedPlotService $projection): bool
+    {
+        return $plot->hasPlotRegisterEvidence() && ($projection === null
+            || $projection->source_call_number === null && $projection->source_missing_since === null);
     }
 
     private function normaliseServiceType(CallOffServiceType|string $serviceType): CallOffServiceType
@@ -272,10 +279,12 @@ class DetermineCallOffEligibilityAction
 
     private function ensureRequestSourceIsAvailable(CallOffRequest $request): void
     {
-        $request->loadMissing('projectedPlotService');
+        $request->loadMissing('projectedPlotService.projectedPlot');
 
         if ($request->projectedPlotService === null
-            || ($request->effectiveServiceIdentifier() !== CallOffServiceType::CavityClosers && ! $request->projectedPlotService->source_present)) {
+            || ($request->effectiveServiceIdentifier() !== CallOffServiceType::CavityClosers
+                && ! $this->canStartFromRegister($request->projectedPlotService->projectedPlot, $request->projectedPlotService)
+                && ! $request->projectedPlotService->source_present)) {
             throw ValidationException::withMessages(['status' => 'This service is no longer available from the source data.']);
         }
 

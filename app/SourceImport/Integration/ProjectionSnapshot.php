@@ -16,7 +16,8 @@ final class ProjectionSnapshot
         $facts = array_column($included, 'facts');
         $visitable = array_values(array_filter($facts, fn (array $fact): bool => $fact['call_type'] !== null));
         $references = array_values(array_unique(array_column($facts, 'plot')));
-        $rowHashes = array_map(fn (array $fact): string => SourceIdentity::sourceRow($scope->namespace, $fact['call_number']), $facts);
+        $numbered = array_values(array_filter($facts, fn (array $fact): bool => $fact['call_number'] !== null));
+        $rowHashes = array_map(fn (array $fact): string => SourceIdentity::sourceRow($scope->namespace, $fact['call_number']), $numbered);
         $visitHashes = array_map(fn (array $fact): string => SourceIdentity::visit($scope->namespace, $fact['call_number'], $fact['call_type']), $visitable);
 
         $plots = DB::table('projected_plots')->where('site_id', $scope->siteId)->whereIn('plot_reference', $references)->orderBy('id')->limit(10001)->lockForUpdate()->get();
@@ -95,8 +96,8 @@ final class ProjectionSnapshot
                 throw new ImportConflict('ambiguous_existing_plot');
             }
             $plot = $matches->first();
-            $rowHash = SourceIdentity::sourceRow($scope->namespace, $fact['call_number']);
-            $sourceRow = $sourceRows->first(fn (object $row): bool => $row->identity_hash === $rowHash
+            $rowHash = $fact['call_number'] === null ? null : SourceIdentity::sourceRow($scope->namespace, $fact['call_number']);
+            $sourceRow = $rowHash === null ? null : $sourceRows->first(fn (object $row): bool => $row->identity_hash === $rowHash
                 || ($row->source_namespace === $scope->namespace && $row->call_number === $fact['call_number']));
             if ($sourceRow && ((int) $sourceRow->site_id !== $scope->siteId || $sourceRow->plot_reference !== $fact['plot'])) {
                 throw new ImportConflict('source_row_identity_changed');
@@ -152,7 +153,9 @@ final class ProjectionSnapshot
 
             $productsForRow = isset($claimedProducts[$fact['plot']]) ? [] : ($productChanges[$fact['plot']] ?? []);
             $claimedProducts[$fact['plot']] = true;
-            $rowOutcome = ! $sourceRow ? 'added' : (($sourceRow->fact_hash === Canonical::hash($fact) && $productsForRow === [] && ($visitOutcome === null || $visitOutcome === 'unchanged')) ? 'unchanged' : 'changed');
+            $rowOutcome = $fact['call_number'] === null
+                ? ($plot === null ? 'added' : ($productsForRow !== [] ? 'changed' : 'unchanged'))
+                : (! $sourceRow ? 'added' : (($sourceRow->fact_hash === Canonical::hash($fact) && $productsForRow === [] && ($visitOutcome === null || $visitOutcome === 'unchanged')) ? 'unchanged' : 'changed'));
             $diff[] = [
                 'call_number' => $fact['call_number'],
                 'plot' => $fact['plot'],

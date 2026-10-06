@@ -306,6 +306,17 @@ WD-47/48 retain their original implementation identity; the current identities b
 
 ## Backport process
 
+CUSTOMER-WALD-SOURCECONTRACT03 (6 October 2026), WD-63, is CustomerApp-specific.
+Capability v1 permits approved plot inventory with absent/blank call columns; profile
+registry v2, discovery v9 and policy/backend/projection v5 invalidate old uncommitted
+interpretation. Generic Wald remains unchanged. Unique controlled two-field register
+headers resolve the generic all-text header warning only after excluding a second
+matching header row. Additive 000026 records reviewed plot inventory evidence; Portal
+can initiate its first call-off using normal authorisation and lead-time rules. Base
+rows create no visits/services and retain physical provenance/receipt hashes. Repeated
+nonblank Calls and full-row exclusions remain. DEC-086 supplies authority; no SiteApp
+backport, production push, deployment or source write-back is included.
+
 CUSTOMER-WALD-ROBUSTNESS01 (6 October 2026) adds CustomerApp-only read-only
 binding audit and transient Office dry run around the existing exact resolver,
 dictionary and workbook inspection. No generic Wald core or semantic definition

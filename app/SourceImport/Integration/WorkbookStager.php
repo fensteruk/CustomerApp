@@ -107,14 +107,15 @@ final class WorkbookStager
             $columns[$role] = $candidate['column'];
             $confirmed[$role] = $explicit;
         }
-        foreach (['call_reference', 'plot_reference', 'call_type'] as $role) {
-            if (! isset($columns[$role])) {
-                throw new ImportConflict('required_column_unresolved');
-            }
-        }
         $roleCandidates = [];
         foreach ($columns as $role => $column) {
             $roleCandidates[$role][(int) $column] = true;
+        }
+        $capabilities = PlotRegisterCapabilities::forRoles($roleCandidates);
+        foreach ($capabilities['plot_register'] ? ['plot_reference'] : ['call_reference', 'plot_reference', 'call_type'] as $role) {
+            if (! isset($columns[$role])) {
+                throw new ImportConflict('required_column_unresolved');
+            }
         }
         $sourceIdentity = (new MasterExportSiteIdentity)->columns($roleCandidates, $run->workbook_hash, isset($run->pilot_upload_id));
         if ($headerNeedsConfirmation && count(array_filter($confirmed)) !== count($confirmed)) {
@@ -183,14 +184,17 @@ final class WorkbookStager
                     $issues[] = 'UNSAFE_CELL';
                 }
             }
-            if (! (is_int($call) || is_string($call)) || ! preg_match('/^[0-9]{1,100}$/D', (string) $call) || ! preg_match('/[1-9]/', (string) $call)) {
+            $emptyCall = $call === null || is_string($call) && trim($call) === '';
+            if (! $emptyCall && (! (is_int($call) || is_string($call)) || ! preg_match('/^[0-9]{1,100}$/D', (string) $call) || ! preg_match('/[1-9]/', (string) $call))) {
                 $issues[] = 'INVALID_CALL_NUMBER';
             }
-            $call = (string) $call;
-            if (isset($seen[$call])) {
+            $call = $emptyCall ? null : (string) $call;
+            if ($call !== null && isset($seen[$call])) {
                 $issues[] = 'DUPLICATE_CALL_NUMBER';
             }
-            $seen[$call] = true;
+            if ($call !== null) {
+                $seen[$call] = true;
+            }
             if ((! is_string($plot) && ! is_int($plot)) || trim((string) $plot) === '' || mb_strlen((string) $plot) > 200 || preg_match('/[\x00-\x1f\x7f<>]/', (string) $plot)) {
                 $issues[] = 'INVALID_PLOT';
             }
@@ -221,7 +225,7 @@ final class WorkbookStager
             if (count($rows) >= BackendStore::MAX_ROWS) {
                 throw new ImportConflict('explicit_run_row_limit_exceeded');
             }
-            $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call, $siteName ?? $normalisedSite, is_string($callType) ? $callType : '');
+            $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call ?? '', $siteName ?? $normalisedSite, is_string($callType) ? $callType : '');
             $excluded = $selection['excluded'];
             $rawPlot = $raw('plot_reference');
             $hierarchy = $excluded || ! $compositeMode ? null : (new CompositePlotHierarchy)->parse($rawPlot, $normalisedSite);
@@ -251,7 +255,7 @@ final class WorkbookStager
                 }
             }
             $semanticApproval = null;
-            $cell = $cells[$columns['call_type']] ?? null;
+            $cell = isset($columns['call_type']) ? ($cells[$columns['call_type']] ?? null) : null;
             if ($cell && $selection['canonical_override'] === null && $callType === 'CC!') {
                 $key = 'occurrence:'.Canonical::hash((new ObservedCell($run->workbook_hash, $sheet->id, $cell))->jsonSerialize());
                 $semanticApproval = $knowledge['selections'][$key] ?? null;
@@ -261,9 +265,12 @@ final class WorkbookStager
                 is_scalar($effectiveType) ? (string) $effectiveType : '',
                 ($table['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null,
             );
-            $hasVisit = is_scalar($effectiveType) && trim((string) $effectiveType) !== '';
+            $hasVisit = $effectiveType !== null && ! (is_string($effectiveType) && trim($effectiveType) === '');
+            if ($hasVisit && $call === null) {
+                $issues[] = 'MISSING_CALLOFF_REFERENCE';
+            }
             $complete = $hasVisit && isset($columns['completion']) ? $dictionary->completion($raw('completion')) : null;
-            if (! $type->isResolved()) {
+            if (! $type->isResolved() || $hasVisit && ! is_string($effectiveType)) {
                 $issues[] = 'UNRESOLVED_CALL_TYPE';
             }
             if ($complete !== null && ! $complete->isResolved()) {

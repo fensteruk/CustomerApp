@@ -470,6 +470,7 @@ final class PilotImportWorkflow
         $states = array_count_values(array_map(fn (array $source): string => $source['resolution']['state'] ?? 'LEGACY_SOURCE', $sources));
 
         return ['total_rows' => (int) ($manifest['record_count'] ?? 0),
+            ...($manifest['row_summary'] ?? []),
             'included_rows' => (int) ($manifest['included_count'] ?? 0),
             'excluded_rows' => (int) ($manifest['excluded_count'] ?? 0),
             'source_sites' => count($sources), 'outcomes' => $states,

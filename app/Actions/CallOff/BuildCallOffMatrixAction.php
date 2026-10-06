@@ -51,7 +51,9 @@ class BuildCallOffMatrixAction
                 $date = CarbonImmutable::parse($serviceDates[$service->value])->startOfDay();
                 $earliest = $service === CallOffServiceType::CavityClosers
                     ? $this->leadTimes->earliestCavityCloserDate()
-                    : ($projection === null ? null : $this->leadTimes->earliestNormalDate($projection));
+                    : ($projection === null
+                        ? ($this->eligibility->canStartFromRegister($plot, null) ? $this->leadTimes->earliestPlotDate($plot) : null)
+                        : $this->leadTimes->earliestNormalDate($projection));
                 $early = $earliest !== null && $date->lt($earliest);
                 if ($included && ! $this->leadTimes->isPermittedRequestedDate($date)) {
                     throw ValidationException::withMessages(['service_dates' => 'Requested dates must be weekdays within six months.']);
