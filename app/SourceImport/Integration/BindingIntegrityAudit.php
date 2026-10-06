@@ -72,11 +72,21 @@ final class BindingIntegrityAudit
                 }
             });
         DB::table('wald_binding_versions as versions')->leftJoin('wald_source_bindings as roots', 'roots.id', '=', 'versions.binding_id')
-            ->whereNull('roots.id')->orderBy('versions.id')->chunk(200, function ($versions) use (&$items): void {
+            ->leftJoin('sites', 'sites.id', '=', 'versions.site_id')
+            ->leftJoin('customer_organisations as customers', 'customers.id', '=', 'versions.customer_organisation_id')
+            ->where(fn ($query) => $query->whereNull('roots.id')->orWhere(function ($history): void {
+                $history->where(fn ($pointer) => $pointer->whereNull('roots.active_version')->orWhereColumn('versions.version', '!=', 'roots.active_version'))
+                    ->where(fn ($target) => $target->whereNull('sites.id')->orWhereNull('customers.id')
+                        ->orWhereColumn('sites.customer_organisation_id', '!=', 'versions.customer_organisation_id'));
+            }))
+            ->select(['versions.id', 'roots.source_identity', 'roots.source_namespace', 'roots.uuid as binding_uuid',
+                'sites.name as site_name', 'customers.name as customer_name'])
+            ->orderBy('versions.id')->chunk(200, function ($versions) use (&$items): void {
                 foreach ($versions as $version) {
-                    $items[] = ['customer_code' => 'Unavailable', 'namespace' => null, 'binding_uuid' => null, 'customer' => null, 'site' => null,
+                    $items[] = ['customer_code' => $version->source_identity ?? 'Unavailable', 'namespace' => $version->source_namespace,
+                        'binding_uuid' => $version->binding_uuid, 'customer' => $version->customer_name, 'site' => $version->site_name,
                         'source' => null, 'upload_uuid' => null, 'category' => 'ORPHAN_BINDING_VERSION', 'blocking' => true,
-                        'reason' => 'A binding version has no retained binding root.', 'action' => 'Needs Office review'];
+                        'reason' => 'Retained binding history has a missing root/target or inconsistent customer ownership.', 'action' => 'Needs Office review'];
                 }
             });
         usort($items, fn ($a, $b): int => strcmp($a['customer_code'], $b['customer_code']) ?: strcmp($a['binding_uuid'] ?? '', $b['binding_uuid'] ?? ''));

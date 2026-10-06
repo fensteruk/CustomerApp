@@ -95,3 +95,14 @@ it('accepts a retained cleared root after purge and cannot resolve the purged ta
     expect(fn () => (new SourceBindingService)->resolve($f['office'], $f['scope'], 'CUSTOMER_CODE', 'CORRUPT'))
         ->toThrow(AuthorizationException::class);
 });
+
+it('detects an orphan historical target behind an otherwise valid active version', function (): void {
+    $f = corruptFixture();
+    $service = new SourceBindingService;
+    $draft = $service->draft($f['office'], $f['scope'], 'CUSTOMER_CODE', 'CORRUPT', 'Second audit version.',
+        (string) Str::uuid(), (int) $f['root']->epoch);
+    $service->activate($f['office'], $f['scope'], $draft['binding'], $draft['version'], $draft['definition_hash'],
+        $draft['epoch'], 'Reviewed second version.', (string) Str::uuid());
+    DB::table('wald_binding_versions')->where('binding_id', $f['root']->id)->where('version', 1)->update(['site_id' => 99999]);
+    expect((new BindingIntegrityAudit)->run()['categories']['ORPHAN_BINDING_VERSION'])->toBe(1);
+});
