@@ -36,7 +36,12 @@ final class MasterSourceResolver
         }
         $versions = [];
         foreach (array_chunk(array_map(fn (object $root): int => (int) $root->id, array_values($roots)), 400) as $chunk) {
-            foreach (DB::table('wald_binding_versions')->whereIn('binding_id', $chunk)->get() as $version) {
+            foreach (DB::table('wald_binding_versions as versions')
+                ->join('wald_source_bindings as roots', 'roots.id', '=', 'versions.binding_id')
+                ->whereIn('versions.binding_id', $chunk)
+                ->where(fn ($query) => $query->whereColumn('versions.version', 'roots.active_version')
+                    ->orWhereColumn('versions.version', 'roots.latest_version'))
+                ->get(['versions.*']) as $version) {
                 $versions[$version->binding_id][$version->version] = $version;
             }
         }

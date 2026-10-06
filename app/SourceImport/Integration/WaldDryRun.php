@@ -200,22 +200,38 @@ final class WaldDryRun
             }
         }
         $sites = array_values(array_unique(array_filter(array_column($resolutions, 'site_id'))));
+        $needed = [];
+        $references = [];
+        foreach ($manifest['sources'] as $source) {
+            $siteId = $resolutions[$source['hash']]['site_id'] ?? null;
+            if ($siteId === null) {
+                continue;
+            }
+            foreach ($source['plots'] ?? [] as $reference) {
+                $needed[$siteId][$reference] = true;
+                $references[$reference] = true;
+            }
+        }
         $plots = [];
         $services = [];
-        foreach (array_chunk($sites, 400) as $chunk) {
-            DB::table('projected_plots')->whereIn('site_id', $chunk)->orderBy('id')->chunkById(400, function ($records) use (&$plots, &$services, $digest): void {
-                foreach ($records as $plot) {
-                    $plots[$plot->site_id."\0".$plot->plot_reference] = $plot;
-                    hash_update($digest, Canonical::json((array) $plot));
-                }
-                foreach (DB::table('projected_plot_services')->whereIn('projected_plot_id', $records->pluck('id'))->orderBy('id')->get() as $service) {
-                    $services[$service->projected_plot_id."\0".$service->service_identifier] = $service;
-                    hash_update($digest, Canonical::json((array) $service));
-                }
-                foreach (DB::table('projected_plot_products')->whereIn('projected_plot_id', $records->pluck('id'))->orderBy('id')->get() as $product) {
-                    hash_update($digest, Canonical::json((array) $product));
-                }
-            });
+        foreach (array_chunk($sites, 200) as $chunk) {
+            foreach (array_chunk(array_keys($references), 400) as $referenceChunk) {
+                DB::table('projected_plots')->whereIn('site_id', $chunk)->whereIn('plot_reference', $referenceChunk)
+                    ->orderBy('id')->chunkById(400, function ($records) use (&$plots, &$services, $digest, $needed): void {
+                        $records = $records->filter(fn ($plot): bool => isset($needed[$plot->site_id][$plot->plot_reference]));
+                        foreach ($records as $plot) {
+                            $plots[$plot->site_id."\0".$plot->plot_reference] = $plot;
+                            hash_update($digest, Canonical::json((array) $plot));
+                        }
+                        foreach (DB::table('projected_plot_services')->whereIn('projected_plot_id', $records->pluck('id'))->orderBy('id')->get() as $service) {
+                            $services[$service->projected_plot_id."\0".$service->service_identifier] = $service;
+                            hash_update($digest, Canonical::json((array) $service));
+                        }
+                        foreach (DB::table('projected_plot_products')->whereIn('projected_plot_id', $records->pluck('id'))->orderBy('id')->get() as $product) {
+                            hash_update($digest, Canonical::json((array) $product));
+                        }
+                    });
+            }
         }
         $dictionary = new CustomerAppDictionary;
         foreach ($manifest['review_rows'] as $row) {
