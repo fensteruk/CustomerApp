@@ -3,6 +3,7 @@
 namespace App\SourceImport\Knowledge;
 
 use App\SourceImport\Integration\CompositeTableDetector;
+use App\SourceImport\Integration\RedZebraExportProfile;
 use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
@@ -93,6 +94,8 @@ final readonly class AnalysisSnapshot
                     continue;
                 }
                 $id = $sheet['id'].':'.$region['id'];
+                $exportProfiles = new RedZebraExportProfile;
+                $sourceProfile = $exportProfiles->recognise($region, $p['reader']['format'] ?? '');
                 $columns = $safety = [];
                 foreach ($region['headers']['paths'] as $path) {
                     if (trim($path['label']) === '') {
@@ -100,7 +103,7 @@ final readonly class AnalysisSnapshot
                     }
                     $header = $path['label'];
                     $token = self::token($header);
-                    $role = $dictionary->field($header)->value;
+                    $role = $exportProfiles->role($sourceProfile, $header) ?? $dictionary->field($header)->value;
                     if (in_array($token, ['plot', 'plot ref', 'plot no.', 'plot number', 'house no.', 'sales plot'], true)) {
                         $role = 'plot_reference';
                     }
@@ -139,6 +142,10 @@ final readonly class AnalysisSnapshot
                     'warnings' => array_values(array_unique([...$sheet['warnings'], ...($region['headers']['warnings'] ?? [])])),
                     'data_start_row' => $hr['end_row'] + 1,
                     'data_end_row' => self::physicalDataEnd($sheet, $region)];
+                if ($sourceProfile !== null) {
+                    $tables[$id]['source_profile'] = $sourceProfile;
+                    $tables[$id]['descriptor']['source_profile'] = $sourceProfile;
+                }
             }
         }
         foreach ($observations as $observation) {

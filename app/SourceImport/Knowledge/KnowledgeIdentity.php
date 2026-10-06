@@ -3,6 +3,7 @@
 namespace App\SourceImport\Knowledge;
 
 use App\SourceImport\Integration\MasterSourceResolver;
+use App\SourceImport\Integration\RedZebraExportProfile;
 use App\SourceImport\Semantics\Data\CoreIdentity;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use LogicException;
@@ -13,7 +14,7 @@ final class KnowledgeIdentity
 
     public const FINGERPRINT = '65168dd6d269b746426238a3ac5dfe23d8971d5d868e4e8895abcc6a6a151d07';
 
-    public const POLICY = 'customerapp.wald-knowledge-policy.v3';
+    public const POLICY = 'customerapp.wald-knowledge-policy.v4';
 
     public function current(): array
     {
@@ -28,7 +29,7 @@ final class KnowledgeIdentity
             'matcher' => 'customerapp.wald-profile-compatibility.v1', 'selector' => 'customerapp.wald-selector.v1',
             'semantic_executable' => 'f4fda0f069bd5106a125b42615ca212294a9dfad',
             'accepted_baseline' => self::BASELINE, 'policy' => self::POLICY,
-            'resolution' => MasterSourceResolver::VERSION];
+            'resolution' => MasterSourceResolver::VERSION, 'source_profiles' => RedZebraExportProfile::VERSION];
     }
 
     public function compatible(array $pins): Compatibility

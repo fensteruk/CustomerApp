@@ -1,6 +1,39 @@
 # Customer Portal — Source Integration Contract
 
-_Sprint 3B — 20 August 2026; CUSTAPP2 identity/composite refinement updated 15 September 2026_
+_Sprint 3B — 20 August 2026; alternate RedZebra export profile updated 6 October 2026_
+
+## CUSTOMER-WALD-SOURCECONTRACT02 addendum — 6 October 2026
+
+The following exact, contiguous, single-header-row XLSX profile is controlled as
+`redzebra-seven-column.v1`, in this exact order:
+
+| Header | Controlled meaning |
+|---|---|
+| `Call` | Permanent Call No. source reference |
+| `Call Type` | Existing controlled Call Type dictionary |
+| `Site Name` | Customer → Site → Plot hierarchy |
+| `Customer Name` | Private descriptive evidence only |
+| `Arrival` | Private source date evidence only |
+| `Complete Date` | Private source date evidence only; no completion authority |
+| `Customer` | CustomerCode |
+
+Recognition is profile-scoped, not a filename rule or a global alias. A changed,
+missing, duplicated, reordered or additional header, a competing table, or a non-XLSX
+transport does not match this profile and must use normal clarification. Raw values,
+worksheet/cell provenance and physical rows remain preserved.
+
+The qualified workbook has 4,463 physical data rows and 4,369 distinct Call values.
+Its 88 repeated-Call groups comprise one canonically identical group and 87 groups
+whose only observed changes are `Arrival` and/or `Complete Date` (84 groups change
+Arrival; 61 change Complete Date; 58 change both). These categories are evidence, not
+business semantics. All repeated Calls remain blocking under the canonical source-row
+contract; no row is deduplicated and no date chooses a winner. Management confirmation
+of the repeated-row business grain is still required before this workbook can progress
+past that gate.
+
+Profile-registry changes are compatibility-significant. Knowledge policy v4 pins
+`customerapp.redzebra-export-profiles.v1`; pilot discovery schema v8 records the
+recognized profile. The business dictionary itself remains unchanged.
 
 ## CUSTOMER-WALD-ROBUSTNESS01 — 6 October 2026
 

@@ -2,13 +2,29 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 22 September 2026 (current-scope exclusions approved under DEC-071)
+**Last updated:** 6 October 2026 (alternate RedZebra export profile approved under DEC-085)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
 This document defines confirmed source meanings. It is not evidence that an import path is on
 `main` or deployed. Wald may infer workbook structure; it may not infer or replace this business
 meaning.
+
+### Controlled alternate RedZebra header profile
+
+For the exact contiguous seven-column XLSX signature `Call`, `Call Type`, `Site Name`,
+`Customer Name`, `Arrival`, `Complete Date`, `Customer`, DEC-085 defines only these
+profile-scoped aliases:
+
+- `Call` = Call No.;
+- `Customer` = CustomerCode;
+- `Site Name` = Customer → Site → Plot hierarchy.
+
+`Customer Name`, `Arrival` and `Complete Date` remain private unmapped evidence.
+Arrival is not Requested Date or Date Agreed. Complete Date does not establish source
+completion. The aliases do not apply to other layouts, CSV files or arbitrary individual
+headers. Repeated Call values remain blocking until their source-row/visit grain is
+explicitly confirmed; dates never select a winning row.
 
 ## 1. Customer Services
 

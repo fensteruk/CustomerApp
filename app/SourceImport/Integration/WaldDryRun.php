@@ -21,7 +21,16 @@ final class WaldDryRun
         $artifact = $storage->store($file);
         try {
             $inspection = (new WorkbookStager)->inspect((object) $artifact);
-            $manifest = (new PilotWorkbookDiscovery)->inspect((object) $artifact, inspection: $inspection);
+            try {
+                $manifest = (new PilotWorkbookDiscovery)->inspect((object) $artifact, inspection: $inspection);
+            } catch (ImportConflict $conflict) {
+                if (in_array($conflict->getMessage(), ['required_call_column_unresolved', 'required_call_type_column_unresolved',
+                    'customer_code_missing', 'customer_code_column_ambiguous', 'source_site_name_column_ambiguous'], true)) {
+                    throw DryRunHeaderConflict::fromInspection($conflict, $inspection);
+                }
+
+                throw $conflict;
+            }
             // Current database state is observed in one read transaction. No saved profile is activated.
             $report = DB::transaction(function () use ($actor, $artifact, $inspection, $manifest): array {
                 (new PilotImportPolicy)->authorize($actor);

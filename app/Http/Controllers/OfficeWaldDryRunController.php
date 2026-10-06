@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\SourceImport\Integration\DryRunHeaderConflict;
 use App\SourceImport\Integration\ImportConflict;
 use App\SourceImport\Integration\PilotImportPolicy;
 use App\SourceImport\Integration\WaldDryRun;
@@ -24,6 +25,8 @@ final class OfficeWaldDryRunController extends Controller
         $request->validate(['workbook' => ['required', 'file', 'max:20480', 'mimes:xls,xlsx,csv']]);
         try {
             $report = $dryRun->analyse($request->user(), $request->file('workbook'));
+        } catch (DryRunHeaderConflict $exception) {
+            return back()->withErrors(['workbook' => $exception->guidance]);
         } catch (ImportConflict $exception) {
             return back()->withErrors(['workbook' => 'Analysis stopped safely: '.str($exception->getMessage())->replace('_', ' ')->ucfirst().'.']);
         } catch (AnalysisProblem|\InvalidArgumentException $exception) {

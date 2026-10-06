@@ -185,3 +185,23 @@ it('renders unit blockers and unknown-row reasons through the actual HTTP report
     expect(DB::table('projected_plots')->count())->toBe(0)
         ->and(DB::table('wald_pilot_uploads')->count())->toBe(0);
 });
+
+it('lists unresolved alternate export headers without approving their meanings or deduplicating rows', function (): void {
+    $office = dryOffice();
+    $file = UploadedFile::fake()->createWithContent('alternate.csv',
+        "Call,Call Type,Site Name,Customer Name,Arrival,Complete Date,Customer\n"
+        ."1801,PC1,Fictional - Example - Plot 033,Example description,2026-01-01,,EXAMPLE\n"
+        ."1801,PC1,Fictional - Example - Plot 033,Example description,2026-01-02,,EXAMPLE\n");
+    $this->followingRedirects()->actingAs($office)->from(route('office.workspace.imports.dry-run'))
+        ->post(route('office.workspace.imports.dry-run.analyse'), ['workbook' => $file])
+        ->assertOk()
+        ->assertSee('Observed header labels: Call, Call Type, Site Name, Customer Name, Arrival, Complete Date, Customer.')
+        ->assertSee('Call Number: no recognised column.')
+        ->assertSee('CustomerCode for a new master export: no recognised column.')
+        ->assertSee('Plot hierarchy: no recognised column.')
+        ->assertSee('No data was applied. No column mapping was approved.')
+        ->assertSee('do not rename columns or discard repeated rows');
+    expect(DB::table('wald_pilot_uploads')->count())->toBe(0)
+        ->and(DB::table('wald_source_bindings')->count())->toBe(0)
+        ->and(DB::table('projected_plots')->count())->toBe(0);
+});

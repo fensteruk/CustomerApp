@@ -11,7 +11,7 @@ final class PilotWorkbookDiscovery
 {
     public const MAX_PARENT_ROWS = 5000;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v7';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v8';
 
     public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null): array
     {
@@ -187,7 +187,7 @@ final class PilotWorkbookDiscovery
             throw new ImportConflict('no_source_records');
         }
         $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
-        $compositeMode = ! $identity['legacy'] && ($sawHierarchySignal
+        $compositeMode = ! $identity['legacy'] && (($table['source_profile'] ?? null) === RedZebraExportProfile::ALTERNATE || $sawHierarchySignal
             || is_string($identityHeader) && trim($identityHeader) === 'Customer Number');
         ksort($sources, SORT_STRING);
         foreach ($sources as &$source) {
@@ -227,6 +227,7 @@ final class PilotWorkbookDiscovery
             'sheet' => $sheet->id,
             'header' => [$table['header_range']['start_row'], $table['header_range']['end_row']],
             'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
+            'source_profile' => $table['source_profile'] ?? null,
             'sources' => array_values($sources),
             'source_count' => count($sources),
             'record_count' => count($seen),

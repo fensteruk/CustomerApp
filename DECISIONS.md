@@ -2282,3 +2282,32 @@ or aggregate created counts. No push, deployment or production action is authori
 
 Reason: Office needs factual inspection and repeatable analysis without mutation,
 while reversal requires enough evidence to restore only facts owned by the import.
+
+---
+
+## DEC-085
+
+Date: 6 October 2026
+
+Decision: The exact contiguous seven-column XLSX header profile `Call`, `Call Type`,
+`Site Name`, `Customer Name`, `Arrival`, `Complete Date`, `Customer` is an approved
+RedZebra export profile. Only within that exact profile, `Call` is the permanent
+Call No. source reference, `Customer` is CustomerCode, and `Site Name` contains the
+Customer → Site → Plot hierarchy. `Customer Name`, `Arrival` and `Complete Date`
+remain private unmapped source evidence and gain no customer-facing or completion
+authority. The same words outside the exact profile do not become global aliases.
+
+Every repeated Call value within one workbook continues to block. No identical row
+or date-variant row may be discarded, merged, ordered or treated as a replacement
+without a separately approved source-row/visit grain. The supplied qualification
+workbook contains one repeated-Call group with identical values and 87 groups whose
+only observed differences are Arrival and/or Complete Date. Those facts do not prove
+whether the rows are appointments, retained history or corrections. Physical row
+coordinates and workbook checksum remain observation provenance, not durable business
+identity. Older uncommitted interpretation knowledge becomes stale when the controlled
+profile registry changes.
+
+Reason: Management confirmed the three structural meanings for this known RedZebra
+layout. The repeated rows still lack an approved business grain, so deterministic
+header recognition can proceed while the existing duplicate guard preserves every row
+and prevents unsafe projection.
