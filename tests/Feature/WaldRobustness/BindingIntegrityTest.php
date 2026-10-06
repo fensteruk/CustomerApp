@@ -13,6 +13,7 @@ use App\SourceImport\Knowledge\KnowledgeScope;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
@@ -68,7 +69,11 @@ it('audits exact customer and site evidence without writing any records', functi
     foreach ($queries as $query) {
         expect(strtolower(ltrim($query)))->toStartWith('select');
     }
-    $this->actingAs($office)->get(route('office.workspace.settings.wald.integrity'))->assertOk()->assertSee('Healthy bindings')->assertSee('AUDIT1');
+    $response = $this->actingAs($office)->get(route('office.workspace.settings.wald.integrity'))->assertOk()->assertSee('Healthy bindings')->assertSee('AUDIT1');
+    if (getenv('WALD_ROBUSTNESS_RENDER') === '1') {
+        File::ensureDirectoryExists(storage_path('framework/testing/wald-robustness-ui'));
+        File::put(storage_path('framework/testing/wald-robustness-ui/integrity.html'), $response->getContent());
+    }
     $this->artisan('wald:integrity-check')->assertExitCode(0);
 });
 

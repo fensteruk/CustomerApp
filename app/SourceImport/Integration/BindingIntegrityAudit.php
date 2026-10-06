@@ -36,6 +36,8 @@ final class BindingIntegrityAudit
                     ->whereIn('v.binding_id', $roots->pluck('id'))->where(fn ($query) => $query
                     ->whereColumn('v.version', 'r.active_version')->orWhereColumn('v.version', 'r.latest_version'))
                     ->get(['v.*'])->groupBy('binding_id');
+                $historyHeads = DB::table('wald_binding_versions')->whereIn('binding_id', $roots->pluck('id'))
+                    ->select('binding_id')->selectRaw('MAX(version) as maximum_version')->groupBy('binding_id')->pluck('maximum_version', 'binding_id');
                 $all = $versions->flatten(1);
                 $sites = DB::table('sites')->whereIn('id', $all->pluck('site_id')->unique())->get()->keyBy('id');
                 $customers = DB::table('customer_organisations')->whereIn('id', $all->pluck('customer_organisation_id')->unique())->get()->keyBy('id');
@@ -43,7 +45,7 @@ final class BindingIntegrityAudit
                     $history = $versions->get($root->id, collect());
                     $active = $history->where('version', $root->active_version);
                     if ($root->active_version === null) {
-                        if ($root->latest_version > 0 && ! $history->contains('version', $root->latest_version)) {
+                        if ((int) $root->latest_version !== (int) $historyHeads->get($root->id, 0)) {
                             $items[] = $this->item($root, null, null, null, 'ORPHAN_BINDING_VERSION', 'The latest binding version is missing.');
                         }
 
@@ -56,7 +58,7 @@ final class BindingIntegrityAudit
                     $source = $evidence[$key] ?? null;
                     $issue = match (true) {
                         $active->count() > 1 || isset($duplicateKeys[$key]) => ['DUPLICATE_ACTIVE_BINDING', 'More than one active target was found.'],
-                        $version === null || $root->active_version > $root->latest_version || $root->active_version <= $root->revoked_through
+                        $version === null || (int) $root->latest_version !== (int) $historyHeads->get($root->id, 0) || $root->active_version > $root->latest_version || $root->active_version <= $root->revoked_through
                             || ! $history->contains('version', $root->latest_version) => ['ORPHAN_BINDING_VERSION', 'The active/latest/revoked binding history is inconsistent.'],
                         $site === null || $customer === null => ['MISSING_TARGET', 'The bound customer or site no longer exists.'],
                         (int) $site->customer_organisation_id !== (int) $customer->id => ['CUSTOMER_MISMATCH', 'The site does not belong to the bound customer.'],
