@@ -104,8 +104,8 @@ final class WaldDryRun
         [, $sheets, $snapshot] = $inspection;
         $sheet = array_values($sheets)[0];
         $columns = [];
-        foreach ($snapshot->data['questions'] as $question) {
-            if (($question['type'] ?? null) !== 'STRUCTURAL') {
+        foreach ($snapshot->data['questions'] as $key => $question) {
+            if (($question['type'] ?? null) !== 'STRUCTURAL' || $key === 'structure:ignored') {
                 continue;
             }
             if (count($question['candidates'] ?? []) !== 1) {

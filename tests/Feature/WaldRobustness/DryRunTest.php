@@ -151,3 +151,14 @@ it('denies customer roles and refuses dry run when the import gate is off', func
         $this->actingAs($external)->post(route('office.workspace.imports.dry-run.analyse'), ['workbook' => dryWorkbook(['A,1401,X,A - B - Plot 1,PC1,No,2'])])->assertForbidden();
     }
 });
+
+it('preserves dictionary-ignored columns without treating them as competing meanings', function (): void {
+    $office = dryOffice();
+    $file = UploadedFile::fake()->createWithContent('ignored.csv',
+        "CustomerNo,Call No.,Site Name,Plot Ref,Call Type,Complete,VS,Items Ordered Status,Site Value\n"
+        ."IGNORED-FIELDS,1501,Description,Customer - Site - Plot 1,PC1,No,2,Internal status,12345\n");
+    $report = (new WaldDryRun)->analyse($office, $file);
+    expect($report['content']['summary']['blocking_units'])->toBe(0)
+        ->and($report['content']['summary']['total_rows'])->toBe(1)
+        ->and(DB::table('wald_pilot_uploads')->count())->toBe(0);
+});

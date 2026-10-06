@@ -9,6 +9,8 @@ use App\Http\Controllers\OfficePermanentDeletionController as PermanentDeletion;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
 use App\Http\Controllers\OfficeUnknownRowsController;
 use App\Http\Controllers\OfficeUserPageController as UserPages;
+use App\Http\Controllers\OfficeWaldDryRunController;
+use App\Http\Controllers\OfficeWaldIntegrityController;
 use App\Http\Controllers\OfficeWaldSettingsController as WaldSettings;
 use App\Models\CustomerOrganisation;
 use Illuminate\Support\Facades\Route;
@@ -27,10 +29,10 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         });
         Route::get('/customers/new', [Pages::class, 'customerForm'])->name('customers.create');
         Route::get('/imports', [PilotImport::class, 'index'])->name('imports');
-        Route::get('/imports/dry-run', [\App\Http\Controllers\OfficeWaldDryRunController::class, 'index'])->name('imports.dry-run');
-        Route::post('/imports/dry-run', [\App\Http\Controllers\OfficeWaldDryRunController::class, 'analyse'])->name('imports.dry-run.analyse');
+        Route::get('/imports/dry-run', [OfficeWaldDryRunController::class, 'index'])->name('imports.dry-run');
+        Route::post('/imports/dry-run', [OfficeWaldDryRunController::class, 'analyse'])->name('imports.dry-run.analyse');
         Route::get('/settings/wald', [WaldSettings::class, 'index'])->name('settings.wald');
-        Route::get('/settings/wald/integrity', \App\Http\Controllers\OfficeWaldIntegrityController::class)->name('settings.wald.integrity');
+        Route::get('/settings/wald/integrity', OfficeWaldIntegrityController::class)->name('settings.wald.integrity');
         Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
         Route::post('/imports/pilot', [PilotImport::class, 'upload'])->name('pilot-import.upload');
         Route::prefix('/imports/pilot/{upload}')->whereUuid('upload')->group(function (): void {
