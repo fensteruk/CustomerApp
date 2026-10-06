@@ -3,10 +3,14 @@
 ## Wald robustness 01 — 6 October 2026
 
 Task A (integrity audit) and Task B (first-class transient dry run) are implemented
-on a separate feature branch and under final qualification. Task C cannot safely
+and qualified on a separate feature branch. Task C cannot safely
 reverse current import receipts: approve forward per-entity ownership/before-images
 and deliberately integrate the accepted Safe Cascade Purge dependency first.
 Normal one-site preview/Apply remains unchanged. No push or deployment is authorised.
+
+Task A/B runtime checkpoint is `f19df5a4d48e96b9a2e776e1cfd038353157e253`.
+Full regression and MySQL 8.4.11 gates pass; five existing Composer advisories need
+separate release review. See `documentation/wald-robustness01-report-2026-10-06.md`.
 
 Earlier roadmap entries are historical context.
 

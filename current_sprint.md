@@ -7,12 +7,18 @@ Feature branch `codex/wald-robustness01-2026-10-06` starts from approved
 Task A adds read-only Office/CLI binding integrity inspection. Task B adds a
 transient Analyse only report with no business, binding or import persistence.
 Task C is blocked by incomplete durable ownership/before-image evidence; the
-separate Safe Cascade Purge engine is not merged or duplicated. Focused SQLite,
-MySQL 8.4 and synthetic viewport qualification are complete; full regression and
-quality gates are in progress. No migration, push, deployment or production use.
+separate Safe Cascade Purge engine is not merged or duplicated. Runtime checkpoint
+`f19df5a4d48e96b9a2e776e1cfd038353157e253` passed 18 focused / 164 assertions,
+85 broader import cases / 706 assertions, MySQL 8.4.11 12 / 149, and the full suite
+1,984 passed / 92 expected skips / 11,075 assertions across 2,076 tests. Eight
+viewport checks and print/keyboard checks passed. Formatting, build, validation,
+production npm audit and whitespace pass; five existing Composer advisories remain
+for separate release review. No migration, push, deployment or production use.
 
 See `documentation/wald-robustness01-reversal-evidence-contract.md` for the exact
 Task C gate. Earlier entries are historical context.
+
+Full report: `documentation/wald-robustness01-report-2026-10-06.md`.
 
 ## Wald disposable customer cleanup — 24 September 2026
 

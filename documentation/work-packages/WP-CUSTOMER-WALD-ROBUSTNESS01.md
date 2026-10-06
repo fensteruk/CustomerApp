@@ -20,3 +20,13 @@ Qualify focused security, deterministic/no-write and failure cases, current full
 suite, formatting, dependencies, assets and disposable MySQL 8.4. Preserve existing
 source semantics, partial-export protection, Portal-owned state and shared history.
 Do not merge the old WALD06 line or the separate purge branch implicitly.
+
+## Qualification outcome
+
+TASK A READY. TASK B READY. TASK C BLOCKED BY EVIDENCE CONTRACT.
+Runtime `f19df5a4d48e96b9a2e776e1cfd038353157e253`: focused 18 / 164,
+grouped 85 / 706, disposable MySQL 8.4.11 12 / 149, full 1,984 passed / 92 expected
+skips / 11,075 assertions. Viewport/keyboard/print, formatter, build, Composer
+validation, production npm audit and diff checks pass. Composer reports five
+existing advisories without upgrades. No new migration, push or deployment.
+See `../wald-robustness01-report-2026-10-06.md` and the reversal evidence contract.

@@ -7,8 +7,16 @@ Task A provides read-only Office/CLI integrity inspection; Task B provides a
 fresh transient dry-run report and print/PDF action. No business/binding/import
 records are created by dry run. Task C is blocked by missing durable per-entity
 ownership and before-images, and by the separately accepted purge dependency.
-No destructive reversal is implemented. Full qualification is in progress.
+No destructive reversal is implemented. Runtime checkpoint
+`f19df5a4d48e96b9a2e776e1cfd038353157e253` is qualified: 18 focused / 164 assertions,
+85 grouped / 706, disposable MySQL 8.4.11 12 / 149, full suite 1,984 passes / 92
+expected skips / 11,075 assertions. Eight viewport checks plus keyboard/print checks
+pass. Composer reports five existing advisories; no dependency upgrade occurred.
 Do not push or deploy this candidate. Production has not been accessed.
+
+See `documentation/wald-robustness01-report-2026-10-06.md` for files, evidence,
+advisories and the blocked reversal contract. The final disposable server was
+stopped normally and its task-only data directory removed.
 
 Earlier handovers are historical context.
 
