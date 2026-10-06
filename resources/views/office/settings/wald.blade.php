@@ -14,7 +14,7 @@
         <section class="min-w-0 rounded-xl border border-slate-200 bg-white p-5 sm:p-6" aria-labelledby="wald-overview-title">
             <div class="flex flex-wrap items-start justify-between gap-4">
                 <div class="min-w-0"><p class="eyebrow">Imports</p><h2 id="wald-overview-title" class="section-title mt-1">Wald Import Pilot</h2><p class="mt-2 max-w-3xl text-sm leading-6 text-slate-600">Control access to the supervised spreadsheet import workspace.</p></div>
-                @if ($effective)<a class="secondary-button" href="{{ route('office.workspace.imports') }}">Open imports</a>@endif
+                <div class="flex flex-wrap gap-3"><a class="secondary-button" href="{{ route('office.workspace.settings.wald.integrity') }}">Integrity check</a>@if ($effective)<a class="secondary-button" href="{{ route('office.workspace.imports') }}">Open imports</a>@endif</div>
             </div>
             <dl class="mt-5 grid gap-3 lg:grid-cols-3">
                 <div @class(['rounded-xl border p-4', 'border-emerald-200 bg-emerald-50' => $effective, 'border-amber-200 bg-amber-50' => ! $effective])><dt class="text-sm font-medium text-slate-700">Current availability</dt><dd class="mt-1 text-lg font-bold text-slate-950">{{ $effective ? 'Pilot available' : 'Pilot unavailable' }}</dd><dd class="mt-2 text-sm leading-6 text-slate-700">{{ $effective ? 'Authorised Office Staff can open the import workspace.' : 'Import access needs both the saved setting and deployment access to be on.' }}</dd></div>

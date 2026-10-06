@@ -28,6 +28,7 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         Route::get('/customers/new', [Pages::class, 'customerForm'])->name('customers.create');
         Route::get('/imports', [PilotImport::class, 'index'])->name('imports');
         Route::get('/settings/wald', [WaldSettings::class, 'index'])->name('settings.wald');
+        Route::get('/settings/wald/integrity', \App\Http\Controllers\OfficeWaldIntegrityController::class)->name('settings.wald.integrity');
         Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
         Route::post('/imports/pilot', [PilotImport::class, 'upload'])->name('pilot-import.upload');
         Route::prefix('/imports/pilot/{upload}')->whereUuid('upload')->group(function (): void {
