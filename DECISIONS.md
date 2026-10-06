@@ -2256,3 +2256,29 @@ Reason: Deleting the import alone leaves a customer request, call-off batch,
 user and shared binding. The Office-approved goal is complete removal of this
 disposable customer and its own history without damaging the current Vistry
 binding or other source units.
+
+---
+
+## CUSTOMER-WALD-ROBUSTNESS01 — Audit, dry run and reversal evidence gate
+
+Date: 6 October 2026
+
+Decision: Add an Office-only read-only binding integrity inspection and first-class
+dry-run report using the current approved dictionary and exact source resolver.
+Dry run changes no customer, site, plot, product, service, request, amendment,
+assignment, binding or source business fact. Its temporary private workbook is
+removed after analysis; no durable upload/import/knowledge records are created.
+Current source evidence and component identities are analysed afresh. The report
+is never Apply approval and ordinary clarification, preview, staleness and one-site
+commit checks remain mandatory. No fuzzy inference, unattended commit or source
+meaning change is authorised.
+
+Import reversal must stop before destructive implementation when existing receipts
+lack complete durable ownership/before-images. Inspection confirms that gap at the
+approved main baseline. TASK C is blocked pending the forward evidence contract
+and explicit accepted Safe Cascade Purge integration. Preserve original receipts,
+Portal-owned state and later imports; do not infer safe ownership from timestamps
+or aggregate created counts. No push, deployment or production action is authorised.
+
+Reason: Office needs factual inspection and repeatable analysis without mutation,
+while reversal requires enough evidence to restore only facts owned by the import.

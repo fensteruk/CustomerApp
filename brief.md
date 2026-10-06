@@ -613,6 +613,15 @@ unless a later approved architecture replaces that model.
 
 No automatic all-site commit is implied.
 
+Office may inspect CustomerCode binding integrity from Wald Settings, including
+while import availability is off. A separate Analyse only / Dry run path compares
+a private workbook with current records and reports resolution, proposals,
+conflicts and site-scoped plot candidates without creating business records,
+source bindings or durable import/knowledge evidence. Its temporary copy is
+removed afterwards. The printable report grants no Apply approval. Automatic
+import reversal remains blocked until complete durable ownership evidence is
+approved and captured; original receipts and Portal-owned history are preserved.
+
 ---
 
 ## 18. Master RedZebra Export

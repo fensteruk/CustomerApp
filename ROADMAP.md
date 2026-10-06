@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## Wald robustness 01 — 6 October 2026
+
+Task A (integrity audit) and Task B (first-class transient dry run) are implemented
+on a separate feature branch and under final qualification. Task C cannot safely
+reverse current import receipts: approve forward per-entity ownership/before-images
+and deliberately integrate the accepted Safe Cascade Purge dependency first.
+Normal one-site preview/Apply remains unchanged. No push or deployment is authorised.
+
+Earlier roadmap entries are historical context.
+
 ## Wald master import after structural approval — 24 September 2026
 
 The local MASTER03 candidate lets Office approve one exact new customer/site

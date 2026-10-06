@@ -2,6 +2,26 @@
 
 _Sprint 3B — 20 August 2026; CUSTAPP2 identity/composite refinement updated 15 September 2026_
 
+## CUSTOMER-WALD-ROBUSTNESS01 — 6 October 2026
+
+Binding integrity inspection is read-only. Exact customer ownership and current
+parsed hierarchy must agree; Site Name alone is never a match. Missing/stale
+source evidence is explicitly unverifiable and partial-export absence cannot
+invalidate a binding. No repair or rebind happens during inspection.
+
+First-class dry run uses a transient private workbook, the current dictionary,
+current exact resolver and batched existing facts. It creates no business,
+binding, upload, import command, knowledge, selection, approval or receipt rows.
+The temporary workbook is discarded after analysis. Report contents and their
+fingerprint are deterministic for unchanged inputs; timing/memory diagnostics
+are separate. No report can become Apply approval.
+
+Destructive import reversal is blocked by the current receipts' incomplete
+durable per-entity ownership and recoverable before-images. See
+`wald-robustness01-reversal-evidence-contract.md`. Preserve original receipts,
+later imports, shared uploads and customer/Office workflow. An accepted forward
+contract and deliberate Safe Cascade Purge integration are prerequisites.
+
 ## CUSTOMER-WALD-MASTER01 hierarchy addendum — 23 September 2026
 
 The recognized `Plot Ref` header in the current RedZebra master export carries an exact

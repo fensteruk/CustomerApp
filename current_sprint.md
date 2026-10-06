@@ -1,5 +1,19 @@
 # Current Sprint
 
+## Wald robustness 01 — 6 October 2026
+
+Feature branch `codex/wald-robustness01-2026-10-06` starts from approved
+`main` / `origin/main` `04e48b55c6178f4e2352cd06e7cd657d0b1f081b`.
+Task A adds read-only Office/CLI binding integrity inspection. Task B adds a
+transient Analyse only report with no business, binding or import persistence.
+Task C is blocked by incomplete durable ownership/before-image evidence; the
+separate Safe Cascade Purge engine is not merged or duplicated. Focused SQLite,
+MySQL 8.4 and synthetic viewport qualification are complete; full regression and
+quality gates are in progress. No migration, push, deployment or production use.
+
+See `documentation/wald-robustness01-reversal-evidence-contract.md` for the exact
+Task C gate. Earlier entries are historical context.
+
 ## Wald disposable customer cleanup — 24 September 2026
 
 The local `main` candidate extends certified demo-customer purge to include

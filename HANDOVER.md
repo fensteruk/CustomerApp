@@ -1,5 +1,17 @@
 # Fenster Customer Portal Handover
 
+## Wald robustness 01 — 6 October 2026
+
+The local robustness branch starts from `04e48b55c6178f4e2352cd06e7cd657d0b1f081b`.
+Task A provides read-only Office/CLI integrity inspection; Task B provides a
+fresh transient dry-run report and print/PDF action. No business/binding/import
+records are created by dry run. Task C is blocked by missing durable per-entity
+ownership and before-images, and by the separately accepted purge dependency.
+No destructive reversal is implemented. Full qualification is in progress.
+Do not push or deploy this candidate. Production has not been accessed.
+
+Earlier handovers are historical context.
+
 ## Wald disposable customer cleanup — 24 September 2026
 
 The local `main` candidate adds an advanced certified purge for the old

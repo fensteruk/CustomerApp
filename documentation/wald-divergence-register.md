@@ -305,6 +305,12 @@ WD-47/48 retain their original implementation identity; the current identities b
 
 ## Backport process
 
+CUSTOMER-WALD-ROBUSTNESS01 (6 October 2026) adds CustomerApp-only read-only
+binding audit and transient Office dry run around the existing exact resolver,
+dictionary and workbook inspection. No generic Wald core or semantic definition
+changes. Import reversal is blocked by the documented durable ownership gap;
+no purge engine is copied or merged. This is feature-branch work, not deployed.
+
 1. For each nontrivial fork change, add/update a ledger entry with reason, category, source
    and destination paths, affected versions, originating commit and fixture/reproducer.
 2. Keep generic fixes separate from domain mappings, policies and migrations. Label useful
