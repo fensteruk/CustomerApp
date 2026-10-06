@@ -25,7 +25,7 @@ final class OfficeWaldDryRunController extends Controller
         try {
             $report = $dryRun->analyse($request->user(), $request->file('workbook'));
         } catch (ImportConflict $exception) {
-            return back()->withErrors(['workbook' => 'Analysis stopped safely: '.str($exception->getMessage())->replace('_', ' ')->sentence()]);
+            return back()->withErrors(['workbook' => 'Analysis stopped safely: '.str($exception->getMessage())->replace('_', ' ')->ucfirst().'.']);
         } catch (AnalysisProblem|\InvalidArgumentException $exception) {
             return back()->withErrors(['workbook' => 'Analysis stopped safely. The workbook could not be analysed within the supported structure and resource limits. No data was applied.']);
         }

@@ -162,3 +162,26 @@ it('preserves dictionary-ignored columns without treating them as competing mean
         ->and($report['content']['summary']['total_rows'])->toBe(1)
         ->and(DB::table('wald_pilot_uploads')->count())->toBe(0);
 });
+
+it('renders stopped analysis as a readable validation error instead of a server error', function (): void {
+    $office = dryOffice();
+    $this->actingAs($office)->from(route('office.workspace.imports.dry-run'))
+        ->post(route('office.workspace.imports.dry-run.analyse'), ['workbook' => dryWorkbook([
+            'DUP,1601,Description,Customer - Site - Plot 1,PC1,No,2',
+            'DUP,1601,Description,Customer - Site - Plot 1,PC1,No,2',
+        ])])->assertRedirect(route('office.workspace.imports.dry-run'))
+        ->assertSessionHasErrors(['workbook' => 'Analysis stopped safely: Duplicate call number.']);
+    expect(DB::table('wald_pilot_uploads')->count())->toBe(0)
+        ->and(DB::table('wald_source_bindings')->count())->toBe(0);
+});
+
+it('renders unit blockers and unknown-row reasons through the actual HTTP report', function (): void {
+    $office = dryOffice();
+    $this->actingAs($office)->post(route('office.workspace.imports.dry-run.analyse'), ['workbook' => dryWorkbook([
+        'UNKNOWN-TYPE,1701,Description,Customer - Site - Plot 1,ZZQ,No,2',
+        ',1702,Description,Customer - Site - Plot 2,PC1,No,2',
+    ])])->assertOk()->assertSee('Unknown call type.')->assertSee('Customer code missing.')
+        ->assertSee('No data applied');
+    expect(DB::table('projected_plots')->count())->toBe(0)
+        ->and(DB::table('wald_pilot_uploads')->count())->toBe(0);
+});
