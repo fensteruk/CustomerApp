@@ -12,6 +12,7 @@
             @include('office.pilot-import.upload-form')
         </section>
         <p class="imports-notice imports-safety"><strong>Uploading does not apply data to CustomerApp.</strong> You will review the changes before anything is applied.</p>
+        <section class="imports-notice"><strong>Want to check a workbook without starting an import?</strong><p>Analyse only compares it with current records and produces a report. No customers, sites, bindings or imported facts are changed.</p><a class="secondary-button mt-3" href="{{ route('office.workspace.imports.dry-run') }}">Analyse only — no changes applied</a></section>
         <section aria-labelledby="recent-imports-title" data-recent-imports>
             <div class="imports-section-heading"><div><h2 id="recent-imports-title">Recent imports</h2><p>Your three most recent uploads. Continue a review or check the latest result.</p></div></div>
             <div class="imports-recent-grid">@forelse ($recentImports as $import) @include('office.pilot-import.summary-card', ['import' => $import]) @empty <div class="imports-empty"><h3>No imports yet</h3><p>Choose a workbook above to check its source sites and rows.</p></div> @endforelse</div>

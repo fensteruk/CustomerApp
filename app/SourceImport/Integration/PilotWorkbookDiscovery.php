@@ -13,9 +13,9 @@ final class PilotWorkbookDiscovery
 
     public const SCHEMA = 'customerapp.wald-pilot-discovery.v7';
 
-    public function inspect(object $upload, array $restoredRows = []): array
+    public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null): array
     {
-        [, $sheets, $snapshot] = (new WorkbookStager)->inspect($upload);
+        [, $sheets, $snapshot] = $inspection ?? (new WorkbookStager)->inspect($upload);
         $data = $snapshot->data;
         if (($data['composite_candidate_count'] ?? 0) > 1) {
             throw new ImportConflict('ambiguous_composite_table');

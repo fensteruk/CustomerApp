@@ -27,6 +27,8 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         });
         Route::get('/customers/new', [Pages::class, 'customerForm'])->name('customers.create');
         Route::get('/imports', [PilotImport::class, 'index'])->name('imports');
+        Route::get('/imports/dry-run', [\App\Http\Controllers\OfficeWaldDryRunController::class, 'index'])->name('imports.dry-run');
+        Route::post('/imports/dry-run', [\App\Http\Controllers\OfficeWaldDryRunController::class, 'analyse'])->name('imports.dry-run.analyse');
         Route::get('/settings/wald', [WaldSettings::class, 'index'])->name('settings.wald');
         Route::get('/settings/wald/integrity', \App\Http\Controllers\OfficeWaldIntegrityController::class)->name('settings.wald.integrity');
         Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
