@@ -178,8 +178,17 @@ it('W5Q03 retains underlying validation and ordering blockers on refused direct 
     };
     $run = B::staged($actor, $scope, $rows, slot: $case === 'identity' ? 'AFTERNOON' : 'MORNING');
     $preview = (new ImportReview)->preview($actor, $scope, $run['run'], $run['epoch'], F::command());
-    expect($preview['blockers'])->not->toBeEmpty();
+    if ($case === 'duplicate') {
+        expect($preview['blockers'])->toBe([]);
+        $payload = json_decode(DB::table('wald_import_previews')->where('uuid', $preview['preview'])->value('payload'), true);
+        expect($payload['withheld_facts'])->toHaveCount(2);
+    } else {
+        expect($preview['blockers'])->not->toBeEmpty();
+    }
     expect(fn () => B::commit($actor, $scope, $preview))->toThrow(ImportConflict::class);
+    if ($case === 'duplicate') {
+        expect(DB::table('wald_source_visits')->count())->toBe(0);
+    }
     $attempt = DB::table('wald_commit_attempts')->orderByDesc('id')->firstOrFail();
     expect(json_decode($attempt->metadata, true)['review_blockers'])->toBe($preview['blockers']);
     expect(DB::table('wald_commit_attempt_outcomes')->where('attempt_id', $attempt->id)->value('outcome'))->toBe('CONFLICTED');

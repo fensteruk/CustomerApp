@@ -5,6 +5,7 @@
     @if(!in_array($run['state'], ['COMMITTED','SUPERSEDED']))<p class="wald-safety">Not yet applied to CustomerApp. No plots from this review have been created or updated.</p>@endif
     @if($item['stage_summary'])
         @php($counts = $item['stage_summary'])
+        @if($counts['call_blocker_rows'])<p class="wald-notice wald-warning">{{ $counts['call_blocker_rows'] }} rows have repeated Call evidence. Their Plot inventory is retained, but call-off, visit and completion facts will not be applied.</p>@endif
         <p>{{ $counts['base_plot_rows'] }} base plot rows with no call-off assertion · {{ $counts['recognised_calloff_rows'] }} recognised source call-off rows · {{ $counts['unknown_call_type_rows'] }} unknown nonblank Call Types.</p>
         <section class="wald-found" aria-label="Selected site analysis"><h4>We found {{ $counts['plots'] }} {{ Illuminate\Support\Str::plural('plot', $counts['plots']) }}</h4><p>{{ $counts['included'] }} included rows · {{ $counts['excluded'] }} ignored rows · {{ $counts['rows'] }} rows checked for this site.</p>@if($counts['customer_care'])<p>{{ $counts['customer_care'] }} Customer Care {{ Illuminate\Support\Str::plural('row', $counts['customer_care']) }} ignored (CU4).</p>@endif<p>{{ $counts['blocked'] ? $counts['blocked'].' source rows need attention.' : 'No source-row blockers.' }} {{ $ui['closed'] ? 'This is the retained analysis for this review.' : ($run['state'] === 'FAILED' ? 'Review the recovery options below.' : 'Create or review the preview to check the full site changes.') }}</p></section>
     @endif
@@ -27,6 +28,7 @@
     @endif
     @if($item['preview'])
         @php($targets = $item['preview']['payload']['projection']['target']['plots'] ?? [])
+        @if(!empty($item['preview']['payload']['withheld_facts']))<div class="wald-notice wald-warning"><strong>Safe inventory preview — some facts are withheld</strong><p>Apply includes safe Plot/product facts and unambiguous calls only. These unresolved facts cannot be approved by this preview:</p><ul>@foreach($item['preview']['payload']['withheld_facts'] as $withheld)<li>Plot {{ $withheld['plot'] }}, row {{ $withheld['row'] }}: @foreach($withheld['call_blockers'] as $call)Call {{ $call['call_number'] }} appears on {{ $call['row_count'] }} rows; call-off/visit/completion withheld. @endforeach @if($withheld['product_blockers'])Conflicting products withheld: {{ implode(', ', $withheld['product_blockers']) }}.@endif</li>@endforeach</ul></div>@endif
         @php($creates = count(array_filter($targets, fn ($resolution) => $resolution === 'CREATE')))
         @php($reuses = count(array_filter($targets, fn ($resolution) => $resolution === 'REUSE')))
         <section class="wald-preview" aria-labelledby="preview-{{ $selection['uuid'] }}"><p class="eyebrow">{{ $ui['closed'] || $ui['refresh'] || $ui['expired'] ? 'Retained preview · not a current approval' : 'One-site preview' }}</p><h4 id="preview-{{ $selection['uuid'] }}">Changes for {{ $selection['site_name'] }}</h4><p>{{ $selection['customer_name'] }} · {{ $selection['site_name'] }}</p>

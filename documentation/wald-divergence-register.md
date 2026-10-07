@@ -306,6 +306,14 @@ WD-47/48 retain their original implementation identity; the current identities b
 
 ## Backport process
 
+WD-64 / SOURCECONTRACT04 (7 October 2026): CustomerApp-only dependency partition for
+repeated Call evidence. Inventory is retained; ambiguous numbered rows/visits/services/
+completion and dependent conflicting quantities are withheld in staging, preview and
+Apply. Full-workbook physical grouping survives Office filtering and site selection.
+Source identities and generic Wald/dictionary are unchanged. DEC-087; policy v6,
+discovery v10, backend/projection v6, scoped-call-evidence v1. No schema or SiteApp
+change, backport, push or deployment. See the repeated-Call isolation report.
+
 CUSTOMER-WALD-SOURCECONTRACT03 (6 October 2026), WD-63, is CustomerApp-specific.
 Capability v1 permits approved plot inventory with absent/blank call columns; profile
 registry v2, discovery v9 and policy/backend/projection v5 invalidate old uncommitted

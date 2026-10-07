@@ -1,5 +1,18 @@
 # Fenster Customer Portal Handover
 
+## Repeated-Call isolation candidate — 7 October 2026
+
+SOURCECONTRACT04 continues from integration baseline
+`3b3f1ae00ec3d0d2ba97763505ef8349a9865687`. The retained PREREQ01 regression now
+reports safe inventory and scoped repeated-Call findings. Preview/Apply withholds
+ambiguous call/service/completion and dependent conflicting quantities, retaining
+every physical observation. No identity change, migration, push or deployment.
+See `documentation/wald-repeated-call-isolation-2026-10-07.md` for final qualification.
+
+Final gate: READY_FOR_DRY_RUN, 2,022 full-suite passes / 92 expected skips / 11,485
+assertions; disposable MySQL 8.4.11 43 passes / six expected skips / 496 assertions.
+This supersedes the PREREQ01 readiness block below; its original report remains history.
+
 ## Wald prerequisite + plot-register integration — 7 October 2026
 
 The isolated integration branch preserves the reviewed audit/dry-run, safe

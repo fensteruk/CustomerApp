@@ -159,6 +159,7 @@ final class WorkbookStager
             }
         }
         $roleByColumn = array_flip($columns);
+        $callFindings = (new ScopedCallEvidence)->discover($sheet, $table, $columns);
         foreach ($sheet->cells as $rowNumber => $cells) {
             if ($rowNumber < $dataStart || $rowNumber > $dataEnd) {
                 continue;
@@ -189,9 +190,6 @@ final class WorkbookStager
                 $issues[] = 'INVALID_CALL_NUMBER';
             }
             $call = $emptyCall ? null : (string) $call;
-            if ($call !== null && isset($seen[$call])) {
-                $issues[] = 'DUPLICATE_CALL_NUMBER';
-            }
             if ($call !== null) {
                 $seen[$call] = true;
             }
@@ -261,6 +259,7 @@ final class WorkbookStager
                 $semanticApproval = $knowledge['selections'][$key] ?? null;
             }
             $effectiveType = $selection['canonical_override'] ?? $semanticApproval['canonical'] ?? $callType;
+            $callBlockers = ScopedCallEvidence::marker($callFindings[$call ?? ''] ?? null);
             $type = $dictionary->callType(
                 is_scalar($effectiveType) ? (string) $effectiveType : '',
                 ($table['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null,
@@ -273,7 +272,7 @@ final class WorkbookStager
             if (! $type->isResolved() || $hasVisit && ! is_string($effectiveType)) {
                 $issues[] = 'UNRESOLVED_CALL_TYPE';
             }
-            if ($complete !== null && ! $complete->isResolved()) {
+            if ($complete !== null && ! $complete->isResolved() && $callBlockers === []) {
                 $issues[] = 'UNRESOLVED_COMPLETION';
             }
             $products = [];
@@ -311,6 +310,9 @@ final class WorkbookStager
             // Compose WALD03 evidence without altering the accepted reasoning or its decisions.
             $semanticEvidence = [];
             foreach ($hasVisit ? array_values(array_intersect(['call_type', 'completion'], array_keys($columns))) : [] as $role) {
+                if ($role === 'completion' && $callBlockers !== []) {
+                    continue;
+                }
                 $cell = $cells[$columns[$role]] ?? null;
                 $hypothesis = collect($reason['hypotheses'])->first(fn ($h) => ($h['hypothesis']['target']['column'] ?? null) === $columns[$role] && ($h['hypothesis']['target']['sheet_id'] ?? null) === $sheet->id);
                 if ($cell && $hypothesis) {
@@ -345,6 +347,7 @@ final class WorkbookStager
                 }
             }
             $rows[] = ['canonical' => $excluded ? ['excluded' => true, 'call_number' => $call] : $facts, 'facts' => $facts, 'excluded' => $excluded,
+                'call_blockers' => $excluded ? [] : $callBlockers,
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),
                 'provenance' => ['sheet' => $sheet->id, 'row' => $rowNumber, 'raw_call_type' => $callType, 'raw_complete' => $raw('completion'),
                     'source_site_name' => $siteName,
@@ -357,7 +360,9 @@ final class WorkbookStager
             throw new ImportConflict('no_source_records');
         }
 
-        $consolidated = (new ProductConsolidator)->consolidate($rows);
+        ScopedCallEvidence::partitionProducts($rows);
+        $projectionRows = array_map(fn ($row) => [...$row, 'facts' => ScopedCallEvidence::facts($row)], $rows);
+        $consolidated = (new ProductConsolidator)->consolidate($projectionRows);
         if ($consolidated['conflicts'] !== []) {
             foreach ($rows as &$row) {
                 if (isset($consolidated['conflicts'][$row['facts']['plot']])) {

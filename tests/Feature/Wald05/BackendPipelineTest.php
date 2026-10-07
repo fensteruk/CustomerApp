@@ -38,11 +38,23 @@ it('preserves absent and blank products while applying an explicit zero under ne
         ->and(ProjectedPlotProduct::query()->where('product_code', 'VS')->where('quantity', '2.125')->count())->toBe(6);
 });
 
-it('blocks duplicates and unknown source meanings without projection effects', function (array $change) {
+it('withholds duplicate calls and blocks other unknown source meanings without unsafe effects', function (array $change) {
     [$actor, $scope] = F::owner();
     B::binding($actor, $scope);
     $run = B::staged($actor, $scope, [1 => $change]);
     $preview = (new ImportReview)->preview($actor, $scope, $run['run'], $run['epoch'], F::command());
+    if (isset($change['Call No.'])) {
+        expect($preview['blockers'])->toBe([]);
+        $payload = json_decode(DB::table('wald_import_previews')->where('uuid', $preview['preview'])->value('payload'), true);
+        expect($payload['withheld_facts'])->toHaveCount(2);
+        (new ImportReview)->approve($actor, $scope, $run['run'], $preview['preview'], $preview['hash'], F::command());
+        B::commit($actor, $scope, $preview);
+        expect(ProjectedPlot::query()->count())->toBe(7)
+            ->and(DB::table('wald_source_visits')->count())->toBe(5)
+            ->and(DB::table('wald_source_visits')->where('call_number', '1001')->exists())->toBeFalse();
+
+        return;
+    }
     expect($preview['blockers'])->toContain('BLOCKED_STAGED_RECORDS');
     expect(fn () => (new ImportReview)->approve($actor, $scope, $run['run'], $preview['preview'], $preview['hash'], F::command()))->toThrow(ImportConflict::class);
     expect(ProjectedPlot::query()->count())->toBe(0);

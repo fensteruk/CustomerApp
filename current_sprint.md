@@ -1,5 +1,16 @@
 # Current Sprint
 
+## Repeated-Call isolation candidate — 7 October 2026
+
+SOURCECONTRACT04 corrects the PREREQ01 discovery failure on the existing integration
+branch. Inventory and call-dependent assertions now have separate dependency findings;
+one-site preview/Apply projects only safe facts. The original red acceptance remains
+unchanged. No migration, push, main change or production access. Current evidence is
+in `documentation/wald-repeated-call-isolation-2026-10-07.md`.
+
+Final qualification is READY_FOR_DRY_RUN. The original PREREQ01 readiness block below
+is superseded; no production change is implied.
+
 ## Wald prerequisite + plot-register integration — 7 October 2026
 
 Local branch `codex/wald-plot-register-integration-2026-10-07` fast-forwards the

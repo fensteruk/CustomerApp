@@ -2,6 +2,27 @@
 
 _Sprint 3B — 20 August 2026; alternate RedZebra export profile updated 6 October 2026_
 
+## CUSTOMER-WALD-SOURCECONTRACT04 repeated-Call isolation — 7 October 2026
+
+DEC-087 supersedes workbook-wide repeated-Call rejection. Call/Visit ambiguity is
+scoped to call-dependent facts. Safe Plot inventory remains discoverable and may
+proceed independently through exact binding, Office preview and one-site atomic Apply.
+All original rows remain evidence; no duplicate is merged or selected as a winner.
+Findings cover every physical occurrence across CustomerCodes/sites, before row review
+or site filtering. Structural confirmation and manual unticks cannot approve Call/Visit
+facts from a repeated group. Those assertions, including completion, remain withheld.
+
+Quantity conflicts involving repeated rows withhold only the affected Plot/product
+assertion across all observations; they never choose a base row or latest value. Other
+safe products and inventory remain eligible, while ordinary unrelated product conflicts
+retain their existing blocker. Existing data and Portal dates/history remain protected.
+The final preview lists withheld facts separately from blockers preventing safe Apply;
+its atomic projection includes no unsafe call assertions. Receipt markers retain the
+withheld evidence. This is dependency isolation, not physical-row deduplication.
+
+Source Row/Visit identity is unchanged. Policy v6, discovery v10, backend/projection v6
+and scoped-call-evidence v1 require fresh uncommitted analysis. No migration is needed.
+
 ## CUSTOMER-WALD-SOURCECONTRACT03 full plot register — 6 October 2026
 
 DEC-086 supersedes the requirement for Call Number/Call Type on every plot row.

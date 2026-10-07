@@ -11,7 +11,7 @@ final class PilotWorkbookDiscovery
 {
     public const MAX_PARENT_ROWS = 5000;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v9';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v10';
 
     public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null): array
     {
@@ -48,6 +48,13 @@ final class PilotWorkbookDiscovery
         $plotColumns = array_keys($roles['plot_reference'] ?? []);
         $plotColumn = count($plotColumns) === 1 ? (int) $plotColumns[0] : null;
         $identity = (new MasterExportSiteIdentity)->columns($roles, $upload->workbook_hash);
+        $findingColumns = [];
+        foreach ($roles as $role => $candidates) {
+            if (count($candidates) === 1) {
+                $findingColumns[$role] = (int) array_key_first($candidates);
+            }
+        }
+        $callFindings = (new ScopedCallEvidence)->discover($sheet, $table, $findingColumns);
 
         $seen = [];
         $physicalRows = 0;
@@ -78,9 +85,6 @@ final class PilotWorkbookDiscovery
             $call = $emptyCall ? '' : (string) $rawCall;
             if (! $emptyCall && ((! is_int($rawCall) && ! is_string($rawCall)) || ! preg_match('/^[0-9]{1,100}$/D', $call) || ! preg_match('/[1-9]/', $call))) {
                 throw new ImportConflict('invalid_call_number');
-            }
-            if ($call !== '' && isset($seen[$call])) {
-                throw new ImportConflict('duplicate_call_number');
             }
             if ($call !== '') {
                 $seen[$call] = true;
@@ -139,6 +143,9 @@ final class PilotWorkbookDiscovery
                 : ['valid' => false, 'issue' => 'PLOT_COLUMN_MISSING'];
             $reviewRows[] = $this->reviewRow($rowNumber, $call, $identityValue, $siteName,
                 $rawPlot, $rawCallType, $hash, $parsed);
+            if (isset($callFindings[$call]) && $reviewRows[array_key_last($reviewRows)]['issue'] === null) {
+                $reviewRows[array_key_last($reviewRows)]['issue'] = 'DUPLICATE_CALL_NUMBER';
+            }
             $sawHierarchySignal = $sawHierarchySignal
                 || (is_string($rawPlot) && (preg_match('/\s[-\x{2013}\x{2014}]\s|[-\x{2013}\x{2014}]\s*Plot\s+/iu', $rawPlot) === 1
                     || (new HierarchySuggestion)->forIssue($identityValue, $rawPlot) !== null));
@@ -240,7 +247,10 @@ final class PilotWorkbookDiscovery
             'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
             'source_profile' => $table['source_profile'] ?? null,
             'capabilities' => $capabilities,
-            'row_summary' => PlotRegisterCapabilities::summary($reviewRows),
+            'call_findings' => array_values($callFindings),
+            'row_summary' => [...PlotRegisterCapabilities::summary($reviewRows),
+                'repeated_call_groups' => count($callFindings),
+                'call_blocker_rows' => count(array_filter($reviewRows, fn ($row) => isset($callFindings[$row['call_no']])))],
             'sources' => array_values($sources),
             'source_count' => count($sources),
             'record_count' => $physicalRows,

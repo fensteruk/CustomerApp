@@ -69,7 +69,14 @@ function registerPreview(User $office, UploadedFile $book, Site $site, string $s
     if ($upload['state'] === 'NEEDS_CLARIFICATION') {
         $upload = $workflow->confirmStructure($office, $upload['upload'], 'CONFIRM DETECTED HEADER AND SITE LIST', (string) Str::uuid());
     }
-    $selected = $workflow->select($office, $upload['upload'], $upload['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
+
+    return registerExistingPreview($office, $upload, $site);
+}
+
+function registerExistingPreview(User $office, array $upload, Site $site, ?string $sourceHash = null): array
+{
+    $workflow = new PilotImportWorkflow;
+    $selected = $workflow->select($office, $upload['upload'], $sourceHash ?? $upload['sources'][0]['hash'], $site->uuid, (string) Str::uuid());
     $run = DB::table('wald_import_runs')->where('uuid', $selected['run'])->firstOrFail();
     try {
         (new ImportAnalysis)->analyse($office, $selected['scope'], $run->uuid, (int) $run->epoch, (string) Str::uuid());
@@ -359,4 +366,108 @@ it('retains independent base plot discovery when repeated call evidence requires
         ->and(DB::table('wald_source_visits')->count())->toBe(0)
         ->and(DB::table('call_off_requests')->count())->toBe(0)
         ->and(DB::table('wald_import_receipts')->count())->toBe(0);
+});
+
+it('applies safe inventory and safe calls on a site while withholding every repeated call observation', function (): void {
+    $book = registerWorkbook([
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 2', 'Call No.' => '4101', 'Call Type' => 'PC1', 'complete' => 'No'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 3', 'Call No.' => '4102', 'Call Type' => 'PC1', 'complete' => 'No'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 3', 'Call No.' => '4102', 'Call Type' => 'PC1', 'complete' => 'Yes'],
+    ]);
+    $report = (new WaldDryRun)->analyse($this->office, $book);
+    expect($report['content']['summary'])->toMatchArray(['plots_discovered' => 3, 'repeated_call_groups' => 1, 'call_blocker_rows' => 2]);
+    $prepared = registerPreview($this->office, $book, $this->site);
+    $preview = DB::table('wald_import_previews')->where('uuid', $prepared[1]['preview'])->firstOrFail();
+    expect(json_decode($preview->payload, true)['withheld_facts'])->toHaveCount(2);
+    $receipt = registerApply($this->office, $prepared);
+    expect($receipt['effects'])->toHaveCount(4)->and(ProjectedPlot::query()->count())->toBe(3)
+        ->and(DB::table('wald_source_rows')->pluck('call_number')->all())->toBe(['4101'])
+        ->and(DB::table('wald_source_visits')->pluck('call_number')->all())->toBe(['4101'])
+        ->and(DB::table('projected_plot_services')->count())->toBe(1)
+        ->and(DB::table('call_off_requests')->count())->toBe(0);
+    $this->actingAs($this->office)->get(route('office.workspace.pilot-import.show', $prepared[2]['upload']))
+        ->assertOk()->assertSee('some facts are withheld')->assertSee('4102');
+});
+
+it('keeps a base plot and independent products when its own call evidence and quantity disagree', function (): void {
+    $book = registerWorkbook([
+        ['Plot Ref' => 'Fictional - Register Site - Plot 776', 'VS' => '2', 'BF' => '1'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 776', 'Call No.' => '4201', 'Call Type' => 'PC1', 'VS' => '3', 'BF' => '1', 'complete' => 'No'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 776', 'Call No.' => '4201', 'Call Type' => 'PC1', 'VS' => '4', 'BF' => '1', 'complete' => 'Yes'],
+    ]);
+    $prepared = registerPreview($this->office, $book, $this->site);
+    registerApply($this->office, $prepared);
+    expect(ProjectedPlot::query()->count())->toBe(1)->and(DB::table('wald_source_visits')->count())->toBe(0)
+        ->and(DB::table('wald_source_rows')->count())->toBe(0)
+        ->and(DB::table('projected_plot_products')->pluck('product_code')->all())->toBe(['BF']);
+});
+
+it('retains global repeated-call evidence after Office unticks one observation during structural review', function (): void {
+    $workflow = new PilotImportWorkflow;
+    $book = registerWorkbook([
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4301', 'Call Type' => 'PC1', 'complete' => 'No'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4301', 'Call Type' => 'PC1', 'complete' => 'Yes'],
+    ]);
+    $upload = $workflow->upload($this->office, $book, new ExportOrder('2026-10-06', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid());
+    $record = DB::table('wald_pilot_uploads')->where('uuid', $upload['upload'])->firstOrFail();
+    (new CustomerCodeReviewWorkflow)->confirm($this->office, $upload['upload'], $upload['sources'][0]['hash'],
+        $this->site->customerOrganisation->uuid, $this->site->uuid, '3', $record->source_manifest_hash, (int) $record->epoch, (string) Str::uuid());
+    $prepared = registerExistingPreview($this->office, $workflow->summary($this->office, $upload['upload']), $this->site);
+    $receipt = registerApply($this->office, $prepared);
+    expect($receipt['effects'])->toHaveCount(1)->and($receipt['effects'][0]['withheld_call'][0]['row_count'])->toBe(2)
+        ->and(DB::table('wald_source_visits')->count())->toBe(0);
+});
+
+it('isolates a multi-site workbook and applies safe inventory on each site', function (): void {
+    $sites = ['A' => $this->site,
+        'B' => Site::factory()->create(['customer_organisation_id' => $this->site->customer_organisation_id, 'name' => 'Site B']),
+        'C' => Site::factory()->create(['customer_organisation_id' => $this->site->customer_organisation_id, 'name' => 'Site C'])];
+    $book = registerWorkbook([
+        ['CustomerCode' => 'A', 'Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4401', 'Call Type' => 'PC1', 'complete' => 'No'],
+        ['CustomerCode' => 'B', 'Plot Ref' => 'Fictional - Site B - Plot 1', 'Call No.' => '4402', 'Call Type' => 'PC1', 'complete' => 'No'],
+        ['CustomerCode' => 'B', 'Plot Ref' => 'Fictional - Site B - Plot 1', 'Call No.' => '4402', 'Call Type' => 'PC1', 'complete' => 'Yes'],
+        ['CustomerCode' => 'C', 'Plot Ref' => 'Fictional - Site C - Plot 1'],
+    ]);
+    $report = (new WaldDryRun)->analyse($this->office, $book);
+    expect($report['content']['summary'])->toMatchArray(['source_units' => 3, 'plots_discovered' => 3, 'blocking_units' => 1]);
+    $workflow = new PilotImportWorkflow;
+    $upload = $workflow->upload($this->office, $book, new ExportOrder('2026-10-06', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid());
+    foreach ($upload['sources'] as $source) {
+        registerApply($this->office, registerExistingPreview($this->office, $workflow->summary($this->office, $upload['upload']), $sites[$source['identity']], $source['hash']));
+    }
+    expect(ProjectedPlot::query()->where('plot_reference', '1')->count())->toBe(3)
+        ->and(DB::table('wald_source_visits')->pluck('call_number')->all())->toBe(['4401'])
+        ->and(DB::table('wald_import_receipts')->count())->toBe(3);
+});
+
+it('withholds a cross-CustomerCode repeated reference on every site', function (): void {
+    $siteB = Site::factory()->create(['customer_organisation_id' => $this->site->customer_organisation_id, 'name' => 'Site B']);
+    $book = registerWorkbook([
+        ['CustomerCode' => 'A', 'Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4501', 'Call Type' => 'PC1'],
+        ['CustomerCode' => 'B', 'Plot Ref' => 'Fictional - Site B - Plot 2', 'Call No.' => '4501', 'Call Type' => 'CC1'],
+    ]);
+    $workflow = new PilotImportWorkflow;
+    $upload = $workflow->upload($this->office, $book, new ExportOrder('2026-10-06', 'MORNING'), ExportOrder::CONFIRMATION, (string) Str::uuid());
+    foreach ($upload['sources'] as $source) {
+        registerApply($this->office, registerExistingPreview($this->office, $workflow->summary($this->office, $upload['upload']), $source['identity'] === 'A' ? $this->site : $siteB, $source['hash']));
+    }
+    expect(ProjectedPlot::query()->count())->toBe(2)->and(DB::table('wald_source_visits')->count())->toBe(0)
+        ->and(DB::table('wald_source_rows')->count())->toBe(0);
+});
+
+it('preserves established completion and quantity when duplicate evidence is withheld', function (): void {
+    registerApply($this->office, registerPreview($this->office, registerWorkbook([
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4601', 'Call Type' => 'PC1', 'VS' => '7', 'complete' => 'Yes'],
+    ]), $this->site));
+    $service = DB::table('projected_plot_services')->first();
+    $book = registerWorkbook([
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4601', 'Call Type' => 'PC1', 'VS' => '2', 'complete' => 'No'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1', 'Call No.' => '4601', 'Call Type' => 'PC1', 'VS' => '3', 'complete' => 'Yes'],
+    ]);
+    registerApply($this->office, registerPreview($this->office, $book, $this->site, 'AFTERNOON'));
+    expect(DB::table('projected_plot_services')->first()->source_completion_observed_at)->toBe($service->source_completion_observed_at)
+        ->and(DB::table('projected_plot_products')->where('product_code', 'VS')->value('quantity'))->toEqual(7)
+        ->and(DB::table('wald_visit_observations')->count())->toBe(1)
+        ->and(DB::table('wald_source_row_observations')->count())->toBe(1);
 });

@@ -167,10 +167,9 @@ it('renders stopped analysis as a readable validation error instead of a server 
     $office = dryOffice();
     $this->actingAs($office)->from(route('office.workspace.imports.dry-run'))
         ->post(route('office.workspace.imports.dry-run.analyse'), ['workbook' => dryWorkbook([
-            'DUP,1601,Description,Customer - Site - Plot 1,PC1,No,2',
-            'DUP,1601,Description,Customer - Site - Plot 1,PC1,No,2',
+            'INVALID,invalid,Description,Customer - Site - Plot 1,PC1,No,2',
         ])])->assertRedirect(route('office.workspace.imports.dry-run'))
-        ->assertSessionHasErrors(['workbook' => 'Analysis stopped safely: Duplicate call number.']);
+        ->assertSessionHasErrors(['workbook' => 'Analysis stopped safely: Invalid call number.']);
     expect(DB::table('wald_pilot_uploads')->count())->toBe(0)
         ->and(DB::table('wald_source_bindings')->count())->toBe(0);
 });

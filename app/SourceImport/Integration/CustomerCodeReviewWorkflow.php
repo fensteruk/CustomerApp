@@ -26,7 +26,7 @@ final class CustomerCodeReviewWorkflow
         $manual = [];
         $automatic = [];
         $unknownTypes = DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $summary['id'])
-            ->where('issue', 'UNKNOWN_CALL_TYPE')->pluck('source_identity_hash')->all();
+            ->whereIn('issue', ['UNKNOWN_CALL_TYPE', 'DUPLICATE_CALL_NUMBER'])->pluck('source_identity_hash')->all();
         foreach ($summary['sources'] as $source) {
             if (($source['hierarchy_mode'] ?? null) !== 'COMPOSITE') {
                 continue;

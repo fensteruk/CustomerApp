@@ -13,7 +13,7 @@ final class ProjectionSnapshot
     public function capture(KnowledgeScope $scope, array $rows, object $run): array
     {
         $included = array_values(array_filter($rows, fn (array $row): bool => ! $row['excluded']));
-        $facts = array_column($included, 'facts');
+        $facts = array_map(ScopedCallEvidence::facts(...), $included);
         $visitable = array_values(array_filter($facts, fn (array $fact): bool => $fact['call_type'] !== null));
         $references = array_values(array_unique(array_column($facts, 'plot')));
         $numbered = array_values(array_filter($facts, fn (array $fact): bool => $fact['call_number'] !== null));
@@ -71,7 +71,7 @@ final class ProjectionSnapshot
             $digests[$key] = ['count' => $items->count(), 'hash' => hash_final($hash)];
         }
 
-        $consolidated = (new ProductConsolidator)->consolidate($included);
+        $consolidated = (new ProductConsolidator)->consolidate(array_map(fn ($row) => [...$row, 'facts' => ScopedCallEvidence::facts($row)], $included));
         if ($consolidated['conflicts'] !== []) {
             throw new ImportConflict('product_quantity_conflict');
         }

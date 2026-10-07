@@ -2358,3 +2358,41 @@ CustomerApp must also let Site Managers initiate the first call-off for register
 Inventory and call-off evidence therefore need separate capabilities and persistence.
 This decision approves the bounded feature implementation and disposable qualification,
 not a main push, deployment or production import.
+
+---
+
+## DEC-087
+
+Date: 7 October 2026
+
+Decision: CUSTOMER-WALD-SOURCECONTRACT04 scopes repeated Call ambiguity to dependent
+Call/Source Row/Visit/service/completion assertions. It supersedes the workbook-wide
+duplicate-Call fatality in DEC-085/086 only to that extent. Safe CustomerCode, exact
+Customer/Site/Plot hierarchy and independent product facts remain discoverable and
+may proceed through normal Office review, selected-site preview and atomic Apply.
+
+Every original physical observation remains retained. A repeated reference is never
+deduplicated, ordered or assigned a guessed subidentity. The immutable finding records
+the Call value, worksheet/rows, CustomerCodes, Plot evidence and Call Types. All affected
+call assertions are withheld, including the first occurrence and observations across
+different CustomerCodes/sites. Office structural confirmation or unticking one row
+cannot repair that ambiguity: staging recomputes it against the full original workbook.
+
+When conflicting quantities involve repeated-Call evidence, withhold the conflicting
+Plot/product assertion across every selected-site observation, retaining its raw values
+and warning. Do not choose an independent/base row as a winner over the conflict. Other
+valid product codes/Plots remain eligible. Existing quantities are preserved where
+withheld; no zero or deletion is asserted. Unrelated product conflicts retain their
+existing blocking rules. Unknown nonblank types, malformed hierarchy, exact binding,
+stale preview, source order and Portal-owned state guards remain.
+
+Preview explicitly lists withheld call/product facts; approval authorizes only the safe
+projection. Apply uses the same immutable dependency partition and creates no ambiguous
+numbered Source Row, Visit, service or completion. Receipts retain physical evidence and
+withheld-fact markers. Numbered Source Row and Visit identities are unchanged. This is
+fact-layer isolation within one whole selected-site transaction, not silent physical-row
+discarding or multi-site Apply. Policy/discovery/backend identities stale old analyses.
+
+Reason: PREREQ01 proved that a call-dependent failure discarded valid base Plot evidence
+before reporting. Inventory is independent of optional call-off evidence. Management
+explicitly approved the scoped correction; no push, deployment or production Apply.

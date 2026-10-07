@@ -12,6 +12,7 @@
         </section>
         @if($report)
             @php($summary = $report['content']['summary'])
+            @if($summary['repeated_call_groups'])<section class="admin-card mt-4"><h2 class="section-title">Call details withheld</h2><p>{{ $summary['call_blocker_rows'] }} affected rows in {{ $summary['repeated_call_groups'] }} repeated Call groups. Safe Plot inventory remains available. These calls cannot create visits, services or completion facts.</p><ul>@foreach($report['content']['call_findings'] as $finding)<li>Call {{ $finding['call_number'] }} · Rows {{ implode(', ', array_column($finding['rows'], 'row')) }} · CustomerCodes {{ implode(', ', array_unique(array_filter(array_column($finding['rows'], 'customer_code')))) }}</li>@endforeach</ul></section>@endif
             <p class="mt-3 text-sm">{{ $report['content']['capabilities']['call_type'] ? 'Plot register with optional source call-off data.' : 'Plot register only: this export has no Call Type column.' }} Counts describe this export; missing call data does not reverse previously recorded call-offs.</p>
             <section class="admin-card" aria-labelledby="dry-run-report-title">
                 <div class="flex flex-wrap justify-between gap-3"><h2 id="dry-run-report-title" class="section-title">Dry-run report</h2><span class="status status-slate">No data applied</span></div>

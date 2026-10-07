@@ -29,7 +29,7 @@ final class ProjectionAdapter
         // Ordinals pair retained physical evidence with its reviewed change, including blank Calls.
         $changes = collect($snapshot['changes'])->values();
         $included = array_values(array_filter($rows, fn (array $row): bool => ! $row['excluded']));
-        $facts = array_column($included, 'facts');
+        $facts = array_map(ScopedCallEvidence::facts(...), $included);
         $references = array_values(array_unique(array_column($facts, 'plot')));
 
         $plots = ProjectedPlot::query()->where('site_id', $scope->siteId)->whereIn('plot_reference', $references)->get()->keyBy('plot_reference');
@@ -106,7 +106,7 @@ final class ProjectionAdapter
         $products = [];
         $touchedPlots = [];
         foreach ($included as $ordinal => $row) {
-            $fact = $row['facts'];
+            $fact = ScopedCallEvidence::facts($row);
             $diff = $changes[$ordinal];
             $plot = $plots[$fact['plot']];
             $sourceRowId = $rowVersion = null;
@@ -239,6 +239,8 @@ final class ProjectionAdapter
                 $touchedPlots[$plot->id] = true;
             }
             $effects[] = [
+                ...(($row['call_blockers'] ?? []) !== [] ? ['withheld_call' => $row['call_blockers']] : []),
+                ...(($row['product_blockers'] ?? []) !== [] ? ['withheld_products' => $row['product_blockers']] : []),
                 ...($fact['call_number'] === null ? ['register_evidence' => [
                     'plot_id' => $plot->id, 'sheet' => $row['provenance']['sheet'], 'row' => $row['provenance']['row'],
                     'fact_hash' => $factHash, 'provenance_hash' => Canonical::hash($row['provenance']),

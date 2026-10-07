@@ -40,6 +40,10 @@ final class ImportReview
             $payload = ['run' => $uuid, 'run_epoch' => (int) $run->epoch + 1, 'stage' => $stage->uuid, 'stage_hash' => $stage->manifest_hash,
                 'canonical_hash' => $stage->canonical_hash, 'manifest' => $manifest, 'stream_epoch' => (int) $stream->epoch,
                 'projection' => $projection, 'blockers' => $blockers, 'reviewer' => $fresh->id, 'reviewed_at' => now('UTC')->toISOString()];
+            $payload['withheld_facts'] = array_values(array_map(fn ($row) => [
+                'sheet' => $row['provenance']['sheet'], 'row' => $row['provenance']['row'], 'plot' => $row['facts']['plot'],
+                'call_blockers' => $row['call_blockers'] ?? [], 'product_blockers' => $row['product_blockers'] ?? [],
+            ], array_filter($rows, fn ($row) => ! $row['excluded'] && (($row['call_blockers'] ?? []) !== [] || ($row['product_blockers'] ?? []) !== []))));
             $preview = (string) Str::uuid();
             $hash = Canonical::hash($payload);
             $id = DB::table('wald_import_previews')->insertGetId(['uuid' => $preview, 'run_id' => $run->id, 'stage_id' => $stage->id,

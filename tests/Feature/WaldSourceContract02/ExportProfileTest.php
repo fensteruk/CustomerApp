@@ -55,10 +55,13 @@ it('analyses the approved exact XLSX profile without completion or business muta
 });
 
 it('keeps exact duplicate and date-variant Call rows blocked without deduplication', function (int $secondDate): void {
-    expect(fn () => (new WaldDryRun)->analyse($this->office, contract02Workbook([
+    $report = (new WaldDryRun)->analyse($this->office, contract02Workbook([
         [2001, 'PC1', 'Fictional - Example - Plot 1', 'Description', 46000, null, 'EXAMPLE'],
         [2001, 'PC1', 'Fictional - Example - Plot 1', 'Description', $secondDate, null, 'EXAMPLE'],
-    ])))->toThrow(ImportConflict::class, 'duplicate_call_number');
+    ]));
+    expect($report['content']['summary'])->toMatchArray(['repeated_call_groups' => 1, 'call_blocker_rows' => 2, 'blocking_units' => 1])
+        ->and($report['content']['call_findings'][0]['rows'])->toHaveCount(2)
+        ->and($report['content']['apply_approval'])->toBeFalse();
     expect(DB::table('wald_pilot_uploads')->count())->toBe(0)->and(DB::table('projected_plots')->count())->toBe(0);
 })->with([46000, 46001]);
 

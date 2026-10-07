@@ -72,6 +72,7 @@ final class WaldDryRun
                         'plot_count' => $resolution['plot_count'], 'plots_create' => $resolution['plots_create'],
                         'plots_reuse' => $resolution['plots_reuse'], 'issues' => $issues,
                         'integrity' => $integrity, 'product_conflicts' => $checks[$source['hash']]['product_conflicts'] ?? [],
+                        'withheld_products' => $checks[$source['hash']]['withheld_products'] ?? [],
                         'site_uuid' => $resolution['site_uuid'] ?? null,
                         'binding' => $resolution['binding'], 'example_plots' => $resolution['example_plots']];
                 }
@@ -98,6 +99,7 @@ final class WaldDryRun
                     'outcomes' => $states, 'units' => $units,
                     'unknown_rows' => array_values(array_filter($manifest['review_rows'], fn ($row): bool => $row['source_identity_hash'] === null)),
                     'ignored_customer_codes' => $manifest['ignored_rows'],
+                    'call_findings' => $manifest['call_findings'],
                     'integrity_summary' => array_intersect_key($audit, array_flip(['healthy', 'warnings', 'blocking']))];
 
                 return ['content' => $content, 'fingerprint' => Canonical::evidenceHash($content)];
@@ -139,6 +141,11 @@ final class WaldDryRun
             $type = $dictionary->callType($selection['canonical_override'] ?? $row['call_type'] ?? '',
                 ($snapshot->data['tables'][array_key_first($snapshot->data['tables'])]['composite'] ?? false) ? CustomerAppDictionary::COMPOSITE_PROFILE : null);
             $issues = [];
+            $finding = collect($manifest['call_findings'])->firstWhere('call_number', $row['call_no']);
+            $callBlockers = ScopedCallEvidence::marker($finding);
+            if ($callBlockers !== []) {
+                $issues[] = 'DUPLICATE_CALL_NUMBER';
+            }
             if ($type->isResolved() && $type->value !== null && $row['call_no'] === '') {
                 $issues[] = 'MISSING_CALLOFF_REFERENCE';
             }
@@ -149,6 +156,7 @@ final class WaldDryRun
                 $issues[] = $row['issue'];
             }
             if (($row['call_type'] ?? '') !== '' && isset($columns['completion'])
+                && $callBlockers === []
                 && ! $dictionary->completion($cells[$columns['completion']]->rawValue ?? null)->isResolved()) {
                 $issues[] = 'UNKNOWN_COMPLETION';
             }
@@ -175,12 +183,14 @@ final class WaldDryRun
             if (! $dictionary->rollup($products)->resolved) {
                 $issues[] = 'PRODUCT_ROLLUP_INVALID';
             }
-            $rows[$hash][] = ['excluded' => false, 'facts' => ['call_number' => $row['call_no'],
+            $rows[$hash][] = ['excluded' => false, 'call_blockers' => $callBlockers, 'canonical' => [], 'facts' => ['call_number' => $row['call_no'],
                 'plot' => $row['parsed_plot'] ?? $row['raw_plot_ref'], 'products' => $products,
                 'call_type' => $type->lookupValue, 'service' => $type->value]];
             $result[$hash]['issues'] = [...($result[$hash]['issues'] ?? []), ...$issues];
         }
         foreach ($rows as $hash => $facts) {
+            $result[$hash]['withheld_products'] = ScopedCallEvidence::partitionProducts($facts);
+            $facts = array_map(fn ($fact) => [...$fact, 'facts' => ScopedCallEvidence::facts($fact)], $facts);
             $products = (new ProductConsolidator)->consolidate($facts);
             $result[$hash]['product_conflicts'] = $products['conflicts'];
             if ($products['conflicts'] !== []) {
@@ -249,6 +259,9 @@ final class WaldDryRun
         }
         $dictionary = new CustomerAppDictionary;
         foreach ($manifest['review_rows'] as $row) {
+            if (collect($manifest['call_findings'])->contains('call_number', $row['call_no'])) {
+                continue;
+            }
             $hash = $row['source_identity_hash'];
             $resolution = $resolutions[$hash] ?? null;
             if ($resolution === null || ! isset($resolution['site_id']) || $row['parsed_plot'] === null) {
