@@ -1,5 +1,13 @@
 # Fenster Customer Portal ROADMAP
 
+## Wald prerequisite + plot-register integration — 7 October 2026
+
+The reviewed prerequisite chain is integrated on a local isolated branch, with
+no main change or deployment. Resolve the essential repeated-Call inventory
+isolation regression before a genuine full-register dry run. Preserve the
+ambiguous call/visit blocker, one-site atomicity and all exact binding/preview
+guards. See `documentation/wald-prerequisite-plot-register-integration-2026-10-07.md`.
+
 ## Wald robustness 01 — 6 October 2026
 
 Task A (integrity audit) and Task B (first-class transient dry run) are implemented

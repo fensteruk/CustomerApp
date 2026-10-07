@@ -345,3 +345,18 @@ it('does not describe a blocked unknown type as a base row in the selected-site 
         'base_plot_rows' => 0, 'recognised_calloff_rows' => 0, 'unknown_call_type_rows' => 1, 'blocked' => 1,
     ]);
 });
+
+it('retains independent base plot discovery when repeated call evidence requires review', function (): void {
+    $book = registerWorkbook([
+        ['Plot Ref' => 'Fictional - Register Site - Plot 1'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 2', 'Call No.' => '3991', 'Call Type' => 'PC1', 'complete' => 'No'],
+        ['Plot Ref' => 'Fictional - Register Site - Plot 2', 'Call No.' => '3991', 'Call Type' => 'PC1', 'complete' => 'Yes'],
+    ]);
+    $report = (new WaldDryRun)->analyse($this->office, $book);
+    expect($report['content']['summary'])->toMatchArray(['base_plot_rows' => 1, 'plots_discovered' => 2, 'blocking_units' => 1])
+        ->and($report['content']['apply_approval'])->toBeFalse();
+    expect(DB::table('projected_plots')->count())->toBe(0)
+        ->and(DB::table('wald_source_visits')->count())->toBe(0)
+        ->and(DB::table('call_off_requests')->count())->toBe(0)
+        ->and(DB::table('wald_import_receipts')->count())->toBe(0);
+});

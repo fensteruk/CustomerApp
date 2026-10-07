@@ -1,5 +1,16 @@
 # Fenster Customer Portal Handover
 
+## Wald prerequisite + plot-register integration — 7 October 2026
+
+The isolated integration branch preserves the reviewed audit/dry-run, safe
+alternate-profile and SOURCECONTRACT03 history. Main remains `04e48b55`; no push,
+deployment or live import. **BLOCKED** by PREREQ01's essential repeated-Call
+inventory-isolation regression: discovery refuses the whole workbook before
+showing its valid base Plot. Keep ambiguous call/visit evidence blocked; fix
+inventory discovery isolation without deduplication or new visit identity.
+The retained red regression and exact gate results are recorded in
+`documentation/wald-prerequisite-plot-register-integration-2026-10-07.md`.
+
 ## Full plot register candidate — 6 October 2026
 
 The SOURCECONTRACT03 feature branch continues directly from SOURCECONTRACT02.

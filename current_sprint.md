@@ -1,5 +1,17 @@
 # Current Sprint
 
+## Wald prerequisite + plot-register integration — 7 October 2026
+
+Local branch `codex/wald-plot-register-integration-2026-10-07` fast-forwards the
+reviewed prerequisite chain from fetched main `04e48b55` through robustness
+`67dcc4c`, controlled profile `50be1f3` and accepted SOURCECONTRACT03 `56c6a986`.
+Main is unchanged; no push, deployment or genuine Apply. Readiness is **BLOCKED**:
+the new PREREQ01 acceptance fixture proves repeated nonblank Call evidence stops
+whole-workbook discovery, hiding independently valid base Plot evidence. Calls
+remain safely blocked and no runtime guard was weakened. See
+`documentation/wald-prerequisite-plot-register-integration-2026-10-07.md`
+for the full ancestry map, qualification and required isolation correction.
+
 ## Full plot register candidate — 6 October 2026
 
 CUSTOMER-WALD-SOURCECONTRACT03 continues from SOURCECONTRACT02 commit
