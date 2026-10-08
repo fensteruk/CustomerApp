@@ -349,3 +349,28 @@ no purge engine is copied or merged. This is feature-branch work, not deployed.
 Knowledge is never merged by commit, filesystem copy or matching profile name. Any future
 profile/dictionary export/import requires a separate tenant/privacy, ownership, compatibility
 and explicit-activation contract. It is out of scope now.
+
+## MASTERREGISTER02 differences — 8 October 2026
+
+- **CustomerApp-specific, MR02-CAPACITY:** integration-owned 20,000-row analysis
+  envelope, 40-second deadline and captured single guarded reader pass. Generic
+  `AnalysisBudget` defaults and non-row limits are unchanged. No hidden import
+  splitting, new queue or enlarged one-site Apply. Policy v7/discovery v11 pin the
+  change. Synthetic 5,000/11,060/20,000-row XLSX, global repeated-Call and MySQL 8.4.11
+  qualification provide evidence; the run reports the actual PHP limits and metrics.
+- **Candidate for both distributions, MR02-XML-PREFIX:** prefixed OOXML child and
+  attribute handling corrected in `XlsxWorkbookSource`; `WorkbookProfiler` reader
+  identity advances to `wald-0.2.3`, XLSX adapter 4. The old reader returned zero
+  cells for a valid prefixed worksheet. Synthetic regressions cover rich/shared
+  strings, numeric/boolean values, date/bold styles, formula metadata and foreign
+  namespace refusal. Existing extension/DTD/ancestry guards remain. Downstream
+  `CoreIdentity`, `AnalysisSnapshot` and knowledge pins advance coherently. No
+  SiteApp access, backport or dictionary meaning change.
+- **CustomerApp-specific, MR02-REPORT:** read-only search, blocker filters, 20-unit
+  pages and product-conflict source references. Print CSS restores all cards; no
+  client-side display decision grants Apply authority or changes report fingerprints.
+
+Origin is the local `codex/wald-masterregister02-2026-10-08` qualification line from
+`741bd3515e6d065673178254525e17b32e8b5ea3`; exact commits are reported at handoff.
+Private workbooks and raw row inventories are not committed. Nick's confirmation
+is required before considering a push. No push, deployment or production Apply.

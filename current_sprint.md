@@ -1,5 +1,34 @@
 # Current Sprint
 
+## MASTERREGISTER02 — local qualification and Nick review gate — 8 October 2026
+
+The bounded feature branch starts at accepted integration `741bd351`. Large analysis
+uses one guarded observation pass with an integration-owned 20,000-row envelope;
+one-site Apply limits and global repeated-Call isolation are unchanged. A reproducible
+prefixed-OOXML reader defect is corrected and versioned as `wald-0.2.3` / XLSX 4.
+No business hierarchy parsing rule is broadened.
+
+The genuine 10,842-row safe-subset candidate completed the actual Office browser dry
+run: 10,136 discovered Plots, 8,311 base rows, 2,531 recognised call-offs, no unknown
+types/malformed groups and no data applied. Its 41 blocked groups include overlapping
+36 product-conflict, 18 distinct-visit-review and three hierarchy-conflict groups.
+An empty disposable database naturally produces 125 customer/site proposals and no
+automatic exact matches. These are proposals, not created records.
+
+All 56 checked business/import/knowledge tables have unchanged before/after counts
+and hashes. Disposable MySQL is 8.4.11 with 26 migrations. Nick's 30 decisions / 47
+evidence rows and the separate 218 hierarchy exceptions remain held for review.
+Final report UI search/filter/page/detail checks pass at desktop, tablet and narrow
+mobile widths without horizontal overflow. Final regression: 2,030 passed / 92
+expected skips / 11,806 assertions across 2,122 tests. MySQL-focused qualification:
+43 passed / 757 assertions. Pint, strict Composer validation, asset build, production
+npm audit and whitespace checks pass. Composer retains five existing advisories.
+Local runtime commits are capacity `797b953352cd1fca974bdc194d2bd7e737a20dff`, reader
+`94d8b0c0079eed2d6c0a68f37a2ff72c78d541c6` and report UI
+`1eb30400f35292673f852452e2220b9e208db599`. No migration or dependency change.
+Nick must explicitly confirm correctness before any push is considered.
+No push, deployment, production access or genuine Apply is authorised.
+
 ## Repeated-Call isolation candidate — 7 October 2026
 
 SOURCECONTRACT04 corrects the PREREQ01 discovery failure on the existing integration

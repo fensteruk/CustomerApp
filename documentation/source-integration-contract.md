@@ -455,3 +455,49 @@ scheduler is added. This is feature-branch behavior, not an HTTP endpoint or dep
 Current verification and parity limits are recorded in
 `documentation/wald/customer-wald05-backend-qa-2026-09-09.md`; the earlier backend completion
 report remains historical implementation evidence.
+
+## CUSTOMER-WALD-MASTERREGISTER02 qualification — 8 October 2026
+
+The user authorises bounded large-workbook analysis and genuine local Analyse-only
+qualification from `741bd3515e6d065673178254525e17b32e8b5ea3`. This is feature-branch
+work, not a production release. Nick must confirm correctness before any push is
+considered; push, deployment and genuine Apply remain unauthorised.
+
+CustomerApp analysis capacity v1 permits at most 20,000 nonempty parent data rows,
+with a 20,001-physical-row reader allowance for the header. The generic reader's
+default remains 10,000. Other archive, cell, string, node and memory guards remain
+unchanged. A 40-second analysis deadline preserves headroom within the local
+45-second request envelope. Sparse observations are captured during the guarded
+profiling pass and reused, rather than reading the same XML twice. There is one
+whole-workbook manifest; no independent batch imports or broader Apply authority.
+Global repeated-Call findings, hierarchy conflicts and the existing 500-row
+selected-site backend limit remain in force. Policy v7 and discovery v11 stale
+prior uncommitted interpretation.
+
+The genuine exported XLSX exposed a reader defect: valid namespace-prefixed cell
+children were silently read as blank. Reader `wald-0.2.3` / XLSX adapter 4 resolves
+children and their unqualified attributes by the exact spreadsheet namespace,
+preserving rich/shared text, numeric/boolean values, formula metadata and styles.
+Foreign spreadsheet namespaces and inconsistent core ancestry fail closed. CSV
+adapter 2, structural/ruleset identities and dictionary meaning are unchanged.
+No SiteApp backport is authorised. Historical reader pins become stale.
+
+The prepared test candidate uses one visible `Data` worksheet and the original
+28 ordered source headers. Values, dates and quantities are copied unchanged;
+master reconciliation metadata is omitted. The normal canonical dictionary header
+pipeline supplies roles; this is not a new global alias registry. Arrival, status
+and both Completed-Date-labelled fields remain private unmapped evidence and gain
+no completion or Portal-date authority. Base rows retain blank call/date/quantity
+fields. All exports remain partial, with no absence-based deletion or reversal.
+
+The 218 source hierarchy exceptions remain separate: 166 require a narrowly
+approved contract/interpretation and 52 require Office/management hierarchy
+confirmation. No broader Plot parsing rule is implemented. Nick's original 30
+decisions, represented by 47 original evidence rows, remain unanswered and outside
+the candidate. Additional product and hierarchy conflicts discovered by dry run
+do not silently resolve that review inventory or authorise any business mutation.
+
+The read-only report adds local display search, blocker filtering, 20-unit pages
+and source Call references for product conflicts. These controls alter neither
+report facts nor approval. Printing includes all source-unit cards regardless of
+display filters. No-JavaScript rendering retains the complete source-unit list.
