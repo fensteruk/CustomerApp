@@ -52,9 +52,13 @@ it('W5-T01 marks pre-correction reader knowledge stale without changing dictiona
     $old = $current;
     $old['core']['reader'] = 'wald-0.2.1';
     $old['reader_adapters']['xlsx'] = 2;
-    expect($current['core']['reader'])->toBe('wald-0.2.2')
-        ->and($current['reader_adapters'])->toBe(['xlsx' => 3, 'csv' => 2])
+    $previousReader = $current;
+    $previousReader['core']['reader'] = 'wald-0.2.2';
+    $previousReader['reader_adapters']['xlsx'] = 3;
+    expect($current['core']['reader'])->toBe('wald-0.2.3')
+        ->and($current['reader_adapters'])->toBe(['xlsx' => 4, 'csv' => 2])
         ->and($identity->compatible($old))->toBe(Compatibility::Stale)
+        ->and($identity->compatible($previousReader))->toBe(Compatibility::Stale)
         ->and($identity->compatible($current))->toBe(Compatibility::Exact)
         ->and($current['fingerprint'])->toBe(KnowledgeIdentity::FINGERPRINT);
 });

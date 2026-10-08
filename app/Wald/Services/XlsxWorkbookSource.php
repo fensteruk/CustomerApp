@@ -12,7 +12,9 @@ use ZipArchive;
 
 final class XlsxWorkbookSource implements WorkbookSource
 {
-    public const ADAPTER_VERSION = '3';
+    public const ADAPTER_VERSION = '4';
+
+    private const MAIN_NAMESPACE = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
 
     private ZipArchive $zip;
 
@@ -185,25 +187,27 @@ final class XlsxWorkbookSource implements WorkbookSource
     private function cell(SimpleXMLElement $node, int $row, int $column): CellObservation
     {
         $type = (string) ($node['t'] ?? 'n');
-        $raw = (string) ($node->v ?? '');
+        $children = $this->spreadsheetChildren($node);
+        $raw = (string) ($children->v ?? '');
         if ($type === 's') {
             if (! ctype_digit($raw) || ! array_key_exists((int) $raw, $this->strings)) {
                 throw new AnalysisProblem('invalid_shared_string');
             }
             $raw = $this->strings[(int) $raw];
         } elseif ($type === 'inlineStr') {
-            $raw = $this->text($node->is ?? new SimpleXMLElement('<is/>'));
+            $raw = $this->text($children->is ?? new SimpleXMLElement('<is/>'));
         }
-        $formula = isset($node->f) ? (string) $node->f : null;
+        $formula = isset($children->f) ? (string) $children->f : null;
+        $formulaAttributes = $formula === null ? null : $children->f->attributes();
         $this->budget->guard('cell_bytes', strlen($raw) + strlen($formula ?? ''));
         $styleId = (int) ($node['s'] ?? 0);
 
         return new CellObservation($row, $column, $raw, match ($type) {
             'n' => 'number', 'b' => 'boolean', 'e' => 'error', 'd' => 'date', default => 'text',
         }, $formula, $this->styles[$styleId] ?? [], ['cell' => SourceRange::columnLetters($column).$row], $formula === null ? [] : [
-            'kind' => (string) ($node->f['t'] ?? 'normal'), 'shared_index' => isset($node->f['si']) ? (int) $node->f['si'] : null,
-            'range' => isset($node->f['ref']) ? SourceRange::parse((string) $node->f['ref'])->address() : null,
-            'cached_value_available' => isset($node->v), 'cached_value_freshness' => 'unknown',
+            'kind' => (string) ($formulaAttributes['t'] ?? 'normal'), 'shared_index' => isset($formulaAttributes['si']) ? (int) $formulaAttributes['si'] : null,
+            'range' => isset($formulaAttributes['ref']) ? SourceRange::parse((string) $formulaAttributes['ref'])->address() : null,
+            'cached_value_available' => isset($children->v), 'cached_value_freshness' => 'unknown',
         ]);
     }
 
@@ -295,6 +299,11 @@ final class XlsxWorkbookSource implements WorkbookSource
                 if ($reader->nodeType === XMLReader::ELEMENT && $reader->depth === 0 && $root !== null && $reader->localName !== $root) {
                     throw new AnalysisProblem('invalid_xml');
                 }
+                if ($reader->nodeType === XMLReader::ELEMENT && $reader->depth === 0
+                    && in_array($root, ['worksheet', 'workbook', 'sst', 'styleSheet'], true)
+                    && ! in_array($reader->namespaceURI, ['', self::MAIN_NAMESPACE], true)) {
+                    throw new AnalysisProblem('invalid_xml');
+                }
                 if ($reader->nodeType === XMLReader::ELEMENT) {
                     $ancestors = array_slice($ancestors, 0, $reader->depth);
                     $ancestors[] = $reader->localName;
@@ -336,6 +345,10 @@ final class XlsxWorkbookSource implements WorkbookSource
                 if ($expectedPath !== null && $ancestors !== $expectedPath) {
                     throw new AnalysisProblem('invalid_xml');
                 }
+                if ($expectedPath !== null && in_array($root, ['worksheet', 'workbook', 'sst'], true)
+                    && count(array_unique($ancestorNamespaces)) !== 1) {
+                    throw new AnalysisProblem('invalid_xml');
+                }
                 if (in_array($reader->localName, $attributesOnly, true)) {
                     $node = new SimpleXMLElement('<'.$reader->localName.'/>');
                     if ($reader->moveToFirstAttribute()) {
@@ -367,8 +380,24 @@ final class XlsxWorkbookSource implements WorkbookSource
 
     private function text(SimpleXMLElement $node): string
     {
+        $this->spreadsheetChildren($node);
         // Excludes phonetic annotations; concatenates the actual rich-text runs only.
-        return implode('', array_map(fn ($text) => (string) $text, $node->xpath('./*[local-name()="t"] | ./*[local-name()="r"]/*[local-name()="t"]') ?: []));
+        $main = 'namespace-uri()="'.self::MAIN_NAMESPACE.'" or namespace-uri()=""';
+
+        return implode('', array_map(fn ($text) => (string) $text,
+            $node->xpath('./*[local-name()="t" and ('.$main.')] | ./*[local-name()="r" and ('.$main.')]/*[local-name()="t" and ('.$main.')]') ?: []));
+    }
+
+    private function spreadsheetChildren(SimpleXMLElement $node): SimpleXMLElement
+    {
+        if ($node->xpath('self::*[namespace-uri()="'.self::MAIN_NAMESPACE.'"]') !== []) {
+            return $node->children(self::MAIN_NAMESPACE);
+        }
+        if ($node->xpath('self::*[namespace-uri()=""]') !== []) {
+            return $node->children('');
+        }
+
+        throw new AnalysisProblem('invalid_xml');
     }
 
     private function readStyles(string $part): void
@@ -380,14 +409,17 @@ final class XlsxWorkbookSource implements WorkbookSource
                 $formats[(int) $node['numFmtId']] = (string) $node['formatCode'];
                 $this->budget->guard('styles', count($formats));
             } elseif ($node->getName() === 'fonts') {
-                foreach ($node->font as $font) {
-                    $fonts[] = isset($font->b) && ! in_array((string) $font->b['val'], ['0', 'false'], true);
+                foreach ($this->spreadsheetChildren($node)->font as $font) {
+                    $children = $this->spreadsheetChildren($font);
+                    $boldAttributes = isset($children->b) ? $children->b->attributes() : null;
+                    $fonts[] = isset($children->b) && ! in_array((string) ($boldAttributes['val'] ?? ''), ['0', 'false'], true);
                     $this->budget->guard('styles', count($fonts));
                 }
             } else {
-                foreach ($node->xf as $style) {
-                    $id = (int) ($style['numFmtId'] ?? 0);
-                    $this->styles[] = ['style_id' => count($this->styles), 'number_format_id' => $id, 'number_format' => $formats[$id] ?? null, 'bold' => $fonts[(int) $style['fontId']] ?? false, 'fill_id' => (int) $style['fillId'], 'border_id' => (int) $style['borderId']];
+                foreach ($this->spreadsheetChildren($node)->xf as $style) {
+                    $attributes = $style->attributes();
+                    $id = (int) ($attributes['numFmtId'] ?? 0);
+                    $this->styles[] = ['style_id' => count($this->styles), 'number_format_id' => $id, 'number_format' => $formats[$id] ?? null, 'bold' => $fonts[(int) $attributes['fontId']] ?? false, 'fill_id' => (int) $attributes['fillId'], 'border_id' => (int) $attributes['borderId']];
                     $this->budget->guard('styles', count($this->styles));
                 }
             }

@@ -19,7 +19,7 @@ it('W5-T01 ignores the precisely namespaced Excel extension without changing cor
     try {
         $sheets = iterator_to_array($source->sheets());
         expect($source->metadata()['date_system'])->toBe($coreDate === '1' ? '1904' : '1900')
-            ->and($source->metadata()['adapter_version'])->toBe('3')
+            ->and($source->metadata()['adapter_version'])->toBe('4')
             ->and($sheets)->toHaveCount(1)
             ->and($sheets[0]->cells[2][1]->rawValue)->toBe('001');
     } finally {
