@@ -1,5 +1,5 @@
 <x-layouts.portal title="Analyse only | Fenster Customer Portal" sidebar-label="Menu">
-    <style>@media print { aside, body > div > header, .dry-run-controls { display: none !important; } body > .min-h-screen, main, .admin-workspace { margin: 0 !important; padding: 0 !important; } article { break-inside: avoid; } }</style>
+    <style>@media print { aside, body > div > header, .dry-run-controls { display: none !important; } body > .min-h-screen, main, .admin-workspace { margin: 0 !important; padding: 0 !important; } article { break-inside: avoid; } .dry-run-unit { display: block !important; } }</style>
     <div class="admin-workspace min-w-0 [overflow-wrap:anywhere]">
         <header><p class="eyebrow">Office only</p><h1 class="admin-title">Analyse only — no changes applied</h1><p class="admin-intro">Check a workbook against current CustomerApp records. Customers, sites, plots, products, services, requests and source bindings stay unchanged.</p></header>
         <section class="admin-card dry-run-controls">
@@ -28,12 +28,38 @@
                 <button type="button" x-data @click="window.print()" class="secondary-button mt-4 dry-run-controls">Print or save report as PDF</button>
             </section>
             <section class="admin-card"><h2 class="section-title">Binding integrity</h2><p class="mt-2">{{ $report['content']['integrity_summary']['healthy'] }} healthy · {{ $report['content']['integrity_summary']['warnings'] }} warnings · {{ $report['content']['integrity_summary']['blocking'] }} blocking issues across retained bindings.</p><a class="secondary-button mt-4 dry-run-controls" href="{{ route('office.workspace.settings.wald.integrity') }}">Open integrity check</a></section>
-            <section class="space-y-4"><h2 class="section-title">Source units</h2>
+            @php($filterUnits = array_map(fn ($unit) => ['code' => $unit['customer_code'], 'customer' => $unit['customer'] ?? '', 'site' => $unit['site'] ?? '', 'blocked' => count($unit['issues']) > 0], $report['content']['units']))
+            <section class="space-y-4" x-data="{
+                search: '', filter: 'all', page: 1, size: 20, units: @js($filterUnits),
+                get matches() { return this.units.map((unit, index) => ({ ...unit, index })).filter(unit =>
+                    (this.filter === 'all' || (this.filter === 'blocking' ? unit.blocked : !unit.blocked))
+                    &amp;&amp; (unit.code + ' ' + unit.customer + ' ' + unit.site).toLowerCase().includes(this.search.trim().toLowerCase())
+                ).map(unit => unit.index); },
+                get pages() { return Math.max(1, Math.ceil(this.matches.length / this.size)); },
+                visible(index) { return this.matches.slice((this.page - 1) * this.size, this.page * this.size).includes(index); }
+            }"><h2 class="section-title">Source units</h2>
+                <div class="admin-card dry-run-controls space-y-4" x-cloak>
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div><label for="dry-run-unit-search" class="form-label">Find CustomerCode, customer or site</label><input id="dry-run-unit-search" type="search" x-model="search" @input="page = 1" class="form-input mt-2"></div>
+                        <div><label for="dry-run-unit-filter" class="form-label">Show source units</label><select id="dry-run-unit-filter" x-model="filter" @change="page = 1" class="form-input mt-2"><option value="all">All source units</option><option value="blocking">With blocking issues</option><option value="clear">No blocking issues</option></select></div>
+                    </div>
+                    <div class="flex flex-wrap items-center justify-between gap-3">
+                        <p class="text-sm" aria-live="polite" x-text="matches.length + ' matching source units. Page ' + page + ' of ' + pages + '.'"></p>
+                        <div class="flex flex-wrap gap-3"><button type="button" class="secondary-button" @click="page--" :disabled="page &lt;= 1">Previous units</button><button type="button" class="secondary-button" @click="page++" :disabled="page &gt;= pages">Next units</button></div>
+                    </div>
+                    <p class="text-sm text-slate-600">20 source units per page. Printing includes the complete report, regardless of these display filters. These controls never approve an Apply.</p>
+                </div>
                 @foreach($report['content']['units'] as $unit)
-                    <article class="admin-card min-w-0"><div class="flex flex-wrap justify-between gap-3"><h3 class="section-title">CustomerCode {{ $unit['customer_code'] }}</h3><span class="status {{ $unit['issues'] ? 'status-red' : 'status-slate' }}">{{ str($unit['state'])->replace('_', ' ')->title() }}</span></div>
+                    <article class="admin-card min-w-0 dry-run-unit" x-show="visible({{ $loop->index }})"><div class="flex flex-wrap justify-between gap-3"><h3 class="section-title">CustomerCode {{ $unit['customer_code'] }}</h3><span class="status {{ $unit['issues'] ? 'status-red' : 'status-slate' }}">{{ str($unit['state'])->replace('_', ' ')->title() }}</span></div>
                         <p class="mt-3">{{ $unit['customer'] ?? 'Customer unresolved' }} / {{ $unit['site'] ?? 'Site unresolved' }}</p><p class="mt-2 text-sm">{{ $unit['rows'] }} rows · {{ $unit['plot_count'] }} plot candidates · {{ $unit['plots_create'] }} create · {{ $unit['plots_reuse'] }} reuse.</p>
                         @if($unit['issues'])<div class="mt-3 rounded-xl border border-rose-300 bg-rose-50 p-4"><p class="font-semibold">Needs review before Apply</p><ul class="mt-2 list-disc pl-5">@foreach($unit['issues'] as $issue)<li>{{ str($issue)->replace('_', ' ')->lower()->ucfirst() }}.</li>@endforeach</ul></div>@else<p class="mt-3 font-semibold">No blocker detected by this dry run. Normal Apply checks still required.</p>@endif
                         @foreach($unit['integrity'] as $integrity)@if($integrity['category'] !== 'HEALTHY')<p class="mt-2 text-sm">Binding: {{ str($integrity['category'])->replace('_', ' ')->title() }} — {{ $integrity['reason'] }}</p>@endif @endforeach
+                        @if($unit['product_conflicts'])
+                            <details class="mt-3"><summary class="cursor-pointer rounded-lg py-3 font-semibold focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2">Product conflict references</summary>
+                                <p class="mt-2 text-sm">Review these source Calls for each Plot/product. No quantity is selected as a winner.</p>
+                                <ul class="mt-2 list-disc pl-5 text-sm">@foreach($unit['product_conflicts'] as $plot => $products)@foreach($products as $code => $calls)<li>Plot {{ $plot }} · {{ $code }} · Calls {{ implode(', ', $calls) }}</li>@endforeach @endforeach</ul>
+                            </details>
+                        @endif
                     </article>
                 @endforeach
             </section>

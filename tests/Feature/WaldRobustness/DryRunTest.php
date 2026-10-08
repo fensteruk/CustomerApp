@@ -61,7 +61,9 @@ it('produces deterministic reports and never mutates business binding or import 
     }
     $response = $this->actingAs($office)->post(route('office.workspace.imports.dry-run.analyse'), ['workbook' => dryWorkbook($rows)])
         ->assertOk()->assertSee('No data applied')->assertSee('Print or save report as PDF')->assertDontSee('private.csv')
-        ->assertDontSee('COMMIT THIS ONE SITE');
+        ->assertDontSee('COMMIT THIS ONE SITE')->assertSee('Find CustomerCode, customer or site')
+        ->assertSee('With blocking issues')->assertSee('20 source units per page.')
+        ->assertSee('.dry-run-unit { display: block !important; }', false);
     if (getenv('WALD_ROBUSTNESS_RENDER') === '1') {
         File::ensureDirectoryExists(storage_path('framework/testing/wald-robustness-ui'));
         File::put(storage_path('framework/testing/wald-robustness-ui/dry-run.html'), $response->getContent());
