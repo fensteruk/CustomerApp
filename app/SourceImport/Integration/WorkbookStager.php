@@ -9,7 +9,6 @@ use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
 use App\Wald\Contracts\SourceRange;
-use App\Wald\Services\AnalysisBudget;
 use App\Wald\Services\Reasoning\ReasoningEngine;
 use App\Wald\Services\ValueProfiler;
 use App\Wald\Services\WorkbookProfiler;
@@ -22,22 +21,17 @@ final class WorkbookStager
     public function inspect(object $run): array
     {
         $path = (new PrivateWorkbookStorage)->path($run);
-        $budget = new AnalysisBudget;
-        if ($run->format === 'xls') {
-            $source = new XlsWorkbookSource($path, $budget);
-            try {
-                $profile = app(WorkbookProfiler::class)->analyse($source, $run->workbook_hash, $budget);
-            } finally {
-                $source->close();
-            }
-        } else {
-            $profile = app(WorkbookProfiler::class)->profile($path, $run->format, $budget);
-        }
-        $source = $run->format === 'xls'
+        $budget = WorkbookAnalysisCapacity::budget();
+        $reader = $run->format === 'xls'
             ? new XlsWorkbookSource($path, $budget)
             : (new WorkbookSourceFactory)->open($path, $run->format, $budget);
+        $source = new CapturedWorkbookSource($reader);
         try {
-            $sheets = iterator_to_array($source->sheets());
+            $profile = app(WorkbookProfiler::class)->analyse($source, $run->workbook_hash, $budget);
+            $sheets = $source->observations();
+            if (! hash_equals($run->workbook_hash, hash_file('sha256', $path))) {
+                throw new ImportConflict('workbook_integrity_error');
+            }
         } finally {
             $source->close();
         }

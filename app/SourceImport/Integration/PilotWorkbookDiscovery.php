@@ -9,9 +9,9 @@ use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 /** Structural discovery only; the controlled dictionary remains the sole meaning authority. */
 final class PilotWorkbookDiscovery
 {
-    public const MAX_PARENT_ROWS = 5000;
+    public const MAX_PARENT_ROWS = WorkbookAnalysisCapacity::DATA_ROWS;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v10';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v11';
 
     public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null): array
     {

@@ -105,6 +105,8 @@ final class WaldDryRun
                 return ['content' => $content, 'fingerprint' => Canonical::evidenceHash($content)];
             });
 
+            WorkbookAnalysisCapacity::guardDuration($start);
+
             return [...$report, 'metrics' => ['duration_ms' => round((hrtime(true) - $start) / 1_000_000, 1),
                 'peak_memory_bytes' => memory_get_peak_usage(true)]];
         } finally {

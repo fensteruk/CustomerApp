@@ -6,6 +6,7 @@ use App\SourceImport\Integration\MasterSourceResolver;
 use App\SourceImport\Integration\PlotRegisterCapabilities;
 use App\SourceImport\Integration\RedZebraExportProfile;
 use App\SourceImport\Integration\ScopedCallEvidence;
+use App\SourceImport\Integration\WorkbookAnalysisCapacity;
 use App\SourceImport\Semantics\Data\CoreIdentity;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use LogicException;
@@ -16,7 +17,7 @@ final class KnowledgeIdentity
 
     public const FINGERPRINT = '65168dd6d269b746426238a3ac5dfe23d8971d5d868e4e8895abcc6a6a151d07';
 
-    public const POLICY = 'customerapp.wald-knowledge-policy.v6';
+    public const POLICY = 'customerapp.wald-knowledge-policy.v7';
 
     public function current(): array
     {
@@ -33,7 +34,7 @@ final class KnowledgeIdentity
             'accepted_baseline' => self::BASELINE, 'policy' => self::POLICY,
             'resolution' => MasterSourceResolver::VERSION, 'source_profiles' => RedZebraExportProfile::VERSION,
             'plot_register' => PlotRegisterCapabilities::VERSION,
-            'call_scope' => ScopedCallEvidence::VERSION];
+            'call_scope' => ScopedCallEvidence::VERSION, 'analysis_capacity' => WorkbookAnalysisCapacity::VERSION];
     }
 
     public function compatible(array $pins): Compatibility
