@@ -1,5 +1,17 @@
 # Current Sprint
 
+## MASTEREXPORT02 — 12 October 2026
+
+Continue the grouped RedZebra qualification on the verified compatible Wald
+lineage. Approved MASTEREXPORT01 docs are protected locally at b127c027.
+Reconcile saved Wald/QA identity/count boundaries, establish current source
+provenance, then release a measured XLS-capacity and grouped-profile correction.
+Keep field-first mapping, whole-site eligibility and category exclusions.
+Optional unapproved product/completion facts remain withheld. Genuine local
+Analyse-only, fictional Apply/customer journeys and independent full/MySQL QA
+are separate gates. No main merge/push/deploy/genuine Apply.
+Canonical scope: documentation/work-packages/WP-CUSTOMERAPP-WALD-MASTEREXPORT02.md.
+
 ## MASTERREGISTER02 — local qualification and Nick review gate — 8 October 2026
 
 The bounded feature branch starts at accepted integration `741bd351`. Large analysis

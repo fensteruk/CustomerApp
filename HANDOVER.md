@@ -1,5 +1,34 @@
 # Fenster Customer Portal Handover
 
+## MASTEREXPORT02 — 12 October 2026
+
+Current owner package authorises coordinated bounded implementation and independent
+qualification, continuing MASTEREXPORT01. Baseline d9fc0b855ca6b8a7546129d9ab6dc5672e76a6b1;
+branch codex/wald-masterexport02-2026-10-12; P0 approved-docs commit
+b127c027f8c7cbd63288aefd31def0a1b0883953. Six prior Main-owned docs preserved;
+no runtime/schema/dependency change. Main owns new work package/register/handover.
+
+Wald and QA reconcile saved row manifests before final counts are frozen. Current
+original-path hash7301acbc…aa725 differs from retained56e64ce1…74f49. Timestamp13:07:20
+BST agrees with Josh's screenshot; no recent edit/cause is established. One bounded
+current-cell delta check may establish provenance; no new-source qualification
+is implied by old evidence. Product/completion meanings are investigated field-first,
+not inferred from old positions/quantity matches. Optional unapproved facts stay withheld.
+
+Backend is available read-only and reports no blanket blocker to independent
+inventory analysis under exact identity/category/site/association safeguards.
+Ops fetched/verified main04e48b55, clean docs commit and free inspected shared
+locks; P0 recovery resources and MySQL remain retained. Integration03 parked;
+DEFENCE01 later work not released; MILESTONE01 unverified; Safe Delete separate.
+
+P1/capacity specification is in investigation. Runtime package awaits Main release
+after bounded spec/domain/environment review. Required genuine local Analyse-only,
+synthetic Apply journeys, independent MySQL/full QA and final commits remain.
+No genuine Apply, main merge, push, deployment or production contact.
+Next: reconcile counts/source provenance and approve safe capacity/profile scope.
+See documentation/project-management/TASK-REGISTER.md and
+documentation/work-packages/WP-CUSTOMERAPP-WALD-MASTEREXPORT02.md.
+
 ## MASTEREXPORT01 investigation and site eligibility — 12 October 2026
 
 Owner priority is the new full grouped XLS, hash56e64ce1…74f49. Baseline remains

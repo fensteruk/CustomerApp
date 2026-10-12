@@ -1,5 +1,15 @@
 # Fenster Customer Portal ROADMAP
 
+## MASTEREXPORT02 — 12 October 2026
+
+Reconcile source counts/provenance → bounded capacity/structure/profile correction
+→ domain/environment review → genuine local Analyse-only and synthetic journeys
+→ independent MySQL/full qualification → controlled release review later.
+Business-meaning questions do not stop unrelated safe technical work; never
+guess withheld product/completion facts. Integration03 remains parked and no
+main merge, push, deployment or genuine Apply is authorised.
+See documentation/work-packages/WP-CUSTOMERAPP-WALD-MASTEREXPORT02.md.
+
 ## Wald prerequisite + plot-register integration — 7 October 2026
 
 The reviewed prerequisite chain is integrated on a local isolated branch, with
