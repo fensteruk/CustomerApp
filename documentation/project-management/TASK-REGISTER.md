@@ -9,7 +9,7 @@ implementation has been merged to obtain these management records.
 
 ## CUSTOMERAPP-WALD-DEMO03
 
-Date: 12 October 2026. State: READY FOR LOCAL COMMIT — genuine report and QA PASS.
+Date: 12 October 2026. State: COMMITTED LOCALLY — genuine report and QA PASS.
 Owner: 0 - CustomerApp Wald. Coordinator: 1 - Product Manager.
 Independent verification: 4 - QA/Testing, once implementation is ready.
 Branch: codex/customerapp-wald-demo03-2026-10-12.
@@ -30,28 +30,19 @@ One focused QA then local exact-scope commit. Stop if correction expands materia
 Main owns current docs; Wald runtime/tests; no overlapping implementer.
 Current state/results: HANDOVER.md. MASTEREXPORT02 is CANCELLED, not resumed.
 
-Outcome: no runtime patch. Parent classification alone does not change flat child
-column roles, whole-AA identity, repeated-Call or fact extraction shared with normal
-import staging. Main verified named discovery/dry-run code; unsafe skip/validation
-relaxation refused. No new tests, genuine retry, implementation QA or correction
-commit. Existing fictional demo/data preserved. Four Main-owned docs only changed.
-Main asks one bounded existing-boundary adapter feasibility question because
-multiple consumers alone do not establish excessive scope. DEMO03 authorises
-consistent grouped identity/call handling; proceed if one limited adapter safely
-meets it, otherwise stop with specific constraints/change surface. No new programme.
-Boundary check found an analyse-only adapter viable; Main approves transient grouped
-classification/raw provenance and logical roles, with optional facts withheld and
-flat path unchanged. No grouped normal import/Apply authority; denial regression
-required. Wald implementation/focused tests released; browser/QA/commit still gated.
+Outcome: bounded analyse-only adapter implemented, retaining raw provenance and
+consistent grouped roles while withholding optional meanings. Flat path unchanged;
+grouped normal import/Apply denied. Independent QA and actual browser report pass.
 
 Final gates: genuine browser report PASS (85 sites,55 eligible,5584 Plots,
 4870 recognised calls,36 unknown;20.47s). All62 counts/eight business hashes
 unchanged; old8108demo all62 fingerprints preserved. Independent QA PASS.
 Affected51/569 and full2043/92skips/11906 pass; style/validation/build pass.
 Composer5 existing advisories retained, npm production0. Local PHP512M/60sec
-only; Wald limits unchanged. Seven runtime/test files plus four Main docs approved
-for local commit after staged diff/secret check. No source files/private outputs
-in Git, no schema/dependency change, no push/deploy/Apply. Final SHA: Git/report.
+only; Wald limits unchanged. Seven runtime/test files plus four Main docs committed
+at 24e6b2c60b73e1f2640061d411c330ca4c1a9ea7 after exact-scope/staged/secret checks.
+No private source/output files in Git, no schema/dependency change, no push/deploy/
+Apply. Subsequent handoff changes are documentation only; latest SHA in Git/report.
 
 ## CUSTOMERAPP-WALD-MASTEREXPORT02
 

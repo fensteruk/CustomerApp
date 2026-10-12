@@ -2,62 +2,39 @@
 
 ## DEMO03 — current grouped-row correction — 12 October 2026
 
-Josh explicitly releases the smallest safe grouped parent/child classification
-correction before Call Number validation, followed by genuine local Analyse only.
-DEMO02 established Sheet1 A3 parent context is misread as Call Number; reuse that
-evidence, not conversion/legacy-XLS/full-parity investigations. MASTEREXPORT02 stays
-cancelled. Full XLS/XLSX parity is still unverified and required before live Apply.
+Status: locally committed; READY for genuine Analyse-only demonstration, not live
+import. MASTEREXPORT02 remains cancelled; no conversion/parity investigation resumed.
+Wald implemented; Main approved scope/Git; independent QA passed.
 
-Wald alone owns implementation/tests. Main owns this handover/register/scope;
-QA reviews once candidate is ready. Separate checkout .codex-build/wald-demo03-2026-10-12,
-branch codex/customerapp-wald-demo03-2026-10-12, base/current HEAD
-144dd263135e5c057bcdae33b97818638b9960ea. Preserve the original checkout's dirty
-docs and running 8108 fictional demonstration: Plot776 Windows request Awaiting
-Fenster for 30 November, Office history unchanged. Do not reset/overwrite its DB.
+Checkout: .codex-build/wald-demo03-2026-10-12. Branch:
+codex/customerapp-wald-demo03-2026-10-12. Baseline 144dd263135e5c057bcdae33b97818638b9960ea.
+Implementation commit: 24e6b2c60b73e1f2640061d411c330ca4c1a9ea7 (11 approved files).
+Latest HEAD is in Git/final report; subsequent handoff changes are documentation only.
+No private workbooks, helpers, credentials, database or evidence committed.
 
-Classification must preserve exact AA-prefix identity, valid parent context,
-unambiguous child association, site boundaries, whole-site eligibility, confirmed
-category exclusions, repeated-Call isolation and one Plot/many calls. Blank calls
-create no service/date/completion; ambiguous/orphan groups remain reviewed/blocked.
-No unapproved product/completion mapping, resource-guard weakening or schema change.
+Root cause: flat roles interpreted A3 parent context as a Call Number. The bounded
+analyse-only classifier preserves raw provenance, AA-prefix identity, parent/child
+and site boundaries, eligibility/exclusions and repeated-Call isolation. Flat imports
+are unchanged. Grouped normal import/Apply remains denied; optional facts withheld.
 
-Focused seven-case/affected regression tests first; then actual Office browser
-retry against separate disposable DB, before/after business counts/fingerprints,
-one focused QA and local commit of exact approved files. No push, production,
-deployment or genuine Apply. If substantially more complex than a bounded
-correction, stop with exact reason. No additional programme automatically released.
-Current boundary: Main approves an ANALYSE-ONLY grouped adapter within existing
-integration code. Classification alone cannot safely reuse flat child/identity/
-fact roles; the adapter retains raw source references and supplies consistent
-logical rows to transient discovery/call checks. Optional product/completion
-meanings withheld; flat path unchanged. Grouped normal import/Apply remains
-unavailable, with a focused denial regression; no persisted profile activated.
-Implementation and actual genuine browser retry PASS. Report: 85 source sites,
-55 eligible / 4 proven-zero / 26 eligibility review; 5,584 discovered Plots,
-3,123 with no source call-off, 4,870 recognised calls, 36 unknown Call Types.
-16,989 data rows; 13,794 included / 3,195 excluded; 28 malformed groups and two
-hierarchy conflicts remain review findings. Duration 20,469ms / displayed156MB.
-These are analysis observations/proposals, not created records or Apply approval.
+Actual browser report: 85 sites; 55 eligible / 4 zero / 26 eligibility review;
+5,584 Plots, 3,123 without source calls, 4,870 recognised calls, 36 unknown types.
+16,989 data rows / 3,195 excluded; 28 malformed groups and two hierarchy conflicts.
+Duration 20.47 seconds; displayed peak 156 MB. These are observations/proposals.
 
-Focused/affected tests51 PASS/569 assertions. Full2043 PASS/92 skipped/11906
-assertions; Pint, strict Composer validation, build and whitespace PASS; npm
-production audit0; Composer retains5 advisories across4 unchanged packages.
-Independent QA PASS (13 tests/100 assertions plus eligibility probes); QA did
-not repeat genuine browser processing, relying on Main's observed report.
-All62 genuine table counts/eight business hashes unchanged. Existing8108DB all62
-fingerprints match priorQA snapshot; health200. Private evidence .cursor/demo03/
-qa-report.md, candidate-checkpoint.md, genuine-browser-integrity.private.json,
-demo02-preservation.private.json. Main captured report through the browser.
+Affected tests: 51 passed / 569 assertions. Full: 2,043 passed / 92 skipped /
+11,906 assertions. Independent QA: 13 passed / 100 assertions plus eligibility
+probes; no duplicate genuine browser run. Pint, validation, build and diff checks
+pass; npm production audit zero; five existing Composer advisories retained.
 
-Local8109 PHP only:512M/60seconds; Wald384MiB/40seconds unchanged. Main owns
-private startuphelper/server. No schema/dependency upgrades or production access.
-Ready for local exact-scope commit: seven runtime/test files and four current
-docs; no workbooks/helpers/credentials/DB/evidence in Git. Commit gate Main approved
-after staged diff/secret checks; final SHA in Git/final report. No push/deploy/Apply.
-Tomorrow: keep8109report tab, or log in with private demo03 Office entry, Imports
-→ Analyse only → FULL MASTER.xlsx → Analyse without applying. Show eligibility,
-Plots/call counts and review findings; normal grouped Apply remains refused.
-Fictional8108 request/history remains separately available and unchanged.
+Data unchanged: 62 genuine counts/eight hashes; all 62 old 8108 fingerprints preserved.
+Evidence: .cursor/demo03/qa-report.md and integrity/preservation JSON files.
+Local PHP 512M/60 seconds; Wald 384MiB/40 seconds unchanged. No schema/dependency
+upgrade, production access, push, deployment or genuine Apply. Full parity unverified.
+
+Tomorrow: open preserved 8109 report; or private demo03 Office login → Imports →
+Analyse only → FULL MASTER.xlsx → Analyse without applying. If stopped, launch
+.cursor/demo03/run-local.ps1 with -Mode serve. Keep fictional 8108 separately unchanged.
 
 ## MASTEREXPORT02 — 12 October 2026
 
