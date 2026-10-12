@@ -2,7 +2,8 @@
 
 Main owns this register under OPERATING-MODEL.md. One request has one parent
 entry; phases below belong to that entry and are not separate programmes.
-The operating model is copied unchanged from the approved management lineage.
+The operating model is copied from the approved management lineage; its current
+state link uses the existing handover in this checkout.
 Earlier Integration03 register evidence remains on its parked branch; no API
 implementation has been merged to obtain these management records.
 
@@ -18,7 +19,7 @@ Protected documentation: b127c027f8c7cbd63288aefd31def0a1b0883953.
 | Phase | State | Accountable owner / gate |
 | --- | --- | --- |
 | 0 Baseline/protection | COMPLETE | Ops; six approved docs committed, runtime tree unchanged |
-| 1 Count reconciliation | INVESTIGATING | Wald with independent QA; Main reconciles exact manifests |
+| 1 Count reconciliation | COMPLETE FOR RETAINED SOURCE | QA independently matches Wald; current-source delta remains |
 | 2 Eligibility/exclusions | SPECIFICATION READY | Wald implementation follows reconciliation; Backend review |
 | 3 XLS capacity | INVESTIGATING | Wald proposes measured bound; Backend/Ops review before release |
 | 4 Structure | INVESTIGATING | Deterministic fixes only; ambiguous evidence retained |
@@ -51,3 +52,12 @@ Commit: documentation only. Push: NO. Deployment: NO. Production Apply: NO.
 
 Next: reconcile P1 findings; review capacity scope and source provenance; release
 only the independently safe bounded implementation package.
+
+P1 checkpoint: independent QA canonical comparison PASS on retained56e64ce1
+cells; zero membership/state disagreements and zero symmetric Plot-key difference.
+85 source units =55 qualifying+3 zero+27 review,4969 candidate Plots,2238 retained
+no-call-off Plots,123 Plots under excluded whole-zero sites. Missing parents at
+rows2/2565 remain REVIEW; they are not joined to adjacent sites. Correcting the
+QA boundary and unapproved AA-suffix equality assumptions explains all listed
+prior disagreements. Main verified the key boundary cells. No current-file or
+runtime/browser/Apply qualification implied. Next: capacity/source-delta scope.

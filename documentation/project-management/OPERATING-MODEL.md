@@ -9,7 +9,8 @@ and returns one consolidated outcome. Main is not automatically the implementer.
 ## Management records
 
 - [Task register](TASK-REGISTER.md): phases, ownership, dependencies and next actions.
-- [Current state](CURRENT-STATE.md): dated Git and workstream evidence.
+- [Current handover](../../HANDOVER.md): dated Git and workstream evidence;
+  use the current task section rather than create a duplicate status document.
 - [Decision ledger](../../DECISIONS.md): durable approved decisions, append only.
 - [Product brief](../../brief.md): current product rules, not deployment history.
 - Existing current_sprint.md, HANDOVER.md and ROADMAP.md retain delivery/handoff context.

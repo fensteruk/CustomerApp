@@ -8,7 +8,12 @@ branch codex/wald-masterexport02-2026-10-12; P0 approved-docs commit
 b127c027f8c7cbd63288aefd31def0a1b0883953. Six prior Main-owned docs preserved;
 no runtime/schema/dependency change. Main owns new work package/register/handover.
 
-Wald and QA reconcile saved row manifests before final counts are frozen. Current
+P1 retained-source reconciliation PASS: QA matches Wald membership/state/Plot keys,
+85 units=55 qualifying+3 zero+27 review,4969 Plot candidates,2238 without calls,
+123 whole-zero-site Plots excluded. Main checked boundary evidence. Corrected
+QA orphan inheritance/suffix assumptions explain differences; rows2/2565 remain
+REVIEW. See documentation/wald-masterexport02-reconciliation-2026-10-12.md.
+Current
 original-path hash7301acbc…aa725 differs from retained56e64ce1…74f49. Timestamp13:07:20
 BST agrees with Josh's screenshot; no recent edit/cause is established. One bounded
 current-cell delta check may establish provenance; no new-source qualification
