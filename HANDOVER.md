@@ -2,6 +2,26 @@
 
 ## MASTEREXPORT02 — 12 October 2026
 
+**Stopped by Josh pending rethink.** All specialist work and extraction releases
+are withdrawn. This checkpoint commit preserves documentation only; it does not
+resume implementation, tests, browser work or any source import.
+
+No importer implementation was completed. P1 counts below apply to the retained
+source evidence, not a newly qualified current workbook. The attempted diagnostic
+failed before PHP launch because private-folder ACL creation was denied; a later
+invocation was refused by the closed window. No native extraction or cell comparison
+completed. A renewed diagnostic setup was prepared but not released before the stop.
+Private helpers/workbooks/generated evidence remain local and excluded from Git.
+
+Binary preflight and short-lived parser-process designs are unapproved proposals,
+not required restart architecture. Restart needs a fresh bounded scope: verify
+current cells using existing tooling, implement the smallest justified reader/
+grouped-layout correction, then focused tests and independent review.
+
+### Last checkpoint before the stop
+
+The following records the prior programme state, not authority to continue.
+
 Current owner package authorises coordinated bounded implementation and independent
 qualification, continuing MASTEREXPORT01. Baseline d9fc0b855ca6b8a7546129d9ab6dc5672e76a6b1;
 branch codex/wald-masterexport02-2026-10-12; P0 approved-docs commit
@@ -13,8 +33,7 @@ P1 retained-source reconciliation PASS: QA matches Wald membership/state/Plot ke
 123 whole-zero-site Plots excluded. Main checked boundary evidence. Corrected
 QA orphan inheritance/suffix assumptions explain differences; rows2/2565 remain
 REVIEW. See documentation/wald-masterexport02-reconciliation-2026-10-12.md.
-Current
-original-path hash7301acbc…aa725 differs from retained56e64ce1…74f49. Timestamp13:07:20
+Current original-path hash7301acbc…aa725 differs from retained56e64ce1…74f49. Timestamp13:07:20
 BST agrees with Josh's screenshot; no recent edit/cause is established. One bounded
 current-cell delta check may establish provenance; no new-source qualification
 is implied by old evidence. Product/completion meanings are investigated field-first,
@@ -26,8 +45,11 @@ Ops fetched/verified main04e48b55, clean docs commit and free inspected shared
 locks; P0 recovery resources and MySQL remain retained. Integration03 parked;
 DEFENCE01 later work not released; MILESTONE01 unverified; Safe Delete separate.
 
-P1/capacity specification is in investigation. Runtime package awaits Main release
-after bounded spec/domain/environment review. Required genuine local Analyse-only,
+P3 initial Backend specification review FAILED: callback bypass allocation,
+pre-callback SST/style/OLE memory, one total deadline and concrete XLS identity
+pins need correction. Wald prepares revised scope; no runtime package released.
+Ops owns a private extraction watchdog/helper review before one current-cell
+comparison; it is not HTTP capacity qualification. Required genuine local Analyse-only,
 synthetic Apply journeys, independent MySQL/full QA and final commits remain.
 No genuine Apply, main merge, push, deployment or production contact.
 Next: reconcile counts/source provenance and approve safe capacity/profile scope.

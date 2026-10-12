@@ -9,12 +9,20 @@ implementation has been merged to obtain these management records.
 
 ## CUSTOMERAPP-WALD-MASTEREXPORT02
 
-Date: 12 October 2026. State: INVESTIGATING.
+Date: 12 October 2026. State: STOPPED AT OWNER REQUEST — RETHINK REQUIRED.
 Authority: owner MASTEREXPORT02 work package and confirmed MASTEREXPORT01 rules.
 Canonical contract: ../work-packages/WP-CUSTOMERAPP-WALD-MASTEREXPORT02.md.
 Baseline: d9fc0b855ca6b8a7546129d9ab6dc5672e76a6b1.
 Branch: codex/wald-masterexport02-2026-10-12.
 Protected documentation: b127c027f8c7cbd63288aefd31def0a1b0883953.
+
+Josh stopped this programme because scope/review overhead and token use were
+disproportionate to delivered implementation. All M02 specialists were instructed
+to stop; no implementation or extraction is released. The table below records
+last checkpoints only, not authority to resume. Local commits preserve approved
+decisions and historical count reconciliation; no importer code is complete.
+Private workbook/helper/generated evidence is not included in this Git checkpoint.
+Resume only after explicit owner direction with a smaller bounded scope.
 
 | Phase | State | Accountable owner / gate |
 | --- | --- | --- |
@@ -61,3 +69,12 @@ rows2/2565 remain REVIEW; they are not joined to adjacent sites. Correcting the
 QA boundary and unapproved AA-suffix equality assumptions explains all listed
 prior disagreements. Main verified the key boundary cells. No current-file or
 runtime/browser/Apply qualification implied. Next: capacity/source-delta scope.
+
+P3 initial technical review: FAIL before runtime release. Backend identified
+native hyperlink/merge allocation outside the proposed callback ceiling,
+SST/style/OLE memory allocated before callbacks, independent intake/inspection
+deadlines, and missing concrete XLS knowledge pins. Wald owns a revised bounded
+specification; Main must obtain renewed review before executable changes.
+EXTRACTION01 is a separate private one-source read under256M/60s and an owned
+external watchdog, not HTTP capacity qualification. Ops reviews exact helper
+and wrapper before one invocation; no extraction pass is claimed yet.
