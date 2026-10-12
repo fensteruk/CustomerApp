@@ -22,7 +22,7 @@ final class WaldDryRun
         try {
             $inspection = (new WorkbookStager)->inspect((object) $artifact);
             try {
-                $manifest = (new PilotWorkbookDiscovery)->inspect((object) $artifact, inspection: $inspection);
+                $manifest = (new PilotWorkbookDiscovery)->inspect((object) $artifact, inspection: $inspection, analyseOnly: true);
             } catch (ImportConflict $conflict) {
                 if (in_array($conflict->getMessage(), ['required_call_column_unresolved', 'required_call_type_column_unresolved',
                     'customer_code_missing', 'customer_code_column_ambiguous', 'source_site_name_column_ambiguous'], true)) {
@@ -47,6 +47,9 @@ final class WaldDryRun
                     $resolution = $resolutions[$source['hash']];
                     $issues = $checks[$source['hash']]['issues'] ?? [];
                     $issues = [...$issues, ...($current['issues'][$source['hash']] ?? [])];
+                    if (($source['eligibility'] ?? null) === 'REVIEW') {
+                        $issues[] = 'SITE_ELIGIBILITY_REVIEW';
+                    }
                     if (in_array($resolution['state'], ['BINDING_CONFLICT', 'SOURCE_HIERARCHY_CONFLICT', 'MALFORMED_HIERARCHY'], true)) {
                         $issues[] = $resolution['state'];
                     }
@@ -101,6 +104,17 @@ final class WaldDryRun
                     'ignored_customer_codes' => $manifest['ignored_rows'],
                     'call_findings' => $manifest['call_findings'],
                     'integrity_summary' => array_intersect_key($audit, array_flip(['healthy', 'warnings', 'blocking']))];
+                if (($manifest['source_profile'] ?? null) === GroupedPlotObservations::PROFILE) {
+                    $eligibility = array_count_values($manifest['grouped_eligibility']);
+                    $content['source_profile'] = GroupedPlotObservations::PROFILE;
+                    $content['withheld_source_facts'] = $manifest['withheld_source_facts'];
+                    $content['summary'] += ['source_sites_discovered' => count($manifest['grouped_eligibility']),
+                        'eligible_sites' => $eligibility['ELIGIBLE'] ?? 0,
+                        'zero_calloff_sites' => $eligibility['ZERO_CALLOFFS'] ?? 0,
+                        'site_eligibility_review' => $eligibility['REVIEW'] ?? 0,
+                        'parent_plot_rows' => count(array_filter($manifest['review_rows'], fn ($row) => $row['row_class'] === 'PARENT_PLOT'))];
+                    $content['summary']['base_plot_rows'] -= $content['summary']['parent_plot_rows'];
+                }
 
                 return ['content' => $content, 'fingerprint' => Canonical::evidenceHash($content)];
             });
@@ -120,6 +134,10 @@ final class WaldDryRun
         $sheet = array_values($sheets)[0];
         $columns = [];
         foreach ($snapshot->data['questions'] as $key => $question) {
+            if (($manifest['source_profile'] ?? null) === GroupedPlotObservations::PROFILE) {
+                // Logical row roles supply call/Plot facts; optional column meanings are withheld.
+                break;
+            }
             if (($question['type'] ?? null) !== 'STRUCTURAL' || $key === 'structure:ignored') {
                 continue;
             }
@@ -130,6 +148,10 @@ final class WaldDryRun
             $columns[$candidate['role']] = $candidate['column'];
         }
         $dictionary = new CustomerAppDictionary;
+        if (($manifest['source_profile'] ?? null) === GroupedPlotObservations::PROFILE) {
+            // These optional meanings are not approved for grouped source rows.
+            $columns = [];
+        }
         $rows = [];
         $result = [];
         foreach ($manifest['review_rows'] as $row) {

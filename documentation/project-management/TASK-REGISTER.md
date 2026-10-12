@@ -7,6 +7,52 @@ state link uses the existing handover in this checkout.
 Earlier Integration03 register evidence remains on its parked branch; no API
 implementation has been merged to obtain these management records.
 
+## CUSTOMERAPP-WALD-DEMO03
+
+Date: 12 October 2026. State: READY FOR LOCAL COMMIT — genuine report and QA PASS.
+Owner: 0 - CustomerApp Wald. Coordinator: 1 - Product Manager.
+Independent verification: 4 - QA/Testing, once implementation is ready.
+Branch: codex/customerapp-wald-demo03-2026-10-12.
+Baseline: 144dd263135e5c057bcdae33b97818638b9960ea.
+
+Correct grouped parent/child classification before Call Number validation.
+Required focused cases: parent heading not CallNo; correct child association;
+many calls/one Plot; consecutive no-call Plots; site-boundary isolation;
+ambiguous orphan refusal/review; existing flat compatibility. Preserve confirmed
+AA prefix, whole-site eligibility, category exclusions, repeated-Call isolation,
+raw provenance and withholding of unapproved product/completion meanings.
+Actual genuine Office Analyse-only retry uses separate disposable DB; capture
+counts/fingerprints, duration and site/Plot/call/exclusion/review metrics or first
+new blocker. Existing fictional 8108 demonstration/Plot776/history must remain
+unchanged. No repeated workbook parity/conversion, parser redesign, extra review
+programme, schema change, genuine Apply, production access, push or deployment.
+One focused QA then local exact-scope commit. Stop if correction expands materially.
+Main owns current docs; Wald runtime/tests; no overlapping implementer.
+Current state/results: HANDOVER.md. MASTEREXPORT02 is CANCELLED, not resumed.
+
+Outcome: no runtime patch. Parent classification alone does not change flat child
+column roles, whole-AA identity, repeated-Call or fact extraction shared with normal
+import staging. Main verified named discovery/dry-run code; unsafe skip/validation
+relaxation refused. No new tests, genuine retry, implementation QA or correction
+commit. Existing fictional demo/data preserved. Four Main-owned docs only changed.
+Main asks one bounded existing-boundary adapter feasibility question because
+multiple consumers alone do not establish excessive scope. DEMO03 authorises
+consistent grouped identity/call handling; proceed if one limited adapter safely
+meets it, otherwise stop with specific constraints/change surface. No new programme.
+Boundary check found an analyse-only adapter viable; Main approves transient grouped
+classification/raw provenance and logical roles, with optional facts withheld and
+flat path unchanged. No grouped normal import/Apply authority; denial regression
+required. Wald implementation/focused tests released; browser/QA/commit still gated.
+
+Final gates: genuine browser report PASS (85 sites,55 eligible,5584 Plots,
+4870 recognised calls,36 unknown;20.47s). All62 counts/eight business hashes
+unchanged; old8108demo all62 fingerprints preserved. Independent QA PASS.
+Affected51/569 and full2043/92skips/11906 pass; style/validation/build pass.
+Composer5 existing advisories retained, npm production0. Local PHP512M/60sec
+only; Wald limits unchanged. Seven runtime/test files plus four Main docs approved
+for local commit after staged diff/secret check. No source files/private outputs
+in Git, no schema/dependency change, no push/deploy/Apply. Final SHA: Git/report.
+
 ## CUSTOMERAPP-WALD-MASTEREXPORT02
 
 Date: 12 October 2026. State: STOPPED AT OWNER REQUEST — RETHINK REQUIRED.

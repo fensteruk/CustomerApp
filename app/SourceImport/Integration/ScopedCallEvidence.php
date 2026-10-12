@@ -9,7 +9,7 @@ final class ScopedCallEvidence
 {
     public const VERSION = 'customerapp.scoped-call-evidence.v1';
 
-    public function discover(object $sheet, array $table, array $columns): array
+    public function discover(object $sheet, array $table, array $columns, ?array $logicalRows = null): array
     {
         if (! isset($columns['call_reference'])) {
             return [];
@@ -21,7 +21,11 @@ final class ScopedCallEvidence
             if ($number < $start || $number > $end) {
                 continue;
             }
-            $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
+            if (($logicalRows[$number]['excluded'] ?? false) === true) {
+                continue;
+            }
+            $raw = fn ($role) => $logicalRows !== null ? ($logicalRows[$number][$role] ?? null)
+                : (isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null);
             $call = $raw('call_reference');
             if ($call === null || is_string($call) && trim($call) === '') {
                 continue;

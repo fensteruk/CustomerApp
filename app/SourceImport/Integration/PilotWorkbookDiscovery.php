@@ -13,7 +13,7 @@ final class PilotWorkbookDiscovery
 
     public const SCHEMA = 'customerapp.wald-pilot-discovery.v11';
 
-    public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null): array
+    public function inspect(object $upload, array $restoredRows = [], ?array $inspection = null, bool $analyseOnly = false): array
     {
         [, $sheets, $snapshot] = $inspection ?? (new WorkbookStager)->inspect($upload);
         $data = $snapshot->data;
@@ -31,6 +31,14 @@ final class PilotWorkbookDiscovery
             throw new ImportConflict('unsafe_or_unsupported_structure');
         }
 
+        $grouped = new GroupedPlotObservations;
+        $logicalRows = null;
+        if ($grouped->matches($sheet, $table)) {
+            if (! $analyseOnly) {
+                throw new ImportConflict('grouped_layout_analyse_only');
+            }
+            $logicalRows = $grouped->classify($sheet, $table);
+        }
         $roles = [];
         foreach ($data['questions'] as $question) {
             if (($question['type'] ?? null) !== 'STRUCTURAL') {
@@ -54,7 +62,8 @@ final class PilotWorkbookDiscovery
                 $findingColumns[$role] = (int) array_key_first($candidates);
             }
         }
-        $callFindings = (new ScopedCallEvidence)->discover($sheet, $table, $findingColumns);
+        $callFindings = (new ScopedCallEvidence)->discover($sheet, $table, $findingColumns, $logicalRows);
+        $eligibility = $logicalRows === null ? [] : $grouped->eligibility($logicalRows, $callFindings);
 
         $seen = [];
         $physicalRows = 0;
@@ -80,7 +89,17 @@ final class PilotWorkbookDiscovery
                     throw new ImportConflict('unsafe_source_cell');
                 }
             }
-            $rawCall = $callColumn === null ? null : ($cells[$callColumn]->rawValue ?? null);
+            $logical = $logicalRows[$rowNumber] ?? null;
+            if ($logical !== null && ($logical['excluded'] || ($eligibility[$logical['source_customer_code'] ?? ''] ?? null) === 'ZERO_CALLOFFS')) {
+                $excluded++;
+                $ignoredRows[] = ['row_number' => (int) $rowNumber, 'customer_code' => $logical['source_customer_code'],
+                    'call_no' => $logical['call_reference'], 'call_type' => $logical['call_type'],
+                    'plot_ref' => $logical['plot_reference'], 'source_provenance' => $logical['provenance'],
+                    'reason' => $logical['excluded'] ? 'GROUPED_CATEGORY' : 'SITE_ZERO_CALLOFFS'];
+
+                continue;
+            }
+            $rawCall = $logical !== null ? $logical['call_reference'] : ($callColumn === null ? null : ($cells[$callColumn]->rawValue ?? null));
             $emptyCall = $rawCall === null || is_string($rawCall) && trim($rawCall) === '';
             $call = $emptyCall ? '' : (string) $rawCall;
             if (! $emptyCall && ((! is_int($rawCall) && ! is_string($rawCall)) || ! preg_match('/^[0-9]{1,100}$/D', $call) || ! preg_match('/[1-9]/', $call))) {
@@ -89,8 +108,8 @@ final class PilotWorkbookDiscovery
             if ($call !== '') {
                 $seen[$call] = true;
             }
-            $rawCallType = $callTypeColumn === null ? null : ($cells[$callTypeColumn]->rawValue ?? null);
-            $rawIdentity = $cells[$identity['identity_column']]->rawValue ?? null;
+            $rawCallType = $logical !== null ? $logical['call_type'] : ($callTypeColumn === null ? null : ($cells[$callTypeColumn]->rawValue ?? null));
+            $rawIdentity = $logical !== null ? $logical['source_customer_code'] : ($cells[$identity['identity_column']]->rawValue ?? null);
             if ($identity['kind'] === MasterExportSiteIdentity::KIND
                 && (is_string($rawIdentity) || is_int($rawIdentity))
                 && CustomerAppDictionary::excludesCustomerCode(trim((string) $rawIdentity))
@@ -108,7 +127,7 @@ final class PilotWorkbookDiscovery
             if ($identity['kind'] === MasterExportSiteIdentity::KIND
                 && (! is_string($rawIdentity) && ! is_int($rawIdentity) || trim((string) $rawIdentity) === '')) {
                 $reviewRows[] = $this->reviewRow($rowNumber, $call, null, null,
-                    $plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null), $rawCallType,
+                    $logical !== null ? $logical['plot_reference'] : ($plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null)), $rawCallType,
                     null, ['valid' => false, 'issue' => 'CUSTOMER_CODE_MISSING']);
 
                 continue;
@@ -119,9 +138,8 @@ final class PilotWorkbookDiscovery
             if ($identityValue === '' || mb_strlen($identityValue) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $identityValue)) {
                 throw new ImportConflict('invalid_source_site');
             }
-            $siteName = (new MasterExportSiteIdentity)->siteName(
-                $identity['site_name_column'] === null ? null : ($cells[$identity['site_name_column']]->rawValue ?? null),
-            );
+            $siteName = (new MasterExportSiteIdentity)->siteName($logical !== null ? $logical['transitional_site_clue']
+                : ($identity['site_name_column'] === null ? null : ($cells[$identity['site_name_column']]->rawValue ?? null)));
             $selection = (new ReviewedWorkbookSelection)->treatment(
                 $upload->workbook_hash,
                 $sheet->id,
@@ -137,12 +155,18 @@ final class PilotWorkbookDiscovery
             }
             $hasUnnumberedBaseRows = $hasUnnumberedBaseRows || $call === '' && PlotRegisterCapabilities::category($rawCallType) === 'BASE_PLOT_ROW';
             $hash = Canonical::hash([$identity['kind'], $identityValue]);
-            $rawPlot = $plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null;
+            $rawPlot = $logical !== null ? $logical['plot_reference'] : ($plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null);
             $parsed = $plotColumn !== null
                 ? (new CompositePlotHierarchy)->parse($rawPlot, $identityValue)
                 : ['valid' => false, 'issue' => 'PLOT_COLUMN_MISSING'];
+            if ($logical !== null && in_array($logical['issue'], ['GROUPED_PARENT_SITE_MISMATCH', 'GROUPED_ORPHAN_ROW', 'GROUPED_CUSTOMER_CODE_MISSING'], true)) {
+                $parsed = ['valid' => false, 'issue' => $logical['issue']];
+            }
             $reviewRows[] = $this->reviewRow($rowNumber, $call, $identityValue, $siteName,
                 $rawPlot, $rawCallType, $hash, $parsed);
+            if ($logical !== null && $logical['issue'] !== null) {
+                $reviewRows[array_key_last($reviewRows)]['issue'] = $logical['issue'];
+            }
             if (isset($callFindings[$call]) && $reviewRows[array_key_last($reviewRows)]['issue'] === null) {
                 $reviewRows[array_key_last($reviewRows)]['issue'] = 'DUPLICATE_CALL_NUMBER';
             }
@@ -198,7 +222,7 @@ final class PilotWorkbookDiscovery
             $sources[$hash]['rows']++;
             $included++;
         }
-        if ($physicalRows === 0 || ($sources === [] && $reviewRows === [])) {
+        if ($physicalRows === 0 || ($logicalRows === null && $sources === [] && $reviewRows === [])) {
             throw new ImportConflict('no_source_records');
         }
         $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
@@ -235,6 +259,17 @@ final class PilotWorkbookDiscovery
             }
         }
         unset($source);
+        if ($logicalRows !== null) {
+            foreach ($sources as &$source) {
+                $source['eligibility'] = $eligibility[$source['identity']] ?? 'REVIEW';
+            }
+            unset($source);
+            foreach ($reviewRows as &$row) {
+                $row['source_provenance'] = $logicalRows[$row['row_number']]['provenance'];
+                $row['row_class'] = $logicalRows[$row['row_number']]['kind'];
+            }
+            unset($row);
+        }
 
         return [
             'schema' => self::SCHEMA,
@@ -245,7 +280,9 @@ final class PilotWorkbookDiscovery
             'sheet' => $sheet->id,
             'header' => [$table['header_range']['start_row'], $table['header_range']['end_row']],
             'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
-            'source_profile' => $table['source_profile'] ?? null,
+            'source_profile' => $logicalRows === null ? ($table['source_profile'] ?? null) : GroupedPlotObservations::PROFILE,
+            ...($logicalRows === null ? [] : ['analyse_only' => true, 'grouped_eligibility' => $eligibility,
+                'withheld_source_facts' => ['products', 'completion', 'operational_dates']]),
             'capabilities' => $capabilities,
             'call_findings' => array_values($callFindings),
             'row_summary' => [...PlotRegisterCapabilities::summary($reviewRows),

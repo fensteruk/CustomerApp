@@ -1,5 +1,21 @@
 # Fenster Customer Portal ROADMAP
 
+## DEMO03 — current priority — 12 October 2026
+
+Small safe grouped-row classification correction → seven focused cases/flat
+regressions → genuine local Office Analyse-only result/non-mutation proof → one
+focused independent QA → local exact-scope commit. Keep existing fictional demo
+unchanged. New blockers get bounded assessment, not automatic programme expansion.
+Full source parity remains separate before live Apply. No production/push/deploy.
+MASTEREXPORT02 below is cancelled and historical, not a resumed development plan.
+
+Main approves an analyse-only grouped adapter supplying consistent logical rows
+and raw provenance, while withholding optional meanings and keeping normal
+grouped import/Apply unavailable. Implementation underway; tests/browser/QA gates
+passed. Genuine report and independent QA PASS; existing fictional demo preserved.
+Commit locally only. Grouped normal import, full source parity and production
+qualification remain separate/unreleased. No broader programme released.
+
 ## MASTEREXPORT02 — 12 October 2026
 
 Reconcile source counts/provenance → bounded capacity/structure/profile correction

@@ -1,5 +1,28 @@
 # Current Sprint
 
+## DEMO03 — current priority — 12 October 2026
+
+Bounded grouped parent/child classification correction before Call Number
+validation, preserving flat compatibility, identities, exclusions, site boundaries
+and all safeguards. Separate candidate/environment; preserve the working fictional
+demo at8108 and its existing request/history. Focused tests → actual genuine
+Office Analyse-only retry/non-mutation proof → one focused QA → local commit.
+No genuine Apply, production, push or deployment. Full source parity unverified.
+MASTEREXPORT02 below is CANCELLED and historical; do not resume it. Current
+scope/checkpoints belong in HANDOVER.md and the central task register.
+
+Main approves a transient ANALYSE-ONLY grouped adapter after
+viability confirmed. It retains raw references, supplies consistent logical rows,
+withholds optional product/completion meanings, and leaves flat imports unchanged.
+Grouped normal import/Apply remains unavailable. Focused denial plus seven cases
+required before separate-environment browser retry and one QA. No M02 restart.
+
+Result: genuine Analyse-only report and independent QA PASS. 85 sites/55eligible,
+5584Plots/4870recognised calls; unknowns/hierarchy issues remain reviewed, optional
+meanings withheld, grouped Apply refused. Data unchanged and8108demo preserved.
+Affected51 tests/full2043 pass (92skips); five Composer advisories retained.
+Local exact-scope commit pending; no production/push/deploy/Apply. See HANDOVER.
+
 ## MASTEREXPORT02 — 12 October 2026
 
 Continue the grouped RedZebra qualification on the verified compatible Wald
