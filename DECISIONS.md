@@ -2396,3 +2396,170 @@ discarding or multi-site Apply. Policy/discovery/backend identities stale old an
 Reason: PREREQ01 proved that a call-dependent failure discarded valid base Plot evidence
 before reporting. Inventory is independent of optional call-off evidence. Management
 explicitly approved the scoped correction; no push, deployment or production Apply.
+
+---
+
+## CUSTOMERAPP-WALD-MASTEREXPORT01 — Export scoped site eligibility
+
+Date: 12 October 2026
+
+For the newly supplied full RedZebra master export, the owner confirms that
+sites with proven zero existing call-offs across all their Plots are excluded
+as whole site units from this import candidate. One safely established qualifying
+call-off qualifies the site and retains all its valid Plots, including those
+with no call-offs. Assessment uses all proven parent/child records under the
+exact CustomerCode/source-site identity, not names, shading or the first Plot.
+
+Nonblank unknown, excluded or ambiguous evidence cannot silently become zero.
+Where qualifying truth cannot be safely established using the approved source
+dictionary, eligibility is REVIEW. This does not give excluded types a new
+service meaning or make malformed Plot/call identities valid.
+
+This decision narrows which site inventories are selected for this export;
+it does not revoke the ability to register no-call-off Plots on eligible sites.
+Existing CustomerApp sites, plots, users, call-off/source history and completion
+remain untouched. No deletion, deactivation or absence-based reconciliation is
+authorised. The task contract records the required metrics and seven regression
+cases: documentation/work-packages/WP-CUSTOMERAPP-WALD-MASTEREXPORT01.md.
+
+Previous raw evidence and verified analysis are retained and reused safely.
+No push, deployment, production access or genuine data Apply is authorised.
+
+---
+
+## CUSTOMERAPP-WALD-MASTEREXPORT01 — Reusable flat and grouped layout support
+
+Date: 12 October 2026
+
+The owner confirms that future imports may arrive in either the established
+flat layout or the newly supplied grouped parent-Plot/child-call layout. Wald
+must support both through verified, separately versioned deterministic profiles,
+preserving old flat behaviour and raw physical provenance. Ambiguous structure
+is reviewed or refused, not guessed. No AI/LLM training, fuzzy business meaning,
+manual-conversion dependency or current-workbook hash-only patch is authorised.
+
+Format recognition and site eligibility remain separate decisions. This reusable
+format support does not make historical/filtered exports complete snapshots or
+authorise deletion, new services, invented Call identity or changed date ownership.
+The current export's whole-site eligibility criteria and safety gates remain.
+
+---
+
+## CUSTOMERAPP-WALD-MASTEREXPORT01 — Grouped AA CustomerCode authority
+
+Date: 12 October 2026
+
+Josh confirms, after reviewing the whole grouped export, that CustomerCode is
+the value to the left of the hyphen in column AA. This prefix is authoritative
+for the verified grouped layout, including base Plot detail rows with no call-offs.
+Preserve the code as a string; do not numerically coerce it or infer it from names.
+This supersedes the investigation's provisional use of column Z and its
+unconfirmed AA-to-Z inheritance assumptions. Z remains private raw comparison
+evidence and must not override AA or supply a fallback identity.
+
+Apply this rule only through the separately verified grouped profile, not as a
+global column-AA alias for flat workbooks. Missing, empty or ambiguously parsed
+AA identity remains review/block. Prefix extraction does not independently
+approve the suffix as Plot Ref or repair conflicting parent/child Plot evidence.
+Retain original coordinates and raw values.
+
+Recalculate exact source-site groups, whole-site eligibility and eligible Plot
+counts from existing verified evidence. Earlier Z-based provisional counts
+remain historical, not acceptance totals. Exact binding, approved code exclusions
+and existing history-protection guards still apply. This does not authorise
+automatic rebinding, moving/deleting existing data or treating absence as deletion.
+
+Product/completion column mapping remains unconfirmed. No new service, date or
+completion meaning, runtime implementation release, genuine Apply, push or
+deployment is authorised by this identity decision.
+
+---
+
+## CUSTOMERAPP-WALD-MASTEREXPORT01 — Confirmed delimiter-less exclusions
+
+Date: 12 October 2026
+
+Josh confirms that all four delimiter-less AA entries shown for review are
+exclusions and may be ignored from the import candidate. They are Sheet1
+AA402, AA13427, AA13429 and AA13616 in the verified grouped workbook with SHA-256
+56e64ce1b9ad380cc2109829c78be4bd195d3a497bf13a86cdaed6bdef174f49.
+Their associated source observations contribute no candidate Plot, service,
+quantity, date or completion assertion. Preserve the raw private evidence and
+an explicit excluded disposition; do not leave these four as unresolved AA
+identity blockers.
+
+This supersedes the earlier review/block disposition for these exact exceptions
+only. It is not a global blacklist of their AA values or every delimiter-less
+entry in future files. Do not drop neighbouring valid Plot groups, infer a
+fallback identity from Z, erase source evidence or delete existing CustomerApp
+data/history. Recalculate only affected candidate metrics using retained cells.
+Other source semantics and hierarchy issues remain subject to their own review.
+No runtime release, genuine Apply, push or deployment is authorised.
+
+---
+
+## CUSTOMERAPP-WALD-MASTEREXPORT01 — Private One Off and Trade Supply Only exclusions
+
+Date: 12 October 2026
+
+Josh confirms, after checking with Nick, that all Private One Off and all
+Trade Supply Only source records are excluded from CustomerApp import data.
+This supersedes the four-entry-only scope of the preceding delimiter-less
+exclusion decision. The four reviewed exceptions are examples covered by this
+category rule, not its complete membership.
+
+Exclude every observation belonging to a verified source category group,
+including parent/detail/call rows, regardless of valid AA identity, recognized
+Call Type or product/completion evidence. Excluded observations contribute no
+candidate Plot, product, service, date or completion assertion. Keep original
+private evidence and explicit exclusion reasons/counts.
+
+The category exclusion is reusable across supported layouts where deterministic
+source evidence establishes membership. It is not a coordinate/hash-only patch,
+a global blacklist of the examples' AA values, or fuzzy customer/site-name
+matching. Uncertain category association requires review; never carry excluded
+context into adjacent normal Plot groups. Format-specific category recognition
+must be verified before claiming support.
+
+Reuse retained cells to recalculate affected inventory/eligibility totals and
+report excluded groups/observations separately. This remains import exclusion,
+not authority to delete existing CustomerApp records/history. AA prefix authority,
+exact binding, Portal state protection and other source review gates remain.
+No runtime implementation release, genuine Apply, push or deployment is authorised.
+
+---
+
+## CUSTOMERAPP-WALD-MASTEREXPORT01 — Field-first mapping independent of column order
+
+Date: 12 October 2026
+
+Josh directs Wald to interpret required fields in the current workbook, not
+replicate an older layout. For each field: identify the approved business meaning,
+look for it anywhere in the current sheet, and use the verified current column.
+Changed position/order is not a blocker or evidence that data is missing/wrong.
+The old workbook's CustomerCode column B has no authority over this sheet;
+the confirmed grouped AA prefix rule remains in force.
+
+This supersedes assumptions that identical column order or historical profile
+positions are required for future compatibility. Approved semantics remain;
+technical profile recognition must support verified reordered fields rather
+than silently reading old positions. Current runtime support still needs proof.
+
+Locate fields using deterministic approved labels, source structure and confirmed
+profile semantics, retaining raw coordinates and mapping provenance. Do not guess
+from quantity similarity, infer product meaning from Call Type, fuzzy-match
+business meanings or manufacture facts. An old/new quantity difference alone
+does not prove heading misalignment; matching values alone do not approve it.
+
+Reassess the reported product/completion blocker field by field using retained
+evidence. A moved identifiable field is resolved by mapping its current location.
+Only genuinely missing, competing or unprovable heading/body meaning requires
+clarification, limited to the affected facts/unit under existing safety rules.
+Report the required field, current candidate location, evidence and exact
+unresolved question, rather than a blanket layout blocker.
+
+Acceptance must prove reordered equivalent inputs preserve intended facts and
+physical provenance, with safe refusal/review for ambiguous mappings. Existing
+AA authority, category exclusions, site eligibility, binding, quantity conflicts
+and Portal-state safeguards remain. This decision releases reassessment and
+documentation, not runtime implementation, genuine Apply, push or deployment.

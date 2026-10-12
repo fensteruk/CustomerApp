@@ -4,6 +4,35 @@
 
 **Last updated:** 6 October 2026 (alternate RedZebra export profile approved under DEC-085)
 
+**Field-first mapping — 12 October 2026:** map required approved fields from
+verified current headers/structure wherever they occur; do not require old column
+order. Preserve current coordinates/mapping provenance. Reassess product/completion
+claims field by field: relocated fields are not blockers, and old/new quantity
+differences do not prove a heading is wrong. Only genuinely missing/ambiguous
+meaning requires clarification; no fuzzy or value-similarity semantic mapping.
+This supersedes old-order requirements for planned compatibility, not approved
+business meanings or the need to qualify runtime support.
+
+**Grouped-layout identity addendum — 12 October 2026:** Josh confirms that the
+string value left of the hyphen in AA is authoritative CustomerCode for the
+verified grouped RedZebra profile, including no-call-off Plot detail rows.
+Z remains private comparison evidence and must not override AA or provide a
+fallback. Do not apply this literal-column rule to flat layouts. Missing, empty
+or ambiguously parsed AA identity requires review/block; prefix extraction does
+not approve the suffix as Plot Ref or bypass exact binding/history protection.
+Product/completion mapping is under field-first reassessment. This is an approved
+business rule, not evidence of implemented or deployed profile support.
+
+**Confirmed category exclusions — 12 October 2026:** Josh has checked with Nick:
+all Private One Off and Trade Supply Only source records are excluded, including
+their verified associated observations with valid AA or recognised Call Types.
+They assert no candidate Plot/product/call/date/completion facts. Retain private
+evidence and explicit exclusion reasons/counts. The four delimiter-less examples
+are covered, not the limit; they are no longer unresolved identity blockers.
+Category recognition must be deterministic and layout-specific, with safe group
+boundaries. Review uncertain membership; no fuzzy name matching, global AA
+blacklist, adjacent-group exclusion or deletion of existing CustomerApp data.
+
 DEC-086 adds plot-register capabilities: Call Number and Call Type may be blank or
 absent for a base row with valid CustomerCode/hierarchy. The alternate signature may
 omit only Call and/or Call Type, retaining all other headers in their exact order.

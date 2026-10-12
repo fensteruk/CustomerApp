@@ -1,6 +1,6 @@
 # Fenster Customer Portal — Current Product and Integration Brief
 
-Last updated: 6 October 2026.
+Last updated: 12 October 2026.
 
 This document is the current product and integration contract for CustomerApp.
 
@@ -719,6 +719,23 @@ CustomerCode
 
 Site Name is descriptive/supporting evidence.
 
+For the verified grouped RedZebra layout, management confirms that the value
+left of the hyphen in column AA is the authoritative CustomerCode, including
+no-call-off Plot detail rows. Preserve it as a string. Column Z is private
+non-authoritative comparison evidence, never an override or fallback. This
+profile-scoped rule does not change flat-layout column meanings. Missing, empty
+or ambiguous identity requires review/block; Plot association and exact binding
+remain independently validated. Existing data must not be moved or rebound
+automatically. See the 12 October 2026 MASTEREXPORT01 decision and work package.
+
+Management has confirmed with Nick that all Private One Off and Trade Supply
+Only source records are excluded from import, including records with valid AA
+codes or recognised call-offs. The four reviewed delimiter-less examples are
+covered by this category rule, not its limit. Verify category membership and
+group boundaries deterministically; preserve source evidence and adjacent normal
+Plot groups. This is not a global code blacklist or authority to delete existing
+CustomerApp data. See the latest MASTEREXPORT01 decision and contract.
+
 ---
 
 ## 21. CustomerCode Behaviour
@@ -1058,6 +1075,13 @@ Do not automatically recognise headers with extra semantic words such as:
 ---
 
 ## 29. Composite Spreadsheet Structure
+
+Wald maps required fields by their approved meaning in the current sheet,
+wherever they are located. Column order need not match an older export.
+Find each required field, verify its current column and use that mapping with
+preserved provenance. A relocated field is not a missing field or a layout
+blocker. Clarification is limited to genuinely missing or ambiguous meaning;
+old/new quantity differences alone do not prove a heading is wrong.
 
 The RedZebra export may represent one logical table across physically separated
 cell regions.

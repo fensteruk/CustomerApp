@@ -1,5 +1,49 @@
 # Fenster Customer Portal Handover
 
+## MASTEREXPORT01 investigation and site eligibility — 12 October 2026
+
+Owner priority is the new full grouped XLS, hash56e64ce1…74f49. Baseline remains
+d9fc0b855ca6b8a7546129d9ab6dc5672e76a6b1; Main/origin/main04e48b55 unchanged.
+Wald leads read-only structure/count/compatibility work; Main owns the new
+work package and append-only decision; QA has updated its read-only plan.
+
+Urgent owner rule: evaluate every Plot/child record for the exact source site.
+Proven-zero sites are wholly excluded from this export candidate. One safely
+qualifying call-off retains all valid site Plots, including blank-call base
+Plots. Unknown/excluded/ambiguous evidence is not automatically zero; unresolved
+eligibility is REVIEW. Site eligibility, Plot validity and child-fact projection
+remain separate. Existing CustomerApp data/history/users/completion are untouched.
+The work package defines seven new regressions and aggregate report metrics.
+
+Latest confirmed identity: CustomerCode is the string left of the hyphen in AA
+for the verified grouped layout, including base Plot detail rows. Z is private
+comparison evidence only; no override/fallback. Wald and independent QA have
+been asked to recalculate groups/counts from existing neutral evidence and
+reconcile earlier mixed-Z findings. Prior Z-based totals are provisional.
+Latest Nick-confirmed rule: all Private One Off and Trade Supply Only source
+records are excluded, not just the four delimiter-less AA examples. Wald/QA are
+recalculating category exclusions with deterministic membership/group boundaries.
+Preserve private evidence, adjacent normal groups and existing CustomerApp data.
+The four examples are excluded, not unresolved identity blockers.
+Other missing/ambiguous AA and conflicting Plot association remain review/block.
+Exact binding/history protections remain; no automatic rebinding.
+Latest owner direction: map each required field from its verified current-sheet
+location; old column order is irrelevant. Wald/QA are reassessing product/completion
+claims field by field, distinguishing relocation from genuine semantic ambiguity.
+Old/new quantity differences alone are not proof of heading misalignment.
+
+Reuse verified inventory instead of restarting scans. Current reported reader
+capacity finding still requires bounded scope reconciliation; no implementation
+has been released. Genuine workbook edits/Apply, production, push/deployment,
+unrelated branch integration and package upgrades remain prohibited.
+
+Integration03 is parked at4165ea4670bad62d54ba723d47deea6a7ec7e982, incomplete:
+API security review passed; HTTP/full independent QA remains. Client01 never
+reserved. DEFENCE01, P0 recovery schemas and root Safe Delete work stay separate.
+Next: reconcile Wald's evidence and independently verify counts; then authorise
+only proved compatibility/filter corrections and qualify genuine Analyse-only
+plus synthetic product journeys.
+
 ## Repeated-Call isolation candidate — 7 October 2026
 
 SOURCECONTRACT04 continues from integration baseline

@@ -2,6 +2,49 @@
 
 _Sprint 3B — 20 August 2026; alternate RedZebra export profile updated 6 October 2026_
 
+## MASTEREXPORT01 field-first mapping — 12 October 2026
+
+Locate every required approved field in the current workbook and use its verified
+column, regardless of old order/position. Reordering is not a blocker. Record
+current header/structure evidence and physical provenance; never read historical
+positions blindly. The confirmed grouped AA-prefix authority remains.
+
+Reassess product/completion mapping field by field. Relocation alone is resolved
+by current mapping; only genuinely missing/competing/unprovable meaning requires
+clarification. Old/new quantity differences are not proof of heading misalignment,
+and matching quantities alone do not approve product meaning. Keep approved
+dictionary semantics, exact boundaries, binding and conflict guards. Runtime
+compatibility remains to be implemented/qualified; no genuine Apply is authorised.
+
+## MASTEREXPORT01 grouped CustomerCode authority — 12 October 2026
+
+For the verified grouped layout, CustomerCode is the string value left of the
+hyphen in AA, including base Plot detail rows. Josh's confirmation supersedes
+provisional Z-based identity/inheritance analysis. Z remains private comparison
+evidence, not authority or fallback. This is profile-scoped; literal AA in flat
+layouts keeps its existing meaning. Missing, empty or ambiguous AA extraction
+requires review/block; the suffix alone does not approve a Plot identity.
+
+Recalculate exact groups and whole-site eligibility using existing verified
+cells. The import-only site filter retains every valid Plot on a qualifying site
+and excludes only proven whole-zero sites; unresolved call evidence remains
+review. Exact bindings and existing Site/Plot/history protection remain unchanged.
+No automatic rebinding or destructive synchronisation is authorised. Product
+and completion mapping is under field-first reassessment; this identity decision does
+not approve runtime implementation, genuine Apply, push or deployment.
+
+Josh subsequently confirms with Nick that all Private One Off and Trade Supply
+Only source records are excluded. This supersedes the four-entry-only disposition:
+Sheet1 AA402, AA13427, AA13429 and AA13616 are covered examples, not the limit.
+Exclude all verified associated observations, even with valid AA or recognised
+Call Type; they supply no candidate Plot/product/service/date/completion facts.
+Retain private evidence and explicit excluded disposition/counts.
+
+Apply the reusable category rule only with deterministic layout-specific
+membership and proven group boundaries. Review uncertain association; do not
+fuzzy-match names, infer Z fallback, blacklist AA values globally, discard adjacent
+normal groups or delete existing CustomerApp data. Other source gates remain.
+
 ## CUSTOMER-WALD-SOURCECONTRACT04 repeated-Call isolation — 7 October 2026
 
 DEC-087 supersedes workbook-wide repeated-Call rejection. Call/Visit ambiguity is
