@@ -68,6 +68,48 @@ final class PrivateWorkbookStorage
         return $data;
     }
 
+    /** Store a paired Analyse input without invoking the single-workbook preflight profile. */
+    public function storeForPairedAnalysis(UploadedFile $file): array
+    {
+        if (! $file->isValid()) {
+            throw new ImportConflict('invalid_upload');
+        }
+        $format = strtolower($file->getClientOriginalExtension());
+        if (! in_array($format, ['xls', 'xlsx'], true)) {
+            throw new ImportConflict('unsupported_upload_type');
+        }
+        $bytes = $file->getSize();
+        if (! is_int($bytes) || $bytes < 1 || $bytes > 5 * 1024 * 1024) {
+            throw new ImportConflict('file_size_limit_exceeded');
+        }
+        $mime = (new \finfo(FILEINFO_MIME_TYPE))->file($file->getPathname());
+        $allowed = $format === 'xls'
+            ? ['application/vnd.ms-excel', 'application/x-ole-storage']
+            : ['application/zip', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'];
+        if (! in_array($mime, $allowed, true)) {
+            throw new ImportConflict('upload_content_type_mismatch');
+        }
+        $hash = hash_file('sha256', $file->getPathname());
+        $key = (string) Str::uuid().'.'.$format;
+        $stream = fopen($file->getPathname(), 'rb');
+        try {
+            $this->disk()->put($key, $stream);
+        } finally {
+            fclose($stream);
+        }
+        $name = mb_substr(preg_replace('/[\x00-\x1f\x7f]/u', '', str_replace('\\', '/', $file->getClientOriginalName())), 0, 200);
+        $data = ['storage_key' => $key, 'original_name' => basename($name), 'format' => $format, 'mime' => $mime,
+            'byte_count' => $bytes, 'workbook_hash' => $hash];
+        try {
+            $this->path((object) $data);
+        } catch (\Throwable $e) {
+            $this->discardUnregistered($key);
+            throw $e;
+        }
+
+        return $data;
+    }
+
     public function path(object $artifact): string
     {
         if (! preg_match('/^[a-f0-9-]{36}\.(xls|xlsx|csv)$/D', $artifact->storage_key)) {

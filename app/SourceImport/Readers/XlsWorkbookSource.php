@@ -38,9 +38,7 @@ final class XlsWorkbookSource implements WorkbookSource
                 $budget->guard('rows', (int) $sheet['totalRows']);
                 $budget->guard('columns', (int) $sheet['totalColumns']);
                 $estimatedCells += (int) $sheet['totalRows'] * (int) $sheet['totalColumns'];
-                if ($estimatedCells > 200_000) {
-                    throw new AnalysisProblem('resource_limit_exceeded', ['limit' => 'xls_estimated_cells', 'maximum' => 200_000]);
-                }
+                $budget->guard('cells', $estimatedCells);
                 $budget->checkpoint();
             }
             if ($sheets === []) {

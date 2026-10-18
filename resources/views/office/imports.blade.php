@@ -2,6 +2,7 @@
     <div class="admin-workspace">
         <a class="admin-back" href="{{ $site ? route('office.workspace.sites.show', [$site['customer']['uuid'], $site['uuid']]) : route('office.workspace.customers.index') }}">← {{ $site ? $site['name'] : 'Customers' }}</a>
         <header><p class="eyebrow">Imports</p><h1 class="admin-title">Import Source Data</h1></header>
+        @if($pairedAnalyseAvailable ?? false)<p class="mt-4"><a class="primary-button" href="{{ route('office.workspace.imports.paired-analyse') }}">Analyse master inventory with call-off report</a></p>@endif
         @if (Route::has('development.import-studio.show') && config('import-demo.enabled'))
             <section class="admin-card max-w-2xl border-2 border-orange-400" aria-labelledby="import-demo-title">
                 <div class="flex flex-wrap gap-2"><span class="status status-red">DEMO ONLY</span><span class="status status-slate">SYNTHETIC DATA</span></div>

@@ -5,6 +5,7 @@ use App\Http\Controllers\OfficeAmendmentsWorkspaceController;
 use App\Http\Controllers\OfficeCustomerCodeReviewController;
 use App\Http\Controllers\OfficeDemoPurgeController as DemoPurge;
 use App\Http\Controllers\OfficeImportReconciliationController;
+use App\Http\Controllers\OfficePairedWorkbookAnalyseController as PairedAnalyse;
 use App\Http\Controllers\OfficePermanentDeletionController as PermanentDeletion;
 use App\Http\Controllers\OfficePilotImportController as PilotImport;
 use App\Http\Controllers\OfficeUnknownRowsController;
@@ -27,6 +28,8 @@ Route::prefix('/portal/office/workspace')->name('office.workspace.')
         });
         Route::get('/customers/new', [Pages::class, 'customerForm'])->name('customers.create');
         Route::get('/imports', [PilotImport::class, 'index'])->name('imports');
+        Route::get('/imports/paired-analyse', [PairedAnalyse::class, 'index'])->name('imports.paired-analyse');
+        Route::post('/imports/paired-analyse', [PairedAnalyse::class, 'analyse'])->middleware('throttle:3,1')->name('imports.paired-analyse.run');
         Route::get('/settings/wald', [WaldSettings::class, 'index'])->name('settings.wald');
         Route::put('/settings/wald', [WaldSettings::class, 'update'])->name('settings.wald.update');
         Route::post('/imports/pilot', [PilotImport::class, 'upload'])->name('pilot-import.upload');

@@ -5,6 +5,7 @@
             <div><p class="eyebrow">Office workspace</p><h1 class="admin-title">Imports</h1><p class="imports-intro">Upload a RedZebra export. See what it contains, then review and apply one site at a time.</p></div>
             <div class="imports-badges"><span>Office use only</span><span>One site at a time</span></div>
         </header>
+        @if($pairedAnalyseAvailable ?? false)<p class="mb-4"><a class="secondary-button" href="{{ route('office.workspace.imports.paired-analyse') }}">Analyse master inventory with call-off report</a></p>@endif
         @if ($errors->any())<div class="imports-notice imports-notice-danger" role="alert"><strong>The import was not started.</strong><ul>@foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul>@if(session('existing_import_url'))<a href="{{ session('existing_import_url') }}">View existing import</a>@endif</div>@endif
         @if (session('status'))<div class="imports-notice" role="status">{{ session('status') }}</div>@endif
         <section class="imports-upload" aria-labelledby="upload-title">

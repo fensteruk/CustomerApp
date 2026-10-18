@@ -28,14 +28,13 @@ it('offers the approved Little Cotton Farm pattern only as a confirmation sugges
         ->and((new HierarchySuggestion)->forIssue('FNA2664', 'Little Cotton Farm 117-144...- Baker Estates LtdABC'))->toBeNull();
 });
 
-it('parses the exact Northam mixed separator format and all trailing digits', function (): void {
-    $parsed = (new CompositePlotHierarchy)->parse('Vistry - Northam PH3-33842', 'FNA2561');
+it('parses the compact mixed separator format generically and takes the full numeric plot suffix', function (): void {
+    $parsed = (new CompositePlotHierarchy)->parse('Vistry - Northam PH3-33842', 'ANY-CUSTOMER-CODE');
     expect($parsed['valid'])->toBeTrue()
         ->and($parsed['customer'])->toBe('Vistry')
         ->and($parsed['site'])->toBe('Northam PH3')
         ->and($parsed['plot'])->toBe('33842')
-        ->and((new CompositePlotHierarchy)->parse('Vistry - Northam PH3-33842', 'OTHER')['valid'])->toBeFalse()
-        ->and((new CompositePlotHierarchy)->parse('Vistry - Northam PH3-338A', 'FNA2561')['valid'])->toBeFalse();
+        ->and((new CompositePlotHierarchy)->parse('Vistry - Northam PH3-338A', 'ANY-CUSTOMER-CODE')['valid'])->toBeFalse();
 });
 
 it('blocks malformed or unspaced hierarchy without guessing', function (string $raw): void {

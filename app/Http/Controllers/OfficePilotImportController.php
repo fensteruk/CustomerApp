@@ -38,7 +38,8 @@ final class OfficePilotImportController extends Controller
     public function index(Request $request, OfficeImportsWorkspaceQuery $workspace): View
     {
         if (! (new WaldPilotAvailability)->enabled()) {
-            return view('office.imports', ['site' => null]);
+            return view('office.imports', ['site' => null,
+                'pairedAnalyseAvailable' => config('wald_import.paired_analyse_available', false) === true]);
         }
         (new PilotImportPolicy)->authorize($request->user());
         $data = $request->validate(['history_filter' => ['sometimes', Rule::in(array_keys(OfficeImportsWorkspaceQuery::FILTERS))],
@@ -64,6 +65,7 @@ final class OfficePilotImportController extends Controller
         return view('office.pilot-import.index', [
             ...$workspace->forOffice($request->user(), $data['history_filter'] ?? 'all'),
             'replacementSlots' => $replacementSlots,
+            'pairedAnalyseAvailable' => config('wald_import.paired_analyse_available', false) === true,
         ]);
     }
 

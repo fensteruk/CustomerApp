@@ -15,15 +15,28 @@ final class CompositePlotHierarchy
 
         $raw = $value;
         $trimmed = trim($raw);
-        // The confirmed Northam source format has one spaced separator and a final compact plot separator.
-        if ($customerCode === 'FNA2561'
-            && preg_match('/^Vistry - Northam PH3-([0-9]+)$/D', $trimmed, $match)) {
-            return ['valid' => true, 'customer' => 'Vistry', 'site' => 'Northam PH3',
-                'plot_source' => $match[1], 'plot' => SourceIdentity::plotReference($match[1]), 'raw' => $raw];
+        // Compact RedZebra form: "Customer - Site-PlotRef". Split at the
+        // final hyphen so the site can contain hyphens without guessing.
+        if (preg_match('/^(.+?)\s+-\s+(.+)-([0-9]+)$/uD', $trimmed, $compact)) {
+            $customer = trim($compact[1]);
+            $site = trim($compact[2]);
+            $plotRef = trim($compact[3]);
+            if ($customer !== '' && $site !== '' && $plotRef !== '') {
+                foreach ([$customer, $site, $plotRef] as $part) {
+                    if (mb_strlen($part) > 200 || preg_match('/[\x00-\x1f\x7f<>]/', $part)) {
+                        return ['valid' => false, 'issue' => 'HIERARCHY_COMPONENT_INVALID', 'raw' => $raw];
+                    }
+                }
+
+                return ['valid' => true, 'customer' => $customer, 'site' => $site,
+                    'plot_source' => $plotRef, 'plot' => SourceIdentity::plotReference($plotRef), 'raw' => $raw];
+            }
         }
         $parts = preg_split('/\s+[-\x{2013}\x{2014}]\s+/u', $trimmed);
-        // Approved compact RedZebra variant: exactly two ASCII separators and a Plot component.
-        if ($parts !== false && count($parts) === 1 && ! preg_match('/\s+[-\x{2013}\x{2014}]\s+/u', $trimmed)) {
+        // Previously approved exact unspaced three-component format. Restrict
+        // it to precisely two separators and an explicit Plot label.
+        if ($parts !== false && count($parts) === 1 && substr_count($trimmed, '-') === 2
+            && preg_match('/^[^-]+-[^-]+-Plot\s+.+$/iuD', $trimmed)) {
             $parts = explode('-', $trimmed);
         }
         if ($parts === false || count($parts) !== 3) {
