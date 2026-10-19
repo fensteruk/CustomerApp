@@ -167,8 +167,9 @@ final class PairedWorkbookAnalyse
                 continue;
             }
             $rawCall = $cells[$columns['Call No.']]->rawValue ?? null;
+            $callHasSupportedType = is_int($rawCall) || is_string($rawCall);
             $call = is_int($rawCall) || is_string($rawCall) ? trim((string) $rawCall) : '';
-            $validCall = $call !== '' && preg_match('/^[0-9]{1,100}$/D', $call) && preg_match('/[1-9]/', $call);
+            $validCall = $callHasSupportedType && $call !== '' && mb_strlen($call) <= 100 && ! preg_match('/[\x00-\x1f\x7f]/', $call);
             $rawPlot = $cells[$columns['Plot Ref']]->rawValue ?? null;
             $parsed = (new CompositePlotHierarchy)->parse($rawPlot, $code !== '' ? $code : null);
             $rawSiteName = $cells[$columns['Site Name']]->rawValue ?? null;
@@ -177,7 +178,9 @@ final class PairedWorkbookAnalyse
                 'plot' => $parsed['valid'] ? $parsed['plot'] : null, 'raw_plot' => $rawPlot,
                 'call_type' => $cells[$columns['Call Type']]->rawValue ?? null, 'source_site_name' => $rawSiteName,
                 'valid_hierarchy' => $parsed['valid'],
-                'issue' => ! $validCall ? ($call === '' ? null : 'INVALID_CALL_NUMBER') : ($parsed['valid'] ? null : $parsed['issue']),
+                'issue' => ! $validCall
+                    ? ($call === '' && ($rawCall === null || is_string($rawCall) && trim($rawCall) === '') ? null : 'INVALID_CALL_NUMBER')
+                    : ($parsed['valid'] ? null : $parsed['issue']),
                 'row' => $number, 'plot_cell' => $cells[$columns['Plot Ref']]->coordinate ?? 'D'.$number];
             if ($code !== '' && $validCall && $parsed['valid']) {
                 $facts[] = ['code' => $code, 'plot' => $parsed['plot'], 'call' => $validCall ? $call : '',
@@ -306,11 +309,13 @@ final class PairedWorkbookAnalyse
             if (! $row['valid_call']) {
                 continue;
             }
-            $callIdentity = $code."\0".$row['call'];
+            $callIdentity = $row['call'];
             if (isset($seenCalls[$callIdentity])) {
-                $callIssues[$code]['duplicate_calls'][] = ['call' => $row['call'], 'rows' => [$seenCalls[$callIdentity], $row['row']]];
+                $duplicate = ['call' => $row['call'], 'rows' => [$seenCalls[$callIdentity]['row'], $row['row']]];
+                $callIssues[$code]['duplicate_calls'][] = $duplicate;
+                $callIssues[$seenCalls[$callIdentity]['code']]['duplicate_calls'][] = $duplicate;
             } else {
-                $seenCalls[$callIdentity] = $row['row'];
+                $seenCalls[$callIdentity] = ['code' => $code, 'row' => $row['row']];
             }
             $callsByCode[$code][] = $row;
             $callsByPlot[$code][$row['plot']][] = $row;
@@ -576,7 +581,8 @@ final class PairedWorkbookAnalyse
                 $units = Quantity::units($quantity);
                 if ($units !== null) {
                     $key = $fact['code']."\0".$fact['plot'];
-                    $assertions[$key][$code][(string) $units][] = ['source' => $fact['source'], 'row' => $fact['row'], 'call' => $fact['call']];
+                    $assertions[$key][$code][(string) $units][] = ['source' => $fact['source'], 'row' => $fact['row'],
+                        'call' => $fact['call'], 'quantity' => Quantity::decimal($units)];
                 }
             }
         }

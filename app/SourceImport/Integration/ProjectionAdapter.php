@@ -26,7 +26,7 @@ final class ProjectionAdapter
             'started_at' => now(),
             'records_seen' => count($rows),
         ]);
-        $changes = collect($snapshot['changes'])->keyBy('call_number');
+        $changes = collect($snapshot['changes'])->keyBy('record_index');
         $included = array_values(array_filter($rows, fn (array $row): bool => ! $row['excluded']));
         $facts = array_column($included, 'facts');
         $references = array_values(array_unique(array_column($facts, 'plot')));
@@ -82,10 +82,11 @@ final class ProjectionAdapter
             );
         }
 
-        $rowHashes = array_map(fn (array $fact): string => SourceIdentity::sourceRow($scope->namespace, $fact['call_number']), $facts);
+        $callFacts = array_values(array_filter($facts, fn (array $fact): bool => $fact['call_number'] !== null));
+        $rowHashes = array_map(fn (array $fact): string => SourceIdentity::sourceRow($scope->namespace, $fact['call_number']), $callFacts);
         $sourceRows = DB::table('wald_source_rows')->whereIn('identity_hash', $rowHashes)->get()->keyBy('identity_hash');
         $visitHashes = array_values(array_filter(array_map(
-            fn (array $fact): ?string => $fact['call_type'] === null ? null : SourceIdentity::visit($scope->namespace, $fact['call_number'], $fact['call_type']),
+            fn (array $fact): ?string => $fact['call_type'] === null || $fact['call_number'] === null ? null : SourceIdentity::visit($scope->namespace, $fact['call_number'], $fact['call_type']),
             $facts,
         )));
         $visits = DB::table('wald_source_visits')->whereIn('identity_hash', $visitHashes)->get()->keyBy('identity_hash');
@@ -102,47 +103,50 @@ final class ProjectionAdapter
         $effects = [];
         $products = [];
         $touchedPlots = [];
-        foreach ($included as $row) {
+        foreach ($included as $index => $row) {
             $fact = $row['facts'];
-            $diff = $changes[$fact['call_number']];
+            $diff = $changes[$index];
             $plot = $plots[$fact['plot']];
-            $rowKey = SourceIdentity::sourceRow($scope->namespace, $fact['call_number']);
-            $sourceRow = $sourceRows->get($rowKey);
+            $rowKey = $fact['call_number'] === null ? null : SourceIdentity::sourceRow($scope->namespace, $fact['call_number']);
+            $sourceRow = $rowKey === null ? null : $sourceRows->get($rowKey);
             if ($sourceRow && $sourceRow->export_order > $run->export_order) {
                 throw new ImportConflict('older_source_row_observation');
             }
-            $rowVersion = $sourceRow ? (int) $sourceRow->epoch + 1 : 1;
+            $rowVersion = $rowKey === null ? null : ($sourceRow ? (int) $sourceRow->epoch + 1 : 1);
             $factHash = Canonical::hash($fact);
-            $sourceRowId = $sourceRow?->id ?? DB::table('wald_source_rows')->insertGetId([
-                'identity_hash' => $rowKey,
-                'source_namespace' => $scope->namespace,
-                'call_number' => $fact['call_number'],
-                'site_id' => $scope->siteId,
-                'plot_reference' => $fact['plot'],
-                'export_order' => $run->export_order,
-                'fact_hash' => $factHash,
-                'created_at' => now('UTC'),
-            ]);
-            $sourceRowObservation = DB::table('wald_source_row_observations')->insertGetId([
-                'source_row_id' => $sourceRowId,
-                'run_id' => $run->id,
-                'version' => $rowVersion,
-                'facts' => Canonical::json($fact),
-                'provenance' => Canonical::json([
-                    'workbook_hash' => $run->workbook_hash,
-                    'binding' => $row['binding'],
-                    'physical' => $row['provenance'],
-                ]),
-                'fact_hash' => $factHash,
-                'created_at' => now('UTC'),
-                'retain_until' => now('UTC')->addYears(6),
-            ]);
-            DB::table('wald_source_rows')->where('id', $sourceRowId)->update([
-                'epoch' => $rowVersion,
-                'observation_id' => $sourceRowObservation,
-                'export_order' => $run->export_order,
-                'fact_hash' => $factHash,
-            ]);
+            $sourceRowId = null;
+            if ($rowKey !== null) {
+                $sourceRowId = $sourceRow?->id ?? DB::table('wald_source_rows')->insertGetId([
+                    'identity_hash' => $rowKey,
+                    'source_namespace' => $scope->namespace,
+                    'call_number' => $fact['call_number'],
+                    'site_id' => $scope->siteId,
+                    'plot_reference' => $fact['plot'],
+                    'export_order' => $run->export_order,
+                    'fact_hash' => $factHash,
+                    'created_at' => now('UTC'),
+                ]);
+                $sourceRowObservation = DB::table('wald_source_row_observations')->insertGetId([
+                    'source_row_id' => $sourceRowId,
+                    'run_id' => $run->id,
+                    'version' => $rowVersion,
+                    'facts' => Canonical::json($fact),
+                    'provenance' => Canonical::json([
+                        'workbook_hash' => $run->workbook_hash,
+                        'binding' => $row['binding'],
+                        'physical' => $row['provenance'],
+                    ]),
+                    'fact_hash' => $factHash,
+                    'created_at' => now('UTC'),
+                    'retain_until' => now('UTC')->addYears(6),
+                ]);
+                DB::table('wald_source_rows')->where('id', $sourceRowId)->update([
+                    'epoch' => $rowVersion,
+                    'observation_id' => $sourceRowObservation,
+                    'export_order' => $run->export_order,
+                    'fact_hash' => $factHash,
+                ]);
+            }
 
             $visitId = null;
             $visitVersion = null;
@@ -232,6 +236,7 @@ final class ProjectionAdapter
                 $touchedPlots[$plot->id] = true;
             }
             $effects[] = [
+                'record_type' => $fact['record_type'] ?? 'SOURCE_ROW',
                 'call_number' => $fact['call_number'],
                 'source_row' => $sourceRowId,
                 'source_row_version' => $rowVersion,
@@ -239,6 +244,11 @@ final class ProjectionAdapter
                 'visit_version' => $visitVersion,
                 'service_id' => $service?->id,
                 'outcome' => $diff['outcome'],
+                'inventory_provenance' => $fact['call_number'] === null ? [
+                    'workbook_hash' => $run->workbook_hash,
+                    'binding' => $row['binding'],
+                    'physical' => $row['provenance'],
+                ] : null,
             ];
         }
 

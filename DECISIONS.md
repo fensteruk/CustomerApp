@@ -2256,3 +2256,52 @@ Reason: Deleting the import alone leaves a customer request, call-off batch,
 user and shared binding. The Office-approved goal is complete removal of this
 disposable customer and its own history without damaging the current Vistry
 binding or other source units.
+
+---
+
+## DEC-085
+
+Date: 19 October 2026
+
+Decision: Wald's import hierarchy is Site → Plots → Call-offs. A site may have
+many plots; each plot may have zero or many call-offs. The master inventory
+supplies plot existence. Genuine Call Nos are opaque nonempty strings unique
+within the workbook; they are not required to be numeric. A row with blank
+Call No and blank Call Type is an inventory-only `BASE_PLOT_ROW`: it may
+create or reuse the plot under the exact resolved site plus normalized Plot
+Ref, and may contribute valid supplied plot/product facts, but it creates no
+source row, visit, service, customer request, date or completion state. Its
+workbook row provenance remains auditable with the import receipt. A blank
+Call No paired with nonblank Call Type blocks. A blank Call Type with a valid
+Call No remains a source row without a visit under DEC-064.
+
+Only sites with at least one nonblank Call No in call-off evidence qualify
+for this combined baseline. Every valid master plot on a qualifying site is
+retained, including plots without call-offs. A site with no call-off evidence
+is excluded from this import only; exclusion must not delete or deactivate
+existing Portal records. Portal-owned request/date workflow and history are
+not changed by inventory rows. This decision authorizes local implementation
+and regression testing only; it does not authorize grouped Apply/Commit, a
+push, merge, deployment or production data change.
+
+Reason: The master register contains plots that have never had call-offs.
+CustomerApp must model Sites → Plots → Call-offs without inventing call
+identifiers or workflow for inventory-only plots.
+
+---
+
+## DEC-086
+
+Date: 19 October 2026
+
+Decision: A source site with no Call Nos is not automatically accepted into the
+baseline, but it must remain visible in the normal Office source-site review
+queue with an explicit zero-call-off warning. Do not silently remove its
+master rows during workbook discovery. Office can inspect and decide whether
+the inventory should be included; no Portal record is changed merely because
+the source site is classified for review. This clarifies DEC-085's
+"excluded from this import" wording: zero-call sites are excluded from
+automatic qualification, not hidden from the manual review stage.
+
+Reason: Office needs to inspect the known zero-call sites during the Wald
+review instead of losing them before Nick can decide how to handle them.

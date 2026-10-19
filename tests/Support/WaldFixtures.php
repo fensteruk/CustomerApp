@@ -133,7 +133,7 @@ final class WaldFixtures
 
     private static function path(string $extension): string
     {
-        $directory = dirname(__DIR__, 2).'/storage/framework/testing';
+        $directory = rtrim(sys_get_temp_dir(), DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'customerapp-wald-testing';
         if (! is_dir($directory)) {
             mkdir($directory, 0777, true);
         }

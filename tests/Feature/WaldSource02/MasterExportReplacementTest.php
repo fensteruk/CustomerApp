@@ -848,6 +848,27 @@ it('keeps ignored CustomerCodes out of source discovery while other malformed ro
         ->and(collect($pilot['sources'])->firstWhere('customer_code', 'FNA2699')['resolution']['state'])->toBe('MALFORMED_HIERARCHY');
 });
 
+it('keeps zero-call sites visible for Office manual review instead of silently dropping them', function (): void {
+    $office = source02Office();
+    $pilot = source02Upload($office, [[
+        'code' => 'ZERO', 'call' => '', 'site' => 'Site Zero', 'plot' => 'Zero Customer - Site Zero - Plot 1', 'type' => '',
+    ]], '2099-02-11');
+
+    $source = $pilot['sources'][0];
+    expect($pilot['manifest']['record_count'])->toBe(1)
+        ->and($pilot['manifest']['included_count'])->toBe(1)
+        ->and($pilot['manifest']['excluded_count'])->toBe(0)
+        ->and($pilot['manifest']['inactive_site_count'])->toBe(1)
+        ->and($source['calloff_rows'])->toBe(0)
+        ->and($source['inventory_rows'])->toBe(1)
+        ->and($source['requires_manual_review'])->toBeTrue()
+        ->and($source['warnings'])->toContain('ZERO_CALLOFF_SITE_REQUIRES_REVIEW');
+
+    $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
+        ->assertOk()->assertSee('No call-off activity found.')
+        ->assertSee('Review this source site manually before including its plots.');
+});
+
 it('lets Office restore an excluded CustomerCode row to guarded review and confirm those left ignored', function (): void {
     $office = source02Office();
     $pilot = source02Upload($office, [

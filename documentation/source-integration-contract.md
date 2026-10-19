@@ -2,6 +2,29 @@
 
 _Sprint 3B — 20 August 2026; CUSTAPP2 identity/composite refinement updated 15 September 2026_
 
+## CUSTOMER-WALD inventory baseline addendum — 19 October 2026
+
+The operational hierarchy is **Site → Plots → Call-offs**. A site has many plots; a plot may
+have zero or many call-offs. The master inventory supplies plot existence, while call-off rows
+provide activity and attach to the exact bound site plus normalized Plot Ref.
+
+A row with a blank Call No. and blank Call Type is an inventory-only `BASE_PLOT_ROW`. It may
+create or reuse the plot and contribute valid supplied plot/product facts, but it does not create
+a source row, visit, service, customer request, date or completion state. Its physical workbook
+provenance remains in the reviewed import receipt. A nonblank Call No. is an opaque string source
+identifier, must be unique within the workbook, and is never required to be numeric. A blank Call
+No. paired with a nonblank Call Type is invalid and blocks the row/site review unit. A genuine
+blank Call Type with a nonblank Call No. remains a source row without a visit, as defined by
+DEC-064.
+
+Only sites with at least one nonblank Call No. in the call-off evidence qualify automatically for
+this combined baseline. For each qualifying site, retain every valid master plot, including plots
+with no call-off. A zero-call site remains visible in the normal Office source-site review queue
+with an explicit warning; it is not automatically accepted, and it is not silently dropped before
+Nick can review it (DEC-086). A manual decision does not delete or deactivate existing Portal
+records. Customer request/date workflow and history remain Portal-owned and are not overwritten
+by inventory rows.
+
 ## CUSTOMER-WALD-MASTER01 hierarchy addendum — 23 September 2026
 
 The recognized `Plot Ref` header in the current RedZebra master export carries an exact

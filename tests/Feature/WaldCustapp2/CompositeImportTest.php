@@ -34,6 +34,73 @@ it('projects plot and product facts from a blank call row without manufacturing 
         ->and(DB::table('call_off_requests')->count())->toBe(0);
 });
 
+it('projects an inventory-only row with no Call No without manufacturing call history or Portal workflow', function (): void {
+    [$actor, $scope] = F::owner();
+    B::binding($actor, $scope);
+    $preview = C::reviewed($actor, $scope, [[
+        'call' => null, 'plot' => 'Inventory 004', 'type' => null, 'complete' => null, 'products' => [],
+    ]]);
+
+    expect($preview['blockers'])->toBe([]);
+    $receipt = C::commit($actor, $scope, $preview);
+
+    expect($receipt['counts'])->toBe(['applied' => 1, 'created' => 1, 'excluded' => 0, 'seen' => 1, 'unchanged' => 0, 'updated' => 0])
+        ->and(ProjectedPlot::query()->where('plot_reference', 'Inventory 004')->count())->toBe(1)
+        ->and(DB::table('wald_source_rows')->count())->toBe(0)
+        ->and(DB::table('wald_source_row_observations')->count())->toBe(0)
+        ->and(DB::table('wald_source_visits')->count())->toBe(0)
+        ->and(DB::table('projected_plot_services')->count())->toBe(0)
+        ->and(DB::table('call_off_requests')->count())->toBe(0)
+        ->and($receipt['effects'][0])->toMatchArray(['record_type' => 'BASE_PLOT_ROW', 'call_number' => null,
+            'source_row' => null, 'visit' => null, 'service_id' => null]);
+});
+
+it('accepts a string Call No as a source-row identity for a genuine call-off', function (): void {
+    [$actor, $scope] = F::owner();
+    B::binding($actor, $scope);
+    $preview = C::reviewed($actor, $scope, [[
+        'call' => 'CALL-A/2026', 'plot' => 'A-7001', 'type' => 'PC1', 'complete' => 'No', 'products' => [],
+    ]]);
+
+    expect($preview['blockers'])->toBe([]);
+    C::commit($actor, $scope, $preview);
+
+    expect(DB::table('wald_source_rows')->where('call_number', 'CALL-A/2026')->count())->toBe(1)
+        ->and(DB::table('wald_source_visits')->where('call_number', 'CALL-A/2026')->where('call_type', 'PC1')->count())->toBe(1)
+        ->and(DB::table('projected_plot_services')->where('source_call_number', 'CALL-A/2026')->count())->toBe(1);
+});
+
+it('attaches a later genuine call-off to the same inventory plot without inventing a prior call', function (): void {
+    [$actor, $scope] = F::owner();
+    B::binding($actor, $scope);
+    C::commit($actor, $scope, C::reviewed($actor, $scope, [[
+        'call' => null, 'plot' => '7001', 'type' => null, 'complete' => null, 'products' => [],
+    ]]));
+    C::commit($actor, $scope, C::reviewed($actor, $scope, [[
+        'call' => 'VISIT-A', 'plot' => '7001', 'type' => 'PC1', 'complete' => 'No', 'products' => [],
+    ]], slot: 'AFTERNOON'));
+
+    expect(ProjectedPlot::query()->where('plot_reference', '7001')->count())->toBe(1)
+        ->and(DB::table('wald_source_rows')->count())->toBe(1)
+        ->and(DB::table('wald_source_rows')->value('call_number'))->toBe('VISIT-A')
+        ->and(DB::table('wald_source_visits')->count())->toBe(1)
+        ->and(DB::table('projected_plot_services')->count())->toBe(1);
+});
+
+it('blocks a blank Call No when the row claims a call-off type', function (): void {
+    [$actor, $scope] = F::owner();
+    B::binding($actor, $scope);
+    $state = C::staged($actor, $scope, [[
+        'call' => null, 'plot' => '7001', 'type' => 'PC1', 'complete' => 'No', 'products' => [],
+    ]]);
+    $preview = (new ImportReview)->preview($actor, $scope, $state['run'], $state['epoch'], F::command());
+
+    expect($preview['blockers'])->toContain('BLOCKED_STAGED_RECORDS')
+        ->and(ProjectedPlot::query()->count())->toBe(0)
+        ->and(DB::table('wald_source_rows')->count())->toBe(0)
+        ->and(DB::table('wald_source_visits')->count())->toBe(0);
+});
+
 it('establishes a visit after a blank row without duplicating plot or source-row identity', function () {
     [$actor, $scope] = F::owner();
     B::binding($actor, $scope);

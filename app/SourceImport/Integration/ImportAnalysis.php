@@ -128,7 +128,7 @@ final class ImportAnalysis
             $rows = (new WorkbookStager)->rows($run, $inspection, $knowledge);
             $manifest = ['workbook_hash' => $run->workbook_hash, 'pins' => (new KnowledgeIdentity)->current(), 'knowledge' => $knowledge,
                 'selection_version' => ReviewedWorkbookSelection::VERSION, 'scope' => $scope->columns(), 'export_order' => $run->export_order, 'coverage' => $run->coverage,
-                'schema' => 'customerapp.wald-staging.v2', 'integration' => BackendStore::IDENTITY];
+                'schema' => 'customerapp.wald-staging.v3', 'integration' => BackendStore::IDENTITY];
 
             return (new ImportStore)->run($actor, $scope, 'analyse', (string) Str::uuid(), [$uuid, $token, 'stage'], function (User $fresh) use ($scope, $uuid, $token, $rows, $manifest, $contextId): array {
                 (new ImportKnowledge)->assertCurrent($fresh, $scope, $contextId, $manifest['knowledge']);

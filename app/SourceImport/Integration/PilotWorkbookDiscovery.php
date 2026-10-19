@@ -9,9 +9,9 @@ use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 /** Structural discovery only; the controlled dictionary remains the sole meaning authority. */
 final class PilotWorkbookDiscovery
 {
-    public const MAX_PARENT_ROWS = 5000;
+    public const MAX_PARENT_ROWS = 10000;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v7';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v8';
 
     public function inspect(object $upload, array $restoredRows = []): array
     {
@@ -52,6 +52,7 @@ final class PilotWorkbookDiscovery
         $sources = [];
         $included = 0;
         $excluded = 0;
+        $rowCount = 0;
         $ignoredRows = [];
         $reviewRows = [];
         $sawHierarchySignal = false;
@@ -62,7 +63,7 @@ final class PilotWorkbookDiscovery
                 || ! array_filter($cells, fn ($cell): bool => $cell->rawValue !== null && $cell->rawValue !== '')) {
                 continue;
             }
-            if (count($seen) >= self::MAX_PARENT_ROWS) {
+            if (++$rowCount > self::MAX_PARENT_ROWS) {
                 throw new ImportConflict('pilot_workbook_row_limit_exceeded');
             }
             foreach ($cells as $cell) {
@@ -70,15 +71,24 @@ final class PilotWorkbookDiscovery
                     throw new ImportConflict('unsafe_source_cell');
                 }
             }
-            $call = (string) ($cells[$callColumn]->rawValue ?? '');
-            if (! preg_match('/^[0-9]{1,100}$/D', $call) || ! preg_match('/[1-9]/', $call)) {
-                throw new ImportConflict('invalid_call_number');
-            }
-            if (isset($seen[$call])) {
-                throw new ImportConflict('duplicate_call_number');
-            }
-            $seen[$call] = true;
+            $rawCall = $cells[$callColumn]->rawValue ?? null;
+            $call = is_string($rawCall) || is_int($rawCall) ? trim((string) $rawCall) : '';
             $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
+            $hasCallType = is_scalar($rawCallType) && trim((string) $rawCallType) !== '';
+            if ($call === '') {
+                if ($hasCallType || ($rawCall !== null && (! is_string($rawCall) || trim($rawCall) !== ''))) {
+                    throw new ImportConflict('invalid_call_number');
+                }
+            } else {
+                if ((! is_string($rawCall) && ! is_int($rawCall)) || mb_strlen($call) > 100
+                    || preg_match('/[\x00-\x1f\x7f]/', $call)) {
+                    throw new ImportConflict('invalid_call_number');
+                }
+                if (isset($seen[$call])) {
+                    throw new ImportConflict('duplicate_call_number');
+                }
+                $seen[$call] = true;
+            }
             $rawIdentity = $cells[$identity['identity_column']]->rawValue ?? null;
             if ($identity['kind'] === MasterExportSiteIdentity::KIND
                 && (is_string($rawIdentity) || is_int($rawIdentity))
@@ -143,6 +153,8 @@ final class PilotWorkbookDiscovery
                 'warnings' => $identity['legacy'] ? ['LEGACY_SOURCE_IDENTITY'] : [],
                 'hash' => $hash,
                 'rows' => 0,
+                'calloff_rows' => 0,
+                'inventory_rows' => 0,
                 'hierarchy' => ['customer' => null, 'site' => null, 'valid_rows' => 0, 'invalid_rows' => 0, 'conflicting_rows' => 0],
                 'hierarchy_issues' => [],
                 'hierarchy_variants' => [],
@@ -181,14 +193,30 @@ final class PilotWorkbookDiscovery
                 $sources[$hash]['observed_site_names'][$siteName] = true;
             }
             $sources[$hash]['rows']++;
+            if ($call === '') {
+                $sources[$hash]['inventory_rows']++;
+            } else {
+                $sources[$hash]['calloff_rows']++;
+            }
             $included++;
         }
-        if ($seen === [] || ($sources === [] && $reviewRows === [])) {
+        if ($rowCount === 0 || ($sources === [] && $reviewRows === [])) {
             throw new ImportConflict('no_source_records');
         }
         $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
         $compositeMode = ! $identity['legacy'] && ($sawHierarchySignal
             || is_string($identityHeader) && trim($identityHeader) === 'Customer Number');
+        $inactiveHashes = [];
+        $inactiveRows = 0;
+        foreach ($sources as $hash => &$source) {
+            if ($source['calloff_rows'] === 0) {
+                $inactiveHashes[$hash] = true;
+                $inactiveRows += $source['rows'];
+                $source['requires_manual_review'] = true;
+                $source['warnings'][] = 'ZERO_CALLOFF_SITE_REQUIRES_REVIEW';
+            }
+        }
+        unset($source);
         ksort($sources, SORT_STRING);
         foreach ($sources as &$source) {
             $source['hierarchy_mode'] = $compositeMode ? 'COMPOSITE' : 'LEGACY_FLAT';
@@ -209,6 +237,7 @@ final class PilotWorkbookDiscovery
             if (count($source['observed_site_names']) > 1) {
                 $source['warnings'][] = 'SOURCE_SITE_NAME_VARIATION';
             }
+            $source['requires_manual_review'] = $source['calloff_rows'] === 0;
             if ($compositeMode && $source['hierarchy']['invalid_rows'] > 0) {
                 $source['warnings'][] = 'SOURCE_HIERARCHY_INVALID';
             }
@@ -229,9 +258,11 @@ final class PilotWorkbookDiscovery
             'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
             'sources' => array_values($sources),
             'source_count' => count($sources),
-            'record_count' => count($seen),
+            'record_count' => $rowCount,
             'included_count' => $included,
             'excluded_count' => $excluded,
+            'inactive_site_count' => count($inactiveHashes),
+            'inactive_row_count' => $inactiveRows,
             'dictionary_excluded_count' => $excluded,
             'office_excluded_count' => 0,
             'unclassified_count' => count(array_filter($reviewRows,

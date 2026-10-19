@@ -147,11 +147,21 @@ final class GroupedPlotObservations
     }
 
     private function row(int $number, ?int $parent, ?int $identityRow, ?string $code, ?string $plot,
-        ?string $call, ?string $type, ?string $issue, bool $excluded, string $kind): array
+        mixed $call, ?string $type, ?string $issue, bool $excluded, string $kind): array
     {
-        if ($call !== null && trim($call) !== '' && (! preg_match('/^[0-9]{1,100}$/D', $call) || ! preg_match('/[1-9]/', $call))) {
-            $issue ??= 'GROUPED_INVALID_CALL_NUMBER';
-            $call = null;
+        if ($call !== null) {
+            if (! is_string($call) && ! is_int($call)) {
+                $issue ??= 'GROUPED_INVALID_CALL_NUMBER';
+                $call = null;
+            } else {
+                $call = trim((string) $call);
+                if ($call === '') {
+                    $call = null;
+                } elseif (mb_strlen($call) > 100 || preg_match('/[\x00-\x1f\x7f]/', $call)) {
+                    $issue ??= 'GROUPED_INVALID_CALL_NUMBER';
+                    $call = null;
+                }
+            }
         }
         $parsed = (new CompositePlotHierarchy)->parse($plot, $code);
 

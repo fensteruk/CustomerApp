@@ -294,6 +294,23 @@ it('matches the exact master Customer Number prefix to the call-off Customer Num
         ->and($site['plots'][0]['has_calloff'])->toBeTrue();
 });
 
+it('accepts opaque string Call Nos as call-off identities', function (): void {
+    $office = pairedOffice();
+    $master = pairedXlsUpload(pairedMasterRows([
+        ['code' => 'C001', 'ref' => '7001', 'customer' => 'Vistry', 'site' => 'Alphington'],
+    ]), 'master.xls');
+    $calls = pairedXlsUpload(pairedCallRows([
+        ['call' => 'CALL-A/2026', 'code' => 'C001', 'plot' => 'Vistry - Alphington - Plot 7001'],
+    ]), 'calls.xls');
+
+    $report = (new PairedWorkbookAnalyse)->analyse($office, $master, $calls);
+    $site = collect($report['content']['sites'])->firstWhere('customer_code', 'C001');
+
+    expect($site['status'])->toBe('QUALIFYING')
+        ->and($site['call_count'])->toBe(1)
+        ->and($site['plots'][0]['call_rows'])->toBe([2]);
+});
+
 it('prefers a populated master Z customer code and does not treat it as MISC product quantity', function (): void {
     $office = pairedOffice();
     $master = pairedXlsUpload(pairedMasterRows([
@@ -309,6 +326,25 @@ it('prefers a populated master Z customer code and does not treat it as MISC pro
     expect($site['status'])->toBe('QUALIFYING')
         ->and($site['master_site_reference'])->toBe('NEW104')
         ->and($report['content']['summary']['product_conflicts_for_review'])->toBe(0);
+});
+
+it('shows the exact quantity for each conflicting product assertion', function (): void {
+    $office = pairedOffice();
+    $master = pairedXlsUpload(pairedMasterRows([
+        ['code' => 'C001', 'ref' => '7001', 'customer' => 'Vistry', 'site' => 'Alphington', 'quantity' => 2],
+    ]), 'master.xls');
+    $calls = pairedXlsUpload(pairedCallRows([
+        ['call' => 832, 'code' => 'C001', 'plot' => 'Vistry - Alphington - Plot 7001', 'quantity' => 1],
+    ]), 'calls.xls');
+
+    $report = (new PairedWorkbookAnalyse)->analyse($office, $master, $calls);
+    $conflict = $report['content']['product_conflicts'][0];
+
+    expect($conflict['product_code'])->toBe('VS')
+        ->and($conflict['assertions'])->toMatchArray([
+            ['source' => 'master', 'row' => 3, 'call' => null, 'quantity' => '2.000'],
+            ['source' => 'call_off', 'row' => 2, 'call' => '832', 'quantity' => '1.000'],
+        ]);
 });
 
 it('keeps exact customer-code and Plot Ref identity when descriptive Site Name labels vary', function (): void {

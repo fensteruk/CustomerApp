@@ -170,7 +170,8 @@ final class WorkbookStager
                 continue;
             }
             $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
-            $call = $raw('call_reference');
+            $rawCall = $raw('call_reference');
+            $call = is_string($rawCall) || is_int($rawCall) ? trim((string) $rawCall) : '';
             $plot = $raw('plot_reference');
             $sourceIdentityValue = $cells[$sourceIdentity['identity_column']]->rawValue ?? null;
             $siteName = (new MasterExportSiteIdentity)->siteName(
@@ -183,14 +184,19 @@ final class WorkbookStager
                     $issues[] = 'UNSAFE_CELL';
                 }
             }
-            if (! (is_int($call) || is_string($call)) || ! preg_match('/^[0-9]{1,100}$/D', (string) $call) || ! preg_match('/[1-9]/', (string) $call)) {
+            $hasCallType = is_scalar($callType) && trim((string) $callType) !== '';
+            if ($call === '') {
+                if ($hasCallType || ($rawCall !== null && (! is_string($rawCall) || trim($rawCall) !== ''))) {
+                    $issues[] = 'INVALID_CALL_NUMBER';
+                }
+            } elseif ((! is_string($rawCall) && ! is_int($rawCall)) || mb_strlen($call) > 100
+                || preg_match('/[\x00-\x1f\x7f]/', $call)) {
                 $issues[] = 'INVALID_CALL_NUMBER';
-            }
-            $call = (string) $call;
-            if (isset($seen[$call])) {
+            } elseif (isset($seen[$call])) {
                 $issues[] = 'DUPLICATE_CALL_NUMBER';
+            } else {
+                $seen[$call] = true;
             }
-            $seen[$call] = true;
             if ((! is_string($plot) && ! is_int($plot)) || trim((string) $plot) === '' || mb_strlen((string) $plot) > 200 || preg_match('/[\x00-\x1f\x7f<>]/', (string) $plot)) {
                 $issues[] = 'INVALID_PLOT';
             }
@@ -263,7 +269,7 @@ final class WorkbookStager
             );
             $hasVisit = is_scalar($effectiveType) && trim((string) $effectiveType) !== '';
             $complete = $hasVisit && isset($columns['completion']) ? $dictionary->completion($raw('completion')) : null;
-            if (! $type->isResolved()) {
+            if ($hasVisit && ! $type->isResolved()) {
                 $issues[] = 'UNRESOLVED_CALL_TYPE';
             }
             if ($complete !== null && ! $complete->isResolved()) {
@@ -314,7 +320,8 @@ final class WorkbookStager
                     }
                 }
             }
-            $facts = ['call_number' => $call, 'source_site' => $normalisedSite, 'site_kind' => $sourceIdentity['kind'],
+            $facts = ['record_type' => $call === '' ? 'BASE_PLOT_ROW' : 'SOURCE_ROW',
+                'call_number' => $call === '' ? null : $call, 'source_site' => $normalisedSite, 'site_kind' => $sourceIdentity['kind'],
                 'plot' => $plot, 'service' => $hasVisit && $type->isResolved() ? $type->value : null,
                 'call_type' => $hasVisit && $type->isResolved() ? $type->lookupValue : null,
                 'complete' => $complete?->isResolved() ? $complete->value : null, 'products' => $products,
@@ -337,7 +344,7 @@ final class WorkbookStager
                         'fragment' => $fragmentByColumn[$column]];
                 }
             }
-            $rows[] = ['canonical' => $excluded ? ['excluded' => true, 'call_number' => $call] : $facts, 'facts' => $facts, 'excluded' => $excluded,
+            $rows[] = ['canonical' => $excluded ? ['excluded' => true, 'call_number' => $call === '' ? null : $call] : $facts, 'facts' => $facts, 'excluded' => $excluded,
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),
                 'provenance' => ['sheet' => $sheet->id, 'row' => $rowNumber, 'raw_call_type' => $callType, 'raw_complete' => $raw('completion'),
                     'source_site_name' => $siteName,
