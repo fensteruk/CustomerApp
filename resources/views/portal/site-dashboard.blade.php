@@ -100,20 +100,41 @@
         @include('portal.call-offs._undo-notice')
         @if ($errors->any())<div class="admin-notice" role="alert">{{ $errors->first() }}</div>@endif
         @include('site-workspace.summary')
+        @php
+            $plotSearchValue = old('plot', $filters['plot']);
+            $plotSelectedStatuses = array_values(array_filter((array) old('overall_status', $filters['overall_status'])));
+            $plotSortValue = old('sort', $filters['sort']);
+            $plotFilterCount = (int) filled($plotSearchValue)
+                + (int) filled($filters['service'])
+                + (int) filled($filters['status'])
+                + count($plotSelectedStatuses)
+                + (int) $filters['show_completed']
+                + (int) ($plotSortValue !== 'plot_asc');
+            $plotFilterErrors = $errors->hasAny(['plot', 'overall_status', 'overall_status.*', 'sort']);
+        @endphp
         <section class="sw-section" aria-labelledby="plots-heading">
             <div class="sw-section-heading"><div><h2 id="plots-heading">Plots &amp; call-offs</h2><p class="sw-muted">Find a plot to view its services and dates.</p></div><span class="sw-badge">{{ $plots->total() }} {{ Str::plural('plot', $plots->total()) }} shown</span></div>
-            <form method="GET" action="{{ route('portal.site-dashboard') }}" class="sw-filters" aria-label="Find site plots">
-                <div class="sw-field"><label for="site-plot-search">Find a plot</label><input type="search" id="site-plot-search" name="plot" value="{{ $filters['plot'] }}" maxlength="100" placeholder="Plot number or reference"></div>
-                <div class="sw-field"><label for="site-plot-status">Plot status</label><select id="site-plot-status" name="overall_status[]"><option value="">All current plots</option>@foreach ($overallStatuses as $status)<option value="{{ $status->value }}" @selected(in_array($status->value, $filters['overall_status'], true))>{{ $status->label() }}</option>@endforeach</select></div>
-                <div class="sw-field"><label for="site-plot-sort">Sort plots</label><select id="site-plot-sort" name="sort"><option value="plot_asc" @selected($filters['sort'] === 'plot_asc')>Reference A–Z</option><option value="plot_desc" @selected($filters['sort'] === 'plot_desc')>Reference Z–A</option></select></div>
-                @if ($filters['service'])<input type="hidden" name="service" value="{{ $filters['service'] }}">@endif
-                @if ($filters['status'])<input type="hidden" name="status" value="{{ $filters['status'] }}">@endif
-                @if ($filters['show_completed'])<input type="hidden" name="show_completed" value="1">@endif
-                <button type="submit" class="sw-button sw-primary">Find plots</button>
-                @if ($activeFilterCount)<a href="{{ route('portal.site-dashboard') }}" class="sw-button">Clear filters</a>@endif
-            </form>
+            <details class="sw-filter-disclosure" data-plot-filters @if ($plotFilterErrors) open @endif>
+                <summary>
+                    <svg class="sw-filter-search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m16.5 16.5 4 4"/></svg>
+                    <span class="sw-filter-trigger-copy"><strong>Search &amp; Filters</strong><span>{{ $plotFilterCount ? $plotFilterCount.' '.Str::plural('setting', $plotFilterCount).' active' : 'Current plots · Reference A–Z' }}</span></span>
+                    <svg class="sw-filter-arrow" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 7.5 5 5 5-5"/></svg>
+                </summary>
+                <div class="sw-filter-panel">
+                    @if ($plotFilterErrors)<p class="sw-filter-error" role="alert">{{ $errors->first() }}</p>@endif
+                    <form method="GET" action="{{ route('portal.site-dashboard') }}" class="sw-filters" aria-label="Find site plots">
+                        <div class="sw-field"><label for="site-plot-search">Find a plot</label><input type="search" id="site-plot-search" name="plot" value="{{ $plotSearchValue }}" maxlength="100" placeholder="Plot number or reference"></div>
+                        <div class="sw-field"><label for="site-plot-status">Plot status</label><select id="site-plot-status" name="overall_status[]"><option value="">All current plots</option>@foreach ($overallStatuses as $status)<option value="{{ $status->value }}" @selected(in_array($status->value, $plotSelectedStatuses, true))>{{ $status->label() }}</option>@endforeach</select></div>
+                        <div class="sw-field"><label for="site-plot-sort">Sort plots</label><select id="site-plot-sort" name="sort"><option value="plot_asc" @selected($plotSortValue === 'plot_asc')>Reference A–Z</option><option value="plot_desc" @selected($plotSortValue === 'plot_desc')>Reference Z–A</option></select></div>
+                        @if ($filters['service'])<input type="hidden" name="service" value="{{ $filters['service'] }}">@endif
+                        @if ($filters['status'])<input type="hidden" name="status" value="{{ $filters['status'] }}">@endif
+                        @if ($filters['show_completed'])<input type="hidden" name="show_completed" value="1">@endif
+                        <button type="submit" class="sw-button sw-primary">Find plots</button>
+                        @if ($plotFilterCount)<a href="{{ route('portal.site-dashboard') }}" class="sw-button">Clear filters</a>@endif
+                    </form>
+                </div>
+            </details>
             <p class="sw-muted">Fully completed plots are hidden by default. Use Show Completed in Filters to include them.</p>
-            @if ($activeFilterCount)<p class="sw-muted" role="status">{{ $activeFilterCount }} {{ Str::plural('filter', $activeFilterCount) }} active</p>@endif
             @if ($plots->isNotEmpty())
                 <form method="POST" action="{{ route('portal.call-offs.dashboard-selection') }}" x-data="{ selected: [] }">
                     @csrf

@@ -144,6 +144,92 @@ it('keeps search and status filters scoped and paginated on both site routes', f
         ->assertViewHas('plots', fn ($plots) => $plots->count() === 3 && ! $plots->pluck('plot.plot_reference')->contains('MATCH-01'));
 });
 
+it('keeps the Site Plot search controls collapsed by default with Table and Cards outside', function (): void {
+    $site = Site::factory()->create();
+    workspacePlot($site);
+    $user = workspaceSiteUser($site);
+
+    $external = $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.site-dashboard'))
+        ->assertOk()
+        ->assertSee('Search &amp; Filters', false)
+        ->assertSee('Current plots · Reference A–Z')
+        ->assertSee('Fully completed plots are hidden by default.')
+        ->assertSee('aria-label="Plot view"', false);
+    $office = $this->actingAs(workspaceOffice())
+        ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
+        ->assertOk()
+        ->assertSee('Search &amp; Filters', false)
+        ->assertSee('All plots · Reference A–Z')
+        ->assertSee('aria-label="Plot view"', false);
+
+    foreach ([$external->getContent(), $office->getContent()] as $content) {
+        expect($content)->not->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/')
+            ->and(strpos($content, 'aria-label="Plot view"'))->toBeGreaterThan(strpos($content, 'data-plot-filters'));
+    }
+});
+
+it('summarises and preserves Site Plot search status and sort query values in both disclosures', function (): void {
+    $site = Site::factory()->create();
+    $plot = workspacePlot($site, 'MATCH-033');
+    workspaceRequest($plot, CallOffRequestStatus::AwaitingFenster);
+    $user = workspaceSiteUser($site);
+    $query = ['overall_status' => ['call_offs_in_progress'], 'sort' => 'plot_desc'];
+
+    $external = $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.site-dashboard', ['plot' => 'MATCH'] + $query))
+        ->assertOk()
+        ->assertSee('3 settings active')
+        ->assertSee('name="plot" value="MATCH"', false)
+        ->assertSee('value="call_offs_in_progress" selected', false)
+        ->assertSee('value="plot_desc" selected', false)
+        ->assertSee('Clear filters');
+
+    $office = $this->actingAs(workspaceOffice())
+        ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots', 'search' => 'MATCH'] + $query))
+        ->assertOk()
+        ->assertSee('3 settings active')
+        ->assertSee('name="search" maxlength="100" value="MATCH"', false)
+        ->assertSee('value="call_offs_in_progress" selected', false)
+        ->assertSee('value="plot_desc" selected', false)
+        ->assertSee('Clear');
+
+    expect($external->getContent())->not->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/')
+        ->and($office->getContent())->not->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
+});
+
+it('opens the relevant Site Plot disclosure after validation errors', function (): void {
+    $site = Site::factory()->create();
+    workspacePlot($site);
+    $user = workspaceSiteUser($site);
+
+    $externalRedirect = $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->from(route('portal.site-dashboard'))
+        ->get(route('portal.site-dashboard', ['plot' => 'RETAINED', 'sort' => 'numeric']))
+        ->assertRedirect(route('portal.site-dashboard'));
+    $external = $this->followRedirects($externalRedirect)
+        ->assertOk()
+        ->assertSee('The selected sort is invalid.')
+        ->assertSee('name="plot" value="RETAINED"', false)
+        ->assertSee('2 settings active');
+    expect($external->getContent())->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
+
+    $officeUrl = route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']);
+    $officeRedirect = $this->actingAs(workspaceOffice())
+        ->from($officeUrl)
+        ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots', 'search' => 'RETAINED', 'sort' => 'numeric']))
+        ->assertRedirect($officeUrl);
+    $office = $this->followRedirects($officeRedirect)
+        ->assertOk()
+        ->assertSee('The selected sort is invalid.')
+        ->assertSee('name="search" maxlength="100" value="RETAINED"', false)
+        ->assertSee('2 settings active');
+    expect($office->getContent())->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
+});
+
 it('renders the shared Table and Cards choices from one page of authorised plot data', function (): void {
     $site = Site::factory()->create(['name' => 'Selector Site']);
     $plot = workspacePlot($site, '033');
