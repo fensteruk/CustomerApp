@@ -72,6 +72,7 @@ class OfficeAdministrationPageController extends Controller
             'page' => ['nullable', 'integer', 'min:1'],
             'overall_status' => ['nullable', 'array', 'max:5'],
             'overall_status.*' => ['nullable', 'string', Rule::enum(PlotOverallStatus::class)],
+            'sort' => ['nullable', 'in:plot_asc,plot_desc'],
         ]);
         $section = $input['section'] ?? 'overview';
         $input['overall_status'] = array_values(array_filter($input['overall_status'] ?? []));
@@ -80,6 +81,7 @@ class OfficeAdministrationPageController extends Controller
             'plot' => $input['search'] ?? '',
             'overall_status' => $input['overall_status'] ?? [],
             'show_completed' => true,
+            'sort' => $input['sort'] ?? 'plot_asc',
         ]);
         $items = match ($section) {
             'plots' => $siteWorkspace['plots'],
@@ -93,7 +95,7 @@ class OfficeAdministrationPageController extends Controller
             $items['runs']->withQueryString();
         }
 
-        return view('office.sites.show', $siteWorkspace + ['site' => $record, 'section' => $section, 'items' => $items, 'search' => $input['search'] ?? '', 'selectedStatuses' => $input['overall_status'] ?? []]);
+        return view('office.sites.show', $siteWorkspace + ['site' => $record, 'section' => $section, 'items' => $items, 'search' => $input['search'] ?? '', 'selectedStatuses' => $input['overall_status'] ?? [], 'plotSort' => $input['sort'] ?? 'plot_asc']);
     }
 
     public function siteForm(Request $request, CustomerOrganisation $customerOrganisation, OfficeAdministrationQueryService $queries, ?Site $site = null): View

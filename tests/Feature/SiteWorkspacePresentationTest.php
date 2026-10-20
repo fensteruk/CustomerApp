@@ -144,6 +144,84 @@ it('keeps search and status filters scoped and paginated on both site routes', f
         ->assertViewHas('plots', fn ($plots) => $plots->count() === 3 && ! $plots->pluck('plot.plot_reference')->contains('MATCH-01'));
 });
 
+it('renders the shared Table and Cards choices from one page of authorised plot data', function (): void {
+    $site = Site::factory()->create(['name' => 'Selector Site']);
+    $plot = workspacePlot($site, '033');
+    workspaceRequest($plot, CallOffRequestStatus::AwaitingFenster);
+    $user = workspaceSiteUser($site);
+
+    $external = $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.site-dashboard'))
+        ->assertOk()
+        ->assertSee('aria-label="Plot view"', false)
+        ->assertSee('data-default-view="cards"', false)
+        ->assertSee('data-plot-view="table"', false)
+        ->assertSee('data-plot-view="cards"', false)
+        ->assertSeeInOrder(['Cavity Closers', 'Windows', 'Snagging', 'CML', 'Overall status', 'Actions'])
+        ->assertSee('Called Off — Awaiting Date')
+        ->assertSee(route('portal.plots.show', $plot), false)
+        ->assertSee(route('portal.call-offs.create', ['plots' => [$plot->uuid]]), false)
+        ->assertSee('<noscript>', false)
+        ->assertDontSee('Bifold')
+        ->assertDontSee('PRIVATE-SOURCE-033');
+
+    expect($external->getContent())->toContain('<template x-if="view === \'table\'">')
+        ->and($external->getContent())->toContain('<template x-if="view === \'cards\'">')
+        ->and($external->getContent())->toContain('try { window.localStorage.setItem(storageKey, next); } catch (error) {}')
+        ->and($external->getContent())->toContain("['table', 'cards'].includes(stored)");
+
+    $office = $this->actingAs(workspaceOffice())
+        ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
+        ->assertOk()
+        ->assertSee('aria-label="Inspect plot information for Plot 033"', false)
+        ->assertSee('Inspect plot information')
+        ->assertSee('PRIVATE-SOURCE-033')
+        ->assertSee('Inspect source services')
+        ->assertSee('No service information supplied.');
+
+    expect(substr_count($office->getContent(), 'name="plots[]"'))->toBe(0);
+});
+
+it('uses the stable site total for the 100 plot Table default without overriding valid stored choices', function (): void {
+    $site = Site::factory()->create();
+    ProjectedPlot::factory()->count(99)->create(['site_id' => $site->id]);
+    $user = workspaceSiteUser($site);
+
+    $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.site-dashboard', ['plot' => 'does-not-match']))
+        ->assertOk()->assertDontSee('data-default-view=', false);
+
+    $cardsDefault = $this->get(route('portal.site-dashboard'))->assertOk();
+    $cardsDefault->assertSee('data-default-view="cards"', false);
+
+    ProjectedPlot::factory()->create(['site_id' => $site->id, 'plot_reference' => 'APT 100']);
+    $tableDefault = $this->get(route('portal.site-dashboard', ['plot' => 'APT 100']))->assertOk();
+    $tableDefault->assertSee('data-default-view="table"', false)
+        ->assertViewHas('plots', fn ($plots) => $plots->total() === 1);
+});
+
+it('sorts plot references as strings in both directions and allowlists the request value', function (): void {
+    $site = Site::factory()->create();
+    foreach (['033', 'Com 4', 'APT 03'] as $reference) {
+        workspacePlot($site, $reference);
+    }
+    $user = workspaceSiteUser($site);
+
+    $ascending = $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.site-dashboard', ['sort' => 'plot_asc']))
+        ->assertOk()->assertViewHas('filters', fn (array $filters): bool => $filters['sort'] === 'plot_asc')
+        ->viewData('plots')->pluck('plot.plot_reference')->all();
+    $descending = $this->get(route('portal.site-dashboard', ['sort' => 'plot_desc']))
+        ->assertOk()->assertViewHas('filters', fn (array $filters): bool => $filters['sort'] === 'plot_desc')
+        ->viewData('plots')->pluck('plot.plot_reference')->all();
+
+    expect($ascending)->toBe(['033', 'APT 03', 'Com 4'])
+        ->and($descending)->toBe(['Com 4', 'APT 03', '033']);
+    $this->get(route('portal.site-dashboard', ['sort' => 'numeric']))->assertRedirect();
+});
+
 it('denies unassigned cross-customer inactive-user and Office-route access without changing policy', function (): void {
     $site = Site::factory()->create();
     $user = workspaceSiteUser($site);

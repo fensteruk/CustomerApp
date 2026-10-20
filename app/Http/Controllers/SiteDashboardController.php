@@ -30,6 +30,7 @@ class SiteDashboardController extends Controller
             'overall_status' => ['nullable', 'array', 'max:5'],
             'overall_status.*' => ['nullable', 'string', Rule::enum(PlotOverallStatus::class)],
             'show_completed' => ['nullable', 'boolean'],
+            'sort' => ['nullable', 'in:plot_asc,plot_desc'],
         ]);
 
         $filters = [
@@ -38,6 +39,7 @@ class SiteDashboardController extends Controller
             'status' => $filters['status'] ?? '',
             'overall_status' => array_values(array_unique(array_filter($filters['overall_status'] ?? []))),
             'show_completed' => (bool) ($filters['show_completed'] ?? false),
+            'sort' => $filters['sort'] ?? 'plot_asc',
         ];
 
         $activeFilterCount = (int) filled($filters['plot'])

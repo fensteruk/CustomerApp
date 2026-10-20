@@ -22,7 +22,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
  */
 class PlotOverviewQueryService
 {
-    /** @param array{plot?: string, service?: string, status?: string, overall_status?: array<int, string>, show_completed?: bool} $filters */
+    /** @param array{plot?: string, service?: string, status?: string, overall_status?: array<int, string>, show_completed?: bool, sort?: string} $filters */
     public function paginate(Site $site, array $filters): LengthAwarePaginator
     {
         $query = ProjectedPlot::query()
@@ -89,8 +89,11 @@ class PlotOverviewQueryService
             });
         }
 
+        $direction = ($filters['sort'] ?? 'plot_asc') === 'plot_desc' ? 'desc' : 'asc';
+
         return $query
-            ->orderBy('plot_reference')
+            ->orderBy('plot_reference', $direction)
+            ->orderBy('id')
             ->paginate(15)
             ->withQueryString()
             ->through(fn (ProjectedPlot $plot): PlotOverview => $this->present($plot));

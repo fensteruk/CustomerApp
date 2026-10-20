@@ -52,6 +52,14 @@
                     </select>
                 </div>
 
+                <div>
+                    <label for="sidebar-plot-sort" class="sidebar-label">Plot order</label>
+                    <select id="sidebar-plot-sort" name="sort" class="sidebar-input">
+                        <option value="plot_asc" @selected($filters['sort'] === 'plot_asc')>Reference A–Z</option>
+                        <option value="plot_desc" @selected($filters['sort'] === 'plot_desc')>Reference Z–A</option>
+                    </select>
+                </div>
+
                 <details @if ($filters['status'] !== '') open @endif class="rounded-lg border border-slate-700 bg-slate-800/40 p-3">
                     <summary class="min-h-11 cursor-pointer text-sm font-bold text-slate-100">Advanced filters</summary>
                     <div class="mt-3">
@@ -97,6 +105,7 @@
             <form method="GET" action="{{ route('portal.site-dashboard') }}" class="sw-filters" aria-label="Find site plots">
                 <div class="sw-field"><label for="site-plot-search">Find a plot</label><input type="search" id="site-plot-search" name="plot" value="{{ $filters['plot'] }}" maxlength="100" placeholder="Plot number or reference"></div>
                 <div class="sw-field"><label for="site-plot-status">Plot status</label><select id="site-plot-status" name="overall_status[]"><option value="">All current plots</option>@foreach ($overallStatuses as $status)<option value="{{ $status->value }}" @selected(in_array($status->value, $filters['overall_status'], true))>{{ $status->label() }}</option>@endforeach</select></div>
+                <div class="sw-field"><label for="site-plot-sort">Sort plots</label><select id="site-plot-sort" name="sort"><option value="plot_asc" @selected($filters['sort'] === 'plot_asc')>Reference A–Z</option><option value="plot_desc" @selected($filters['sort'] === 'plot_desc')>Reference Z–A</option></select></div>
                 @if ($filters['service'])<input type="hidden" name="service" value="{{ $filters['service'] }}">@endif
                 @if ($filters['status'])<input type="hidden" name="status" value="{{ $filters['status'] }}">@endif
                 @if ($filters['show_completed'])<input type="hidden" name="show_completed" value="1">@endif
@@ -108,13 +117,13 @@
             @if ($plots->isNotEmpty())
                 <form method="POST" action="{{ route('portal.call-offs.dashboard-selection') }}" x-data="{ selected: [] }">
                     @csrf
-                    @include('site-workspace.cards')
+                    @include('site-workspace.plot-list')
                     <div class="sw-selection"><p aria-live="polite"><strong x-text="selected.length">0</strong> <span x-text="selected.length === 1 ? 'plot selected' : 'plots selected'">plots selected</span> <span class="sw-muted">· This page</span></p><button type="submit" class="sw-button sw-primary" :disabled="selected.length === 0">Call Off Selected</button></div>
                 </form>
             @else
                 <div class="empty-state mt-5">
                     @if (! $hasProjectedPlots)<h3 class="section-title">No plots yet</h3><p>There are no plots available for this assigned site yet.</p>
-                    @elseif (! $filters['show_completed'] && collect($filters)->except('show_completed')->filter()->isEmpty())<h3 class="section-title">All current plots are fully completed</h3><p>Use Show Completed to view them.</p>
+                    @elseif (! $filters['show_completed'] && collect($filters)->except(['show_completed', 'sort'])->filter()->isEmpty())<h3 class="section-title">All current plots are fully completed</h3><p>Use Show Completed to view them.</p>
                     @else<h3 class="section-title">No plots match your filters</h3><p>Try changing or clearing the filters to see other plots for this assigned site.</p>@endif
                 </div>
             @endif
