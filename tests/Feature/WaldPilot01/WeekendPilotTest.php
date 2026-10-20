@@ -293,9 +293,14 @@ it('renders an exact minimal legacy manifest at review and committed states with
 
         $summary = $workflow->summary($office, $pilot['upload']);
         expect(array_keys($summary['sources'][0]))->toBe([
-            'hash', 'kind', 'identity', 'rows', 'customer_code', 'site_name', 'observed_site_names',
+            'hash', 'kind', 'identity', 'rows', 'calloff_rows', 'inventory_rows', 'requires_manual_review',
+            'customer_code', 'site_name', 'observed_site_names',
             'warnings', 'legacy_pre_customer_code', 'identity_label', 'binding', 'draft',
         ])
+            // The deliberately old manifest has no row-kind metrics, so the compatibility presenter defaults them.
+            ->and($summary['sources'][0]['calloff_rows'])->toBe(0)
+            ->and($summary['sources'][0]['inventory_rows'])->toBe(0)
+            ->and($summary['sources'][0]['requires_manual_review'])->toBeFalse()
             ->and($summary['sources'][0]['customer_code'])->toBeNull()
             ->and($summary['sources'][0]['identity'])->toBe('LEGACY-SOURCE-001')
             ->and($summary['sources'][0]['identity_label'])->toBe('Legacy source identity')
