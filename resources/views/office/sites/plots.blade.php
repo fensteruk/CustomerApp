@@ -1,8 +1,22 @@
 @php
     $plotSort = $plotSort ?? 'plot_asc';
-    $plotSearchValue = old('search', $search);
-    $plotSelectedStatuses = array_values(array_filter((array) old('overall_status', $selectedStatuses)));
-    $plotSortValue = old('sort', $plotSort);
+    $oldPlotSearch = old('search', $search);
+    $plotSearchValue = is_string($oldPlotSearch) ? $oldPlotSearch : $search;
+    $allowedPlotStatuses = array_map(
+        static fn (App\Enums\PlotOverallStatus $status): string => $status->value,
+        App\Enums\PlotOverallStatus::cases(),
+    );
+    $oldPlotStatuses = old('overall_status', $selectedStatuses);
+    $plotSelectedStatuses = is_array($oldPlotStatuses)
+        ? array_values(array_filter(
+            $oldPlotStatuses,
+            static fn (mixed $status): bool => is_string($status) && in_array($status, $allowedPlotStatuses, true),
+        ))
+        : $selectedStatuses;
+    $oldPlotSort = old('sort', $plotSort);
+    $plotSortValue = is_string($oldPlotSort) && in_array($oldPlotSort, ['plot_asc', 'plot_desc'], true)
+        ? $oldPlotSort
+        : $plotSort;
     $plotFilterCount = (int) filled($plotSearchValue)
         + count($plotSelectedStatuses)
         + (int) ($plotSortValue !== 'plot_asc');

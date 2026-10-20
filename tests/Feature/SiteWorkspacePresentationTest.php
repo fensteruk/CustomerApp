@@ -214,7 +214,7 @@ it('opens the relevant Site Plot disclosure after validation errors', function (
         ->assertOk()
         ->assertSee('The selected sort is invalid.')
         ->assertSee('name="plot" value="RETAINED"', false)
-        ->assertSee('2 settings active');
+        ->assertSee('1 setting active');
     expect($external->getContent())->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
 
     $officeUrl = route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']);
@@ -226,7 +226,35 @@ it('opens the relevant Site Plot disclosure after validation errors', function (
         ->assertOk()
         ->assertSee('The selected sort is invalid.')
         ->assertSee('name="search" maxlength="100" value="RETAINED"', false)
-        ->assertSee('2 settings active');
+        ->assertSee('1 setting active');
+    expect($office->getContent())->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
+});
+
+it('safely re-renders array-shaped Site Plot search input after validation', function (): void {
+    $site = Site::factory()->create();
+    workspacePlot($site);
+    $user = workspaceSiteUser($site);
+
+    $externalRedirect = $this->actingAs($user)
+        ->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->from(route('portal.site-dashboard'))
+        ->get(route('portal.site-dashboard', ['plot' => ['x']]))
+        ->assertRedirect(route('portal.site-dashboard'));
+    $external = $this->followRedirects($externalRedirect)
+        ->assertOk()
+        ->assertSee('The plot field must be a string.')
+        ->assertSee('name="plot" value=""', false);
+    expect($external->getContent())->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
+
+    $officeUrl = route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']);
+    $officeRedirect = $this->actingAs(workspaceOffice())
+        ->from($officeUrl)
+        ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots', 'search' => ['x']]))
+        ->assertRedirect($officeUrl);
+    $office = $this->followRedirects($officeRedirect)
+        ->assertOk()
+        ->assertSee('The search field must be a string.')
+        ->assertSee('name="search" maxlength="100" value=""', false);
     expect($office->getContent())->toMatch('/<details[^>]*data-plot-filters[^>]*\bopen\b/');
 });
 

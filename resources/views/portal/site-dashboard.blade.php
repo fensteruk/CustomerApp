@@ -101,9 +101,23 @@
         @if ($errors->any())<div class="admin-notice" role="alert">{{ $errors->first() }}</div>@endif
         @include('site-workspace.summary')
         @php
-            $plotSearchValue = old('plot', $filters['plot']);
-            $plotSelectedStatuses = array_values(array_filter((array) old('overall_status', $filters['overall_status'])));
-            $plotSortValue = old('sort', $filters['sort']);
+            $oldPlotSearch = old('plot', $filters['plot']);
+            $plotSearchValue = is_string($oldPlotSearch) ? $oldPlotSearch : $filters['plot'];
+            $allowedPlotStatuses = array_map(
+                static fn (App\Enums\PlotOverallStatus $status): string => $status->value,
+                $overallStatuses,
+            );
+            $oldPlotStatuses = old('overall_status', $filters['overall_status']);
+            $plotSelectedStatuses = is_array($oldPlotStatuses)
+                ? array_values(array_filter(
+                    $oldPlotStatuses,
+                    static fn (mixed $status): bool => is_string($status) && in_array($status, $allowedPlotStatuses, true),
+                ))
+                : $filters['overall_status'];
+            $oldPlotSort = old('sort', $filters['sort']);
+            $plotSortValue = is_string($oldPlotSort) && in_array($oldPlotSort, ['plot_asc', 'plot_desc'], true)
+                ? $oldPlotSort
+                : $filters['sort'];
             $plotFilterCount = (int) filled($plotSearchValue)
                 + (int) filled($filters['service'])
                 + (int) filled($filters['status'])
