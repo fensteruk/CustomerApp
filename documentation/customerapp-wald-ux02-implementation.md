@@ -68,8 +68,10 @@ read models, authorisation and routes. It does not restore obsolete business log
   `cards.blade.php` and the new `table.blade.php`.
 
 Both routes continue through `SiteWorkspaceQueryService` and `PlotOverviewQueryService` and use
-one 15-record paginator. The existing bounded-query test also passes with hundreds of fictional
-Plots.
+one 15-record paginator. The original bounded-query regression test grows to 30 fictional Plots.
+Independent Backend QA separately measured a 130-Plot Site: 15 records per page across nine
+pages, with exactly four queries—the same count as a one-Plot Site. Its independent focused run
+also passed 13 tests with 122 assertions.
 
 ## Status and source accuracy
 
