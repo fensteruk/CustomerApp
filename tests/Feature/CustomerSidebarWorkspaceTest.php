@@ -143,7 +143,7 @@ it('filters by the established overall plot statuses without changing the status
 
     $this->get('/portal/site-dashboard?overall_status%5B0%5D=call_offs_in_progress')
         ->assertOk()
-        ->assertSee('1 filter active');
+        ->assertSee('1 setting active');
 
     $completedItems = app(PlotOverviewQueryService::class)
         ->paginate($site, ['overall_status' => ['fully_completed']])
