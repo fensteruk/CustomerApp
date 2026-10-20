@@ -866,6 +866,8 @@ it('keeps zero-call sites visible for Office manual review instead of silently d
 
     $this->actingAs($office)->get(route('office.workspace.pilot-import.show', $pilot['upload']))
         ->assertOk()->assertSee('No call-off activity found.')
+        ->assertSee('0 call-off rows')
+        ->assertSee('1 inventory-only rows')
         ->assertSee('Review this source site manually before including its plots.');
 });
 

@@ -297,10 +297,10 @@ it('renders an exact minimal legacy manifest at review and committed states with
             'customer_code', 'site_name', 'observed_site_names',
             'warnings', 'legacy_pre_customer_code', 'identity_label', 'binding', 'draft',
         ])
-            // The deliberately old manifest has no row-kind metrics, so the compatibility presenter defaults them.
-            ->and($summary['sources'][0]['calloff_rows'])->toBe(0)
-            ->and($summary['sources'][0]['inventory_rows'])->toBe(0)
-            ->and($summary['sources'][0]['requires_manual_review'])->toBeFalse()
+            // The deliberately old manifest has no row-kind metrics, so their meaning remains unknown.
+            ->and($summary['sources'][0]['calloff_rows'])->toBeNull()
+            ->and($summary['sources'][0]['inventory_rows'])->toBeNull()
+            ->and($summary['sources'][0]['requires_manual_review'])->toBeNull()
             ->and($summary['sources'][0]['customer_code'])->toBeNull()
             ->and($summary['sources'][0]['identity'])->toBe('LEGACY-SOURCE-001')
             ->and($summary['sources'][0]['identity_label'])->toBe('Legacy source identity')
@@ -311,6 +311,9 @@ it('renders an exact minimal legacy manifest at review and committed states with
             ->assertSee('Legacy source identity LEGACY-SOURCE-001')
             ->assertSee('Retained pre-CustomerCode record')
             ->assertSee('Retained pre-CustomerCode selection')
+            ->assertDontSee('0 call-off rows')
+            ->assertDontSee('0 inventory-only rows')
+            ->assertDontSee('No call-off activity found.')
             ->assertDontSee('Source CustomerCode:')
             ->assertDontSee('Undefined array key');
 
