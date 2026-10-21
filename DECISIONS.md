@@ -2305,3 +2305,31 @@ automatic qualification, not hidden from the manual review stage.
 
 Reason: Office needs to inspect the known zero-call sites during the Wald
 review instead of losing them before Nick can decide how to handle them.
+
+---
+
+## DEC-087
+
+Date: 21 October 2026
+
+Decision: The shared site plot listing (Site User dashboard and Office Site
+Details) opens in the Table view for every site and at every screen width.
+This supersedes the UX02 behaviour that opened Cards below 100 plots. A valid
+Table or Cards choice the user has already saved in that browser is still
+honoured, and Cards remains one click away. The Plot column stays visible
+while the table scrolls horizontally, and from tablet width upward the
+Actions column stays visible too, so Call Off is reachable without scrolling
+sideways at desktop width.
+
+When New Call Off opens with plots already chosen from the dashboard, it
+shows those plots as a short summary and folds the full plot list behind
+"Change plots", so Services and requested dates follow immediately. When no
+plots are pre-selected, the plot list opens as before in a compact grid.
+Selection, validation, eligibility and submission rules are unchanged.
+
+Reason: Josh asked for Table as the default view and found the full plot list
+on New Call Off superfluous: after choosing a plot on the dashboard the user
+had to scroll past every plot on the site to reach the next step.
+
+This decision authorises local implementation and testing on a feature branch
+only; it does not authorise a merge or push to `main`, or a deployment.

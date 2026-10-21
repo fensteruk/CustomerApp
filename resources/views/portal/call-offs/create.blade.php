@@ -9,14 +9,22 @@
         <ol class="mt-7 grid gap-2 text-sm font-bold text-slate-700 sm:grid-cols-2" aria-label="Call off progress"><li class="rounded bg-sky-700 px-3 py-2 text-white">1. Select combinations</li><li class="rounded bg-slate-100 px-3 py-2">2. Confirm call-off</li></ol>
         <form method="POST" action="{{ route('portal.call-offs.matrix') }}" class="mt-8 space-y-8" x-ref="selectionForm" @submit.prevent="openConfirmation()">
             @csrf
-            <fieldset class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><legend class="text-lg font-bold text-slate-900">Plots</legend><p class="mt-1 text-sm text-slate-600">Selection is limited to this page and this assigned site.</p>
-                <div class="mt-5 grid gap-3 sm:grid-cols-2">
-                    @forelse ($plots as $plot)
-                        <label @class(['flex min-h-14 items-center gap-3 rounded-lg border p-4 text-sm font-bold', 'border-slate-200 text-slate-500' => $plot->is_completed, 'border-slate-200 text-slate-900' => ! $plot->is_completed])><input type="checkbox" name="plots[]" value="{{ $plot->uuid }}" class="h-5 w-5 rounded border-slate-300 text-sky-700 focus:ring-sky-700" x-model="selectedPlots" @checked(in_array($plot->uuid, old('plots', $selectedPlotUuids), true)) @disabled($plot->is_completed)><span>{{ $plot->plot_reference }} @if ($plot->is_completed)<span class="font-normal">(fully completed — not available)</span>@endif</span></label>
-                    @empty
-                        <div class="empty-state sm:col-span-2"><h2 class="text-lg font-bold text-slate-900">No plots available</h2><p class="mt-2 text-sm text-slate-700">There are no projected plots for this site yet.</p></div>
-                    @endforelse
-                </div>
+            @php($initialPlotUuids = old('plots', $selectedPlotUuids))
+            <fieldset class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><legend class="text-lg font-bold text-slate-900">Plots</legend>
+                @if ($initialPlotUuids !== [])
+                    <p class="mt-2 font-bold text-slate-900 [overflow-wrap:anywhere]" data-selected-plot-summary x-data="{ plotOrder: @js($plots->map(fn ($plot) => [$plot->uuid, $plot->plot_reference])->values()) }" x-text="plotOrder.filter(([uuid]) => selectedPlots.includes(uuid)).map(([, label]) => label).join(', ') || 'No plots selected'">{{ $plots->whereIn('uuid', $initialPlotUuids)->pluck('plot_reference')->join(', ') }}</p>
+                @endif
+                <details class="mt-3" data-plot-choices @if ($initialPlotUuids === []) open @endif>
+                    <summary class="flex min-h-11 cursor-pointer items-center text-sm font-bold text-sky-800">{{ $initialPlotUuids === [] ? 'Choose plots' : 'Change plots' }}</summary>
+                    <p class="mt-1 text-sm text-slate-600">Selection is limited to this page and this assigned site.</p>
+                    <div class="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
+                        @forelse ($plots as $plot)
+                            <label @class(['flex min-h-11 min-w-0 items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold [overflow-wrap:anywhere]', 'border-slate-200 text-slate-500' => $plot->is_completed, 'border-slate-200 text-slate-900' => ! $plot->is_completed])><input type="checkbox" name="plots[]" value="{{ $plot->uuid }}" class="h-5 w-5 shrink-0 rounded border-slate-300 text-sky-700 focus:ring-sky-700" x-model="selectedPlots" @checked(in_array($plot->uuid, $initialPlotUuids, true)) @disabled($plot->is_completed)><span class="min-w-0">{{ $plot->plot_reference }} @if ($plot->is_completed)<span class="font-normal">(fully completed — not available)</span>@endif</span></label>
+                        @empty
+                            <div class="empty-state col-span-full"><h2 class="text-lg font-bold text-slate-900">No plots available</h2><p class="mt-2 text-sm text-slate-700">There are no projected plots for this site yet.</p></div>
+                        @endforelse
+                    </div>
+                </details>
                 <p class="mt-4 text-sm font-bold text-slate-800"><span x-text="selectedPlots.length">0</span> <span x-text="selectedPlots.length === 1 ? 'plot selected' : 'plots selected'">plots selected</span></p></fieldset>
             <fieldset class="rounded-lg border border-slate-200 bg-white p-5 shadow-sm"><legend class="text-lg font-bold text-slate-900">Services and requested dates</legend><p class="mt-1 text-sm text-slate-600">Each date applies to every selected plot. You can exclude individual combinations next.</p>
                 <div class="mt-5 grid gap-4 sm:grid-cols-2">

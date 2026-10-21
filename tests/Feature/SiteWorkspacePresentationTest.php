@@ -269,7 +269,7 @@ it('renders the shared Table and Cards choices from one page of authorised plot 
         ->get(route('portal.site-dashboard'))
         ->assertOk()
         ->assertSee('aria-label="Plot view"', false)
-        ->assertSee('data-default-view="cards"', false)
+        ->assertSee('data-default-view="table"', false)
         ->assertSee('data-plot-view="table"', false)
         ->assertSee('data-plot-view="cards"', false)
         ->assertSeeInOrder(['Cavity Closers', 'Windows', 'Snagging', 'CML', 'Overall status', 'Actions'])
@@ -297,22 +297,26 @@ it('renders the shared Table and Cards choices from one page of authorised plot 
     expect(substr_count($office->getContent(), 'name="plots[]"'))->toBe(0);
 });
 
-it('uses the stable site total for the 100 plot Table default without overriding valid stored choices', function (): void {
+it('defaults every site to the Table view without overriding valid stored choices', function (): void {
     $site = Site::factory()->create();
-    ProjectedPlot::factory()->count(99)->create(['site_id' => $site->id]);
+    workspacePlot($site, 'APT 01');
     $user = workspaceSiteUser($site);
 
     $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
         ->get(route('portal.site-dashboard', ['plot' => 'does-not-match']))
         ->assertOk()->assertDontSee('data-default-view=', false);
 
-    $cardsDefault = $this->get(route('portal.site-dashboard'))->assertOk();
-    $cardsDefault->assertSee('data-default-view="cards"', false);
+    $small = $this->get(route('portal.site-dashboard'))->assertOk();
+    $small->assertSee('data-default-view="table"', false)->assertDontSee('data-default-view="cards"', false);
+    expect($small->getContent())->toContain("['table', 'cards'].includes(stored)")
+        ->and($small->getContent())->toContain("['table', 'cards'].includes(fallback) ? fallback : 'table'");
 
-    ProjectedPlot::factory()->create(['site_id' => $site->id, 'plot_reference' => 'APT 100']);
-    $tableDefault = $this->get(route('portal.site-dashboard', ['plot' => 'APT 100']))->assertOk();
-    $tableDefault->assertSee('data-default-view="table"', false)
-        ->assertViewHas('plots', fn ($plots) => $plots->total() === 1);
+    ProjectedPlot::factory()->count(120)->create(['site_id' => $site->id]);
+    $this->get(route('portal.site-dashboard'))->assertOk()->assertSee('data-default-view="table"', false);
+
+    $this->actingAs(workspaceOffice())
+        ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
+        ->assertOk()->assertSee('data-default-view="table"', false);
 });
 
 it('sorts plot references as strings in both directions and allowlists the request value', function (): void {

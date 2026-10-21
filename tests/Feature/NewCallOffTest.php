@@ -52,6 +52,30 @@ test('the start page is active-site scoped and Office Staff is denied', function
         ->assertForbidden();
 });
 
+test('the start page summarises dashboard-selected plots and folds the full plot list away', function (): void {
+    [$user, $site] = newMultiCallOffUser();
+    $chosen = newMultiCallOffPlot($site, 'Plot 104');
+    newMultiCallOffPlot($site, 'Plot 105');
+    $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id]);
+
+    $selected = $this->get(route('portal.call-offs.create', ['plots' => [$chosen->uuid]]))
+        ->assertOk()
+        ->assertSee('data-selected-plot-summary', false)
+        ->assertSee('Change plots</summary>', false)
+        ->assertDontSee('Choose plots</summary>', false)
+        ->assertSeeInOrder(['Plot 104', 'Change plots', 'Plot 105', 'Services and requested dates']);
+    expect($selected->getContent())->not->toMatch('/<details[^>]*data-plot-choices[^>]*\bopen\b/')
+        ->and($selected->getContent())->toMatch('/value="'.$chosen->uuid.'"[^>]*checked/');
+
+    $unselected = $this->get(route('portal.call-offs.create'))
+        ->assertOk()
+        ->assertDontSee('data-selected-plot-summary', false)
+        ->assertSee('Choose plots</summary>', false)
+        ->assertSee('Plot 104')
+        ->assertSee('Plot 105');
+    expect($unselected->getContent())->toMatch('/<details[^>]*data-plot-choices[^>]*\bopen\b/');
+});
+
 test('the matrix route validates dates, UUIDs and services before it builds combinations', function (): void {
     [$user, $site] = newMultiCallOffUser();
     $plot = newMultiCallOffPlot($site, 'Plot 201');
