@@ -76,6 +76,18 @@ test('the start page summarises dashboard-selected plots and folds the full plot
     expect($unselected->getContent())->toMatch('/<details[^>]*data-plot-choices[^>]*\bopen\b/');
 });
 
+test('the start page lists plots by plot number', function (): void {
+    [$user, $site] = newMultiCallOffUser();
+    foreach (['Plot 1000', 'Plot 010', 'Plot 002'] as $reference) {
+        newMultiCallOffPlot($site, $reference);
+    }
+
+    $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
+        ->get(route('portal.call-offs.create'))
+        ->assertOk()
+        ->assertSeeInOrder(['Plot 002', 'Plot 010', 'Plot 1000']);
+});
+
 test('the matrix route validates dates, UUIDs and services before it builds combinations', function (): void {
     [$user, $site] = newMultiCallOffUser();
     $plot = newMultiCallOffPlot($site, 'Plot 201');

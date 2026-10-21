@@ -154,14 +154,14 @@ it('keeps the Site Plot search controls collapsed by default with Table and Card
         ->get(route('portal.site-dashboard'))
         ->assertOk()
         ->assertSee('Search &amp; Filters', false)
-        ->assertSee('Current plots · Reference A–Z')
+        ->assertSee('Current plots · Low to High')
         ->assertSee('Fully completed plots are hidden by default.')
         ->assertSee('aria-label="Plot view"', false);
     $office = $this->actingAs(workspaceOffice())
         ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
         ->assertOk()
         ->assertSee('Search &amp; Filters', false)
-        ->assertSee('All plots · Reference A–Z')
+        ->assertSee('All plots · Low to High')
         ->assertSee('aria-label="Plot view"', false);
 
     foreach ([$external->getContent(), $office->getContent()] as $content) {
@@ -327,9 +327,9 @@ it('defaults to Cards on mobile and Table on desktop for every site size without
         ->assertSee('data-desktop-default-view="table"', false);
 });
 
-it('sorts plot references as strings in both directions and allowlists the request value', function (): void {
+it('sorts plots by plot number in both directions and allowlists the request value', function (): void {
     $site = Site::factory()->create();
-    foreach (['033', 'Com 4', 'APT 03'] as $reference) {
+    foreach (['Plot 1000', 'Com', 'Plot 002', '033', 'Plot 010', 'APT 3'] as $reference) {
         workspacePlot($site, $reference);
     }
     $user = workspaceSiteUser($site);
@@ -343,8 +343,11 @@ it('sorts plot references as strings in both directions and allowlists the reque
         ->assertOk()->assertViewHas('filters', fn (array $filters): bool => $filters['sort'] === 'plot_desc')
         ->viewData('plots')->pluck('plot.plot_reference')->all();
 
-    expect($ascending)->toBe(['033', 'APT 03', 'Com 4'])
-        ->and($descending)->toBe(['Com 4', 'APT 03', '033']);
+    expect($ascending)->toBe(['Plot 002', 'APT 3', 'Plot 010', '033', 'Plot 1000', 'Com'])
+        ->and($descending)->toBe(['Plot 1000', '033', 'Plot 010', 'APT 3', 'Plot 002', 'Com']);
+    $this->get(route('portal.site-dashboard'))->assertOk()
+        ->assertSeeInOrder(['value="plot_asc"', 'Low to High', 'value="plot_desc"', 'High to Low'], false)
+        ->assertDontSee('Reference A–Z');
     $this->get(route('portal.site-dashboard', ['sort' => 'numeric']))->assertRedirect();
 });
 

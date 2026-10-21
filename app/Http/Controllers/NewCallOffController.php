@@ -12,6 +12,7 @@ use App\Models\Site;
 use App\Presenters\CustomerProductPresenter;
 use App\Services\CallOffLeadTimeService;
 use App\Services\CallOffSubmissionWorkflow;
+use App\Services\PlotReferenceOrder;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -36,7 +37,9 @@ class NewCallOffController extends Controller
         return view('portal.call-offs.create', [
             'activeSite' => $site->load('customerOrganisation'),
             'serviceTypes' => CallOffServiceType::cases(),
-            'plots' => $site->projectedPlots()->orderBy('plot_reference')->get(['uuid', 'plot_reference', 'is_completed']),
+            'plots' => $site->projectedPlots()->get(['id', 'uuid', 'plot_reference', 'is_completed'])
+                ->sort(fn ($left, $right): int => PlotReferenceOrder::compare($left->plot_reference, $right->plot_reference) ?: $left->id <=> $right->id)
+                ->values(),
             'selectedPlotUuids' => $selected,
             'cavityEarliestDate' => $leadTimes->earliestCavityCloserDate(),
         ]);

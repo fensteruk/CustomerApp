@@ -89,12 +89,19 @@ class PlotOverviewQueryService
             });
         }
 
-        $direction = ($filters['sort'] ?? 'plot_asc') === 'plot_desc' ? 'desc' : 'asc';
+        // Plot numbers are ordered numerically in PHP, so only one page of plots is hydrated.
+        $descending = ($filters['sort'] ?? 'plot_asc') === 'plot_desc';
+        $orderedIds = (clone $query)->toBase()->select(['id', 'plot_reference'])->get()
+            ->sort(fn (object $left, object $right): int => PlotReferenceOrder::compare($left->plot_reference, $right->plot_reference, $descending) ?: $left->id <=> $right->id)
+            ->pluck('id')
+            ->values();
+        $page = LengthAwarePaginator::resolveCurrentPage();
+        $pageIds = $orderedIds->forPage($page, 15)->values();
+        $plots = $pageIds->isEmpty()
+            ? collect()
+            : $query->whereKey($pageIds)->get()->sortBy(fn (ProjectedPlot $plot): int => $pageIds->search($plot->id))->values();
 
-        return $query
-            ->orderBy('plot_reference', $direction)
-            ->orderBy('id')
-            ->paginate(15)
+        return (new LengthAwarePaginator($plots, $orderedIds->count(), 15, $page, ['path' => LengthAwarePaginator::resolveCurrentPath()]))
             ->withQueryString()
             ->through(fn (ProjectedPlot $plot): PlotOverview => $this->present($plot));
     }

@@ -27,7 +27,7 @@
     <details class="sw-filter-disclosure" data-plot-filters @if ($plotFilterErrors) open @endif>
         <summary>
             <svg class="sw-filter-search-icon" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path stroke-linecap="round" d="m16.5 16.5 4 4"/></svg>
-            <span class="sw-filter-trigger-copy"><strong>Search &amp; Filters</strong><span>{{ $plotFilterCount ? $plotFilterCount.' '.Str::plural('setting', $plotFilterCount).' active' : 'All plots · Reference A–Z' }}</span></span>
+            <span class="sw-filter-trigger-copy"><strong>Search &amp; Filters</strong><span>{{ $plotFilterCount ? $plotFilterCount.' '.Str::plural('setting', $plotFilterCount).' active' : 'All plots · Low to High' }}</span></span>
             <svg class="sw-filter-arrow" aria-hidden="true" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m5 7.5 5 5 5-5"/></svg>
         </summary>
         <div class="sw-filter-panel">
@@ -36,7 +36,7 @@
                 <input type="hidden" name="section" value="plots">
                 <div class="sw-field"><label for="plot-search">Plot reference</label><input id="plot-search" type="search" name="search" maxlength="100" value="{{ $plotSearchValue }}" placeholder="Plot number or reference"></div>
                 <div class="sw-field"><label for="plot-status">Plot status</label><select id="plot-status" name="overall_status[]"><option value="">All plots</option>@foreach (App\Enums\PlotOverallStatus::cases() as $status)<option value="{{ $status->value }}" @selected(in_array($status->value, $plotSelectedStatuses, true))>{{ $status->label() }}</option>@endforeach</select></div>
-                <div class="sw-field"><label for="plot-sort">Sort plots</label><select id="plot-sort" name="sort"><option value="plot_asc" @selected($plotSortValue === 'plot_asc')>Reference A–Z</option><option value="plot_desc" @selected($plotSortValue === 'plot_desc')>Reference Z–A</option></select></div>
+                <div class="sw-field"><label for="plot-sort">Sort plots</label><select id="plot-sort" name="sort"><option value="plot_asc" @selected($plotSortValue === 'plot_asc')>Low to High</option><option value="plot_desc" @selected($plotSortValue === 'plot_desc')>High to Low</option></select></div>
                 <button class="sw-button sw-primary" type="submit">Search</button>
                 @if ($plotFilterCount)<a class="sw-button" href="{{ route('office.workspace.sites.show', [$site['customer']['uuid'], $site['uuid'], 'section' => 'plots']) }}">Clear</a>@endif
             </form>

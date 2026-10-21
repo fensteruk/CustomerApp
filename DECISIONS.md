@@ -2355,3 +2355,29 @@ default at desktop width.
 
 This decision authorises local implementation and testing on a feature branch
 only; it does not authorise a merge or push to `main`, or a deployment.
+
+---
+
+## DEC-089
+
+Date: 21 October 2026
+
+Decision: Plot sorting on the site plot listing (Site User dashboard, its
+sidebar filters, and Office Site Details) is by plot number, labelled
+"Low to High" (default) and "High to Low", replacing "Reference A–Z" and
+"Reference Z–A". The plot number is the last run of digits in the stored
+Plot Ref, so "Plot 001" is 1 and "Plot 999" sorts before "Plot 1000". Plots
+with the same number fall back to natural reference order; references with no
+digits follow the numbered plots in either direction. New Call Off lists plots
+in the same Low to High order. The request values `plot_asc` / `plot_desc`
+are unchanged, and the stored Plot Ref and source identity are not altered.
+
+The listing still renders one page of 15 plots. To order numerically on both
+SQLite and MySQL, the query reads only plot ids and references for the
+filtered site, orders them in PHP, then loads that page's plots.
+
+Reason: Josh confirmed that users read plot references as numbers (001, 002,
+003); the "Plot" prefix is how the site stores them.
+
+This decision authorises local implementation and testing on a feature branch
+only; it does not authorise a merge or push to `main`, or a deployment.
