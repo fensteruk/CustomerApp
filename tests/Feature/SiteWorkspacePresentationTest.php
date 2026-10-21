@@ -297,21 +297,24 @@ it('renders the shared Table and Cards choices from one page of authorised plot 
     expect(substr_count($office->getContent(), 'name="plots[]"'))->toBe(0);
 });
 
-it('uses the stable site total for the 100 plot Table default without overriding valid stored choices', function (): void {
+it('defaults Site Plot lists to Table regardless of plot count', function (): void {
     $site = Site::factory()->create();
-    ProjectedPlot::factory()->count(99)->create(['site_id' => $site->id]);
+    ProjectedPlot::factory()->count(10)->create(['site_id' => $site->id]);
     $user = workspaceSiteUser($site);
 
     $this->actingAs($user)->withSession([EnsureActiveSiteIsAssigned::SESSION_KEY => $site->id])
         ->get(route('portal.site-dashboard', ['plot' => 'does-not-match']))
         ->assertOk()->assertDontSee('data-default-view=', false);
 
-    $cardsDefault = $this->get(route('portal.site-dashboard'))->assertOk();
-    $cardsDefault->assertSee('data-default-view="cards"', false);
+    $smallSiteDefault = $this->get(route('portal.site-dashboard'))->assertOk();
+    $smallSiteDefault->assertSee('data-default-view="table"', false);
 
     ProjectedPlot::factory()->create(['site_id' => $site->id, 'plot_reference' => 'APT 100']);
-    $tableDefault = $this->get(route('portal.site-dashboard', ['plot' => 'APT 100']))->assertOk();
-    $tableDefault->assertSee('data-default-view="table"', false)
+    $tableDefault = $this->get(route('portal.site-dashboard'))->assertOk();
+    $tableDefault->assertSee('data-default-view="table"', false);
+
+    $filteredDefault = $this->get(route('portal.site-dashboard', ['plot' => 'APT 100']))->assertOk();
+    $filteredDefault->assertSee('data-default-view="table"', false)
         ->assertViewHas('plots', fn ($plots) => $plots->total() === 1);
 });
 

@@ -1,5 +1,5 @@
 @php
-    $plotViewDefault = $siteSummary['total'] >= 100 ? 'table' : 'cards';
+    $plotViewDefault = 'table';
     $plotViewStorageKey = 'customerapp:site-plots:view:'.auth()->user()->uuid;
 @endphp
 <div class="sw-view-workspace" x-data="sitePlotView(@js($plotViewStorageKey), @js($plotViewDefault))" data-default-view="{{ $plotViewDefault }}">
@@ -22,7 +22,7 @@
 <script>
     window.sitePlotView = window.sitePlotView || function (storageKey, fallback) {
         return {
-            view: ['table', 'cards'].includes(fallback) ? fallback : 'cards',
+            view: ['table', 'cards'].includes(fallback) ? fallback : 'table',
             init() {
                 try {
                     const stored = window.localStorage.getItem(storageKey);
