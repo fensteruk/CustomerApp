@@ -1,8 +1,10 @@
 @php
-    $plotViewDefault = 'table';
+    $plotViewDefault = 'cards';
+    $plotViewDesktopDefault = 'table';
+    $plotViewDesktopQuery = '(min-width: 1024px)';
     $plotViewStorageKey = 'customerapp:site-plots:view:'.auth()->user()->uuid;
 @endphp
-<div class="sw-view-workspace" x-data="sitePlotView(@js($plotViewStorageKey), @js($plotViewDefault))" data-default-view="{{ $plotViewDefault }}">
+<div class="sw-view-workspace" x-data="sitePlotView(@js($plotViewStorageKey), @js($plotViewDefault), @js($plotViewDesktopDefault), @js($plotViewDesktopQuery))" data-default-view="{{ $plotViewDefault }}" data-desktop-default-view="{{ $plotViewDesktopDefault }}" data-desktop-query="{{ $plotViewDesktopQuery }}">
     <div class="sw-view-switcher" role="group" aria-label="Plot view">
         <span class="sw-muted">View</span>
         <button type="button" class="sw-view-button" :class="{ 'is-selected': view === 'table' }" :aria-pressed="(view === 'table').toString()" @click="choose('table')">Table</button>
@@ -20,17 +22,21 @@
     @include('site-workspace.cards')
 </noscript>
 <script>
-    window.sitePlotView = window.sitePlotView || function (storageKey, fallback) {
+    window.sitePlotView = window.sitePlotView || function (storageKey, fallback, desktopView, desktopQuery) {
+        const isView = (value) => ['table', 'cards'].includes(value);
+        let desktop = false;
+        try { desktop = Boolean(desktopQuery) && window.matchMedia(desktopQuery).matches; } catch (error) {}
+
         return {
-            view: ['table', 'cards'].includes(fallback) ? fallback : 'table',
+            view: desktop && isView(desktopView) ? desktopView : (isView(fallback) ? fallback : 'cards'),
             init() {
                 try {
                     const stored = window.localStorage.getItem(storageKey);
-                    if (['table', 'cards'].includes(stored)) this.view = stored;
+                    if (isView(stored)) this.view = stored;
                 } catch (error) {}
             },
             choose(next) {
-                if (!['table', 'cards'].includes(next)) return;
+                if (!isView(next)) return;
                 this.view = next;
                 try { window.localStorage.setItem(storageKey, next); } catch (error) {}
             },

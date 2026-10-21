@@ -2333,3 +2333,25 @@ had to scroll past every plot on the site to reach the next step.
 
 This decision authorises local implementation and testing on a feature branch
 only; it does not authorise a merge or push to `main`, or a deployment.
+
+---
+
+## DEC-088
+
+Date: 21 October 2026
+
+Decision: Supersede the screen-width part of DEC-087. The shared site plot
+listing opens in Cards on mobile and in Table on desktop, for every site size.
+"Desktop" means a browser viewport of at least 1024 px wide, checked when the
+page loads; narrower screens, including phones and portrait tablets, open in
+Cards. A valid Table or Cards choice the user has already saved in that browser
+is still honoured, and the other view remains one click away. No-JavaScript
+users continue to see Cards. The rest of DEC-087 (pinned Plot and Actions
+columns, and the shorter New Call Off plot choice) is unchanged.
+
+Reason: Josh confirmed that the 1120 px plot table does not fit a phone screen
+and is not practical as the mobile default, while Table remains the preferred
+default at desktop width.
+
+This decision authorises local implementation and testing on a feature branch
+only; it does not authorise a merge or push to `main`, or a deployment.

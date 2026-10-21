@@ -269,7 +269,8 @@ it('renders the shared Table and Cards choices from one page of authorised plot 
         ->get(route('portal.site-dashboard'))
         ->assertOk()
         ->assertSee('aria-label="Plot view"', false)
-        ->assertSee('data-default-view="table"', false)
+        ->assertSee('data-default-view="cards"', false)
+        ->assertSee('data-desktop-default-view="table"', false)
         ->assertSee('data-plot-view="table"', false)
         ->assertSee('data-plot-view="cards"', false)
         ->assertSeeInOrder(['Cavity Closers', 'Windows', 'Snagging', 'CML', 'Overall status', 'Actions'])
@@ -283,7 +284,7 @@ it('renders the shared Table and Cards choices from one page of authorised plot 
     expect($external->getContent())->toContain('<template x-if="view === \'table\'">')
         ->and($external->getContent())->toContain('<template x-if="view === \'cards\'">')
         ->and($external->getContent())->toContain('try { window.localStorage.setItem(storageKey, next); } catch (error) {}')
-        ->and($external->getContent())->toContain("['table', 'cards'].includes(stored)");
+        ->and($external->getContent())->toContain('if (isView(stored)) this.view = stored;');
 
     $office = $this->actingAs(workspaceOffice())
         ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
@@ -297,7 +298,7 @@ it('renders the shared Table and Cards choices from one page of authorised plot 
     expect(substr_count($office->getContent(), 'name="plots[]"'))->toBe(0);
 });
 
-it('defaults every site to the Table view without overriding valid stored choices', function (): void {
+it('defaults to Cards on mobile and Table on desktop for every site size without overriding valid stored choices', function (): void {
     $site = Site::factory()->create();
     workspacePlot($site, 'APT 01');
     $user = workspaceSiteUser($site);
@@ -307,16 +308,23 @@ it('defaults every site to the Table view without overriding valid stored choice
         ->assertOk()->assertDontSee('data-default-view=', false);
 
     $small = $this->get(route('portal.site-dashboard'))->assertOk();
-    $small->assertSee('data-default-view="table"', false)->assertDontSee('data-default-view="cards"', false);
-    expect($small->getContent())->toContain("['table', 'cards'].includes(stored)")
-        ->and($small->getContent())->toContain("['table', 'cards'].includes(fallback) ? fallback : 'table'");
+    $small->assertSee('data-default-view="cards"', false)
+        ->assertSee('data-desktop-default-view="table"', false)
+        ->assertSee('data-desktop-query="(min-width: 1024px)"', false);
+    expect($small->getContent())->toContain('desktop = Boolean(desktopQuery) && window.matchMedia(desktopQuery).matches;')
+        ->and($small->getContent())->toContain("view: desktop && isView(desktopView) ? desktopView : (isView(fallback) ? fallback : 'cards'),")
+        ->and($small->getContent())->toContain('if (isView(stored)) this.view = stored;');
 
     ProjectedPlot::factory()->count(120)->create(['site_id' => $site->id]);
-    $this->get(route('portal.site-dashboard'))->assertOk()->assertSee('data-default-view="table"', false);
+    $this->get(route('portal.site-dashboard'))->assertOk()
+        ->assertSee('data-default-view="cards"', false)
+        ->assertSee('data-desktop-default-view="table"', false);
 
     $this->actingAs(workspaceOffice())
         ->get(route('office.workspace.sites.show', [$site->customerOrganisation, $site, 'section' => 'plots']))
-        ->assertOk()->assertSee('data-default-view="table"', false);
+        ->assertOk()
+        ->assertSee('data-default-view="cards"', false)
+        ->assertSee('data-desktop-default-view="table"', false);
 });
 
 it('sorts plot references as strings in both directions and allowlists the request value', function (): void {
