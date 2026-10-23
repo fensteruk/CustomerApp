@@ -9,7 +9,6 @@ use App\SourceImport\Semantics\Data\ObservedCell;
 use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\SourceImport\Semantics\SemanticAdapter;
 use App\Wald\Contracts\SourceRange;
-use App\Wald\Services\AnalysisBudget;
 use App\Wald\Services\Reasoning\ReasoningEngine;
 use App\Wald\Services\ValueProfiler;
 use App\Wald\Services\WorkbookProfiler;
@@ -22,7 +21,9 @@ final class WorkbookStager
     public function inspect(object $run): array
     {
         $path = (new PrivateWorkbookStorage)->path($run);
-        $budget = new AnalysisBudget;
+        // This boundary also analyses bounded native RedZebra grouped sheets
+        // larger than Wald's legacy 10,000-row generic reader default.
+        $budget = WorkbookAnalysisCapacity::budget();
         if ($run->format === 'xls') {
             $source = new XlsWorkbookSource($path, $budget);
             try {
@@ -76,8 +77,20 @@ final class WorkbookStager
         if ($sheet === null) {
             throw new ImportConflict('source_sheet_changed');
         }
+        $decoded = [];
+        if ($run->pilot_upload_id ?? null) {
+            $manifest = DB::table('wald_pilot_uploads')->where('id', $run->pilot_upload_id)->value('source_manifest');
+            $decoded = is_string($manifest) ? json_decode($manifest, true, flags: JSON_THROW_ON_ERROR) : [];
+        }
+        $groupedDirectMode = ($decoded['source_profile'] ?? null) === GroupedPlotObservations::NATIVE_PROFILE;
+        $groupedProfile = new GroupedPlotObservations;
+        $groupedPhysicalMatch = $groupedProfile->matches($sheet, $table);
+        if ($groupedDirectMode !== $groupedPhysicalMatch) {
+            throw new ImportConflict('source_profile_changed');
+        }
         $headerNeedsConfirmation = in_array('no_clear_header', $table['warnings'], true);
-        if (array_diff($table['warnings'], ['no_clear_header']) !== [] || $sheet->visibility !== 'visible' || $sheet->hiddenRows !== [] || $sheet->hiddenColumns !== [] || $sheet->merges !== []) {
+        $allowedWarnings = $groupedDirectMode ? ['no_clear_header', 'ambiguous_header_candidates'] : ['no_clear_header'];
+        if (array_diff($table['warnings'], $allowedWarnings) !== [] || $sheet->visibility !== 'visible' || $sheet->hiddenRows !== [] || $sheet->hiddenColumns !== [] || $sheet->merges !== []) {
             throw new ImportConflict('unsafe_or_unsupported_structure');
         }
         $reasoning = (new ReasoningEngine)->reason($profile);
@@ -117,6 +130,12 @@ final class WorkbookStager
             $roleCandidates[$role][(int) $column] = true;
         }
         $sourceIdentity = (new MasterExportSiteIdentity)->columns($roleCandidates, $run->workbook_hash, isset($run->pilot_upload_id));
+        if ($groupedDirectMode) {
+            $columns['call_reference'] = 1;
+            $columns['call_type'] = 2;
+            $columns['plot_reference'] = 2;
+            unset($columns['quantity:MISC']);
+        }
         if ($headerNeedsConfirmation && count(array_filter($confirmed)) !== count($confirmed)) {
             throw new ImportConflict('structural_clarification_required');
         }
@@ -129,6 +148,7 @@ final class WorkbookStager
         }
         $compositeMode = false;
         $hierarchyAnswers = [];
+        $groupedRows = [];
         $restoredRows = [];
         $reviewRows = [];
         if ($run->pilot_upload_id ?? null) {
@@ -137,14 +157,15 @@ final class WorkbookStager
             $restoredRows = array_fill_keys(DB::table('wald_pilot_ignored_rows')
                 ->where('pilot_upload_id', $run->pilot_upload_id)->where('disposition', 'RESTORED')
                 ->pluck('row_number')->map(fn ($row): int => (int) $row)->all(), true);
-            $manifest = DB::table('wald_pilot_uploads')->where('id', $run->pilot_upload_id)->value('source_manifest');
-            $decoded = is_string($manifest) ? json_decode($manifest, true, flags: JSON_THROW_ON_ERROR) : [];
             $compositeMode = collect($decoded['sources'] ?? [])->contains(
                 fn (array $source): bool => ($source['hash'] ?? null) === $run->source_site_filter_hash
                     && ($source['hierarchy_mode'] ?? null) === 'COMPOSITE',
-            );
+            ) || $groupedDirectMode;
             if ($compositeMode) {
                 $hierarchyAnswers = (new HierarchyClarifications)->all($run->pilot_upload_id)[$run->source_site_filter_hash] ?? [];
+            }
+            if ($groupedDirectMode) {
+                $groupedRows = $groupedProfile->classify($sheet, $table);
             }
         }
         $rows = [];
@@ -169,20 +190,43 @@ final class WorkbookStager
             if ($reviewRow && in_array($reviewRow->disposition, ['UNKNOWN', 'REVIEWED_MISSING_CODE', 'EXCLUDED'], true)) {
                 continue;
             }
-            $raw = fn ($role) => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null;
+            $groupedRow = $groupedRows[(int) $rowNumber] ?? null;
+            if ($groupedDirectMode && $groupedRow === null) {
+                throw new ImportConflict('grouped_row_classification_missing');
+            }
+            if ($groupedDirectMode && $groupedRow['kind'] === 'PARENT_PLOT') {
+                // The heading supplies inherited Plot identity; only child/base
+                // detail records become staged source facts.
+                continue;
+            }
+            $raw = fn ($role) => $groupedDirectMode
+                ? match ($role) {
+                    'call_reference' => $groupedRow['call_reference'],
+                    'call_type' => $groupedRow['call_type'],
+                    'plot_reference' => $groupedRow['plot_reference'],
+                    default => isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null,
+                }
+            : (isset($columns[$role]) ? ($cells[$columns[$role]]->rawValue ?? null) : null);
             $rawCall = $raw('call_reference');
             $call = is_string($rawCall) || is_int($rawCall) ? trim((string) $rawCall) : '';
             $plot = $raw('plot_reference');
-            $sourceIdentityValue = $cells[$sourceIdentity['identity_column']]->rawValue ?? null;
-            $siteName = (new MasterExportSiteIdentity)->siteName(
-                $sourceIdentity['site_name_column'] === null ? null : ($cells[$sourceIdentity['site_name_column']]->rawValue ?? null),
-            );
+            $sourceIdentityValue = $groupedDirectMode
+                ? $groupedRow['source_customer_code']
+                : ($cells[$sourceIdentity['identity_column']]->rawValue ?? null);
+            $siteName = $groupedDirectMode
+                ? (new MasterExportSiteIdentity)->siteName($groupedRow['master_site_name'] ?? null)
+                : (new MasterExportSiteIdentity)->siteName(
+                    $sourceIdentity['site_name_column'] === null ? null : ($cells[$sourceIdentity['site_name_column']]->rawValue ?? null),
+                );
             $callType = $raw('call_type');
             $issues = [];
             foreach ($cells as $cell) {
                 if ($cell->formula !== null || $cell->type === 'error') {
                     $issues[] = 'UNSAFE_CELL';
                 }
+            }
+            if ($groupedDirectMode && $groupedRow['issue'] !== null) {
+                $issues[] = $groupedRow['issue'];
             }
             $hasCallType = is_scalar($callType) && trim((string) $callType) !== '';
             if ($call === '') {
@@ -207,9 +251,15 @@ final class WorkbookStager
                 && ($sourceIdentityValue === null || trim((string) $sourceIdentityValue) === '')) {
                 continue;
             }
-            $normalisedSite = $sourceIdentity['kind'] === MasterExportSiteIdentity::KIND
-                ? (new MasterExportSiteIdentity)->customerCode($sourceIdentityValue)
-                : trim((string) $sourceIdentityValue);
+            if ($groupedDirectMode && (! is_string($sourceIdentityValue) && ! is_int($sourceIdentityValue)
+                || trim((string) $sourceIdentityValue) === '')) {
+                $normalisedSite = '';
+                $issues[] = 'GROUPED_CUSTOMER_CODE_MISSING';
+            } else {
+                $normalisedSite = $sourceIdentity['kind'] === MasterExportSiteIdentity::KIND
+                    ? (new MasterExportSiteIdentity)->customerCode($sourceIdentityValue)
+                    : trim((string) $sourceIdentityValue);
+            }
             if ($sourceIdentity['kind'] === MasterExportSiteIdentity::KIND && CustomerAppDictionary::excludesCustomerCode($normalisedSite)
                 && ! isset($restoredRows[(int) $rowNumber])) {
                 continue;
@@ -224,7 +274,8 @@ final class WorkbookStager
                     continue;
                 }
             }
-            if (count($rows) >= BackendStore::MAX_ROWS) {
+            $maxStagedRows = $groupedDirectMode ? BackendStore::NATIVE_GROUPED_MAX_ROWS : BackendStore::MAX_ROWS;
+            if (count($rows) >= $maxStagedRows) {
                 throw new ImportConflict('explicit_run_row_limit_exceeded');
             }
             $selection = (new ReviewedWorkbookSelection)->treatment($run->workbook_hash, $sheet->id, $rowNumber, $call, $siteName ?? $normalisedSite, is_string($callType) ? $callType : '');
@@ -282,6 +333,12 @@ final class WorkbookStager
                     continue;
                 }
                 $code = substr($role, 9);
+                if ($groupedDirectMode && $code === 'MISC') {
+                    // Column Z is the approved preferred CustomerCode on this
+                    // versioned grouped profile, even though the legacy export
+                    // heading still says MISC. Never treat that identifier as a quantity.
+                    continue;
+                }
                 $value = $raw($role);
                 $sourceCell = $cells[$column] ?? null;
                 $represented = $sourceCell !== null && ! (is_string($value) && trim($value) === '');
@@ -336,6 +393,23 @@ final class WorkbookStager
                     'logical_row' => $rowNumber - $dataStart + 1,
                     'fragment' => $fragmentByColumn[$column] ?? null];
             }
+            if ($groupedDirectMode) {
+                $parentRow = $groupedRow['provenance']['parent_row'];
+                $valueProvenance['call_reference'] = ['sheet' => $sheet->id,
+                    'cell' => $groupedRow['provenance']['call_cell'], 'raw' => $rawCall,
+                    'logical_row' => $rowNumber - $dataStart + 1, 'fragment' => null];
+                $valueProvenance['call_type'] = ['sheet' => $sheet->id,
+                    'cell' => $groupedRow['provenance']['type_cell'], 'raw' => $callType,
+                    'logical_row' => $rowNumber - $dataStart + 1, 'fragment' => null];
+                $valueProvenance['plot_reference'] = ['sheet' => $sheet->id,
+                    'cell' => $parentRow === null ? null : 'B'.$parentRow, 'raw' => $rawPlot,
+                    'logical_row' => $parentRow === null ? null : $parentRow - $dataStart + 1, 'fragment' => null];
+                $codeColumn = $groupedRow['provenance']['preferred_code_cell']
+                    ?? $groupedRow['provenance']['identity_cell'];
+                $valueProvenance['source_customer_code'] = ['sheet' => $sheet->id,
+                    'cell' => $codeColumn, 'raw' => $groupedRow['provenance']['source_customer_code_raw'],
+                    'logical_row' => $rowNumber - $dataStart + 1, 'fragment' => null];
+            }
             $unmapped = [];
             foreach ($cells as $column => $cell) {
                 if (isset($fragmentByColumn[$column]) && ! isset($roleByColumn[$column]) && $cell->hasContent()) {
@@ -348,6 +422,8 @@ final class WorkbookStager
                 'issues' => $excluded ? array_values(array_intersect($issues, ['DUPLICATE_CALL_NUMBER', 'INVALID_CALL_NUMBER', 'UNSAFE_CELL'])) : array_values(array_unique($issues)),
                 'provenance' => ['sheet' => $sheet->id, 'row' => $rowNumber, 'raw_call_type' => $callType, 'raw_complete' => $raw('completion'),
                     'source_site_name' => $siteName,
+                    'grouped_row_kind' => $groupedRow['kind'] ?? null,
+                    'grouped_parent_row' => $groupedRow['provenance']['parent_row'] ?? null,
                     'parsed_hierarchy' => $hierarchy,
                     'logical_table' => $table['canonical_reference'] ?? $table['range']['address'],
                     'values' => $valueProvenance, 'unmapped_private_evidence' => $unmapped,

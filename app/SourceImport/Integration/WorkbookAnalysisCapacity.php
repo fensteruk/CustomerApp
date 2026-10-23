@@ -12,13 +12,15 @@ final class WorkbookAnalysisCapacity
 
     public const DATA_ROWS = 20_000;
 
+    public const CELLS = 2_000_000;
+
     public const SECONDS = 40;
 
     public static function budget(): AnalysisBudget
     {
         // Include one physical header row. All archive, cell, string and memory guards remain.
         // Reserve five seconds of the historical 45-second HTTP envelope for reporting/cleanup.
-        return new AnalysisBudget(['rows' => self::DATA_ROWS + 1, 'seconds' => self::SECONDS]);
+        return new AnalysisBudget(['rows' => self::DATA_ROWS + 1, 'cells' => self::CELLS, 'seconds' => self::SECONDS]);
     }
 
     public static function guardDuration(int $started): void

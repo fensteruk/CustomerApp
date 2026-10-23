@@ -126,9 +126,14 @@ final class ImportAnalysis
                 return (new ImportKnowledge)->capture($actor, $scope, $contextId);
             });
             $rows = (new WorkbookStager)->rows($run, $inspection, $knowledge);
+            $sourceManifest = $run->pilot_upload_id
+                ? json_decode((string) DB::table('wald_pilot_uploads')->where('id', $run->pilot_upload_id)->value('source_manifest'), true)
+                : [];
+            $sourceProfile = is_string($sourceManifest['source_profile'] ?? null) ? $sourceManifest['source_profile'] : null;
             $manifest = ['workbook_hash' => $run->workbook_hash, 'pins' => (new KnowledgeIdentity)->current(), 'knowledge' => $knowledge,
                 'selection_version' => ReviewedWorkbookSelection::VERSION, 'scope' => $scope->columns(), 'export_order' => $run->export_order, 'coverage' => $run->coverage,
-                'schema' => 'customerapp.wald-staging.v3', 'integration' => BackendStore::IDENTITY];
+                'schema' => 'customerapp.wald-staging.v3', 'source_profile' => $sourceProfile,
+                'integration' => BackendStore::identityForProfile($sourceProfile)];
 
             return (new ImportStore)->run($actor, $scope, 'analyse', (string) Str::uuid(), [$uuid, $token, 'stage'], function (User $fresh) use ($scope, $uuid, $token, $rows, $manifest, $contextId): array {
                 (new ImportKnowledge)->assertCurrent($fresh, $scope, $contextId, $manifest['knowledge']);

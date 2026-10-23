@@ -123,7 +123,8 @@ final class CommitAttemptJournal
             $manifest = $reviewed['manifest'] ?? [];
             $bindings = [];
             if ($preview) {
-                foreach (DB::table('wald_staged_rows')->where('stage_id', $preview->stage_id)->orderBy('ordinal')->limit(BackendStore::MAX_ROWS + 1)->pluck('payload') as $json) {
+                $maxRows = BackendStore::maxRowsForManifest($manifest);
+                foreach (DB::table('wald_staged_rows')->where('stage_id', $preview->stage_id)->orderBy('ordinal')->limit($maxRows + 1)->pluck('payload') as $json) {
                     $binding = json_decode($json, true)['binding'] ?? null;
                     if ($binding !== null) {
                         $bindings[Canonical::hash($binding)] = $binding;

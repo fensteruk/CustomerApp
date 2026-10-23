@@ -6,6 +6,7 @@ use App\Services\OfficeImportsWorkspaceQuery;
 use App\SourceImport\Integration\ApproveMasterHierarchyProposal;
 use App\SourceImport\Integration\BackendStore;
 use App\SourceImport\Integration\ExportOrder;
+use App\SourceImport\Integration\GroupedPlotObservations;
 use App\SourceImport\Integration\HierarchyClarifications;
 use App\SourceImport\Integration\HierarchyTarget;
 use App\SourceImport\Integration\IdenticalPilotImportConflict;
@@ -238,6 +239,9 @@ final class OfficePilotImportController extends Controller
         try {
             $summary = $workflow->summary($request->user(), $upload);
             $source = collect($summary['sources'])->firstWhere('hash', $data['source_hash']) ?? throw new ImportConflict('source_identity_not_found');
+            if (GroupedPlotObservations::isZeroCallSource($source)) {
+                throw new ImportConflict('zero_call_site_excluded');
+            }
             $site = (new PilotImportPolicy)->activeSite($request->user(), $data['site_uuid']);
             (new HierarchyTarget)->assertMatches($source, $site);
             $scope = new KnowledgeScope($site->customer_organisation_id, $site->id, 'redzebra', 'call-offs');
@@ -270,6 +274,9 @@ final class OfficePilotImportController extends Controller
             });
             if (! $matchingSource) {
                 throw new ImportConflict('binding_draft_not_in_upload');
+            }
+            if (GroupedPlotObservations::isZeroCallSource($matchingSource)) {
+                throw new ImportConflict('zero_call_site_excluded');
             }
             $site = (new PilotImportPolicy)->activeSite($request->user(), $data['site_uuid']);
             (new HierarchyTarget)->assertMatches($matchingSource, $site);

@@ -2,12 +2,22 @@
 
 namespace App\SourceImport\Integration;
 
+use App\SourceImport\Semantics\Dictionary\CustomerAppDictionary;
 use App\Wald\Contracts\SheetObservation;
 
 /** Analyse-only logical roles; the original physical sheet is never rewritten. */
 final class GroupedPlotObservations
 {
     public const PROFILE = 'customerapp.redzebra-grouped.analyse-only.v1';
+
+    public const NATIVE_PROFILE = 'customerapp.redzebra-grouped-native.v1';
+
+    public static function isZeroCallSource(array $source): bool
+    {
+        return ($source['source_profile'] ?? null) === self::NATIVE_PROFILE
+            && (int) ($source['calloff_rows'] ?? 0) === 0
+            && (int) ($source['activity_ambiguous_rows'] ?? 0) === 0;
+    }
 
     public function matches(SheetObservation $sheet, array $table): bool
     {
@@ -39,11 +49,17 @@ final class GroupedPlotObservations
             }
             $code = null;
             $identityRow = null;
+            $preferredCodeCell = null;
+            $sourceCustomerCodeRaw = null;
             foreach ($children as $number) {
-                $code = $this->code($sheet->cells[$number][26]->rawValue ?? null,
-                    $sheet->cells[$number][27]->rawValue ?? null);
+                $preferredCode = $sheet->cells[$number][26]->rawValue ?? null;
+                $legacyCode = $sheet->cells[$number][27]->rawValue ?? null;
+                $evidence = $this->codeEvidence($preferredCode, $legacyCode);
+                $code = $evidence['code'];
                 if ($code !== null) {
                     $identityRow = $number;
+                    $preferredCodeCell = $evidence['column'] === 'Z' ? 'Z'.$number : null;
+                    $sourceCustomerCodeRaw = $evidence['raw'];
                     break;
                 }
             }
@@ -51,12 +67,16 @@ final class GroupedPlotObservations
             $excluded = in_array($category, ['Private One Off', 'Trade Supply Only'], true);
             $rawPlot = $sheet->cells[$parent][2]->rawValue;
             $rows[$parent] = $this->row($parent, $parent, $identityRow, $code, $rawPlot, null, null,
-                $code === null ? 'GROUPED_CUSTOMER_CODE_MISSING' : null, $excluded, 'PARENT_PLOT');
+                $code === null ? 'GROUPED_CUSTOMER_CODE_MISSING' : null, $excluded, 'PARENT_PLOT', $preferredCodeCell,
+                $sourceCustomerCodeRaw);
             $rows[$parent]['master_site_name'] = $category;
             $fenced = false;
             foreach ($children as $number) {
                 $cells = $sheet->cells[$number];
-                $childCode = $this->code($cells[26]->rawValue ?? null, $cells[27]->rawValue ?? null);
+                $preferredCode = $cells[26]->rawValue ?? null;
+                $legacyCode = $cells[27]->rawValue ?? null;
+                $evidence = $this->codeEvidence($preferredCode, $legacyCode);
+                $childCode = $evidence['code'];
                 $issue = null;
                 if ($childCode === null) {
                     $issue = 'GROUPED_CUSTOMER_CODE_MISSING';
@@ -67,7 +87,8 @@ final class GroupedPlotObservations
                     $issue = 'GROUPED_ORPHAN_ROW';
                 }
                 $rows[$number] = $this->row($number, $parent, $number, $childCode, $rawPlot,
-                    $cells[1]->rawValue ?? null, $cells[2]->rawValue ?? null, $issue, $excluded, 'CHILD_DETAIL');
+                    $cells[1]->rawValue ?? null, $cells[2]->rawValue ?? null, $issue, $excluded, 'CHILD_DETAIL',
+                    $evidence['column'] === 'Z' ? 'Z'.$number : null, $evidence['raw']);
                 $rows[$number]['master_site_name'] = $category;
             }
         };
@@ -81,13 +102,23 @@ final class GroupedPlotObservations
                 $flush();
                 $parent = $number;
                 $children = [];
+            } elseif ($this->ambiguousParentCandidate($cells)) {
+                $flush();
+                $parent = null;
+                $children = [];
+                $evidence = $this->codeEvidence($cells[26]->rawValue ?? null, $cells[27]->rawValue ?? null);
+                $rows[$number] = $this->row($number, null, $number, $evidence['code'], $cells[2]->rawValue,
+                    $cells[1]->rawValue, null, 'GROUPED_PARENT_HIERARCHY_INVALID', false, 'AMBIGUOUS_PARENT',
+                    $evidence['column'] === 'Z' ? 'Z'.$number : null, $evidence['raw']);
             } elseif ($parent !== null) {
                 $children[] = $number;
             } else {
+                $evidence = $this->codeEvidence($cells[26]->rawValue ?? null, $cells[27]->rawValue ?? null);
                 $rows[$number] = $this->row($number, null, $number,
-                    $this->code($cells[26]->rawValue ?? null, $cells[27]->rawValue ?? null), null,
+                    $evidence['code'], null,
                     $cells[1]->rawValue ?? null, $cells[2]->rawValue ?? null,
-                    'GROUPED_ORPHAN_ROW', false, 'ORPHAN');
+                    'GROUPED_ORPHAN_ROW', false, 'ORPHAN',
+                    $evidence['column'] === 'Z' ? 'Z'.$number : null, $evidence['raw']);
             }
         }
         $flush();
@@ -104,6 +135,9 @@ final class GroupedPlotObservations
             if ($code === null || $row['excluded']) {
                 continue;
             }
+            if (is_string($row['call_type']) && CustomerAppDictionary::excludesCallType($row['call_type'])) {
+                continue;
+            }
             $states[$code] ??= ['typed' => false, 'unsafe' => false, 'qualifying' => false];
             $parsed = (new CompositePlotHierarchy)->parse($row['plot_reference'], $code);
             $category = PlotRegisterCapabilities::category($row['call_type']);
@@ -111,7 +145,7 @@ final class GroupedPlotObservations
             $states[$code]['unsafe'] = $states[$code]['unsafe'] || $row['issue'] !== null || ! $parsed['valid'];
             $states[$code]['qualifying'] = $states[$code]['qualifying']
                 || ($row['issue'] === null && $parsed['valid'] && $row['call_reference'] !== null
-                    && $row['call_reference'] !== '' && $category === 'RECOGNISED_CALLOFF_ROW'
+                    && $row['call_reference'] !== ''
                     && ! isset($callFindings[$row['call_reference']]));
         }
 
@@ -124,31 +158,56 @@ final class GroupedPlotObservations
         $populated = array_keys(array_filter($cells, fn ($cell) => $cell->hasContent()));
         sort($populated);
 
+        return $this->parentShape($cells, $populated)
+            && (new CompositePlotHierarchy)->parse($cells[2]->rawValue)['valid'];
+    }
+
+    private function ambiguousParentCandidate(array $cells): bool
+    {
+        $populated = array_keys(array_filter($cells, fn ($cell) => $cell->hasContent()));
+        sort($populated);
+
+        return $this->parentShape($cells, $populated)
+            && preg_match_all('/[-\x{2013}\x{2014}]/u', trim($cells[2]->rawValue)) >= 2
+            && ! (new CompositePlotHierarchy)->parse($cells[2]->rawValue)['valid'];
+    }
+
+    private function parentShape(array $cells, array $populated): bool
+    {
         return $populated === [1, 2] && ! preg_match('/^[0-9]+$/D', $cells[1]->rawValue)
             && trim($cells[1]->rawValue) !== '' && trim($cells[2]->rawValue) !== '';
     }
 
-    private function code(?string $preferred, ?string $legacy): ?string
+    private function codeEvidence(?string $preferred, ?string $legacy): array
     {
         if ($preferred !== null && trim($preferred) !== '') {
-            $code = $preferred;
-        } elseif ($legacy !== null && str_contains($legacy, '-')) {
-            $code = explode('-', $legacy, 2)[0];
-        } else {
-            return null;
+            $preferredCode = $this->validCode($preferred) ? $preferred : null;
+            if ($preferredCode !== null) {
+                return ['code' => $preferredCode, 'column' => 'Z', 'raw' => $preferred];
+            }
         }
 
-        if ($code === '' || $code !== trim($code) || mb_strlen($code) > 512
-            || preg_match('/[\x00-\x1f\x7f<>]/', $code)) {
-            return null;
+        if ($legacy !== null && str_contains($legacy, '-')) {
+            $legacyCode = explode('-', $legacy, 2)[0];
+            if ($this->validCode($legacyCode)) {
+                return ['code' => $legacyCode, 'column' => 'AA', 'raw' => $legacy];
+            }
         }
 
-        return $code;
+        return ['code' => null, 'column' => null, 'raw' => null];
+    }
+
+    private function validCode(string $code): bool
+    {
+        return $code !== '' && $code === trim($code) && mb_strlen($code) <= 512
+            && ! preg_match('/[\x00-\x1f\x7f<>]/', $code);
     }
 
     private function row(int $number, ?int $parent, ?int $identityRow, ?string $code, ?string $plot,
-        mixed $call, ?string $type, ?string $issue, bool $excluded, string $kind): array
+        mixed $call, ?string $type, ?string $issue, bool $excluded, string $kind,
+        ?string $preferredCodeCell = null, ?string $sourceCustomerCodeRaw = null): array
     {
+        $rawCall = $call;
         if ($call !== null) {
             if (! is_string($call) && ! is_int($call)) {
                 $issue ??= 'GROUPED_INVALID_CALL_NUMBER';
@@ -163,6 +222,9 @@ final class GroupedPlotObservations
                 }
             }
         }
+        if ($call === null && is_scalar($type) && trim((string) $type) !== '') {
+            $issue ??= 'GROUPED_CALL_NUMBER_MISSING';
+        }
         $parsed = (new CompositePlotHierarchy)->parse($plot, $code);
 
         return ['kind' => $kind, 'call_reference' => $call, 'call_type' => $type,
@@ -172,7 +234,10 @@ final class GroupedPlotObservations
             'provenance' => ['row' => $number, 'parent_row' => $parent,
                 'plot_cell' => $parent === null ? null : 'B'.$parent,
                 'identity_cell' => $identityRow === null ? null : 'AA'.$identityRow,
-                'preferred_code_cell' => $identityRow === null ? null : 'Z'.$identityRow,
+                'preferred_code_cell' => $preferredCodeCell,
+                'source_customer_code_raw' => $sourceCustomerCodeRaw,
+                'raw_call' => $rawCall,
+                'raw_type' => $type,
                 'call_cell' => $kind === 'PARENT_PLOT' ? null : 'A'.$number,
                 'type_cell' => $kind === 'PARENT_PLOT' ? null : 'B'.$number]];
     }

@@ -11,7 +11,7 @@ final class PilotWorkbookDiscovery
 {
     public const MAX_PARENT_ROWS = 10000;
 
-    public const SCHEMA = 'customerapp.wald-pilot-discovery.v8';
+    public const SCHEMA = 'customerapp.wald-pilot-discovery.v9';
 
     public function inspect(object $upload, array $restoredRows = []): array
     {
@@ -26,10 +26,14 @@ final class PilotWorkbookDiscovery
         $tableId = array_key_first($data['tables']);
         $table = $data['tables'][$tableId];
         $sheet = array_values($sheets)[0];
-        if (array_diff($table['warnings'], ['no_clear_header']) !== [] || $sheet->visibility !== 'visible'
+        $groupedProfile = new GroupedPlotObservations;
+        $groupedDirect = $groupedProfile->matches($sheet, $table);
+        $allowedWarnings = $groupedDirect ? ['no_clear_header', 'ambiguous_header_candidates'] : ['no_clear_header'];
+        if (array_diff($table['warnings'], $allowedWarnings) !== [] || $sheet->visibility !== 'visible'
             || $sheet->hiddenRows !== [] || $sheet->hiddenColumns !== [] || $sheet->merges !== []) {
             throw new ImportConflict('unsafe_or_unsupported_structure');
         }
+        $groupedRows = $groupedDirect ? $groupedProfile->classify($sheet, $table) : [];
 
         $roles = [];
         foreach ($data['questions'] as $question) {
@@ -63,7 +67,7 @@ final class PilotWorkbookDiscovery
                 || ! array_filter($cells, fn ($cell): bool => $cell->rawValue !== null && $cell->rawValue !== '')) {
                 continue;
             }
-            if (++$rowCount > self::MAX_PARENT_ROWS) {
+            if (++$rowCount > ($groupedDirect ? WorkbookAnalysisCapacity::DATA_ROWS : self::MAX_PARENT_ROWS)) {
                 throw new ImportConflict('pilot_workbook_row_limit_exceeded');
             }
             foreach ($cells as $cell) {
@@ -71,12 +75,22 @@ final class PilotWorkbookDiscovery
                     throw new ImportConflict('unsafe_source_cell');
                 }
             }
-            $rawCall = $cells[$callColumn]->rawValue ?? null;
+            $groupedRow = $groupedRows[(int) $rowNumber] ?? null;
+            if ($groupedDirect && $groupedRow === null) {
+                throw new ImportConflict('grouped_row_classification_missing');
+            }
+            if ($groupedDirect && $groupedRow['excluded']) {
+                $excluded++;
+
+                continue;
+            }
+            $groupedIssue = $groupedRow['issue'] ?? null;
+            $rawCall = $groupedDirect ? $groupedRow['call_reference'] : ($cells[$callColumn]->rawValue ?? null);
             $call = is_string($rawCall) || is_int($rawCall) ? trim((string) $rawCall) : '';
-            $rawCallType = $cells[$callTypeColumn]->rawValue ?? null;
+            $rawCallType = $groupedDirect ? $groupedRow['call_type'] : ($cells[$callTypeColumn]->rawValue ?? null);
             $hasCallType = is_scalar($rawCallType) && trim((string) $rawCallType) !== '';
             if ($call === '') {
-                if ($hasCallType || ($rawCall !== null && (! is_string($rawCall) || trim($rawCall) !== ''))) {
+                if (! $groupedDirect && ($hasCallType || ($rawCall !== null && (! is_string($rawCall) || trim($rawCall) !== '')))) {
                     throw new ImportConflict('invalid_call_number');
                 }
             } else {
@@ -85,17 +99,24 @@ final class PilotWorkbookDiscovery
                     throw new ImportConflict('invalid_call_number');
                 }
                 if (isset($seen[$call])) {
-                    throw new ImportConflict('duplicate_call_number');
+                    if (! $groupedDirect) {
+                        throw new ImportConflict('duplicate_call_number');
+                    }
+                    $groupedIssue ??= 'GROUPED_DUPLICATE_CALL_NUMBER';
+                } else {
+                    $seen[$call] = true;
                 }
-                $seen[$call] = true;
             }
-            $rawIdentity = $cells[$identity['identity_column']]->rawValue ?? null;
+            $rawIdentity = $groupedDirect
+                ? $groupedRow['source_customer_code']
+                : ($cells[$identity['identity_column']]->rawValue ?? null);
             if ($identity['kind'] === MasterExportSiteIdentity::KIND
                 && (is_string($rawIdentity) || is_int($rawIdentity))
                 && CustomerAppDictionary::excludesCustomerCode(trim((string) $rawIdentity))
                 && ! isset($restoredRows[(int) $rowNumber])) {
                 $excluded++;
-                $ignoredRows[] = $this->ignoredRow($rowNumber, $call, $cells, $identity, $plotColumn, $rawCallType, 'CUSTOMER_CODE');
+                $ignoredRows[] = $this->ignoredRow($rowNumber, $call, $cells, $identity, $plotColumn, $rawCallType,
+                    'CUSTOMER_CODE', $groupedDirect ? $rawIdentity : null);
 
                 continue;
             }
@@ -107,20 +128,26 @@ final class PilotWorkbookDiscovery
             if ($identity['kind'] === MasterExportSiteIdentity::KIND
                 && (! is_string($rawIdentity) && ! is_int($rawIdentity) || trim((string) $rawIdentity) === '')) {
                 $reviewRows[] = $this->reviewRow($rowNumber, $call, null, null,
-                    $plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null), $rawCallType,
-                    null, ['valid' => false, 'issue' => 'CUSTOMER_CODE_MISSING']);
+                    $groupedDirect ? $groupedRow['plot_reference']
+                        : ($plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null)), $rawCallType,
+                    null, ['valid' => false, 'issue' => $groupedDirect && $groupedIssue !== null
+                        ? $groupedIssue : 'CUSTOMER_CODE_MISSING']);
 
                 continue;
             }
-            $identityValue = $identity['kind'] === MasterExportSiteIdentity::KIND
-                ? (new MasterExportSiteIdentity)->customerCode($rawIdentity)
-                : trim((string) $rawIdentity);
+            $identityValue = $groupedDirect
+                ? trim((string) $rawIdentity)
+                : ($identity['kind'] === MasterExportSiteIdentity::KIND
+                    ? (new MasterExportSiteIdentity)->customerCode($rawIdentity)
+                    : trim((string) $rawIdentity));
             if ($identityValue === '' || mb_strlen($identityValue) > 512 || preg_match('/[\x00-\x1f\x7f<>]/', $identityValue)) {
                 throw new ImportConflict('invalid_source_site');
             }
-            $siteName = (new MasterExportSiteIdentity)->siteName(
-                $identity['site_name_column'] === null ? null : ($cells[$identity['site_name_column']]->rawValue ?? null),
-            );
+            $siteName = $groupedDirect
+                ? (new MasterExportSiteIdentity)->siteName($groupedRow['master_site_name'] ?? null)
+                : (new MasterExportSiteIdentity)->siteName(
+                    $identity['site_name_column'] === null ? null : ($cells[$identity['site_name_column']]->rawValue ?? null),
+                );
             $selection = (new ReviewedWorkbookSelection)->treatment(
                 $upload->workbook_hash,
                 $sheet->id,
@@ -135,12 +162,17 @@ final class PilotWorkbookDiscovery
                 continue;
             }
             $hash = Canonical::hash([$identity['kind'], $identityValue]);
-            $rawPlot = $plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null;
+            $rawPlot = $groupedDirect
+                ? $groupedRow['plot_reference']
+                : ($plotColumn !== null ? ($cells[$plotColumn]->rawValue ?? null) : null);
             $parsed = $plotColumn !== null
                 ? (new CompositePlotHierarchy)->parse($rawPlot, $identityValue)
                 : ['valid' => false, 'issue' => 'PLOT_COLUMN_MISSING'];
             $reviewRows[] = $this->reviewRow($rowNumber, $call, $identityValue, $siteName,
                 $rawPlot, $rawCallType, $hash, $parsed);
+            if ($groupedDirect) {
+                $reviewRows[array_key_last($reviewRows)]['issue'] ??= $groupedIssue;
+            }
             $sawHierarchySignal = $sawHierarchySignal
                 || (is_string($rawPlot) && (preg_match('/\s[-\x{2013}\x{2014}]\s|[-\x{2013}\x{2014}]\s*Plot\s+/iu', $rawPlot) === 1
                     || (new HierarchySuggestion)->forIssue($identityValue, $rawPlot) !== null));
@@ -154,12 +186,20 @@ final class PilotWorkbookDiscovery
                 'hash' => $hash,
                 'rows' => 0,
                 'calloff_rows' => 0,
+                'activity_ambiguous_rows' => 0,
                 'inventory_rows' => 0,
+                'recognized_calloff_rows' => 0,
+                'unknown_call_type_rows' => 0,
+                'blank_type_call_rows' => 0,
                 'hierarchy' => ['customer' => null, 'site' => null, 'valid_rows' => 0, 'invalid_rows' => 0, 'conflicting_rows' => 0],
                 'hierarchy_issues' => [],
                 'hierarchy_variants' => [],
                 'plots' => [],
+                'calloff_plots' => [],
             ];
+            if ($groupedDirect) {
+                $sources[$hash]['source_profile'] = GroupedPlotObservations::NATIVE_PROFILE;
+            }
             if ($plotColumn !== null) {
                 if (! $parsed['valid']) {
                     $sources[$hash]['hierarchy']['invalid_rows']++;
@@ -179,6 +219,9 @@ final class PilotWorkbookDiscovery
                     ];
                     $sources[$hash]['hierarchy_variants'][$variantHash]['rows'][] = (int) $rowNumber;
                     $sources[$hash]['plots'][$parsed['plot']] = true;
+                    if ($groupedDirect && $call !== '') {
+                        $sources[$hash]['calloff_plots'][$parsed['plot']] = true;
+                    }
                     if ($hierarchy['customer'] === null) {
                         $hierarchy['customer'] = $parsed['customer'];
                         $hierarchy['site'] = $parsed['site'];
@@ -189,6 +232,22 @@ final class PilotWorkbookDiscovery
                     unset($hierarchy);
                 }
             }
+            if ($groupedDirect && $groupedIssue !== null) {
+                $sources[$hash]['hierarchy']['invalid_rows']++;
+                if (in_array($groupedIssue, ['GROUPED_CALL_NUMBER_MISSING', 'GROUPED_INVALID_CALL_NUMBER'], true)) {
+                    $sources[$hash]['activity_ambiguous_rows']++;
+                }
+                $groupedIssueHash = Canonical::hash(['grouped-row', $groupedIssue, $rowNumber]);
+                $sources[$hash]['hierarchy_issues'][$groupedIssueHash] = [
+                    'hash' => $groupedIssueHash,
+                    'raw' => $rawPlot,
+                    'raw_call' => $groupedRow['provenance']['raw_call'] ?? null,
+                    'raw_type' => $groupedRow['provenance']['raw_type'] ?? null,
+                    'reason' => $groupedIssue,
+                    'rows' => [(int) $rowNumber],
+                    'suggestion' => null,
+                ];
+            }
             if ($siteName !== null) {
                 $sources[$hash]['observed_site_names'][$siteName] = true;
             }
@@ -197,6 +256,16 @@ final class PilotWorkbookDiscovery
                 $sources[$hash]['inventory_rows']++;
             } else {
                 $sources[$hash]['calloff_rows']++;
+                if ($groupedDirect) {
+                    $callCategory = PlotRegisterCapabilities::category($rawCallType);
+                    if ($callCategory === 'RECOGNISED_CALLOFF_ROW') {
+                        $sources[$hash]['recognized_calloff_rows']++;
+                    } elseif ($callCategory === 'UNKNOWN_NONBLANK_CALLOFF_ROW') {
+                        $sources[$hash]['unknown_call_type_rows']++;
+                    } elseif ($callCategory === 'BASE_PLOT_ROW') {
+                        $sources[$hash]['blank_type_call_rows']++;
+                    }
+                }
             }
             $included++;
         }
@@ -204,12 +273,15 @@ final class PilotWorkbookDiscovery
             throw new ImportConflict('no_source_records');
         }
         $identityHeader = $sheet->cells[$table['header_range']['start_row']][$identity['identity_column']]->rawValue ?? null;
-        $compositeMode = ! $identity['legacy'] && ($sawHierarchySignal
-            || is_string($identityHeader) && trim($identityHeader) === 'Customer Number');
+        $compositeMode = $groupedDirect || (! $identity['legacy'] && ($sawHierarchySignal
+            || is_string($identityHeader) && trim($identityHeader) === 'Customer Number'));
         $inactiveHashes = [];
         $inactiveRows = 0;
         foreach ($sources as $hash => &$source) {
-            if ($source['calloff_rows'] === 0) {
+            $provenZeroCall = $groupedDirect
+                ? GroupedPlotObservations::isZeroCallSource($source)
+                : $source['calloff_rows'] === 0;
+            if ($provenZeroCall) {
                 $inactiveHashes[$hash] = true;
                 $inactiveRows += $source['rows'];
                 $source['requires_manual_review'] = true;
@@ -226,18 +298,39 @@ final class PilotWorkbookDiscovery
                 $source['hierarchy_variants'] = [];
                 $source['plots'] = [];
             } else {
+                // Variant row lists are only needed to explain a real within-code conflict.
+                // Keeping them for every ordinary row duplicates the plot inventory and can
+                // push a valid native RedZebra manifest over Canonical's bounded payload cap.
+                if ($source['hierarchy']['conflicting_rows'] === 0) {
+                    $source['hierarchy_variants'] = [];
+                }
                 $source['hierarchy_issues'] = array_values($source['hierarchy_issues']);
                 $source['hierarchy_variants'] = array_values($source['hierarchy_variants']);
                 $source['plots'] = array_map('strval', array_keys($source['plots']));
                 sort($source['plots'], SORT_NATURAL);
             }
+            if (($source['source_profile'] ?? null) === GroupedPlotObservations::NATIVE_PROFILE) {
+                $allPlots = array_fill_keys($source['plots'], true);
+                $calloffPlots = $source['calloff_plots'];
+                $source['plot_count'] = count($allPlots);
+                $source['plots_with_calloffs'] = count(array_intersect_key($allPlots, $calloffPlots));
+                $source['inventory_only_plots'] = count(array_diff_key($allPlots, $calloffPlots));
+                $source['inventory_rows'] = $source['inventory_only_plots'];
+                if ($source['unknown_call_type_rows'] > 0 || $source['blank_type_call_rows'] > 0) {
+                    $source['warnings'][] = 'UNRESOLVED_CALLOFF_ROWS_PRESENT';
+                }
+            }
+            unset($source['calloff_plots']);
             $source['observed_site_names'] = array_keys($source['observed_site_names']);
             sort($source['observed_site_names'], SORT_NATURAL | SORT_FLAG_CASE);
             $source['site_name'] = $source['observed_site_names'][0] ?? $source['site_name'];
             if (count($source['observed_site_names']) > 1) {
                 $source['warnings'][] = 'SOURCE_SITE_NAME_VARIATION';
             }
-            $source['requires_manual_review'] = $source['calloff_rows'] === 0;
+            $source['requires_manual_review'] = $source['calloff_rows'] === 0
+                || ($compositeMode && $source['hierarchy']['invalid_rows'] > 0)
+                || ($source['source_profile'] ?? null) === GroupedPlotObservations::NATIVE_PROFILE
+                    && ($source['unknown_call_type_rows'] > 0 || $source['blank_type_call_rows'] > 0);
             if ($compositeMode && $source['hierarchy']['invalid_rows'] > 0) {
                 $source['warnings'][] = 'SOURCE_HIERARCHY_INVALID';
             }
@@ -249,6 +342,7 @@ final class PilotWorkbookDiscovery
 
         return [
             'schema' => self::SCHEMA,
+            'source_profile' => $groupedDirect ? GroupedPlotObservations::NATIVE_PROFILE : 'flat-v1',
             'knowledge_policy' => KnowledgeIdentity::POLICY,
             'resolver_version' => MasterSourceResolver::VERSION,
             'analysis_hash' => $data['analysis_hash'],
@@ -290,9 +384,10 @@ final class PilotWorkbookDiscovery
         ];
     }
 
-    private function ignoredRow(int $rowNumber, string $call, array $cells, array $identity, ?int $plotColumn, mixed $rawCallType, string $reason): array
+    private function ignoredRow(int $rowNumber, string $call, array $cells, array $identity, ?int $plotColumn,
+        mixed $rawCallType, string $reason, mixed $resolvedCode = null): array
     {
-        $rawCode = $cells[$identity['identity_column']]->rawValue ?? null;
+        $rawCode = $resolvedCode ?? ($cells[$identity['identity_column']]->rawValue ?? null);
         $rawPlot = $plotColumn === null ? null : ($cells[$plotColumn]->rawValue ?? null);
 
         return [

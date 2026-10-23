@@ -1,5 +1,63 @@
 # Customer Portal — Source Integration Contract
 
+## DIRECTMASTER01 native grouped RedZebra profile — 23 October 2026
+
+This addendum describes the bounded, versioned native grouped profile
+`customerapp.redzebra-grouped-native.v1`. It does not change flat or paired
+workbook interpretation, the existing source-site binding, Plot identity, or
+Portal-owned workflows.
+
+- The profile is selected only for one visible, unmerged worksheet whose exact
+  header cells match the supported RedZebra layout and whose physical rows
+  contain the confirmed parent Plot shape. Otherwise the existing flat/paired
+  paths remain in force or the workbook is held.
+- A parent Plot row has populated A and B only: A is descriptive site/customer
+  text and B is the source Customer → Site → Plot hierarchy. It establishes
+  Plot evidence and resets the active parent. It is not a Call No.
+- Following populated child/detail rows inherit that parent until a new valid
+  parent begins. A row with a valid opaque string/number in A is a Call No.
+  candidate; B remains its Call Type evidence. Call Type length never
+  classifies row identity. Blank-A detail rows may carry inventory/product
+  evidence and do not create a Visit. A populated Call Type with no Call No.,
+  duplicate Call No., malformed parent, or orphan child remains a review
+  finding; no row is attached across a detected source-code conflict.
+- The parent hierarchy is parsed using the existing exact
+  `CompositePlotHierarchy` rules. Existing source-site binding remains
+  `source namespace + CustomerCode`; existing Plot identity remains the exact
+  bound site plus normalized Plot Ref. A conflicting parsed customer/site,
+  differing child CustomerCode, or missing identity blocks its affected source
+  row/site review. Site-name similarity is never a binding rule.
+- In this exact grouped profile, Z is the preferred source CustomerCode. When
+  Z is absent, blank or invalid, use the prefix before the first hyphen in AA. Preserve the raw
+  source cells and their provenance. This versioned profile treats Z as
+  identity even though its legacy heading says `MISC`; Z must not also be read
+  as a product quantity. Other profiles retain their existing dictionary
+  meanings.
+- Call Numbers are preserved as opaque strings after trimming and must be
+  unique within the uploaded workbook. Known Call Types use the controlled
+  dictionary; blank means no Visit; a nonblank unknown remains unresolved and
+  blocks the dependent row. A Call No. is source-row identity, not permission
+  to invent a Visit meaning.
+- Inventory-only Plot detail stages as `BASE_PLOT_ROW`. It can establish the
+  Plot and approved source product facts but creates no visit, service,
+  completion, requested date, agreed date, or Portal workflow. Parent headings
+  establish hierarchy and are not double-staged as rows.
+- The native profile accepts up to 20,000 nonempty workbook data rows and uses
+  a profile-pinned maximum of 1,000 staged records for one selected site; the
+  existing flat/paired staging maximum remains 500. Oversize units are held,
+  never silently chunked. The one-site preview, explicit confirmation,
+  atomic commit and audit receipt remain the only Apply path. Multi-site or
+  grouped Apply is not enabled by this addendum.
+- Profile/schema and staging identity versions are pinned in the source
+  manifest. Existing uploads are not silently reinterpreted. Reanalysis must
+  create a new review generation and pass the current stale-source checks.
+
+Regression acceptance includes base Plot rows, one/many calls, consecutive
+parent rows, a new parent/site boundary, orphan rows, unknown types, repeated
+Call Numbers, same Plot Ref on different exact sites, differing descriptive
+names under the same code, and continued flat/paired compatibility. Genuine
+source qualification is Analyse-only; it is not Apply approval.
+
 _Sprint 3B — 20 August 2026; CUSTAPP2 identity/composite refinement updated 15 September 2026_
 
 ## CUSTOMER-WALD inventory baseline addendum — 19 October 2026

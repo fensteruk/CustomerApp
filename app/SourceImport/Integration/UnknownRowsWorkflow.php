@@ -64,6 +64,9 @@ final class UnknownRowsWorkflow
             if (! $source || $source['customer_code'] !== $code) {
                 throw new ImportConflict('review_source_not_found');
             }
+            if (GroupedPlotObservations::isZeroCallSource($source)) {
+                throw new ImportConflict('zero_call_site_excluded');
+            }
             $sourceSiteAlias = $this->sourceSiteAlias($selectedRows, $site, $confirmSourceSite);
             (new OfficeBindingCorrection)->confirm($fresh, $upload, $source, $selectedRows, $site,
                 $confirmBinding, $command, $sourceSiteAlias !== null);

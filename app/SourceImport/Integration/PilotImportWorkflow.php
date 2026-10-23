@@ -245,6 +245,9 @@ final class PilotImportWorkflow
             if (! $source || (int) ($source['rows'] ?? 0) < 1) {
                 throw new ImportConflict('source_identity_not_found');
             }
+            if (GroupedPlotObservations::isZeroCallSource($source)) {
+                throw new ImportConflict('zero_call_site_excluded');
+            }
             $source = (new HierarchyClarifications)->resolve($source, (new HierarchyClarifications)->all($upload->id)[$sourceHash] ?? []);
             $stream = DB::table('wald_import_streams')->where('id', $upload->stream_id)->firstOrFail();
             $resolution = (new MasterSourceResolver)->resolve([$source], $stream->source_namespace)[$sourceHash];
@@ -435,6 +438,16 @@ final class PilotImportWorkflow
             'rows' => (int) ($source['rows'] ?? 0),
             'calloff_rows' => (int) ($source['calloff_rows'] ?? 0),
             'inventory_rows' => (int) ($source['inventory_rows'] ?? 0),
+            ...(($source['source_profile'] ?? null) === GroupedPlotObservations::NATIVE_PROFILE ? [
+                'source_profile' => GroupedPlotObservations::NATIVE_PROFILE,
+                'plot_count' => (int) ($source['plot_count'] ?? 0),
+                'plots_with_calloffs' => (int) ($source['plots_with_calloffs'] ?? 0),
+                'inventory_only_plots' => (int) ($source['inventory_only_plots'] ?? 0),
+                'recognized_calloff_rows' => (int) ($source['recognized_calloff_rows'] ?? 0),
+                'unknown_call_type_rows' => (int) ($source['unknown_call_type_rows'] ?? 0),
+                'blank_type_call_rows' => (int) ($source['blank_type_call_rows'] ?? 0),
+                'activity_ambiguous_rows' => (int) ($source['activity_ambiguous_rows'] ?? 0),
+            ] : []),
             'requires_manual_review' => (bool) ($source['requires_manual_review'] ?? false),
             'customer_code' => $customerCode,
             'site_name' => $siteName,

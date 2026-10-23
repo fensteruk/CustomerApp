@@ -10,8 +10,31 @@ final class BackendStore
 {
     public const MAX_ROWS = 500;
 
+    public const NATIVE_GROUPED_MAX_ROWS = 1000;
+
     public const IDENTITY = ['application' => 'customerapp.wald-import-backend.pilot-v5', 'projection' => 'customerapp.wald-source-projection.v5',
         'hashing' => 'customerapp.wald-transient-evidence-digest.v3', 'max_rows' => self::MAX_ROWS];
+
+    public static function identityForProfile(?string $profile): array
+    {
+        if ($profile === GroupedPlotObservations::NATIVE_PROFILE) {
+            return [...self::IDENTITY, 'application' => 'customerapp.wald-import-backend.native-grouped.v1',
+                'source_profile' => $profile, 'max_rows' => self::NATIVE_GROUPED_MAX_ROWS];
+        }
+
+        return self::IDENTITY;
+    }
+
+    public static function maxRowsForManifest(array $manifest): int
+    {
+        $sourceProfile = $manifest['source_profile'] ?? null;
+        $identity = self::identityForProfile(is_string($sourceProfile) ? $sourceProfile : null);
+        if (Canonical::hash($manifest['integration'] ?? []) !== Canonical::hash($identity)) {
+            throw new ImportConflict('stale_component_or_scope');
+        }
+
+        return $identity['max_rows'];
+    }
 
     public function run(KnowledgeScope $scope, string $uuid, bool $lock = false): object
     {
@@ -24,8 +47,9 @@ final class BackendStore
     {
         $stage = DB::table('wald_import_stages')->where('id', $run->stage_id)->where('run_id', $run->id)->firstOrFail();
         $manifest = $this->payload($stage, 'manifest', 'manifest_hash');
-        $records = DB::table('wald_staged_rows')->where('stage_id', $stage->id)->orderBy('ordinal')->limit(self::MAX_ROWS + 1)->get();
-        if ($records->count() !== (int) $stage->row_count || $records->count() > self::MAX_ROWS) {
+        $maxRows = self::maxRowsForManifest($manifest);
+        $records = DB::table('wald_staged_rows')->where('stage_id', $stage->id)->orderBy('ordinal')->limit($maxRows + 1)->get();
+        if ($records->count() !== (int) $stage->row_count || $records->count() > $maxRows) {
             throw new ImportConflict('staging_integrity_error');
         }
         $rows = $records->map(fn ($row) => $this->payload($row))->all();

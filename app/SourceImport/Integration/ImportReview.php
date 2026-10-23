@@ -56,6 +56,7 @@ final class ImportReview
     {
         return (new ImportStore)->run($actor, $scope, 'review', $command, [$uuid, $previewUuid, $hash, 'approve'], function (User $fresh) use ($scope, $uuid, $previewUuid, $hash): array {
             $run = (new BackendStore)->run($scope, $uuid, true);
+            $this->assertGroupedApplyDisabled($run);
             if ($run->state !== 'REVIEWED') {
                 throw new ImportConflict('review_approval_state_conflict');
             }
@@ -71,6 +72,7 @@ final class ImportReview
         return (new ImportStore)->run($actor, $scope, 'commit', $command, [$uuid, $previewUuid, $hash], function (User $fresh) use ($scope, $uuid, $previewUuid, $hash, $command): array {
             $store = new BackendStore;
             $run = $store->run($scope, $uuid, true);
+            $this->assertGroupedApplyDisabled($run);
             $existing = DB::table('wald_import_receipts')->where('run_id', $run->id)->first();
             if ($existing) {
                 $oldPreview = DB::table('wald_import_previews')->where('id', $existing->preview_id)->firstOrFail();
@@ -130,6 +132,14 @@ final class ImportReview
         });
     }
 
+    private function assertGroupedApplyDisabled(object $run): void
+    {
+        [, $manifest] = (new BackendStore)->stage($run);
+        if (($manifest['source_profile'] ?? null) === GroupedPlotObservations::NATIVE_PROFILE) {
+            throw new ImportConflict('grouped_apply_not_enabled');
+        }
+    }
+
     private function validate(User $actor, KnowledgeScope $scope, object $run, string $uuid, string $hash): array
     {
         $store = new BackendStore;
@@ -162,7 +172,10 @@ final class ImportReview
     private function dependencies(User $actor, KnowledgeScope $scope, object $run, array $manifest, array $rows): void
     {
         if (Canonical::hash((new KnowledgeIdentity)->current()) !== Canonical::hash($manifest['pins']) || $manifest['selection_version'] !== ReviewedWorkbookSelection::VERSION
-            || ($manifest['schema'] ?? null) !== 'customerapp.wald-staging.v3' || Canonical::hash($manifest['integration'] ?? []) !== Canonical::hash(BackendStore::IDENTITY)
+            || ($manifest['schema'] ?? null) !== 'customerapp.wald-staging.v3'
+            || Canonical::hash($manifest['integration'] ?? []) !== Canonical::hash(BackendStore::identityForProfile(
+                is_string($manifest['source_profile'] ?? null) ? $manifest['source_profile'] : null,
+            ))
             || Canonical::hash($manifest['scope']) !== Canonical::hash($scope->columns())
             || $manifest['workbook_hash'] !== $run->workbook_hash || $manifest['export_order'] !== $run->export_order || $manifest['coverage'] !== $run->coverage) {
             throw new ImportConflict('stale_component_or_scope');

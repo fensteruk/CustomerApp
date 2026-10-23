@@ -95,6 +95,9 @@ final class CustomerCodeReviewWorkflow
             if ($sourceIndex === false || ($manifest['sources'][$sourceIndex]['hierarchy_mode'] ?? null) !== 'COMPOSITE') {
                 throw new ImportConflict('review_source_not_found');
             }
+            if (GroupedPlotObservations::isZeroCallSource($manifest['sources'][$sourceIndex])) {
+                throw new ImportConflict('zero_call_site_excluded');
+            }
             $rows = DB::table('wald_pilot_review_rows')->where('pilot_upload_id', $upload->id)
                 ->where('source_identity_hash', $sourceHash)->orderBy('row_number')->lockForUpdate()->get();
             if ($rows->isEmpty() || count($excluded) > $rows->count()) {

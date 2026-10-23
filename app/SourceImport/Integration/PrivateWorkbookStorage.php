@@ -3,7 +3,6 @@
 namespace App\SourceImport\Integration;
 
 use App\SourceImport\Readers\XlsWorkbookSource;
-use App\Wald\Services\AnalysisBudget;
 use App\Wald\Services\WorkbookSourceFactory;
 use Illuminate\Filesystem\FilesystemAdapter;
 use Illuminate\Http\UploadedFile;
@@ -29,7 +28,9 @@ final class PrivateWorkbookStorage
         if (! in_array($format, ['xls', 'xlsx', 'csv'], true)) {
             throw new ImportConflict('unsupported_upload_type');
         }
-        $budget = new AnalysisBudget;
+        // Native RedZebra master sheets can exceed Wald's generic 10,000-row
+        // reader default; final profile discovery still applies its own bound.
+        $budget = WorkbookAnalysisCapacity::budget();
         $bytes = $file->getSize();
         $budget->guard('file_bytes', $bytes);
         if ($bytes < 1) {

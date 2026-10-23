@@ -71,6 +71,9 @@ final class ApproveMasterHierarchyProposal
                     || ($source['customer_code'] ?? null) === null) {
                     throw new ImportConflict('proposal_not_in_upload');
                 }
+                if (GroupedPlotObservations::isZeroCallSource($source)) {
+                    throw new ImportConflict('zero_call_site_excluded');
+                }
                 if (DB::table('wald_pilot_selections')->where('pilot_upload_id', $upload->id)
                     ->where('source_identity_hash', $sourceHash)->exists()) {
                     throw new ImportConflict('proposal_already_selected');

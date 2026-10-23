@@ -2,7 +2,7 @@
 
 **Status:** Current approved business dictionary
 
-**Last updated:** 22 September 2026 (current-scope exclusions approved under DEC-071)
+**Last updated:** 23 October 2026 (profile-scoped DIRECTMASTER01 source identity rule)
 
 **Applies to:** CustomerApp spreadsheet import, Wald clarification and Portal projection
 
@@ -153,6 +153,18 @@ product facts to the resolved plot without establishing a Visit.
 A filtered export cannot zero or delete values outside supplied records.
 
 ## 5. Other Confirmed Fields
+
+### Direct grouped RedZebra master profile
+
+For the exact versioned `customerapp.redzebra-grouped-native.v1` profile only,
+source rows use the confirmed grouped layout: parent A/B establishes the Plot;
+following detail rows inherit it. A present, valid Z value supplies the
+preferred source CustomerCode; otherwise the prefix before the first hyphen in
+AA supplies the CustomerCode. In this profile Z is identity evidence and is not a `MISC`
+quantity. This rule does not change other workbook profiles. Call Numbers stay
+opaque string identifiers; blank Call Type does not create a visit. See the
+source-integration contract addendum for classification, boundaries, blockers
+and staging limits.
 
 | Field | Treatment |
 |---|---|
