@@ -16,6 +16,8 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 uses(RefreshDatabase::class);
 
 test('one multi-service batch creates independently dated request items atomically', function (): void {
+    $this->travelTo(CarbonImmutable::parse('2026-10-26 09:00:00'));
+
     $organisation = CustomerOrganisation::factory()->create();
     $site = Site::factory()->create(['customer_organisation_id' => $organisation->id]);
     PortalRole::firstOrCreate(['identifier' => PortalRoleIdentifier::SiteManager->value], ['name' => 'Site Manager']);

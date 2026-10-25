@@ -120,8 +120,21 @@
                             <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between"><h3 class="font-bold text-sky-950">Fenster proposed {{ $proposal->proposed_date->format('j M Y') }}</h3><time class="text-sm text-sky-900" datetime="{{ $proposal->proposed_at?->toIso8601String() }}">{{ $proposal->proposed_at?->format('j M Y, H:i:s') ?? 'Time not available' }}</time></div>
                             <p class="mt-2 text-sm text-sky-950">{{ $proposal->proposedBy?->name ?? 'Fenster' }}@if ($proposal->proposedBy?->portalRole), {{ $proposal->proposedBy->portalRole->name }}@endif</p>
                             @if ($proposal->customer_response && $proposal->status === App\Enums\CallOffDateProposalStatus::AwaitingResponse)<p class="mt-3 rounded-lg bg-white p-3 text-sm leading-6 text-slate-800">{{ $proposal->customer_response }}</p>@endif
-                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Rejected)<p class="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-950"><strong>Rejected by {{ $proposal->respondedBy?->name ?? 'a site user' }}</strong>@if ($proposal->respondedBy?->portalRole), {{ $proposal->respondedBy->portalRole->name }}@endif@if ($proposal->responded_at) on {{ $proposal->responded_at->format('j M Y, H:i:s') }}@endif.<br>Reason: {{ $proposal->customer_response }}</p>@endif
-                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Accepted)<p class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-950">Accepted by {{ $proposal->respondedBy?->name ?? 'a site user' }}@if ($proposal->respondedBy?->portalRole), {{ $proposal->respondedBy->portalRole->name }}@endif@if ($proposal->responded_at) on {{ $proposal->responded_at->format('j M Y, H:i:s') }}@endif.</p>@endif
+                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Rejected)
+                                <p class="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-950">
+                                    <strong>Rejected by {{ $proposal->respondedBy?->name ?? 'a site user' }}</strong>
+                                    @if ($proposal->respondedBy?->portalRole), {{ $proposal->respondedBy->portalRole->name }}@endif
+                                    @if ($proposal->responded_at) on {{ $proposal->responded_at->format('j M Y, H:i:s') }}@endif.
+                                    <br>Reason: {{ $proposal->customer_response }}
+                                </p>
+                            @endif
+                            @if ($proposal->status === App\Enums\CallOffDateProposalStatus::Accepted)
+                                <p class="mt-3 rounded-lg border border-emerald-200 bg-emerald-50 p-3 text-sm font-bold text-emerald-950">
+                                    Accepted by {{ $proposal->respondedBy?->name ?? 'a site user' }}
+                                    @if ($proposal->respondedBy?->portalRole), {{ $proposal->respondedBy->portalRole->name }}@endif
+                                    @if ($proposal->responded_at) on {{ $proposal->responded_at->format('j M Y, H:i:s') }}@endif.
+                                </p>
+                            @endif
                         </li>
                     @endif
                 @endforeach
