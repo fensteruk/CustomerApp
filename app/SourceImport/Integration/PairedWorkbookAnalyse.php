@@ -61,7 +61,9 @@ final class PairedWorkbookAnalyse
         if (! $grouped->matches($sheet, $table)) {
             throw new ImportConflict('master_register_profile_not_recognised');
         }
-        $logical = $grouped->classify($sheet, $table);
+        // Paired identity comes from the approved AA code/plot data when present;
+        // malformed descriptive B text remains evidence for the paired review.
+        $logical = $grouped->classify($sheet, $table, allowMalformedParentHierarchy: true);
         $plots = [];
         $facts = [];
         $childrenByParent = [];

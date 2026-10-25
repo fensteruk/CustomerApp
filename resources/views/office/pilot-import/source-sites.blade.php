@@ -11,8 +11,29 @@
                     @php($sourceState = $source['resolution']['state'] ?? 'LEGACY_SOURCE')
                     @php($category = match ($sourceState) { 'NEW_CUSTOMER_AND_SITE' => 'new_customers', 'EXACT_CUSTOMER_NEW_SITE' => 'new_sites', 'BINDING_CONFLICT', 'SOURCE_HIERARCHY_CONFLICT' => 'conflicts', 'MALFORMED_HIERARCHY' => 'clarifications', default => 'ready' })
                     <article class="admin-card" x-show="category === 'all' || category === '{{ $category }}'"><div class="flex items-start justify-between gap-3"><div><p class="eyebrow">{{ $source['rows'] ?? 0 }} selected rows</p><h3 class="admin-card-title [overflow-wrap:anywhere]">{{ ($source['identity_label'] ?? 'Source identity').' '.(($source['customer_code'] ?? null) ?: ($source['identity'] ?? 'Not recorded')) }}</h3>@if(! empty($source['legacy_pre_customer_code']))<p class="mt-2 text-sm text-slate-600">Retained pre-CustomerCode record. Its historical source identity has not been changed or reinterpreted.</p>@endif @if(! empty($source['site_name']))<p class="mt-2 text-sm"><strong>Source Site Name</strong><br>{{ $source['site_name'] }}</p>@endif</div><span class="status {{ $selected ? 'status-green' : (! empty($source['binding']) ? 'status-green' : 'status-slate') }}">{{ $selected ? 'Selected' : (! empty($source['binding']) ? 'Bound' : (! empty($source['draft']) ? 'Draft' : 'Unbound')) }}</span></div>
-                        @if(isset($source['calloff_rows']))<p class="mt-2 text-sm text-slate-600">{{ number_format($source['calloff_rows']) }} call-off rows@if(isset($source['plot_count'])) ({{ number_format($source['recognized_calloff_rows']) }} recognised, {{ number_format($source['unknown_call_type_rows']) }} unknown type, {{ number_format($source['blank_type_call_rows']) }} blank type)@if(($source['activity_ambiguous_rows'] ?? 0) > 0) · {{ number_format($source['activity_ambiguous_rows']) }} activity rows need review@endif · {{ number_format($source['plot_count']) }} plots · {{ number_format($source['plots_with_calloffs']) }} with calls · {{ number_format($source['inventory_only_plots']) }} without calls@else · {{ number_format($source['inventory_rows']) }} inventory-only rows@endif</p>@endif
-                        @if(in_array('ZERO_CALLOFF_SITE_REQUIRES_REVIEW', $source['warnings'] ?? [], true))<div class="mt-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800" role="status"><strong>No call-off activity found.</strong> This source site is excluded from this import.</div>@endif
+                        @if(isset($source['calloff_rows']))
+                            <p class="mt-2 text-sm text-slate-600">
+                                {{ number_format($source['calloff_rows']) }} call-off rows
+                                @if(isset($source['plot_count']))
+                                    ({{ number_format($source['recognized_calloff_rows']) }} recognised,
+                                    {{ number_format($source['unknown_call_type_rows']) }} unknown type,
+                                    {{ number_format($source['blank_type_call_rows']) }} blank type)
+                                    @if(($source['activity_ambiguous_rows'] ?? 0) > 0)
+                                        · {{ number_format($source['activity_ambiguous_rows']) }} activity rows need review
+                                    @endif
+                                    · {{ number_format($source['plot_count']) }} plots
+                                    · {{ number_format($source['plots_with_calloffs']) }} with calls
+                                    · {{ number_format($source['inventory_only_plots']) }} without calls
+                                @elseif(isset($source['inventory_rows']))
+                                    · {{ number_format($source['inventory_rows']) }} inventory-only rows
+                                @else
+                                    · inventory counts not recorded
+                                @endif
+                            </p>
+                        @elseif(isset($source['inventory_rows']))
+                            <p class="mt-2 text-sm text-slate-600">Call-off count not recorded · {{ number_format($source['inventory_rows']) }} inventory-only rows</p>
+                        @endif
+                        @if(in_array('ZERO_CALLOFF_SITE_REQUIRES_REVIEW', $source['warnings'] ?? [], true))<div class="mt-4 rounded-lg border border-slate-300 bg-slate-50 p-3 text-sm text-slate-800" role="status"><strong>No call-off activity found.</strong> Review this source site manually before including its plots.</div>@endif
                         @if(in_array('SOURCE_SITE_NAME_VARIATION', $source['warnings'] ?? [], true))<div class="mt-4 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950" role="status"><strong>Site name variation:</strong> {{ implode(' · ', $source['observed_site_names'] ?? []) }}. CustomerCode remains the identity; review the descriptive names.</div>@endif
                         @if(! empty($source['hierarchy']['customer']))<p class="mt-4 text-sm"><strong>Parsed source hierarchy:</strong> {{ $source['hierarchy']['customer'] }} → {{ $source['hierarchy']['site'] }} → {{ $source['hierarchy']['valid_rows'] }} plot rows</p>@endif
                         @php($proposal = $source['hierarchy_proposal'] ?? ['state' => 'LEGACY_SOURCE'])

@@ -82,6 +82,17 @@ it('classifies an A/B-only opaque Call Number as a child, not a new parent headi
         ->and($rows[3]['call_reference'])->toBe('CALL-X9');
 });
 
+it('preserves paired mode parent rows when AA carries identity and B is only descriptive evidence', function (): void {
+    $sheet = groupedDemoSheet([2 => [1 => 'Heading', 2 => 'Malformed display label'],
+        3 => [1 => '1001', 2 => 'PC1', 27 => '104-001']]);
+    $rows = (new GroupedPlotObservations)->classify($sheet, groupedDemoTable($sheet), allowMalformedParentHierarchy: true);
+
+    expect($rows[2]['kind'])->toBe('PARENT_PLOT')
+        ->and($rows[3]['kind'])->toBe('CHILD_DETAIL')
+        ->and($rows[3]['provenance']['parent_row'])->toBe(2)
+        ->and($rows[2]['source_customer_code'])->toBe('104');
+});
+
 it('ends parent context at a malformed hierarchy boundary and holds following details as orphans', function (): void {
     $sheet = groupedDemoSheet([2 => [1 => 'Heading A', 2 => 'Customer - Site - Plot 1'],
         3 => [1 => '1001', 2 => 'PC1', 27 => '104-001'],

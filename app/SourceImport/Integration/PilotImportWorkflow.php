@@ -436,8 +436,8 @@ final class PilotImportWorkflow
             'kind' => (string) ($source['kind'] ?? ''),
             'identity' => (string) ($source['identity'] ?? ''),
             'rows' => (int) ($source['rows'] ?? 0),
-            'calloff_rows' => (int) ($source['calloff_rows'] ?? 0),
-            'inventory_rows' => (int) ($source['inventory_rows'] ?? 0),
+            'calloff_rows' => array_key_exists('calloff_rows', $source) ? (int) $source['calloff_rows'] : null,
+            'inventory_rows' => array_key_exists('inventory_rows', $source) ? (int) $source['inventory_rows'] : null,
             ...(($source['source_profile'] ?? null) === GroupedPlotObservations::NATIVE_PROFILE ? [
                 'source_profile' => GroupedPlotObservations::NATIVE_PROFILE,
                 'plot_count' => (int) ($source['plot_count'] ?? 0),
@@ -448,7 +448,8 @@ final class PilotImportWorkflow
                 'blank_type_call_rows' => (int) ($source['blank_type_call_rows'] ?? 0),
                 'activity_ambiguous_rows' => (int) ($source['activity_ambiguous_rows'] ?? 0),
             ] : []),
-            'requires_manual_review' => (bool) ($source['requires_manual_review'] ?? false),
+            'requires_manual_review' => array_key_exists('requires_manual_review', $source)
+                ? (bool) $source['requires_manual_review'] : null,
             'customer_code' => $customerCode,
             'site_name' => $siteName,
             'observed_site_names' => $observedSiteNames,

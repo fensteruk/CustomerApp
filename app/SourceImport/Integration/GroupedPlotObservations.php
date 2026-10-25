@@ -38,7 +38,7 @@ final class GroupedPlotObservations
         return false;
     }
 
-    public function classify(SheetObservation $sheet, array $table): array
+    public function classify(SheetObservation $sheet, array $table, bool $allowMalformedParentHierarchy = false): array
     {
         $rows = [];
         $parent = null;
@@ -98,7 +98,7 @@ final class GroupedPlotObservations
             if ($number < $start || $number > $end || ! array_filter($cells, fn ($cell) => $cell->hasContent())) {
                 continue;
             }
-            if ($this->parent($cells)) {
+            if ($this->parent($cells, $allowMalformedParentHierarchy)) {
                 $flush();
                 $parent = $number;
                 $children = [];
@@ -153,13 +153,13 @@ final class GroupedPlotObservations
             : (! $state['typed'] && ! $state['unsafe'] ? 'ZERO_CALLOFFS' : 'REVIEW'), $states);
     }
 
-    private function parent(array $cells): bool
+    private function parent(array $cells, bool $allowMalformedHierarchy = false): bool
     {
         $populated = array_keys(array_filter($cells, fn ($cell) => $cell->hasContent()));
         sort($populated);
 
         return $this->parentShape($cells, $populated)
-            && (new CompositePlotHierarchy)->parse($cells[2]->rawValue)['valid'];
+            && ($allowMalformedHierarchy || (new CompositePlotHierarchy)->parse($cells[2]->rawValue)['valid']);
     }
 
     private function ambiguousParentCandidate(array $cells): bool
